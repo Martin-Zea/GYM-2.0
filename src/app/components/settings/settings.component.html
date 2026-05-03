@@ -81,6 +81,19 @@
         </div>
         <div class="settings-row">
           <div class="settings-row-main">
+            <div class="settings-row-label">Edad</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input class="input" type="number" min="10" max="100"
+              placeholder="—"
+              style="width:75px;text-align:center"
+              [value]="settings().userProfile.age ?? ''"
+              (input)="patchProfileNum('age', $event)"/>
+            <span style="font-size:12px;color:var(--text-2)">años</span>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-main">
             <div class="settings-row-label">Sexo</div>
           </div>
           <select class="select" style="width:150px"

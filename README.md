@@ -1,59 +1,53 @@
-# GYM20
+# GYM 2.0
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.7.
+PWA de seguimiento de entrenamiento con progresión asistida por IA. Interfaz en español, mobile-first, funciona offline.
 
-## Development server
+## Características
 
-To start a local development server, run:
+- **Rutina semanal configurable** — días editables con ejercicios personalizados
+- **Registro de series** — peso, reps y estado completado por set
+- **Progresión IA** — recomendaciones automáticas vía Groq (llama-3.3-70b) con fallback local
+- **Gráficos** — progresión de peso por ejercicio (SVG)
+- **Calendario** — heatmap mensual de actividad
+- **Temporizador de descanso** — overlay con cuenta regresiva configurable
+- **Perfil de usuario** — peso, altura y sexo para recomendaciones personalizadas
+- **Exportar / importar** — backup completo en JSON
+- **PWA** — instalable, funciona sin conexión
 
-```bash
-ng serve
-```
+## Stack
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- Angular 21.2 (standalone components, signals)
+- TypeScript 5.9
+- Groq API (`llama-3.3-70b-versatile`) — opcional
+- localStorage (`gym_app_state_v2`)
+- Vitest
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
+## Desarrollo
 
 ```bash
-ng build
+npm start        # dev server → http://localhost:4200
+npm run build    # build de producción
+npm test         # unit tests con Vitest
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Configuración de IA
 
-## Running unit tests
+1. Abrí **Ajustes** en la app
+2. Ingresá tu API key de [Groq](https://console.groq.com) (gratuita)
+3. Opcionalmente completá tu perfil físico para recomendaciones personalizadas
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+Sin API key, la app usa el algoritmo de progresión local (siempre disponible).
 
-```bash
-ng test
+## Estructura
+
+```
+src/app/
+  models/         # interfaces TypeScript (workout.model.ts)
+  data/           # rutina inicial (initial-data.ts)
+  services/       # StorageService, StateService, UIStateService, ProgressionService
+  components/     # home, exercise-card, charts, calendar, rest-timer, day-editor, settings, icon
 ```
 
-## Running end-to-end tests
+## Datos
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+El estado completo se persiste en `localStorage`. Al exportar se descarga un `.json` con toda la historia de sesiones, rutina y configuración.

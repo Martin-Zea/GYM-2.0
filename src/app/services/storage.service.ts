@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { AppState, SetRecord, Session, TodaySetProgress } from '../models/workout.model';
+import { AppState, SetRecord, Session } from '../models/workout.model';
 import { createInitialState } from '../data/initial-data';
 
 const STORAGE_KEY = 'gym_app_state_v2';
@@ -21,10 +21,11 @@ export class StorageService {
     try {
       const p = JSON.parse(raw) as Partial<AppState>;
       return {
-        schemaVersion: 2,
+        schemaVersion: 3,
         days: p.days ?? [],
         sessions: p.sessions ?? [],
         activeDayIndex: p.activeDayIndex ?? 0,
+        routinePointer: p.routinePointer ?? p.activeDayIndex ?? 0,
         todayProgress: p.todayProgress ?? {},
         settings: {
           apiKey: p.settings?.apiKey ?? '',
@@ -34,6 +35,7 @@ export class StorageService {
           userProfile: {
             weightKg: p.settings?.userProfile?.weightKg ?? null,
             heightCm: p.settings?.userProfile?.heightCm ?? null,
+            age: p.settings?.userProfile?.age ?? null,
             sex: p.settings?.userProfile?.sex ?? null,
           },
         },
@@ -66,6 +68,7 @@ export class StorageService {
 
   lastSessionForExercise(state: AppState, exerciseId: string, beforeISO?: string): Session | null {
     const sessions = state.sessions
+      .filter(s => !s.skipped)
       .filter(s => s.sets.some(set => set.exerciseId === exerciseId))
       .filter(s => !beforeISO || s.dateISO < beforeISO)
       .sort((a, b) => b.dateISO.localeCompare(a.dateISO));
@@ -76,6 +79,18 @@ export class StorageService {
     const session = this.lastSessionForExercise(state, exerciseId, beforeISO);
     if (!session) return null;
     return session.sets.filter(s => s.exerciseId === exerciseId);
+  }
+
+  lastSessionForDay(state: AppState, dayId: string): Session | null {
+    return state.sessions
+      .filter(s => s.dayId === dayId && !s.skipped)
+      .sort((a, b) => b.dateISO.localeCompare(a.dateISO))[0] ?? null;
+  }
+
+  allSessionsForDay(state: AppState, dayId: string): Session[] {
+    return state.sessions
+      .filter(s => s.dayId === dayId && !s.skipped)
+      .sort((a, b) => b.dateISO.localeCompare(a.dateISO));
   }
 
   historyForExercise(state: AppState, exerciseId: string): HistoryEntry[] {

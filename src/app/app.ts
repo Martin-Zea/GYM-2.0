@@ -6,6 +6,9 @@ import { IconComponent } from './components/icon/icon.component';
 import { RestTimerComponent } from './components/rest-timer/rest-timer.component';
 import { DayEditorComponent } from './components/day-editor/day-editor.component';
 import { SettingsComponent } from './components/settings/settings.component';
+import { DayDetailSheetComponent } from './components/day-detail-sheet/day-detail-sheet.component';
+import { DayPickerSheetComponent } from './components/day-picker-sheet/day-picker-sheet.component';
+import { DayHistorySheetComponent } from './components/day-history-sheet/day-history-sheet.component';
 
 @Component({
   selector: 'app-root',
@@ -13,6 +16,7 @@ import { SettingsComponent } from './components/settings/settings.component';
   imports: [
     RouterOutlet, RouterLink, RouterLinkActive,
     IconComponent, RestTimerComponent, DayEditorComponent, SettingsComponent,
+    DayDetailSheetComponent, DayPickerSheetComponent, DayHistorySheetComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',

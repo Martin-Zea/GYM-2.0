@@ -1,7 +1,7 @@
 <div class="main">
   <div class="view-header">
     <h2 class="view-title">Progresión</h2>
-    <p class="view-sub">Peso máximo por sesión</p>
+    <p class="view-sub">Peso máximo y volumen por sesión</p>
   </div>
 
   @if (!chartItems().length) {
@@ -14,15 +14,21 @@
     </div>
   } @else {
     @for (item of chartItems(); track item.exercise.id) {
-      <div class="chart-card">
+      <div class="chart-card" [id]="'chart-' + item.exercise.id">
         <div class="chart-head">
           <div>
             <p class="chart-title">{{ item.exercise.name }}</p>
             <p class="chart-sub">{{ item.history.length }} sesiones</p>
           </div>
-          <div class="chart-pr">
-            <div class="chart-pr-label">PR</div>
-            <div class="chart-pr-value">{{ item.pr }} kg</div>
+          <div class="chart-stats-right">
+            <div class="chart-stat">
+              <div class="chart-stat-label">PR</div>
+              <div class="chart-stat-value">{{ item.pr }} kg</div>
+            </div>
+            <div class="chart-stat">
+              <div class="chart-stat-label">Vol. última</div>
+              <div class="chart-stat-value chart-stat-vol">{{ item.volLast }} kg</div>
+            </div>
           </div>
         </div>
 
@@ -64,6 +70,15 @@
               }
             </g>
           </svg>
+        </div>
+
+        <div class="chart-vol-bar">
+          <span class="chart-vol-label">Volumen promedio: {{ item.volAvg }} kg</span>
+          <div class="chart-vol-track">
+            <div class="chart-vol-fill"
+              [style.width.%]="item.volAvg > 0 ? (item.volLast / item.volAvg) * 50 : 0">
+            </div>
+          </div>
         </div>
       </div>
     }

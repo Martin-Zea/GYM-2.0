@@ -8,4 +8,16 @@ export class UIStateService {
   readonly showSettings = signal(false);
   readonly editingDay = signal<EditingDayState>(null);
   readonly restTimer = signal<RestTimerState | null>(null);
+
+  // Day detail sheet: shows last session + option to train
+  readonly dayDetail = signal<WorkoutDay | null>(null);
+
+  // Day picker sheet: select a day while in training mode
+  readonly showDayPicker = signal(false);
+
+  // Day history sheet: full session history for a day
+  readonly dayHistory = signal<WorkoutDay | null>(null);
+
+  // Signal set by DayDetailSheet to trigger training start in HomeComponent
+  readonly pendingTrainingStart = signal(false);
 }

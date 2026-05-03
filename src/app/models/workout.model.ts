@@ -30,6 +30,7 @@ export interface Session {
   dayId: string;
   dateISO: string;
   sets: SetRecord[];
+  skipped?: boolean;
 }
 
 export interface TodaySetProgress {
@@ -46,6 +47,7 @@ export interface TodayDayProgress {
 export interface UserProfile {
   weightKg: number | null;
   heightCm: number | null;
+  age: number | null;
   sex: 'male' | 'female' | 'other' | null;
 }
 
@@ -62,13 +64,18 @@ export interface AppState {
   days: WorkoutDay[];
   sessions: Session[];
   activeDayIndex: number;
+  routinePointer: number;
   todayProgress: Record<string, TodayDayProgress>;
   settings: AppSettings;
 }
 
-export interface AiRecommendation {
+export interface SetRecommendation {
   weight: number;
   reps: number;
+}
+
+export interface AiRecommendation {
+  sets: SetRecommendation[];
   reason: string;
   source: 'groq' | 'local';
   loading?: boolean;

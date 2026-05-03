@@ -22,6 +22,17 @@ export class StateService {
   readonly settings = computed(() => this.state().settings);
   readonly activeDayIndex = computed(() => this.state().activeDayIndex);
   readonly activeDay = computed(() => this.state().days[this.state().activeDayIndex] ?? null);
+  readonly routinePointer = computed(() => this.state().routinePointer);
+  readonly currentDayIndex = computed(() => {
+    const days = this.state().days;
+    if (!days.length) return 0;
+    return this.state().routinePointer % days.length;
+  });
+  readonly currentDay = computed(() => {
+    const days = this.state().days;
+    if (!days.length) return null;
+    return days[this.state().routinePointer % days.length] ?? null;
+  });
 
   get todayKey(): string {
     return this.storage.todayISO();
@@ -63,6 +74,31 @@ export class StateService {
 
   saveSettings(settings: AppSettings): void {
     this.state.update(s => ({ ...s, settings }));
+  }
+
+  advanceRoutine(): void {
+    this.state.update(s => ({ ...s, routinePointer: s.routinePointer + 1 }));
+  }
+
+  skipDay(): void {
+    const day = this.currentDay();
+    if (!day) return;
+    const alreadySkipped = this.state().sessions.some(
+      s => s.dayId === day.id && s.dateISO === this.todayKey && s.skipped,
+    );
+    if (!alreadySkipped) {
+      this.state.update(s => ({
+        ...s,
+        sessions: [...s.sessions, {
+          id: this.storage.uid(),
+          dayId: day.id,
+          dateISO: this.todayKey,
+          sets: [],
+          skipped: true,
+        }],
+      }));
+    }
+    this.advanceRoutine();
   }
 
   getTodayProgress(dayId: string): TodayDayProgress {
@@ -179,10 +215,11 @@ export class StateService {
           const data = JSON.parse(text);
           if (!data.days) throw new Error('Formato inválido');
           this.state.update(() => ({
-            schemaVersion: 2,
+            schemaVersion: 3,
             days: data.days ?? [],
             sessions: data.sessions ?? [],
             activeDayIndex: data.activeDayIndex ?? 0,
+            routinePointer: data.routinePointer ?? data.activeDayIndex ?? 0,
             todayProgress: data.todayProgress ?? {},
             settings: {
               apiKey: data.settings?.apiKey ?? '',

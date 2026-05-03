@@ -1,54 +1,151 @@
-<div class="tabs">
-  @for (day of state.days(); track day.id; let i = $index) {
-    <button
-      class="tab"
-      [class.active]="i === state.activeDayIndex()"
-      [class.today-trained]="trainedDayIds().has(day.id)"
-      (click)="state.setActiveDay(i)">
-      <span class="tab-day">Día {{ i + 1 }}</span>
-      <span class="tab-name">{{ day.name }}</span>
-    </button>
-  }
-  <button class="tab-add" title="Nuevo día" (click)="uiState.editingDay.set('new')">
-    <app-icon name="plus" [size]="16"/>
-  </button>
-</div>
+@if (mode() === 'today') {
 
-<div class="main">
   @if (!state.days().length) {
-    <div class="empty">
-      <div class="empty-icon">
-        <app-icon name="dumbbell" [size]="24"/>
+    <div class="main">
+      <div class="empty">
+        <div class="empty-icon"><app-icon name="dumbbell" [size]="24"/></div>
+        <h3>Sin rutinas</h3>
+        <p>Creá tu primer día de entrenamiento para comenzar.</p>
+        <button class="btn btn-primary" (click)="uiState.editingDay.set('new')">
+          <app-icon name="plus" [size]="14"/>
+          Nuevo día
+        </button>
       </div>
-      <h3>Sin rutinas</h3>
-      <p>Creá tu primer día de entrenamiento para comenzar.</p>
-      <button class="btn btn-primary" (click)="uiState.editingDay.set('new')">
-        <app-icon name="plus" [size]="14"/>
-        Nuevo día
-      </button>
     </div>
   } @else {
-    @if (state.activeDay(); as day) {
-      <div class="day-header">
-        <div>
-          <h2 class="day-title">{{ day.name }}</h2>
-          <div class="day-meta">
-            <div class="day-progress">
-              <div class="progress-bar">
-                <div class="progress-fill"
-                  [style.width.%]="dayProgress().total
-                    ? dayProgress().done / dayProgress().total * 100
-                    : 0">
-                </div>
+
+    <div class="dashboard">
+
+      <!-- HOY TE TOCA card -->
+      <div class="today-card">
+        <div class="today-card-top">
+          <span class="today-eyebrow">HOY TE TOCA</span>
+          <h2 class="today-title">{{ state.currentDay()!.name }}</h2>
+          <p class="today-last">
+            {{ lastTrainedInfo() ?? 'Primera sesión — definí tus pesos iniciales' }}
+          </p>
+        </div>
+
+        <div class="today-ex-list">
+          @for (ex of state.currentDay()!.exercises; track ex.id) {
+            <div class="today-ex-row">
+              <div class="today-ex-info">
+                <span class="today-ex-name">{{ ex.name }}</span>
+                <span class="today-ex-target">{{ ex.defaultSets }}×{{ ex.defaultRepTarget }}</span>
+                @if (recLabel(ex)) {
+                  <span class="today-ex-rec">{{ recLabel(ex) }}</span>
+                }
               </div>
-              <span>{{ dayProgress().done }}/{{ dayProgress().total }} series</span>
+              <a class="yt-btn"
+                 [href]="youtubeUrl(ex.name)"
+                 target="_blank"
+                 rel="noopener noreferrer">
+                YT
+              </a>
+            </div>
+          }
+        </div>
+
+        @if (currentDayProgress().done > 0) {
+          <div class="today-progress">
+            <div class="progress-bar">
+              <div class="progress-fill"
+                [style.width.%]="currentDayProgress().total
+                  ? currentDayProgress().done / currentDayProgress().total * 100 : 0">
+              </div>
+            </div>
+            <span>{{ currentDayProgress().done }}/{{ currentDayProgress().total }} series completadas</span>
+          </div>
+        }
+
+        <div class="today-card-actions">
+          <button class="btn btn-ghost btn-sm today-history-btn"
+            (click)="openDayDetail(state.currentDay()!)">
+            <app-icon name="history" [size]="13"/>
+            Ver última sesión
+          </button>
+        </div>
+
+        <button class="btn btn-primary today-cta" (click)="startTraining()">
+          <app-icon name="dumbbell" [size]="16"/>
+          {{ currentDayProgress().done > 0 ? 'Continuar entrenamiento' : 'Empezar entrenamiento' }}
+        </button>
+
+        @if (!confirmSkip()) {
+          <button class="btn btn-ghost today-skip-btn" (click)="confirmSkip.set(true)">
+            Saltar este día
+          </button>
+        } @else {
+          <div class="skip-confirm">
+            <p>¿Seguro? Se registrará como saltado.</p>
+            <div class="skip-confirm-btns">
+              <button class="btn btn-sm btn-danger" (click)="doSkip()">Sí, saltar</button>
+              <button class="btn btn-sm btn-ghost" (click)="confirmSkip.set(false)">Cancelar</button>
             </div>
           </div>
+        }
+      </div>
+
+      <!-- TU RUTINA section -->
+      <div class="routine-section">
+        <h3 class="section-title">Tu rutina</h3>
+        @for (item of routineDays(); track item.day.id) {
+          <button class="routine-day-card" [class.current]="item.isCurrent"
+            (click)="openDayDetail(item.day)">
+            <div class="routine-day-left">
+              <span class="routine-day-num">Día {{ item.index + 1 }}</span>
+              <span class="routine-day-name">{{ item.day.name }}</span>
+            </div>
+            <span class="routine-day-ago" [class.current-label]="item.isCurrent">
+              @if (item.isCurrent) { HOY } @else { {{ item.lastLabel }} }
+            </span>
+          </button>
+        }
+      </div>
+
+    </div>
+  }
+
+} @else {
+
+  <!-- Training mode header (replaces tabs) -->
+  <div class="training-bar">
+    <button class="day-selector-btn" (click)="openDayPicker()">
+      <app-icon name="menu" [size]="16" class="day-selector-menu-icon"/>
+      <div class="day-selector-text">
+        <span class="day-selector-num">Día {{ state.activeDayIndex() + 1 }}</span>
+        <span class="day-selector-name">{{ state.activeDay()!.name }}</span>
+      </div>
+      <app-icon name="chevron" [size]="14" class="day-selector-chevron"/>
+    </button>
+
+    <div class="training-bar-actions">
+      <button class="icon-btn" title="Historial" (click)="openActiveHistory()">
+        <app-icon name="history" [size]="16"/>
+      </button>
+      <button class="btn btn-ghost btn-sm" (click)="uiState.editingDay.set(state.activeDay()!)">
+        <app-icon name="edit" [size]="13"/>
+        Editar
+      </button>
+      <button class="btn btn-primary btn-sm" (click)="finishTraining()">
+        <app-icon name="check" [size]="13"/>
+        Terminar
+      </button>
+    </div>
+  </div>
+
+  <div class="main">
+    @if (state.activeDay(); as day) {
+      <div class="day-meta-bar">
+        <div class="day-progress">
+          <div class="progress-bar">
+            <div class="progress-fill"
+              [style.width.%]="dayProgress().total
+                ? dayProgress().done / dayProgress().total * 100 : 0">
+            </div>
+          </div>
+          <span>{{ dayProgress().done }}/{{ dayProgress().total }} series</span>
         </div>
-        <button class="btn btn-ghost btn-sm" (click)="uiState.editingDay.set(day)">
-          <app-icon name="edit" [size]="13"/>
-          Editar
-        </button>
       </div>
 
       <div class="exercises">
@@ -61,5 +158,6 @@
         }
       </div>
     }
-  }
-</div>
+  </div>
+
+}

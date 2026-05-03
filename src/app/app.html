@@ -40,4 +40,16 @@
   @if (uiState.showSettings()) {
     <app-settings/>
   }
+
+  @if (uiState.dayDetail()) {
+    <app-day-detail-sheet/>
+  }
+
+  @if (uiState.showDayPicker()) {
+    <app-day-picker-sheet/>
+  }
+
+  @if (uiState.dayHistory()) {
+    <app-day-history-sheet/>
+  }
 </div>

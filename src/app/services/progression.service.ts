@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { AiRecommendation, AppSettings, Exercise, SetRecord, TodaySetProgress, UserProfile } from '../models/workout.model';
+import { AiRecommendation, AppSettings, Exercise, SetRecommendation, SetRecord, TodaySetProgress, UserProfile } from '../models/workout.model';
 import { HistoryEntry } from './storage.service';
 
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
@@ -19,50 +19,75 @@ export class ProgressionService {
   ): AiRecommendation {
     const brick = exercise.brick || 2.5;
     const repTarget = exercise.defaultRepTarget || 10;
-    const repBottom = Math.max(repTarget - 3, 6);
+    const setsTarget = exercise.defaultSets || 3;
 
-    const doneSets = todaySets.filter(s => s?.done).map(s => ({
-      exerciseId: exercise.id,
-      setIndex: 0,
-      weight: typeof s.weight === 'number' ? s.weight : 0,
-      reps: typeof s.reps === 'number' ? s.reps : 0,
-    }));
+    const doneSets = todaySets
+      .filter(s => s?.done)
+      .map(s => ({
+        exerciseId: exercise.id,
+        setIndex: 0,
+        weight: typeof s.weight === 'number' ? s.weight : 0,
+        reps: typeof s.reps === 'number' ? s.reps : 0,
+      }));
+
     const baseSets: SetRecord[] = doneSets.length > 0 ? doneSets : (lastSets ?? []);
 
     if (baseSets.length === 0) {
       return {
-        weight: 0, reps: repTarget,
+        sets: Array.from({ length: setsTarget }, () => ({ weight: 0, reps: repTarget })),
         reason: 'Primera sesión: definí un peso inicial y completá para que la IA te guíe.',
         source: 'local',
       };
     }
 
     const topWeight = Math.max(...baseSets.map(s => s.weight || 0));
-    const setsAtTop = baseSets.filter(s => (s.weight || 0) === topWeight);
-    const minRepsAtTop = Math.min(...setsAtTop.map(s => s.reps || 0));
-    const maxRepsAtTop = Math.max(...setsAtTop.map(s => s.reps || 0));
-    const allComplete = baseSets.length >= (exercise.defaultSets || 3) &&
-                        baseSets.every(s => (s.reps || 0) >= repTarget);
+    const totalRepsAtTop = baseSets
+      .filter(s => (s.weight || 0) === topWeight)
+      .reduce((sum, s) => sum + (s.reps || 0), 0);
+    const maxPossibleReps = setsTarget * repTarget;
+    const completionRatio = maxPossibleReps > 0 ? totalRepsAtTop / maxPossibleReps : 0;
 
-    let weight = topWeight;
-    let reps = repTarget;
-    let reason = '';
-
-    if (allComplete) {
-      weight = this.roundToBrick(topWeight + brick, brick);
-      reps = repBottom;
-      reason = `Completaste ${exercise.defaultSets}×${repTarget} con ${topWeight}kg. Subimos ${brick}kg y reiniciamos a ${repBottom} reps.`;
-    } else if (minRepsAtTop >= repBottom) {
-      reps = Math.min(maxRepsAtTop + 1, repTarget);
-      weight = topWeight;
-      reason = `Buen trabajo con ${topWeight}kg. Apuntá a ${reps} reps — cuando llegués a ${repTarget} en todas las series, subimos peso.`;
-    } else {
-      weight = topWeight;
-      reps = Math.max(repBottom, minRepsAtTop + 1);
-      reason = `Mantenemos ${topWeight}kg para consolidar. Apuntá a ${reps} reps.`;
+    // 100% → últimas 2 series suben 1 ladrillo, el resto mantiene
+    if (completionRatio >= 1) {
+      const newWeight = this.roundToBrick(topWeight + brick, brick);
+      const challengeFrom = Math.max(0, setsTarget - 2);
+      const sets: SetRecommendation[] = Array.from({ length: setsTarget }, (_, i) => ({
+        weight: i >= challengeFrom ? newWeight : topWeight,
+        reps: repTarget,
+      }));
+      return {
+        sets,
+        reason: `Objetivo cumplido con ${topWeight}kg. Las últimas 2 series suben a ${newWeight}kg.`,
+        source: 'local',
+      };
     }
 
-    return { weight: this.roundToBrick(weight, brick), reps, reason, source: 'local' };
+    // 80–99% → mismo peso todas las series
+    if (completionRatio >= 0.8) {
+      return {
+        sets: Array.from({ length: setsTarget }, () => ({ weight: topWeight, reps: repTarget })),
+        reason: `Muy cerca del objetivo con ${topWeight}kg. Repetís este peso para cerrar.`,
+        source: 'local',
+      };
+    }
+
+    // 50–79% → consolidar
+    if (completionRatio >= 0.5) {
+      return {
+        sets: Array.from({ length: setsTarget }, () => ({ weight: topWeight, reps: repTarget })),
+        reason: `Seguimos consolidando ${topWeight}kg. Enfocate en la técnica.`,
+        source: 'local',
+      };
+    }
+
+    // < 50% → bajar peso + más reps
+    const prevWeight = this.roundToBrick(Math.max(topWeight - brick, 0), brick);
+    const higherReps = Math.round(repTarget * 1.3);
+    return {
+      sets: Array.from({ length: setsTarget }, () => ({ weight: prevWeight, reps: higherReps })),
+      reason: `El peso fue excesivo. Bajamos a ${prevWeight}kg con más reps para mantener el estímulo.`,
+      source: 'local',
+    };
   }
 
   private async groqRecommendation(
@@ -79,9 +104,12 @@ export class ProgressionService {
 
     const doneSets = todaySets.filter(s => s?.done);
     const perfilParts: string[] = [];
-    if (userProfile.weightKg) perfilParts.push(`peso ${userProfile.weightKg}kg`);
+    if (userProfile.weightKg) perfilParts.push(`peso corporal ${userProfile.weightKg}kg`);
     if (userProfile.heightCm) perfilParts.push(`altura ${userProfile.heightCm}cm`);
-    if (userProfile.sex) perfilParts.push(`sexo ${userProfile.sex === 'male' ? 'masculino' : userProfile.sex === 'female' ? 'femenino' : 'otro'}`);
+    if (userProfile.age) perfilParts.push(`edad ${userProfile.age} años`);
+    if (userProfile.sex) {
+      perfilParts.push(`sexo ${userProfile.sex === 'male' ? 'masculino' : userProfile.sex === 'female' ? 'femenino' : 'otro'}`);
+    }
 
     const summary = {
       ejercicio: exercise.name,
@@ -95,31 +123,38 @@ export class ProgressionService {
         reps: typeof s.reps === 'number' ? s.reps : 0,
       })),
       sesion_anterior: (lastSets ?? []).map((s, i) => ({
-        serie: i + 1, peso_kg: s.weight, reps: s.reps,
+        serie: i + 1,
+        peso_kg: s.weight,
+        reps: s.reps,
       })),
-      historial_top_pesos: history.slice(-6).map(h => ({
-        fecha: h.dateISO, peso_top_kg: h.topWeight, reps_top: h.topReps,
+      historial_ultimas_sesiones: history.slice(-6).map(h => ({
+        fecha: h.dateISO,
+        peso_top_kg: h.topWeight,
+        reps_top: h.topReps,
+        volumen_total: h.volume,
       })),
     };
 
     const profileNote = perfilParts.length
-      ? `- Tené en cuenta el perfil del usuario para sugerencias personalizadas.\n` : '';
+      ? `- Considerá el perfil del usuario (${perfilParts.join(', ')}) para personalizar.\n`
+      : '';
 
-    const prompt = `Sos un coach de entrenamiento. Analizá los datos y devolvé un JSON estricto con la recomendación para la próxima sesión.
+    const prompt = `Sos un entrenador profesional de hipertrofia muscular. Analizá los datos y devolvé la recomendación serie por serie para la próxima sesión.
 
 Datos:
 ${JSON.stringify(summary, null, 2)}
 
-Reglas:
-- Siempre buscar progreso.
-- Si completó todas las series al tope del rango (${repTarget} reps), subí el peso 1 ladrillo (${brick}kg) y bajá las reps al inicio del rango.
-- Si las reps están por debajo del tope, mantené el peso y subí 1 rep como objetivo.
-- Si falló (reps debajo del rango), mantené el peso para consolidar.
-- El peso final debe ser múltiplo de ${brick}kg.
-- Razón: máximo 1 oración, en español, motivadora pero técnica.
-${profileNote}
-Respondé EXCLUSIVAMENTE con JSON válido (sin markdown, sin texto extra):
-{"weight": <number>, "reps": <number>, "reason": "<string>"}`;
+Reglas (aplicar en orden):
+1. Si completó 100% del objetivo (${setsTarget}×${repTarget}): las primeras ${setsTarget - 2} series mantienen el peso base, las últimas 2 series suben 1 ladrillo (${brick}kg).
+2. Si completó 80-99%: mismo peso y reps en todas las series (está cerca).
+3. Si completó 50-79%: mismo peso, mismo rep target (consolidar técnica).
+4. Si completó menos del 50%: bajá 1 ladrillo en todas las series, aumentá reps (~30% más).
+5. Patrón de fallo 2-3 sesiones seguidas: sugerí deload u otro enfoque.
+
+El peso debe ser múltiplo de ${brick}kg. La razón: máximo 1 oración, español, técnica y motivadora.
+${profileNote}Respondé EXCLUSIVAMENTE con JSON válido (sin markdown):
+{"sets": [{"weight": <number>, "reps": <number>}, ...], "reason": "<string>"}
+El array "sets" debe tener EXACTAMENTE ${setsTarget} elementos.`;
 
     const resp = await fetch(GROQ_URL, {
       method: 'POST',
@@ -130,8 +165,8 @@ Respondé EXCLUSIVAMENTE con JSON válido (sin markdown, sin texto extra):
       body: JSON.stringify({
         model: GROQ_MODEL,
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.4,
-        max_tokens: 200,
+        temperature: 0.3,
+        max_tokens: 300,
         response_format: { type: 'json_object' },
       }),
     });
@@ -143,7 +178,7 @@ Respondé EXCLUSIVAMENTE con JSON válido (sin markdown, sin texto extra):
 
     const data = await resp.json();
     const text: string = data?.choices?.[0]?.message?.content ?? '';
-    let parsed: { weight: number; reps: number; reason: string };
+    let parsed: { sets: { weight: number; reps: number }[]; reason: string };
     try {
       parsed = JSON.parse(text);
     } catch {
@@ -152,13 +187,21 @@ Respondé EXCLUSIVAMENTE con JSON válido (sin markdown, sin texto extra):
       parsed = JSON.parse(m[0]);
     }
 
-    if (typeof parsed.weight !== 'number' || typeof parsed.reps !== 'number') {
+    if (!Array.isArray(parsed.sets) || parsed.sets.length === 0) {
       throw new Error('JSON IA incompleto');
     }
 
+    // Normalizar a setsTarget elementos
+    const normalizedSets: { weight: number; reps: number }[] = Array.from(
+      { length: setsTarget },
+      (_, i) => parsed.sets[i] ?? parsed.sets[parsed.sets.length - 1],
+    );
+
     return {
-      weight: this.roundToBrick(parsed.weight, brick),
-      reps: Math.max(1, Math.round(parsed.reps)),
+      sets: normalizedSets.map(s => ({
+        weight: this.roundToBrick(s.weight || 0, brick),
+        reps: Math.max(1, Math.round(s.reps || repTarget)),
+      })),
       reason: parsed.reason,
       source: 'groq',
     };

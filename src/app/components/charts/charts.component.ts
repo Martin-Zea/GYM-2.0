@@ -1,4 +1,5 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { IconComponent } from '../icon/icon.component';
 import { StateService } from '../../services/state.service';
 import { HistoryEntry, StorageService } from '../../services/storage.service';
@@ -10,6 +11,8 @@ interface ChartItem {
   exercise: Exercise;
   history: HistoryEntry[];
   pr: number;
+  volLast: number;
+  volAvg: number;
   pts: Pt[];
   points: string;
   areaPath: string;
@@ -26,6 +29,7 @@ interface ChartItem {
 export class ChartsComponent {
   protected readonly state = inject(StateService);
   private readonly storage = inject(StorageService);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly chartItems = computed<ChartItem[]>(() => {
     const s = this.state.state();
@@ -36,14 +40,30 @@ export class ChartsComponent {
         const history = this.storage.historyForExercise(s, ex.id).filter(h => h.topWeight > 0);
         if (history.length < 2) continue;
         const pr = Math.max(...history.map(h => h.topWeight));
-        result.push({ exercise: ex, history, pr, ...this.buildChart(history) });
+        const volLast = history[history.length - 1].volume;
+        const volAvg = Math.round(history.reduce((sum, h) => sum + h.volume, 0) / history.length);
+        result.push({ exercise: ex, history, pr, volLast, volAvg, ...this.buildChart(history) });
       }
     }
 
     return result;
   });
 
-  private buildChart(history: HistoryEntry[]): Omit<ChartItem, 'exercise' | 'history' | 'pr'> {
+  constructor() {
+    // Scroll to specific exercise when navigated with fragment
+    effect(() => {
+      this.chartItems(); // ensure computed runs
+      this.route.fragment.subscribe(fragment => {
+        if (!fragment) return;
+        setTimeout(() => {
+          const el = document.getElementById('chart-' + fragment);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      });
+    });
+  }
+
+  private buildChart(history: HistoryEntry[]): Omit<ChartItem, 'exercise' | 'history' | 'pr' | 'volLast' | 'volAvg'> {
     const x0 = 32, x1 = 292, y0 = 8, y1 = 88;
     const pw = x1 - x0, ph = y1 - y0;
     const n = history.length;

@@ -14,6 +14,13 @@
     </div>
     <div class="exercise-status">
       <span class="set-pill">{{ doneSetsCount() }}/{{ exercise().defaultSets }}</span>
+      <a class="chart-icon-btn"
+         [routerLink]="['/charts']"
+         [fragment]="exercise().id"
+         title="Ver progresión"
+         (click)="$event.stopPropagation()">
+        <app-icon name="chart" [size]="13"/>
+      </a>
     </div>
     <app-icon name="chevron" [size]="16" class="chevron"/>
   </div>
@@ -28,12 +35,8 @@
           } @else {
             <app-icon name="sparkle" [size]="14" class="ai-icon"/>
             <span>
-              @if (aiRec()!.weight > 0) {
-                <strong>{{ aiRec()!.weight }} kg · {{ aiRec()!.reps }} reps</strong>
-              } @else {
-                <strong>{{ aiRec()!.reps }} reps</strong>
-              }
-              — {{ aiRec()!.reason }}
+              <strong>{{ aiRecLabel() }}</strong>
+              @if (aiRec()!.reason) { — {{ aiRec()!.reason }} }
             </span>
           }
         </div>

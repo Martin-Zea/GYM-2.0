@@ -115,17 +115,18 @@ export function createInitialState(): AppState {
   ];
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     days,
     sessions,
     activeDayIndex: 0,
+    routinePointer: 0,
     todayProgress: {},
     settings: {
       apiKey: '',
       defaultRest: 60,
       sounds: true,
       theme: 'dark',
-      userProfile: { weightKg: null, heightCm: null, sex: null },
+      userProfile: { weightKg: null, heightCm: null, age: null, sex: null },
     },
   };
 }

@@ -35,7 +35,7 @@ export class SettingsComponent {
     this.patch({ apiKey: (event.target as HTMLInputElement).value });
   }
 
-  protected patchProfileNum(key: 'weightKg' | 'heightCm', event: Event): void {
+  protected patchProfileNum(key: 'weightKg' | 'heightCm' | 'age', event: Event): void {
     const val = (event.target as HTMLInputElement).value;
     this.patchProfile({ [key]: val === '' ? null : Number(val) } as Partial<UserProfile>);
   }

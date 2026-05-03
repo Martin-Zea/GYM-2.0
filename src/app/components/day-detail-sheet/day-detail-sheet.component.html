@@ -1,0 +1,55 @@
+<div class="sheet-backdrop" (click)="close()"></div>
+<div class="sheet">
+  <div class="sheet-panel">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div>
+        <h3 class="sheet-title">{{ day()?.name }}</h3>
+        @if (sessionDateLabel()) {
+          <p class="sheet-sub">Última sesión · {{ sessionDateLabel() }}</p>
+        }
+      </div>
+      <button class="icon-btn" (click)="close()">
+        <app-icon name="x" [size]="16"/>
+      </button>
+    </div>
+
+    <div class="sheet-body">
+      @if (!lastSession()) {
+        <div class="detail-empty">
+          <p>Todavía no hay sesiones registradas para este día.</p>
+        </div>
+      } @else {
+        <div class="detail-exercises">
+          @for (item of exerciseSets(); track item.exercise.id) {
+            <div class="detail-ex">
+              <p class="detail-ex-name">{{ item.exercise.name }}</p>
+              @if (item.sets.length) {
+                <div class="detail-sets">
+                  @for (set of item.sets; track set.setIndex; let i = $index) {
+                    <span class="detail-set-chip">
+                      {{ i + 1 }}. {{ setLabel(set.weight, set.reps, item.exercise.unit) }}
+                    </span>
+                  }
+                </div>
+              } @else {
+                <span class="detail-no-data">Sin datos</span>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="sheet-footer">
+      <button class="btn btn-ghost btn-sm" (click)="openHistory()">
+        <app-icon name="history" [size]="13"/>
+        Ver todo el historial
+      </button>
+      <button class="btn btn-primary btn-sm" (click)="trainDay()">
+        <app-icon name="dumbbell" [size]="13"/>
+        Entrenar este día
+      </button>
+    </div>
+  </div>
+</div>

@@ -7,7 +7,14 @@ interface CalDay {
   day: number | null;
   iso: string | null;
   trained: boolean;
+  skipped: boolean;
   isToday: boolean;
+}
+
+interface RoutineDaySummary {
+  id: string;
+  name: string;
+  daysAgo: number | null;
 }
 
 @Component({
@@ -33,8 +40,12 @@ export class CalendarComponent {
     return `${CalendarComponent.MONTHS[d.getMonth()]} ${d.getFullYear()}`;
   });
 
-  private readonly trainedIsos = computed(() =>
-    new Set(this.state.sessions().map(s => s.dateISO)),
+  private readonly realTrainedIsos = computed(() =>
+    new Set(this.state.sessions().filter(s => !s.skipped).map(s => s.dateISO)),
+  );
+
+  private readonly skippedIsos = computed(() =>
+    new Set(this.state.sessions().filter(s => s.skipped).map(s => s.dateISO)),
   );
 
   protected readonly calDays = computed<CalDay[]>(() => {
@@ -42,24 +53,31 @@ export class CalendarComponent {
     const year = d.getFullYear();
     const month = d.getMonth();
     const today = this.storage.todayISO();
-    const trained = this.trainedIsos();
+    const trained = this.realTrainedIsos();
+    const skipped = this.skippedIsos();
 
-    const firstDow = (new Date(year, month, 1).getDay() + 6) % 7; // Mon=0
+    const firstDow = (new Date(year, month, 1).getDay() + 6) % 7;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
     const cells: CalDay[] = [];
     for (let i = 0; i < firstDow; i++) {
-      cells.push({ day: null, iso: null, trained: false, isToday: false });
+      cells.push({ day: null, iso: null, trained: false, skipped: false, isToday: false });
     }
     for (let n = 1; n <= daysInMonth; n++) {
       const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(n).padStart(2, '0')}`;
-      cells.push({ day: n, iso, trained: trained.has(iso), isToday: iso === today });
+      cells.push({
+        day: n,
+        iso,
+        trained: trained.has(iso),
+        skipped: !trained.has(iso) && skipped.has(iso),
+        isToday: iso === today,
+      });
     }
     return cells;
   });
 
   protected readonly stats = computed(() => {
-    const trained = this.trainedIsos();
+    const trained = this.realTrainedIsos();
     const now = new Date();
 
     let last30 = 0;
@@ -75,15 +93,38 @@ export class CalendarComponent {
     for (let i = startOffset; i < 366; i++) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      if (trained.has(d.toISOString().slice(0, 10))) {
-        streak++;
-      } else {
-        break;
-      }
+      if (trained.has(d.toISOString().slice(0, 10))) streak++;
+      else break;
     }
 
     return { total: trained.size, last30, streak };
   });
+
+  protected readonly routineSummary = computed<RoutineDaySummary[]>(() => {
+    const sessions = this.state.sessions();
+    const today = this.storage.todayISO();
+
+    return this.state.days().map(day => {
+      const last = sessions
+        .filter(s => s.dayId === day.id && !s.skipped)
+        .sort((a, b) => b.dateISO.localeCompare(a.dateISO))[0];
+
+      if (!last) return { id: day.id, name: day.name, daysAgo: null };
+      if (last.dateISO === today) return { id: day.id, name: day.name, daysAgo: 0 };
+
+      const diff = Math.floor(
+        (new Date(today).getTime() - new Date(last.dateISO).getTime()) / 86_400_000,
+      );
+      return { id: day.id, name: day.name, daysAgo: diff };
+    });
+  });
+
+  protected daysAgoLabel(daysAgo: number | null): string {
+    if (daysAgo === null) return 'Sin sesiones';
+    if (daysAgo === 0) return 'Hoy';
+    if (daysAgo === 1) return 'Ayer';
+    return `Hace ${daysAgo} días`;
+  }
 
   protected prevMonth(): void {
     this.viewDate.update(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));

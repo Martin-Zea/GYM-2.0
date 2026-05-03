@@ -23,10 +23,16 @@
         <div class="cal-day"
           [class.outside]="!cell.day"
           [class.today]="cell.isToday"
-          [class.trained]="cell.trained">
+          [class.trained]="cell.trained"
+          [class.skipped]="cell.skipped">
           {{ cell.day ?? '' }}
         </div>
       }
+    </div>
+
+    <div class="cal-legend">
+      <span class="cal-legend-item"><span class="cal-legend-dot trained"></span> Entrenado</span>
+      <span class="cal-legend-item"><span class="cal-legend-dot skipped"></span> Saltado</span>
     </div>
   </div>
 
@@ -47,4 +53,18 @@
       <div class="stat-sub">días seguidos</div>
     </div>
   </div>
+
+  @if (routineSummary().length) {
+    <div class="routine-summary">
+      <p class="routine-summary-title">Estado de la rutina</p>
+      @for (item of routineSummary(); track item.id) {
+        <div class="routine-day-row">
+          <span class="routine-day-name">{{ item.name }}</span>
+          <span class="routine-day-ago" [class.fresh]="item.daysAgo !== null && item.daysAgo <= 2">
+            {{ daysAgoLabel(item.daysAgo) }}
+          </span>
+        </div>
+      }
+    </div>
+  }
 </div>

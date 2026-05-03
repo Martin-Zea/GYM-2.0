@@ -1,0 +1,45 @@
+<div class="sheet-backdrop" (click)="close()"></div>
+<div class="sheet">
+  <div class="sheet-panel">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div>
+        <h3 class="sheet-title">Historial</h3>
+        <p class="sheet-sub">{{ day()?.name }}</p>
+      </div>
+      <button class="icon-btn" (click)="close()">
+        <app-icon name="x" [size]="16"/>
+      </button>
+    </div>
+
+    <div class="sheet-body">
+      @if (!sessions().length) {
+        <div class="detail-empty">
+          <p>Todavía no hay sesiones registradas para este día.</p>
+        </div>
+      } @else {
+        @for (sv of sessions(); track sv.session.id) {
+          <div class="history-session">
+            <div class="history-session-header">
+              <span class="history-date">{{ sv.dateLabel }}</span>
+              @if (sv.totalVolume > 0) {
+                <span class="history-vol">{{ sv.totalVolume | number:'1.0-0' }} kg vol.</span>
+              }
+            </div>
+
+            @for (ex of sv.exercises; track ex.name) {
+              <div class="history-ex">
+                <span class="history-ex-name">{{ ex.name }}</span>
+                <div class="history-ex-sets">
+                  @for (set of ex.sets; track $index; let i = $index) {
+                    <span class="detail-set-chip">{{ i + 1 }}. {{ setLabel(set.weight, set.reps, ex.unit) }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>

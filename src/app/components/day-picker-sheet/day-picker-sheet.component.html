@@ -1,0 +1,32 @@
+<div class="sheet-backdrop" (click)="close()"></div>
+<div class="sheet">
+  <div class="sheet-panel">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <h3 class="sheet-title">Seleccionar día</h3>
+      <button class="icon-btn" (click)="close()">
+        <app-icon name="x" [size]="16"/>
+      </button>
+    </div>
+
+    <div class="sheet-body" style="padding: 8px 10px">
+      @for (item of dayItems(); track item.day.id) {
+        <button
+          class="picker-day-row"
+          [class.active]="item.index === state.activeDayIndex()"
+          (click)="select(item.index)">
+          <div class="picker-day-info">
+            <span class="picker-day-num">Día {{ item.index + 1 }}</span>
+            <span class="picker-day-name">{{ item.day.name }}</span>
+          </div>
+          <span class="picker-day-ago" [class.fresh]="item.lastLabel === 'Hoy'">
+            {{ item.lastLabel }}
+          </span>
+          @if (item.index === state.activeDayIndex()) {
+            <app-icon name="check" [size]="14" class="picker-check"/>
+          }
+        </button>
+      }
+    </div>
+  </div>
+</div>
