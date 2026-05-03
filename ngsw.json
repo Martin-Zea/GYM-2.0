@@ -1,0 +1,89 @@
+{
+  "configVersion": 1,
+  "timestamp": 1777847898214,
+  "index": "/GYM-2.0/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/GYM-2.0/chunk-BI4CP573.js",
+        "/GYM-2.0/chunk-MXZVPZUL.js",
+        "/GYM-2.0/chunk-PKHR7HXU.js",
+        "/GYM-2.0/chunk-SWEGVQDL.js",
+        "/GYM-2.0/chunk-YF45HCI5.js",
+        "/GYM-2.0/chunk-YP2CRWOV.js",
+        "/GYM-2.0/favicon.ico",
+        "/GYM-2.0/index.html",
+        "/GYM-2.0/main-DFCZHCOP.js",
+        "/GYM-2.0/manifest.webmanifest",
+        "/GYM-2.0/styles-AQAPY24M.css"
+      ],
+      "patterns": []
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/GYM-2.0/icons/icon-128x128.png",
+        "/GYM-2.0/icons/icon-144x144.png",
+        "/GYM-2.0/icons/icon-152x152.png",
+        "/GYM-2.0/icons/icon-192x192.png",
+        "/GYM-2.0/icons/icon-384x384.png",
+        "/GYM-2.0/icons/icon-512x512.png",
+        "/GYM-2.0/icons/icon-72x72.png",
+        "/GYM-2.0/icons/icon-96x96.png"
+      ],
+      "patterns": []
+    }
+  ],
+  "dataGroups": [],
+  "hashTable": {
+    "/GYM-2.0/chunk-BI4CP573.js": "5b4b6df633c1bae196e3bc8a57ea0e11265d3d51",
+    "/GYM-2.0/chunk-MXZVPZUL.js": "fbc8cc269f7347197706651ec070db252f44f94c",
+    "/GYM-2.0/chunk-PKHR7HXU.js": "c05c4e60c110961899af82f555259874bc016ea1",
+    "/GYM-2.0/chunk-SWEGVQDL.js": "d6d2c118c08c51b5c3d987cb5e2e2638ff84431a",
+    "/GYM-2.0/chunk-YF45HCI5.js": "1bd7f968468e55b583f18b2e5325a9e0e7aac9ef",
+    "/GYM-2.0/chunk-YP2CRWOV.js": "2c3bdd0f49a68e25c2bb6afb0fa29999ece6f6ea",
+    "/GYM-2.0/favicon.ico": "9c39f434fe1261f68c5e3eefdf734630d99c5670",
+    "/GYM-2.0/icons/icon-128x128.png": "f912963bdc6d5a38d8f1dd0afbaab2ce8d657acb",
+    "/GYM-2.0/icons/icon-144x144.png": "b155fd5f2fd5d2ea7760721063003c4cd95fd783",
+    "/GYM-2.0/icons/icon-152x152.png": "eae6e0f0c8afb8aaae339e2a569b43e9238e5e6c",
+    "/GYM-2.0/icons/icon-192x192.png": "15c4180454633880d98674aa7394656196c91584",
+    "/GYM-2.0/icons/icon-384x384.png": "94a915751ef6c9282df9aea405ad679230631814",
+    "/GYM-2.0/icons/icon-512x512.png": "1de182f76f7329dfa8f9fcdd1fdcdd695bea6a99",
+    "/GYM-2.0/icons/icon-72x72.png": "aa88a6096bd973be7f6d7a5489bfa6bc2463f8c4",
+    "/GYM-2.0/icons/icon-96x96.png": "7fb8f59c30ce2ff12c700321a0b39e14b3dc8f95",
+    "/GYM-2.0/index.html": "669558ab087ade1f8c1f407b695ac3915d86b053",
+    "/GYM-2.0/main-DFCZHCOP.js": "fa2738ea3d534e643793a5eff2e8845594c0d21c",
+    "/GYM-2.0/manifest.webmanifest": "b05a13d9d50d06e2ff6a0558770ba97f2c6c28f5",
+    "/GYM-2.0/styles-AQAPY24M.css": "c5e1fc03397ce3b86d5d823c5cf9127f1f34d112"
+  },
+  "navigationUrls": [
+    {
+      "positive": true,
+      "regex": "^\\/.*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*\\.[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*\\/.*$"
+    }
+  ],
+  "navigationRequestStrategy": "performance"
+}
