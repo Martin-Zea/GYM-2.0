@@ -1,0 +1,1 @@
+import{G as a,Y as e}from"./chunk-GFTKV5HB.js";var n=class t{showSettings=e(!1);editingDay=e(null);restTimer=e(null);static \u0275fac=function(o){return new(o||t)};static \u0275prov=a({token:t,factory:t.\u0275fac,providedIn:"root"})};export{n as a};
