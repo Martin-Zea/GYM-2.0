@@ -1,0 +1,71 @@
+<div class="main">
+  <div class="view-header">
+    <h2 class="view-title">Progresión</h2>
+    <p class="view-sub">Peso máximo por sesión</p>
+  </div>
+
+  @if (!chartItems().length) {
+    <div class="empty">
+      <div class="empty-icon">
+        <app-icon name="chart" [size]="24"/>
+      </div>
+      <h3>Sin datos suficientes</h3>
+      <p>Completá al menos 2 sesiones con un ejercicio para ver su progresión.</p>
+    </div>
+  } @else {
+    @for (item of chartItems(); track item.exercise.id) {
+      <div class="chart-card">
+        <div class="chart-head">
+          <div>
+            <p class="chart-title">{{ item.exercise.name }}</p>
+            <p class="chart-sub">{{ item.history.length }} sesiones</p>
+          </div>
+          <div class="chart-pr">
+            <div class="chart-pr-label">PR</div>
+            <div class="chart-pr-value">{{ item.pr }} kg</div>
+          </div>
+        </div>
+
+        <div class="chart-svg-wrap">
+          <svg viewBox="0 0 300 110" preserveAspectRatio="none">
+            <defs>
+              <linearGradient [attr.id]="'grad-' + item.exercise.id" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+
+            <g class="chart-grid">
+              <line x1="32" y1="8" x2="292" y2="8"/>
+              <line x1="32" y1="48" x2="292" y2="48"/>
+              <line x1="32" y1="88" x2="292" y2="88"/>
+            </g>
+
+            <path [attr.d]="item.areaPath"
+              [attr.fill]="'url(#grad-' + item.exercise.id + ')'"
+              stroke="none"/>
+
+            <polyline [attr.points]="item.points" class="chart-line" fill="none"/>
+
+            @for (pt of item.pts; track $index) {
+              <circle [attr.cx]="pt.x.toFixed(1)" [attr.cy]="pt.y.toFixed(1)"
+                r="3" class="chart-dot"/>
+            }
+
+            <g class="chart-axis">
+              @for (lbl of item.yLabels; track lbl.value) {
+                <text x="28" [attr.y]="lbl.y" text-anchor="end">{{ lbl.value }}</text>
+              }
+            </g>
+
+            <g class="chart-axis">
+              @for (lbl of item.xLabels; track lbl.label) {
+                <text [attr.x]="lbl.x.toFixed(1)" y="106" text-anchor="middle">{{ lbl.label }}</text>
+              }
+            </g>
+          </svg>
+        </div>
+      </div>
+    }
+  }
+</div>

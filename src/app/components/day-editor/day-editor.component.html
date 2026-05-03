@@ -1,0 +1,108 @@
+<div class="sheet-backdrop" (click)="close()"></div>
+<div class="sheet">
+  <div class="sheet-panel">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <h3 class="sheet-title">{{ isNew ? 'Nuevo día' : 'Editar día' }}</h3>
+      <button class="icon-btn" (click)="close()">
+        <app-icon name="x" [size]="16"/>
+      </button>
+    </div>
+
+    <div class="sheet-body">
+      <div class="field">
+        <label class="field-label">Nombre del día</label>
+        <input
+          class="input"
+          type="text"
+          placeholder="Ej: Pecho + Tríceps"
+          [value]="dayName()"
+          (input)="setDayName($event)"/>
+      </div>
+
+      <div class="divider"></div>
+
+      @for (ex of exercises(); track ex.id; let i = $index) {
+        <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+            <input
+              class="input"
+              type="text"
+              placeholder="Nombre del ejercicio"
+              style="flex:1"
+              [value]="ex.name"
+              (input)="setExName(i, $event)"/>
+            <button class="icon-btn" (click)="moveUp(i)" title="Subir"
+              [style.opacity]="i === 0 ? 0.3 : 1">↑</button>
+            <button class="icon-btn" (click)="moveDown(i)" title="Bajar"
+              [style.opacity]="i === exercises().length - 1 ? 0.3 : 1">↓</button>
+            <button class="icon-btn" (click)="removeExercise(i)" title="Eliminar"
+              style="color:var(--danger)">
+              <app-icon name="trash" [size]="14"/>
+            </button>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">Series</label>
+              <input class="input" type="number" min="1" max="10"
+                [value]="ex.defaultSets"
+                (input)="setExNum(i, 'defaultSets', $event)"/>
+            </div>
+            <div class="field">
+              <label class="field-label">Reps objetivo</label>
+              <input class="input" type="number" min="1" max="50"
+                [value]="ex.defaultRepTarget"
+                (input)="setExNum(i, 'defaultRepTarget', $event)"/>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">Incremento (kg)</label>
+              <input class="input" type="number" min="0.5" step="0.5"
+                [value]="ex.brick"
+                (input)="setExNum(i, 'brick', $event)"/>
+            </div>
+            <div class="field">
+              <label class="field-label">Descanso (seg)</label>
+              <input class="input" type="number" min="15" step="15"
+                [value]="ex.restSeconds"
+                (input)="setExNum(i, 'restSeconds', $event)"/>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Unidad</label>
+            <select class="select"
+              [value]="ex.unit"
+              (change)="setExUnit(i, $event)">
+              @for (unit of units; track unit) {
+                <option [value]="unit">{{ unit }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      }
+
+      <button class="btn" style="width:100%;justify-content:center" (click)="addExercise()">
+        <app-icon name="plus" [size]="14"/>
+        Agregar ejercicio
+      </button>
+    </div>
+
+    <div class="sheet-footer">
+      @if (!isNew) {
+        <button class="btn btn-danger" (click)="deleteDay()">
+          <app-icon name="trash" [size]="13"/>
+          Eliminar
+        </button>
+      }
+      <button class="btn btn-ghost" (click)="close()">Cancelar</button>
+      <button class="btn btn-primary" (click)="save()"
+        [attr.disabled]="!dayName().trim() ? true : null">
+        Guardar
+      </button>
+    </div>
+  </div>
+</div>

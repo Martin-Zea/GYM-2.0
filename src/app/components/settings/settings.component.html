@@ -1,0 +1,145 @@
+<div class="sheet-backdrop" (click)="close()"></div>
+<div class="sheet">
+  <div class="sheet-panel">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <h3 class="sheet-title">Ajustes</h3>
+      <button class="icon-btn" (click)="close()">
+        <app-icon name="x" [size]="16"/>
+      </button>
+    </div>
+
+    <div class="sheet-body">
+      <!-- Apariencia -->
+      <div class="settings-section">
+        <p class="settings-section-title">Apariencia</p>
+        <div class="settings-row">
+          <div class="settings-row-main">
+            <div class="settings-row-label">Tema oscuro</div>
+          </div>
+          <button class="toggle"
+            [class.on]="settings().theme === 'dark'"
+            (click)="patch({ theme: settings().theme === 'dark' ? 'light' : 'dark' })">
+          </button>
+        </div>
+      </div>
+
+      <!-- Sesión -->
+      <div class="settings-section">
+        <p class="settings-section-title">Sesión</p>
+        <div class="settings-row">
+          <div class="settings-row-main">
+            <div class="settings-row-label">Descanso por defecto</div>
+            <div class="settings-row-desc">segundos entre series</div>
+          </div>
+          <input class="input" type="number" min="15" step="15"
+            style="width:70px;text-align:center"
+            [value]="settings().defaultRest"
+            (input)="patchDefaultRest($event)"/>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-main">
+            <div class="settings-row-label">Sonido al completar</div>
+          </div>
+          <button class="toggle" [class.on]="settings().sounds"
+            (click)="patch({ sounds: !settings().sounds })">
+          </button>
+        </div>
+      </div>
+
+      <!-- Perfil -->
+      <div class="settings-section">
+        <p class="settings-section-title">Tu perfil</p>
+        <p class="settings-row-desc" style="margin-bottom:12px">
+          La IA usa tu perfil para personalizar las recomendaciones.
+        </p>
+        <div class="settings-row">
+          <div class="settings-row-main">
+            <div class="settings-row-label">Peso</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input class="input" type="number" min="30" max="300" step="0.5"
+              placeholder="—"
+              style="width:75px;text-align:center"
+              [value]="settings().userProfile.weightKg ?? ''"
+              (input)="patchProfileNum('weightKg', $event)"/>
+            <span style="font-size:12px;color:var(--text-2)">kg</span>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-main">
+            <div class="settings-row-label">Altura</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input class="input" type="number" min="100" max="250"
+              placeholder="—"
+              style="width:75px;text-align:center"
+              [value]="settings().userProfile.heightCm ?? ''"
+              (input)="patchProfileNum('heightCm', $event)"/>
+            <span style="font-size:12px;color:var(--text-2)">cm</span>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-main">
+            <div class="settings-row-label">Sexo</div>
+          </div>
+          <select class="select" style="width:150px"
+            [value]="settings().userProfile.sex ?? ''"
+            (change)="patchProfileSex($event)">
+            <option value="">Sin especificar</option>
+            <option value="male">Masculino</option>
+            <option value="female">Femenino</option>
+            <option value="other">Otro</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- IA -->
+      <div class="settings-section">
+        <p class="settings-section-title">Inteligencia artificial</p>
+        <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px">
+          <div class="settings-row-label">API Key de Gemini</div>
+          <div class="settings-row-desc">
+            Gratis en
+            <a class="muted-link" href="https://aistudio.google.com/app/apikey"
+              target="_blank" rel="noopener">aistudio.google.com</a>.
+            Sin key se usa lógica local.
+          </div>
+          <div style="display:flex;gap:8px">
+            <input class="input"
+              [type]="showApiKey() ? 'text' : 'password'"
+              placeholder="AIza..."
+              style="flex:1"
+              [value]="settings().apiKey"
+              (input)="patchApiKey($event)"/>
+            <button class="btn btn-ghost btn-sm" (click)="showApiKey.update(v => !v)">
+              {{ showApiKey() ? 'Ocultar' : 'Ver' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Datos -->
+      <div class="settings-section">
+        <p class="settings-section-title">Datos</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <button class="btn btn-sm" (click)="state.exportData()">
+            <app-icon name="arrow_right" [size]="13"/>
+            Exportar JSON
+          </button>
+          <button class="btn btn-sm" (click)="importData()">
+            <app-icon name="arrow_left" [size]="13"/>
+            Importar JSON
+          </button>
+          <button class="btn btn-danger btn-sm" (click)="reset()">
+            <app-icon name="refresh" [size]="13"/>
+            Reiniciar todo
+          </button>
+        </div>
+        @if (importError()) {
+          <p style="color:var(--danger);font-size:12px;margin-top:8px">{{ importError() }}</p>
+        }
+      </div>
+    </div>
+  </div>
+</div>

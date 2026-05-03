@@ -1,0 +1,50 @@
+<div class="main">
+  <div class="view-header">
+    <h2 class="view-title">Calendario</h2>
+    <p class="view-sub">Historial de entrenamientos</p>
+  </div>
+
+  <div class="calendar">
+    <div class="cal-nav">
+      <button class="icon-btn" (click)="prevMonth()">
+        <app-icon name="arrow_left" [size]="16"/>
+      </button>
+      <span class="cal-month">{{ monthLabel() }}</span>
+      <button class="icon-btn" (click)="nextMonth()">
+        <app-icon name="arrow_right" [size]="16"/>
+      </button>
+    </div>
+
+    <div class="cal-grid">
+      @for (d of DOW; track d) {
+        <div class="cal-dow">{{ d }}</div>
+      }
+      @for (cell of calDays(); track $index) {
+        <div class="cal-day"
+          [class.outside]="!cell.day"
+          [class.today]="cell.isToday"
+          [class.trained]="cell.trained">
+          {{ cell.day ?? '' }}
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="cal-stats">
+    <div class="stat">
+      <div class="stat-label">Total</div>
+      <div class="stat-value">{{ stats().total }}</div>
+      <div class="stat-sub">sesiones</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Últ. 30 días</div>
+      <div class="stat-value">{{ stats().last30 }}</div>
+      <div class="stat-sub">entrenamientos</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Racha</div>
+      <div class="stat-value">{{ stats().streak }}</div>
+      <div class="stat-sub">días seguidos</div>
+    </div>
+  </div>
+</div>

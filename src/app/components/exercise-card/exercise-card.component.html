@@ -1,0 +1,108 @@
+<div class="exercise" [class.done]="isDone()" [class.expanded]="expanded()">
+  <div class="exercise-head" (click)="toggle()">
+    <div class="exercise-name-wrap">
+      <p class="exercise-name">{{ exercise().name }}</p>
+      <div class="exercise-meta">
+        {{ exercise().defaultSets }}×{{ exercise().defaultRepTarget }}
+        <span class="dot"></span>
+        {{ exercise().unit }}
+        @if (exercise().notes) {
+          <span class="dot"></span>
+          <span>{{ exercise().notes }}</span>
+        }
+      </div>
+    </div>
+    <div class="exercise-status">
+      <span class="set-pill">{{ doneSetsCount() }}/{{ exercise().defaultSets }}</span>
+    </div>
+    <app-icon name="chevron" [size]="16" class="chevron"/>
+  </div>
+
+  @if (expanded()) {
+    <div class="exercise-body">
+      @if (aiRec()) {
+        <div class="ai-suggestion">
+          @if (aiRec()!.loading) {
+            <div class="ai-loading"></div>
+            <span>Analizando con IA...</span>
+          } @else {
+            <app-icon name="sparkle" [size]="14" class="ai-icon"/>
+            <span>
+              @if (aiRec()!.weight > 0) {
+                <strong>{{ aiRec()!.weight }} kg · {{ aiRec()!.reps }} reps</strong>
+              } @else {
+                <strong>{{ aiRec()!.reps }} reps</strong>
+              }
+              — {{ aiRec()!.reason }}
+            </span>
+          }
+        </div>
+      } @else {
+        <button class="btn btn-ghost btn-sm"
+          (click)="$event.stopPropagation(); onRequestAi()">
+          <app-icon name="sparkle" [size]="12"/>
+          Consejo IA
+        </button>
+      }
+
+      <div class="sets">
+        <div class="sets-header">
+          <span>#</span>
+          @switch (exercise().unit) {
+            @case ('peso corporal') { <span>—</span> }
+            @case ('tiempo') { <span>Seg</span> }
+            @default { <span>Peso</span> }
+          }
+          <span>Reps</span>
+          <span></span>
+        </div>
+
+        @for (set of setsArray(); track $index; let i = $index) {
+          <div class="set-row" [class.done]="set.done">
+            <span class="set-num">{{ i + 1 }}</span>
+
+            <div class="set-input-wrap">
+              @if (exercise().unit !== 'peso corporal') {
+                <input
+                  class="set-input"
+                  type="number"
+                  inputmode="decimal"
+                  [value]="set.weight !== '' ? set.weight : null"
+                  [placeholder]="'' + (lastSets()?.[i]?.weight ?? '0')"
+                  [attr.disabled]="set.done ? true : null"
+                  (input)="updateWeight(i, $event)"/>
+              } @else {
+                <span class="set-input"
+                  style="display:flex;align-items:center;justify-content:center;color:var(--text-3)">—</span>
+              }
+              @if (lastSets()?.[i]) {
+                <span class="set-history">{{ lastSets()![i].weight }}×{{ lastSets()![i].reps }}</span>
+              }
+            </div>
+
+            <div class="set-input-wrap">
+              <input
+                class="set-input"
+                type="number"
+                inputmode="numeric"
+                [value]="set.reps !== '' ? set.reps : null"
+                [placeholder]="'' + exercise().defaultRepTarget"
+                [attr.disabled]="set.done ? true : null"
+                (input)="updateReps(i, $event)"/>
+              @if (lastSets()?.[i]) {
+                <span class="set-history">&nbsp;</span>
+              }
+            </div>
+
+            <button
+              class="set-check"
+              (click)="$event.stopPropagation(); toggleDone(i)"
+              [attr.aria-label]="set.done ? 'Desmarcar' : 'Marcar'">
+              <app-icon name="check" [size]="14"/>
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

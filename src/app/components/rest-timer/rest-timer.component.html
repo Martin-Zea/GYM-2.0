@@ -1,0 +1,30 @@
+<div class="rest-overlay">
+  <p class="rest-label">Descanso</p>
+
+  <div class="rest-ring">
+    <svg viewBox="0 0 220 220">
+      <circle cx="110" cy="110" r="95"
+        fill="none" stroke-width="8" class="rest-ring-bg"/>
+      <circle cx="110" cy="110" r="95"
+        fill="none" stroke-width="8" class="rest-ring-fg"
+        [attr.stroke-dasharray]="C"
+        [attr.stroke-dashoffset]="C * (1 - progress())"/>
+    </svg>
+    <div class="rest-time">
+      <span class="rest-time-value">{{ remaining() }}</span>
+      <span class="rest-time-sub">seg</span>
+    </div>
+  </div>
+
+  @if (uiState.restTimer()?.nextLabel) {
+    <div class="rest-next">
+      Sigue: <strong>{{ uiState.restTimer()!.nextLabel }}</strong>
+    </div>
+  }
+
+  <div class="rest-controls">
+    <button class="rest-adjust" (click)="adjust(-15)">−15</button>
+    <button class="rest-skip" (click)="skip()">Saltar</button>
+    <button class="rest-adjust" (click)="adjust(15)">+15</button>
+  </div>
+</div>

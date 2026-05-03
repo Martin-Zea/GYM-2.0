@@ -1,0 +1,65 @@
+<div class="tabs">
+  @for (day of state.days(); track day.id; let i = $index) {
+    <button
+      class="tab"
+      [class.active]="i === state.activeDayIndex()"
+      [class.today-trained]="trainedDayIds().has(day.id)"
+      (click)="state.setActiveDay(i)">
+      <span class="tab-day">Día {{ i + 1 }}</span>
+      <span class="tab-name">{{ day.name }}</span>
+    </button>
+  }
+  <button class="tab-add" title="Nuevo día" (click)="uiState.editingDay.set('new')">
+    <app-icon name="plus" [size]="16"/>
+  </button>
+</div>
+
+<div class="main">
+  @if (!state.days().length) {
+    <div class="empty">
+      <div class="empty-icon">
+        <app-icon name="dumbbell" [size]="24"/>
+      </div>
+      <h3>Sin rutinas</h3>
+      <p>Creá tu primer día de entrenamiento para comenzar.</p>
+      <button class="btn btn-primary" (click)="uiState.editingDay.set('new')">
+        <app-icon name="plus" [size]="14"/>
+        Nuevo día
+      </button>
+    </div>
+  } @else {
+    @if (state.activeDay(); as day) {
+      <div class="day-header">
+        <div>
+          <h2 class="day-title">{{ day.name }}</h2>
+          <div class="day-meta">
+            <div class="day-progress">
+              <div class="progress-bar">
+                <div class="progress-fill"
+                  [style.width.%]="dayProgress().total
+                    ? dayProgress().done / dayProgress().total * 100
+                    : 0">
+                </div>
+              </div>
+              <span>{{ dayProgress().done }}/{{ dayProgress().total }} series</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" (click)="uiState.editingDay.set(day)">
+          <app-icon name="edit" [size]="13"/>
+          Editar
+        </button>
+      </div>
+
+      <div class="exercises">
+        @for (ex of day.exercises; track ex.id) {
+          <app-exercise-card
+            [day]="day"
+            [exercise]="ex"
+            [aiRec]="aiCache()[ex.id] ?? null"
+            (requestAi)="requestAi(ex)"/>
+        }
+      </div>
+    }
+  }
+</div>
