@@ -70,7 +70,7 @@ export interface AiRecommendation {
   weight: number;
   reps: number;
   reason: string;
-  source: 'gemini' | 'local';
+  source: 'groq' | 'local';
   loading?: boolean;
 }
 

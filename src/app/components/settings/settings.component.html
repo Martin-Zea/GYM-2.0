@@ -98,17 +98,17 @@
       <div class="settings-section">
         <p class="settings-section-title">Inteligencia artificial</p>
         <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px">
-          <div class="settings-row-label">API Key de Gemini</div>
+          <div class="settings-row-label">API Key de Groq (IA gratis)</div>
           <div class="settings-row-desc">
             Gratis en
-            <a class="muted-link" href="https://aistudio.google.com/app/apikey"
-              target="_blank" rel="noopener">aistudio.google.com</a>.
+            <a class="muted-link" href="https://console.groq.com/keys"
+              target="_blank" rel="noopener">console.groq.com</a>.
             Sin key se usa lógica local.
           </div>
           <div style="display:flex;gap:8px">
             <input class="input"
               [type]="showApiKey() ? 'text' : 'password'"
-              placeholder="AIza..."
+              placeholder="gsk_..."
               style="flex:1"
               [value]="settings().apiKey"
               (input)="patchApiKey($event)"/>

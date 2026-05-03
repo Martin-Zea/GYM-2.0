@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { AiRecommendation, AppSettings, Exercise, SetRecord, TodaySetProgress, UserProfile } from '../models/workout.model';
 import { HistoryEntry } from './storage.service';
 
-const GEMINI_MODEL = 'gemini-2.0-flash';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 @Injectable({ providedIn: 'root' })
 export class ProgressionService {
@@ -65,7 +65,7 @@ export class ProgressionService {
     return { weight: this.roundToBrick(weight, brick), reps, reason, source: 'local' };
   }
 
-  private async geminiRecommendation(
+  private async groqRecommendation(
     apiKey: string,
     exercise: Exercise,
     todaySets: TodaySetProgress[],
@@ -121,26 +121,28 @@ ${profileNote}
 Respondé EXCLUSIVAMENTE con JSON válido (sin markdown, sin texto extra):
 {"weight": <number>, "reps": <number>, "reason": "<string>"}`;
 
-    const resp = await fetch(`${GEMINI_URL}?key=${encodeURIComponent(apiKey)}`, {
+    const resp = await fetch(GROQ_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.4, topP: 0.9,
-          maxOutputTokens: 200,
-          responseMimeType: 'application/json',
-        },
+        model: GROQ_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.4,
+        max_tokens: 200,
+        response_format: { type: 'json_object' },
       }),
     });
 
     if (!resp.ok) {
       const errText = await resp.text();
-      throw new Error(`Gemini ${resp.status}: ${errText.slice(0, 120)}`);
+      throw new Error(`Groq ${resp.status}: ${errText.slice(0, 120)}`);
     }
 
     const data = await resp.json();
-    const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    const text: string = data?.choices?.[0]?.message?.content ?? '';
     let parsed: { weight: number; reps: number; reason: string };
     try {
       parsed = JSON.parse(text);
@@ -158,7 +160,7 @@ Respondé EXCLUSIVAMENTE con JSON válido (sin markdown, sin texto extra):
       weight: this.roundToBrick(parsed.weight, brick),
       reps: Math.max(1, Math.round(parsed.reps)),
       reason: parsed.reason,
-      source: 'gemini',
+      source: 'groq',
     };
   }
 
@@ -173,11 +175,11 @@ Respondé EXCLUSIVAMENTE con JSON válido (sin markdown, sin texto extra):
 
     if (settings.apiKey && hasDoneOrHistory) {
       try {
-        return await this.geminiRecommendation(
+        return await this.groqRecommendation(
           settings.apiKey, exercise, todaySets, lastSets, history, settings.userProfile,
         );
       } catch (e) {
-        console.info('Gemini falló, usando fallback local:', (e as Error).message);
+        console.info('Groq falló, usando fallback local:', (e as Error).message);
         const local = this.localRecommendation(exercise, todaySets, lastSets);
         local.reason += ' (modo offline)';
         return local;
