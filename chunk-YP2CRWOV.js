@@ -1,1 +1,0 @@
-import{H as t,_ as e}from"./chunk-BI4CP573.js";var n=class a{showSettings=e(!1);editingDay=e(null);restTimer=e(null);dayDetail=e(null);showDayPicker=e(!1);dayHistory=e(null);pendingTrainingStart=e(!1);static \u0275fac=function(o){return new(o||a)};static \u0275prov=t({token:a,factory:a.\u0275fac,providedIn:"root"})};export{n as a};
