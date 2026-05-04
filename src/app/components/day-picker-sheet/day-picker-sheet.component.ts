@@ -9,6 +9,7 @@ import { UIStateService } from '../../services/ui-state.service';
   standalone: true,
   imports: [IconComponent],
   templateUrl: './day-picker-sheet.component.html',
+  styleUrl: './day-picker-sheet.component.scss',
 })
 export class DayPickerSheetComponent {
   protected readonly state = inject(StateService);

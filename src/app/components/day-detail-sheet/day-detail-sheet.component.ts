@@ -10,6 +10,7 @@ import { Session } from '../../models/workout.model';
   standalone: true,
   imports: [IconComponent],
   templateUrl: './day-detail-sheet.component.html',
+  styleUrl: './day-detail-sheet.component.scss',
 })
 export class DayDetailSheetComponent {
   protected readonly state = inject(StateService);

@@ -29,6 +29,7 @@ export class StorageService {
         todayProgress: p.todayProgress ?? {},
         settings: {
           apiKey: p.settings?.apiKey ?? '',
+          cohereApiKey: p.settings?.cohereApiKey ?? '',
           defaultRest: p.settings?.defaultRest ?? 60,
           sounds: p.settings?.sounds ?? true,
           theme: p.settings?.theme ?? 'dark',
@@ -91,6 +92,40 @@ export class StorageService {
     return state.sessions
       .filter(s => s.dayId === dayId && !s.skipped)
       .sort((a, b) => b.dateISO.localeCompare(a.dateISO));
+  }
+
+  weeklyStats(state: AppState): { streak: number; weeklyVolume: number } {
+    const todayISO = this.todayISO();
+
+    // Monday of current week
+    const today = new Date(todayISO + 'T12:00:00');
+    const dayOfWeek = today.getDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + mondayOffset);
+    const mondayISO = monday.toISOString().slice(0, 10);
+
+    let weeklyVolume = 0;
+    const sessionDates = new Set<string>();
+    for (const session of state.sessions) {
+      if (session.skipped) continue;
+      sessionDates.add(session.dateISO);
+      if (session.dateISO >= mondayISO && session.dateISO <= todayISO) {
+        for (const set of session.sets) {
+          weeklyVolume += (set.weight || 0) * (set.reps || 0);
+        }
+      }
+    }
+
+    // Consecutive-day streak going back from today
+    let streak = 0;
+    const cursor = new Date(todayISO + 'T12:00:00');
+    while (sessionDates.has(cursor.toISOString().slice(0, 10))) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+
+    return { streak, weeklyVolume };
   }
 
   historyForExercise(state: AppState, exerciseId: string): HistoryEntry[] {

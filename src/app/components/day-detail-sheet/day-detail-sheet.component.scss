@@ -1,0 +1,9 @@
+.sheet-sub { font-size: 12px; color: var(--text-2); margin: 2px 0 0; }
+
+.detail-empty { padding: 24px 0; text-align: center; color: var(--text-2); font-size: 13px; }
+.detail-empty p { margin: 0; }
+.detail-exercises { display: flex; flex-direction: column; gap: 14px; }
+.detail-ex { display: flex; flex-direction: column; gap: 6px; }
+.detail-ex-name { font-size: 14px; font-weight: 600; color: var(--text-0); margin: 0; }
+.detail-sets { display: flex; flex-wrap: wrap; gap: 6px; }
+.detail-no-data { font-size: 12px; color: var(--text-3); }

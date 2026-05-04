@@ -1,0 +1,28 @@
+.settings-section { margin-bottom: 22px; }
+.settings-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-2); font-weight: 500; margin: 0 0 8px; }
+.settings-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); gap: 10px; }
+.settings-row:last-child { border-bottom: none; }
+.settings-row-main { flex: 1; min-width: 0; }
+.settings-row-label { font-size: 14px; color: var(--text-0); font-weight: 500; }
+.settings-row-desc { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+
+.toggle {
+  width: 38px; height: 22px; background: var(--bg-3); border-radius: 999px; position: relative;
+  transition: background 0.18s; flex-shrink: 0; border: 1px solid var(--border); cursor: pointer;
+}
+.toggle::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+  background: var(--text-1); border-radius: 50%; transition: transform 0.18s, background 0.18s;
+}
+.toggle.on { background: var(--accent); border-color: var(--accent); }
+.toggle.on::after { transform: translateX(16px); background: var(--accent-fg); }
+
+.reset-confirm {
+  margin-top: 12px; padding: 12px 14px;
+  background: rgba(239,100,100,0.06); border: 1px solid rgba(239,100,100,0.2);
+  border-radius: var(--radius-lg); display: flex; flex-direction: column; gap: 10px;
+}
+.reset-confirm-label { font-size: 13px; color: var(--text-1); margin: 0; line-height: 1.5; }
+.reset-confirm-label strong { color: var(--danger); }
+.reset-confirm-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.reset-confirm-input { max-width: 120px; font-family: "JetBrains Mono", ui-monospace, monospace; }

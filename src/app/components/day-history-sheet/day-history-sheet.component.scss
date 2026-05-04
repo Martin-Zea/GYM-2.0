@@ -1,0 +1,13 @@
+.sheet-sub { font-size: 12px; color: var(--text-2); margin: 2px 0 0; }
+
+.history-session {
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.history-session:last-child { border-bottom: none; }
+.history-session-header { display: flex; align-items: center; justify-content: space-between; }
+.history-date { font-size: 13px; font-weight: 600; color: var(--text-0); }
+.history-vol { font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.history-ex { display: flex; flex-direction: column; gap: 4px; }
+.history-ex-name { font-size: 12px; font-weight: 500; color: var(--text-2); }
+.history-ex-sets { display: flex; flex-wrap: wrap; gap: 4px; }

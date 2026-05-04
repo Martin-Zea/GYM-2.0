@@ -1,4 +1,4 @@
-export type ExerciseUnit = 'kg' | 'kg por mano' | 'tiempo' | 'peso corporal';
+export type ExerciseUnit = 'kg' | 'kg por mano' | 'kg por brazo' | 'tiempo' | 'peso corporal';
 
 export interface Exercise {
   id: string;
@@ -53,6 +53,7 @@ export interface UserProfile {
 
 export interface AppSettings {
   apiKey: string;
+  cohereApiKey: string;
   defaultRest: number;
   sounds: boolean;
   theme: 'dark' | 'light';
@@ -77,7 +78,7 @@ export interface SetRecommendation {
 export interface AiRecommendation {
   sets: SetRecommendation[];
   reason: string;
-  source: 'groq' | 'local';
+  source: 'groq' | 'cohere' | 'local';
   loading?: boolean;
 }
 
@@ -85,4 +86,5 @@ export interface RestTimerState {
   seconds: number;
   exerciseId: string;
   nextLabel: string;
+  nextSetIndex?: number;
 }

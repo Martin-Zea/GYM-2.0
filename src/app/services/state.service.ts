@@ -223,6 +223,7 @@ export class StateService {
             todayProgress: data.todayProgress ?? {},
             settings: {
               apiKey: data.settings?.apiKey ?? '',
+              cohereApiKey: data.settings?.cohereApiKey ?? '',
               defaultRest: data.settings?.defaultRest ?? 60,
               sounds: data.settings?.sounds ?? true,
               theme: data.settings?.theme ?? 'dark',

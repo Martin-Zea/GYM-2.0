@@ -1,0 +1,75 @@
+@if (visible()) {
+<div class="hiw">
+
+  <div class="hiw-header">
+    <div>
+      <p class="hiw-eyebrow">{{ T().hiw_eyebrow }}</p>
+      <h3 class="hiw-title">{{ T().how_title }}</h3>
+    </div>
+    <button class="hiw-dismiss" (click)="dismiss()">
+      {{ T().hiw_dismiss }}
+      <app-icon name="x" [size]="11"/>
+    </button>
+  </div>
+
+  <div class="hiw-cards">
+
+    <!-- Card 1: Registro Rápido -->
+    <div class="hiw-card">
+      <div class="hiw-card-demo">
+        <div class="hiw-mock-row">
+          <span class="hiw-mock-set">1</span>
+          <div class="hiw-mock-input">75</div>
+          <div class="hiw-mock-input">8</div>
+          <div class="hiw-mock-check"><app-icon name="check" [size]="10"/></div>
+        </div>
+        <div class="hiw-mock-row">
+          <span class="hiw-mock-set">2</span>
+          <div class="hiw-mock-input hiw-mock-input--empty">—</div>
+          <div class="hiw-mock-input hiw-mock-input--empty">—</div>
+          <div class="hiw-mock-check hiw-mock-check--pending"><app-icon name="check" [size]="10"/></div>
+        </div>
+      </div>
+      <span class="hiw-step-num">01</span>
+      <p class="hiw-card-title">{{ T().how_step1_title }}</p>
+      <p class="hiw-card-desc">{{ T().how_step1_desc }}</p>
+    </div>
+
+    <!-- Card 2: IA Adaptativa -->
+    <div class="hiw-card">
+      <div class="hiw-card-demo hiw-card-demo--ai">
+        <span class="hiw-mock-badge">
+          <app-icon name="sparkle" [size]="9"/>
+          {{ T().ai_source_badge }}: 80kg × 8
+        </span>
+        <span class="hiw-mock-badge hiw-mock-badge--local">
+          <app-icon name="ruler" [size]="9"/>
+          {{ T().ai_local_badge }}: 77.5kg × 8
+        </span>
+      </div>
+      <span class="hiw-step-num">02</span>
+      <p class="hiw-card-title">{{ T().how_step2_title }}</p>
+      <p class="hiw-card-desc">{{ T().how_step2_desc }}</p>
+    </div>
+
+    <!-- Card 3: Progresión Real -->
+    <div class="hiw-card">
+      <div class="hiw-card-demo">
+        <svg class="hiw-sparkline" viewBox="0 0 120 44" fill="none"
+             aria-hidden="true">
+          <polyline
+            points="0,38 24,30 48,22 72,14 96,8 120,4"
+            stroke="var(--accent)" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="120" cy="4" r="3.5" fill="var(--accent)"/>
+        </svg>
+        <span class="hiw-spark-label">+12 kg</span>
+      </div>
+      <span class="hiw-step-num">03</span>
+      <p class="hiw-card-title">{{ T().how_step3_title }}</p>
+      <p class="hiw-card-desc">{{ T().how_step3_desc }}</p>
+    </div>
+
+  </div>
+</div>
+}

@@ -19,6 +19,7 @@ interface SessionView {
   standalone: true,
   imports: [IconComponent, DecimalPipe],
   templateUrl: './day-history-sheet.component.html',
+  styleUrl: './day-history-sheet.component.scss',
 })
 export class DayHistorySheetComponent {
   protected readonly state = inject(StateService);

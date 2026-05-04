@@ -3,19 +3,36 @@
   <div class="sheet-panel">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <h3 class="sheet-title">Ajustes</h3>
+      <h3 class="sheet-title">{{ T().settings_title }}</h3>
       <button class="icon-btn" (click)="close()">
         <app-icon name="x" [size]="16"/>
       </button>
     </div>
 
     <div class="sheet-body">
-      <!-- Apariencia -->
+
+      <!-- Idioma / Language -->
       <div class="settings-section">
-        <p class="settings-section-title">Apariencia</p>
+        <p class="settings-section-title">{{ T().settings_language }}</p>
         <div class="settings-row">
           <div class="settings-row-main">
-            <div class="settings-row-label">Tema oscuro</div>
+            <div class="settings-row-label">{{ T().settings_language_desc }}</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm" [class.btn-primary]="tr.lang() === 'es'"
+              (click)="tr.setLang('es')">ES</button>
+            <button class="btn btn-sm" [class.btn-primary]="tr.lang() === 'en'"
+              (click)="tr.setLang('en')">EN</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Apariencia -->
+      <div class="settings-section">
+        <p class="settings-section-title">{{ T().settings_appearance }}</p>
+        <div class="settings-row">
+          <div class="settings-row-main">
+            <div class="settings-row-label">{{ T().settings_dark_theme }}</div>
           </div>
           <button class="toggle"
             [class.on]="settings().theme === 'dark'"
@@ -26,11 +43,11 @@
 
       <!-- Sesión -->
       <div class="settings-section">
-        <p class="settings-section-title">Sesión</p>
+        <p class="settings-section-title">{{ T().settings_session }}</p>
         <div class="settings-row">
           <div class="settings-row-main">
-            <div class="settings-row-label">Descanso por defecto</div>
-            <div class="settings-row-desc">segundos entre series</div>
+            <div class="settings-row-label">{{ T().settings_default_rest }}</div>
+            <div class="settings-row-desc">{{ T().settings_rest_desc }}</div>
           </div>
           <input class="input" type="number" min="15" step="15"
             style="width:70px;text-align:center"
@@ -39,7 +56,7 @@
         </div>
         <div class="settings-row">
           <div class="settings-row-main">
-            <div class="settings-row-label">Sonido al completar</div>
+            <div class="settings-row-label">{{ T().settings_sounds }}</div>
           </div>
           <button class="toggle" [class.on]="settings().sounds"
             (click)="patch({ sounds: !settings().sounds })">
@@ -49,13 +66,13 @@
 
       <!-- Perfil -->
       <div class="settings-section">
-        <p class="settings-section-title">Tu perfil</p>
+        <p class="settings-section-title">{{ T().settings_profile }}</p>
         <p class="settings-row-desc" style="margin-bottom:12px">
-          La IA usa tu perfil para personalizar las recomendaciones.
+          {{ T().settings_profile_ai_note }}
         </p>
         <div class="settings-row">
           <div class="settings-row-main">
-            <div class="settings-row-label">Peso</div>
+            <div class="settings-row-label">{{ T().settings_weight }}</div>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             <input class="input" type="number" min="30" max="300" step="0.5"
@@ -68,7 +85,7 @@
         </div>
         <div class="settings-row">
           <div class="settings-row-main">
-            <div class="settings-row-label">Altura</div>
+            <div class="settings-row-label">{{ T().settings_height }}</div>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             <input class="input" type="number" min="100" max="250"
@@ -81,7 +98,7 @@
         </div>
         <div class="settings-row">
           <div class="settings-row-main">
-            <div class="settings-row-label">Edad</div>
+            <div class="settings-row-label">{{ T().settings_age }}</div>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             <input class="input" type="number" min="10" max="100"
@@ -89,34 +106,34 @@
               style="width:75px;text-align:center"
               [value]="settings().userProfile.age ?? ''"
               (input)="patchProfileNum('age', $event)"/>
-            <span style="font-size:12px;color:var(--text-2)">años</span>
+            <span style="font-size:12px;color:var(--text-2)">{{ T().settings_age_unit }}</span>
           </div>
         </div>
         <div class="settings-row">
           <div class="settings-row-main">
-            <div class="settings-row-label">Sexo</div>
+            <div class="settings-row-label">{{ T().settings_sex }}</div>
           </div>
           <select class="select" style="width:150px"
             [value]="settings().userProfile.sex ?? ''"
             (change)="patchProfileSex($event)">
-            <option value="">Sin especificar</option>
-            <option value="male">Masculino</option>
-            <option value="female">Femenino</option>
-            <option value="other">Otro</option>
+            <option value="">{{ T().settings_sex_none }}</option>
+            <option value="male">{{ T().settings_sex_male }}</option>
+            <option value="female">{{ T().settings_sex_female }}</option>
+            <option value="other">{{ T().settings_sex_other }}</option>
           </select>
         </div>
       </div>
 
       <!-- IA -->
       <div class="settings-section">
-        <p class="settings-section-title">Inteligencia artificial</p>
+        <p class="settings-section-title">{{ T().settings_ai_section }}</p>
         <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px">
-          <div class="settings-row-label">API Key de Groq (IA gratis)</div>
+          <div class="settings-row-label">{{ T().settings_api_key_label }}</div>
           <div class="settings-row-desc">
-            Gratis en
+            {{ T().settings_api_key_free }}
             <a class="muted-link" href="https://console.groq.com/keys"
               target="_blank" rel="noopener">console.groq.com</a>.
-            Sin key se usa lógica local.
+            {{ T().settings_api_key_desc }}
           </div>
           <div style="display:flex;gap:8px">
             <input class="input"
@@ -126,7 +143,27 @@
               [value]="settings().apiKey"
               (input)="patchApiKey($event)"/>
             <button class="btn btn-ghost btn-sm" (click)="showApiKey.update(v => !v)">
-              {{ showApiKey() ? 'Ocultar' : 'Ver' }}
+              {{ showApiKey() ? T().settings_hide : T().settings_show }}
+            </button>
+          </div>
+        </div>
+        <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px;margin-top:12px">
+          <div class="settings-row-label">{{ T().settings_cohere_key_label }}</div>
+          <div class="settings-row-desc">
+            {{ T().settings_cohere_key_free }}
+            <a class="muted-link" href="https://dashboard.cohere.com/api-keys"
+              target="_blank" rel="noopener">dashboard.cohere.com</a>.
+            {{ T().settings_cohere_key_desc }}
+          </div>
+          <div style="display:flex;gap:8px">
+            <input class="input"
+              [type]="showCohereKey() ? 'text' : 'password'"
+              placeholder="..."
+              style="flex:1"
+              [value]="settings().cohereApiKey"
+              (input)="patchCohereApiKey($event)"/>
+            <button class="btn btn-ghost btn-sm" (click)="showCohereKey.update(v => !v)">
+              {{ showCohereKey() ? T().settings_hide : T().settings_show }}
             </button>
           </div>
         </div>
@@ -134,23 +171,49 @@
 
       <!-- Datos -->
       <div class="settings-section">
-        <p class="settings-section-title">Datos</p>
+        <p class="settings-section-title">{{ T().settings_data }}</p>
         <div style="display:flex;flex-wrap:wrap;gap:8px">
           <button class="btn btn-sm" (click)="state.exportData()">
             <app-icon name="arrow_right" [size]="13"/>
-            Exportar JSON
+            {{ T().settings_export }}
           </button>
           <button class="btn btn-sm" (click)="importData()">
             <app-icon name="arrow_left" [size]="13"/>
-            Importar JSON
+            {{ T().settings_import }}
           </button>
-          <button class="btn btn-danger btn-sm" (click)="reset()">
-            <app-icon name="refresh" [size]="13"/>
-            Reiniciar todo
-          </button>
+          @if (!resetConfirm()) {
+            <button class="btn btn-danger btn-sm" (click)="openResetConfirm()">
+              <app-icon name="refresh" [size]="13"/>
+              {{ T().settings_reset }}
+            </button>
+          }
         </div>
         @if (importError()) {
           <p style="color:var(--danger);font-size:12px;margin-top:8px">{{ importError() }}</p>
+        }
+        @if (resetConfirm()) {
+          <div class="reset-confirm">
+            <p class="reset-confirm-label">
+              {{ T().settings_reset_warning }}<br>
+              {{ tr.tp('settings_reset_type', { word: T().settings_reset_word }) }}
+            </p>
+            <div class="reset-confirm-row">
+              <input class="input reset-confirm-input"
+                type="text"
+                [placeholder]="T().settings_reset_word"
+                autocomplete="off"
+                [value]="resetInput()"
+                (input)="resetInput.set($any($event.target).value)"/>
+              <button class="btn btn-danger btn-sm"
+                [attr.disabled]="resetInput() !== T().settings_reset_word ? true : null"
+                (click)="confirmReset()">
+                {{ T().settings_reset_do }}
+              </button>
+              <button class="btn btn-ghost btn-sm" (click)="cancelReset()">
+                {{ T().cancel }}
+              </button>
+            </div>
+          </div>
         }
       </div>
     </div>

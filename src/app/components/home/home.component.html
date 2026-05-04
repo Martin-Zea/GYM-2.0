@@ -4,11 +4,11 @@
     <div class="main">
       <div class="empty">
         <div class="empty-icon"><app-icon name="dumbbell" [size]="24"/></div>
-        <h3>Sin rutinas</h3>
-        <p>Creá tu primer día de entrenamiento para comenzar.</p>
+        <h3>{{ T().empty_title }}</h3>
+        <p>{{ T().empty_desc }}</p>
         <button class="btn btn-primary" (click)="uiState.editingDay.set('new')">
           <app-icon name="plus" [size]="14"/>
-          Nuevo día
+          {{ T().new_day_btn }}
         </button>
       </div>
     </div>
@@ -16,88 +16,159 @@
 
     <div class="dashboard">
 
-      <!-- HOY TE TOCA card -->
-      <div class="today-card">
-        <div class="today-card-top">
-          <span class="today-eyebrow">HOY TE TOCA</span>
-          <h2 class="today-title">{{ state.currentDay()!.name }}</h2>
-          <p class="today-last">
-            {{ lastTrainedInfo() ?? 'Primera sesión — definí tus pesos iniciales' }}
-          </p>
+      <!-- RIGHT/TOP aside: AI hero + week stats (appears first in mobile flow) -->
+      <div class="dash-aside">
+        <div class="ai-hero">
+          <div class="ai-hero-icon">
+            <app-icon name="sparkle" [size]="15"/>
+          </div>
+          <div class="ai-hero-text">
+            <strong>{{ T().ai_hero_title }}</strong>
+            <span>{{ T().ai_hero_subtitle }}</span>
+          </div>
         </div>
 
-        <div class="today-ex-list">
-          @for (ex of state.currentDay()!.exercises; track ex.id) {
-            <div class="today-ex-row">
-              <div class="today-ex-info">
-                <span class="today-ex-name">{{ ex.name }}</span>
-                <span class="today-ex-target">{{ ex.defaultSets }}×{{ ex.defaultRepTarget }}</span>
-                @if (recLabel(ex)) {
-                  <span class="today-ex-rec">{{ recLabel(ex) }}</span>
-                }
+        <div class="week-stats" [class.week-stats--empty]="weekStatsDisplay().isEmpty">
+          @if (weekStatsDisplay().isEmpty) {
+            <span class="week-stats-empty-msg">{{ T().first_week_prompt }}</span>
+          } @else {
+            @if (weekStatsDisplay().streak > 0) {
+              <div class="week-stat">
+                <span class="week-stat-value">{{ weekStatsDisplay().streak }}</span>
+                <span class="week-stat-label">
+                  {{ weekStatsDisplay().streak === 1 ? T().days_streak_one : tr.tp('days_streak_many', { n: weekStatsDisplay().streak }) }}
+                </span>
               </div>
-              <a class="yt-btn"
-                 [href]="youtubeUrl(ex.name)"
-                 target="_blank"
-                 rel="noopener noreferrer">
-                YT
-              </a>
+              <div class="week-stat-sep"></div>
+            }
+            <div class="week-stat">
+              <span class="week-stat-value">{{ weekStatsDisplay().vol }}</span>
+              <span class="week-stat-label">{{ T().this_week }}</span>
             </div>
           }
         </div>
-
-        @if (currentDayProgress().done > 0) {
-          <div class="today-progress">
-            <div class="progress-bar">
-              <div class="progress-fill"
-                [style.width.%]="currentDayProgress().total
-                  ? currentDayProgress().done / currentDayProgress().total * 100 : 0">
-              </div>
-            </div>
-            <span>{{ currentDayProgress().done }}/{{ currentDayProgress().total }} series completadas</span>
-          </div>
-        }
-
-        <div class="today-card-actions">
-          <button class="btn btn-ghost btn-sm today-history-btn"
-            (click)="openDayDetail(state.currentDay()!)">
-            <app-icon name="history" [size]="13"/>
-            Ver última sesión
-          </button>
-        </div>
-
-        <button class="btn btn-primary today-cta" (click)="startTraining()">
-          <app-icon name="dumbbell" [size]="16"/>
-          {{ currentDayProgress().done > 0 ? 'Continuar entrenamiento' : 'Empezar entrenamiento' }}
-        </button>
-
-        @if (!confirmSkip()) {
-          <button class="btn btn-ghost today-skip-btn" (click)="confirmSkip.set(true)">
-            Saltar este día
-          </button>
-        } @else {
-          <div class="skip-confirm">
-            <p>¿Seguro? Se registrará como saltado.</p>
-            <div class="skip-confirm-btns">
-              <button class="btn btn-sm btn-danger" (click)="doSkip()">Sí, saltar</button>
-              <button class="btn btn-sm btn-ghost" (click)="confirmSkip.set(false)">Cancelar</button>
-            </div>
-          </div>
-        }
       </div>
 
-      <!-- TU RUTINA section -->
+      <!-- LEFT/MAIN column: today card + onboarding -->
+      <div class="dash-main">
+
+        <!-- HOY TE TOCA card -->
+        <div class="today-card">
+          <div class="today-card-top">
+            <div class="today-card-top-row">
+              <div>
+                <span class="today-eyebrow">{{ T().today_eyebrow }}</span>
+                <h2 class="today-title">{{ state.currentDay()!.name }}</h2>
+                <p class="today-last">
+                  {{ lastTrainedInfo() ?? T().last_session_first }}
+                </p>
+                <button class="today-history-quick-btn"
+                  (click)="openDayDetail(state.currentDay()!)">
+                  <app-icon name="history" [size]="11"/>
+                  {{ T().view_last_session }}
+                </button>
+              </div>
+              <div class="day-menu-wrap">
+                <button class="icon-btn day-menu-btn"
+                  (click)="$event.stopPropagation(); showDayMenu.update(v => !v)"
+                  title="Más opciones">
+                  <app-icon name="dots" [size]="16"/>
+                </button>
+                @if (showDayMenu()) {
+                  <div class="day-menu-backdrop" (click)="showDayMenu.set(false)"></div>
+                  <div class="day-menu">
+                    <button class="day-menu-item"
+                      (click)="uiState.editingDay.set(state.currentDay()!); showDayMenu.set(false)">
+                      <app-icon name="edit" [size]="14"/>
+                      {{ T().edit_routine }}
+                    </button>
+                    @if (!confirmSkip()) {
+                      <button class="day-menu-item day-menu-item--danger"
+                        (click)="confirmSkip.set(true)">
+                        <app-icon name="x" [size]="14"/>
+                        {{ T().skip_day }}
+                      </button>
+                    } @else {
+                      <div class="day-menu-skip-confirm">
+                        <p>{{ T().skip_confirm_q }}</p>
+                        <div class="day-menu-skip-btns">
+                          <button class="btn btn-sm btn-danger" (click)="doSkip()">{{ T().skip_yes }}</button>
+                          <button class="btn btn-sm btn-ghost"
+                            (click)="confirmSkip.set(false)">{{ T().cancel }}</button>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary today-cta" (click)="startTraining()">
+            <app-icon name="dumbbell" [size]="16"/>
+            {{ currentDayProgress().done > 0 ? T().continue_training : T().start_training }}
+          </button>
+
+          @if (currentDayProgress().done > 0) {
+            <div class="today-progress">
+              <div class="progress-bar">
+                <div class="progress-fill"
+                  [style.width.%]="currentDayProgress().total
+                    ? currentDayProgress().done / currentDayProgress().total * 100 : 0">
+                </div>
+              </div>
+              <span>{{ tr.tp('sets_progress', { done: currentDayProgress().done, total: currentDayProgress().total }) }}</span>
+            </div>
+          }
+
+          <div class="today-ex-list">
+            @for (ex of state.currentDay()!.exercises; track ex.id) {
+              <div class="today-ex-row">
+                <div class="today-ex-info">
+                  <span class="today-ex-name">{{ ex.name }}</span>
+                  <span class="today-ex-target">{{ ex.defaultSets }}×{{ ex.defaultRepTarget }} · {{ ex.unit }}</span>
+                  @if (isRecLoading(ex)) {
+                    <span class="today-ex-rec today-ex-rec-loading">
+                      <span class="rec-spinner"></span>
+                    </span>
+                  } @else if (recLabel(ex)) {
+                    <span class="today-ex-rec" [class.today-ex-rec--local]="recSource(ex) === 'local'">
+                      <app-icon
+                        [name]="recSource(ex) === 'groq' ? 'sparkle' : 'ruler'"
+                        [size]="10"
+                        class="today-ex-rec-icon"/>
+                      {{ recSource(ex) === 'groq' ? T().ai_source_badge : T().ai_local_badge }}: {{ recLabel(ex) }}
+                    </span>
+                  }
+                </div>
+                <a class="today-ex-chart-btn"
+                   [routerLink]="['/charts']"
+                   [fragment]="ex.id"
+                   title="Ver progresión">
+                  <app-icon name="chart" [size]="13"/>
+                </a>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Onboarding: shown until dismissed -->
+        <app-how-it-works/>
+
+      </div>
+
+      <!-- ROUTINE section: bottom of right col on desktop, bottom of page on mobile -->
       <div class="routine-section">
-        <h3 class="section-title">Tu rutina</h3>
+        <h3 class="section-title">{{ T().routine_section_title }}</h3>
         @for (item of routineDays(); track item.day.id) {
           <button class="routine-day-card" [class.current]="item.isCurrent"
             (click)="openDayDetail(item.day)">
             <div class="routine-day-left">
-              <span class="routine-day-num">Día {{ item.index + 1 }}</span>
+              <span class="routine-day-num">{{ tr.tp('day_n', { n: item.index + 1 }) }}</span>
               <span class="routine-day-name">{{ item.day.name }}</span>
             </div>
             <span class="routine-day-ago" [class.current-label]="item.isCurrent">
-              @if (item.isCurrent) { HOY } @else { {{ item.lastLabel }} }
+              @if (item.isCurrent) { {{ T().today_label }} } @else { {{ item.lastLabel }} }
             </span>
           </button>
         }
@@ -108,56 +179,144 @@
 
 } @else {
 
-  <!-- Training mode header (replaces tabs) -->
+  <!-- Training mode header -->
   <div class="training-bar">
     <button class="day-selector-btn" (click)="openDayPicker()">
       <app-icon name="menu" [size]="16" class="day-selector-menu-icon"/>
       <div class="day-selector-text">
-        <span class="day-selector-num">Día {{ state.activeDayIndex() + 1 }}</span>
+        <span class="day-selector-num">{{ tr.tp('day_n', { n: state.activeDayIndex() + 1 }) }}</span>
         <span class="day-selector-name">{{ state.activeDay()!.name }}</span>
       </div>
       <app-icon name="chevron" [size]="14" class="day-selector-chevron"/>
     </button>
 
     <div class="training-bar-actions">
-      <button class="icon-btn" title="Historial" (click)="openActiveHistory()">
+      <button class="icon-btn" [title]="T().history_title" (click)="openActiveHistory()">
         <app-icon name="history" [size]="16"/>
       </button>
-      <button class="btn btn-ghost btn-sm" (click)="uiState.editingDay.set(state.activeDay()!)">
-        <app-icon name="edit" [size]="13"/>
-        Editar
-      </button>
-      <button class="btn btn-primary btn-sm" (click)="finishTraining()">
+
+      <div class="day-menu-wrap">
+        <button class="icon-btn"
+          title="Más opciones"
+          (click)="$event.stopPropagation(); showTrainingMenu.update(v => !v)">
+          <app-icon name="dots" [size]="16"/>
+        </button>
+        @if (showTrainingMenu()) {
+          <div class="day-menu-backdrop" (click)="showTrainingMenu.set(false)"></div>
+          <div class="day-menu day-menu--right">
+            <button class="day-menu-item"
+              (click)="showTrainingMenu.set(false); uiState.editingDay.set(state.activeDay()!)">
+              <app-icon name="edit" [size]="14"/>
+              {{ T().edit_routine }}
+            </button>
+          </div>
+        }
+      </div>
+
+      <button class="btn btn-primary btn-sm" (click)="showFinishModal.set(true)">
         <app-icon name="check" [size]="13"/>
-        Terminar
+        {{ T().finish_btn }}
       </button>
     </div>
   </div>
 
-  <div class="main">
-    @if (state.activeDay(); as day) {
-      <div class="day-meta-bar">
-        <div class="day-progress">
-          <div class="progress-bar">
-            <div class="progress-fill"
-              [style.width.%]="dayProgress().total
-                ? dayProgress().done / dayProgress().total * 100 : 0">
+  <!-- Training layout: sidebar (desktop-only) + main content -->
+  <div class="training-layout">
+
+    <!-- Desktop sidebar: exercise overview + completion status -->
+    <aside class="training-sidebar">
+      <div class="tsb-header">
+        <span class="section-title" style="margin:0">Ejercicios</span>
+        <span class="tsb-total">{{ dayProgress().done }}/{{ dayProgress().total }}</span>
+      </div>
+      @if (state.activeDay(); as day) {
+        @for (ex of day.exercises; track ex.id) {
+          <button class="tsb-row"
+            [class.tsb-row--done]="(exerciseDoneCounts()[ex.id]?.done ?? 0) >= ex.defaultSets"
+            [class.tsb-row--active]="activeExerciseId() === ex.id"
+            (click)="scrollToExercise(ex.id)">
+            <span class="tsb-name">{{ ex.name }}</span>
+            <span class="tsb-badge">{{ exerciseDoneCounts()[ex.id]?.done ?? 0 }}/{{ ex.defaultSets }}</span>
+          </button>
+        }
+      }
+      <div class="tsb-finish">
+        <button class="btn btn-primary btn-sm tsb-finish-btn" (click)="showFinishModal.set(true)">
+          <app-icon name="check" [size]="13"/>
+          {{ T().finish_btn }}
+        </button>
+      </div>
+    </aside>
+
+    <div class="main">
+      @if (state.activeDay(); as day) {
+        <div class="day-meta-bar">
+          <div class="day-progress">
+            <div class="progress-bar">
+              <div class="progress-fill"
+                [style.width.%]="dayProgress().total
+                  ? dayProgress().done / dayProgress().total * 100 : 0">
+              </div>
+            </div>
+            <span>{{ dayProgress().done }}/{{ dayProgress().total }} series</span>
+          </div>
+        </div>
+
+        <div class="exercises">
+          @for (ex of day.exercises; track ex.id) {
+            <app-exercise-card
+              [attr.data-exercise-id]="ex.id"
+              [day]="day"
+              [exercise]="ex"
+              [aiRec]="aiCache()[ex.id] ?? null"
+              [isActive]="activeExerciseId() === ex.id"
+              (requestAi)="requestAi(ex)"
+              (exerciseCompleted)="onExerciseCompleted(ex)"/>
+          }
+        </div>
+      }
+    </div>
+
+  </div>
+
+  <!-- Modal de confirmación para terminar -->
+  @if (showFinishModal()) {
+    <div class="sheet-backdrop" (click)="showFinishModal.set(false)"></div>
+    <div class="sheet">
+      <div class="sheet-panel finish-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <h3 class="sheet-title">{{ T().finish_title }}</h3>
+        </div>
+        <div class="sheet-body finish-sheet-body">
+          <div class="finish-stats">
+            <div class="finish-stat">
+              <span class="finish-stat-value">{{ dayProgress().done }}</span>
+              <span class="finish-stat-label">{{ T().sets_done_label }}</span>
+            </div>
+            <div class="finish-stat-sep"></div>
+            <div class="finish-stat">
+              <span class="finish-stat-value">{{ dayProgress().total }}</span>
+              <span class="finish-stat-label">{{ T().total_sets_label }}</span>
             </div>
           </div>
-          <span>{{ dayProgress().done }}/{{ dayProgress().total }} series</span>
+          @if (dayProgress().done < dayProgress().total) {
+            <p class="finish-warning">
+              {{ tr.tp('finish_incomplete', { n: dayProgress().total - dayProgress().done }) }}
+            </p>
+          } @else {
+            <p class="finish-all-done">{{ T().finish_all_done }}</p>
+          }
+        </div>
+        <div class="sheet-footer">
+          <button class="btn btn-ghost" (click)="showFinishModal.set(false)">{{ T().keep_training }}</button>
+          <button class="btn btn-primary" (click)="finishTraining()">
+            <app-icon name="check" [size]="13"/>
+            {{ T().save_finish }}
+          </button>
         </div>
       </div>
-
-      <div class="exercises">
-        @for (ex of day.exercises; track ex.id) {
-          <app-exercise-card
-            [day]="day"
-            [exercise]="ex"
-            [aiRec]="aiCache()[ex.id] ?? null"
-            (requestAi)="requestAi(ex)"/>
-        }
-      </div>
-    }
-  </div>
+    </div>
+  }
 
 }

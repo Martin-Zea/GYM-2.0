@@ -22,6 +22,7 @@ interface RoutineDaySummary {
   standalone: true,
   imports: [IconComponent],
   templateUrl: './calendar.component.html',
+  styleUrl: './calendar.component.scss',
 })
 export class CalendarComponent {
   protected readonly state = inject(StateService);

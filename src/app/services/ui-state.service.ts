@@ -20,4 +20,10 @@ export class UIStateService {
 
   // Signal set by DayDetailSheet to trigger training start in HomeComponent
   readonly pendingTrainingStart = signal(false);
+
+  // True while a training session is in progress (drives topbar indicator)
+  readonly trainingActive = signal(false);
+
+  // Set by rest-timer on completion to auto-focus the next pending set input
+  readonly focusSet = signal<{ exerciseId: string; setIndex: number } | null>(null);
 }

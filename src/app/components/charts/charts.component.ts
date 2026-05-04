@@ -25,6 +25,7 @@ interface ChartItem {
   standalone: true,
   imports: [IconComponent],
   templateUrl: './charts.component.html',
+  styleUrl: './charts.component.scss',
 })
 export class ChartsComponent {
   protected readonly state = inject(StateService);

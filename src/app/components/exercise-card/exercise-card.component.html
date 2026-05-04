@@ -1,4 +1,4 @@
-<div class="exercise" [class.done]="isDone()" [class.expanded]="expanded()">
+<div class="exercise" [class.done]="isDone()" [class.expanded]="expanded()" [class.is-active]="isActive()">
   <div class="exercise-head" (click)="toggle()">
     <div class="exercise-name-wrap">
       <p class="exercise-name">{{ exercise().name }}</p>
@@ -15,6 +15,14 @@
     <div class="exercise-status">
       <span class="set-pill">{{ doneSetsCount() }}/{{ exercise().defaultSets }}</span>
       <a class="chart-icon-btn"
+         [href]="ytUrl()"
+         target="_blank"
+         rel="noopener"
+         [title]="T().exercise_yt_title"
+         (click)="$event.stopPropagation()">
+        <app-icon name="youtube" [size]="13"/>
+      </a>
+      <a class="chart-icon-btn"
          [routerLink]="['/charts']"
          [fragment]="exercise().id"
          title="Ver progresión"
@@ -27,26 +35,27 @@
 
   @if (expanded()) {
     <div class="exercise-body">
-      @if (aiRec()) {
-        <div class="ai-suggestion">
-          @if (aiRec()!.loading) {
-            <div class="ai-loading"></div>
-            <span>Analizando con IA...</span>
-          } @else {
-            <app-icon name="sparkle" [size]="14" class="ai-icon"/>
-            <span>
-              <strong>{{ aiRecLabel() }}</strong>
-              @if (aiRec()!.reason) { — {{ aiRec()!.reason }} }
-            </span>
-          }
-        </div>
-      } @else {
-        <button class="btn btn-ghost btn-sm"
-          (click)="$event.stopPropagation(); onRequestAi()">
-          <app-icon name="sparkle" [size]="12"/>
-          Consejo IA
-        </button>
-      }
+
+      <!-- AI nudge: shows source badge (sparkle = Groq, ruler = local) -->
+      <div class="ai-nudge">
+        @if (aiRec()?.loading) {
+          <span class="ai-nudge-loading">
+            <span class="ai-nudge-spinner"></span>
+            {{ T().ai_analyzing }}
+          </span>
+        } @else if (aiRec() && aiRecLabel()) {
+          <app-icon
+            [name]="aiRec()!.source !== 'local' ? 'sparkle' : 'ruler'"
+            [size]="11"
+            class="ai-nudge-icon"
+            [class.ai-nudge-icon--local]="aiRec()!.source === 'local'"/>
+          <span class="ai-nudge-text">
+            <strong>{{ aiRec()!.source !== 'local' ? T().ai_source_badge : T().ai_local_badge }}:
+              {{ aiRecLabel() }}</strong>
+            @if (aiRec()!.reason) { — {{ aiRec()!.reason }} }
+          </span>
+        }
+      </div>
 
       <div class="sets">
         <div class="sets-header">
@@ -61,37 +70,45 @@
         </div>
 
         @for (set of setsArray(); track $index; let i = $index) {
-          <div class="set-row" [class.done]="set.done">
+          <div class="set-row"
+               [class.done]="set.done"
+               [class.active-set]="i === activeSetIndex() && isActive() && !set.done">
             <span class="set-num">{{ i + 1 }}</span>
 
+            <!-- Weight column -->
             <div class="set-input-wrap">
               @if (exercise().unit !== 'peso corporal') {
                 <input
-                  class="set-input"
+                  class="set-input set-input-weight"
+                  [class.ai-prefilled]="aiPrefilledIndices().has(i) && !set.done"
                   type="number"
                   inputmode="decimal"
+                  [attr.data-set-index]="i"
                   [value]="set.weight !== '' ? set.weight : null"
-                  [placeholder]="'' + (lastSets()?.[i]?.weight ?? '0')"
+                  [placeholder]="set.weight === '' ? '0' : ''"
                   [attr.disabled]="set.done ? true : null"
                   (input)="updateWeight(i, $event)"/>
               } @else {
-                <span class="set-input"
-                  style="display:flex;align-items:center;justify-content:center;color:var(--text-3)">—</span>
+                <span class="set-input set-input-bw">—</span>
               }
               @if (lastSets()?.[i]) {
                 <span class="set-history">{{ lastSets()![i].weight }}×{{ lastSets()![i].reps }}</span>
               }
             </div>
 
+            <!-- Reps column -->
             <div class="set-input-wrap">
               <input
-                class="set-input"
+                class="set-input set-input-reps"
+                [class.ai-prefilled]="aiPrefilledIndices().has(i) && !set.done"
                 type="number"
                 inputmode="numeric"
+                [attr.data-set-index]="i"
                 [value]="set.reps !== '' ? set.reps : null"
                 [placeholder]="'' + exercise().defaultRepTarget"
                 [attr.disabled]="set.done ? true : null"
-                (input)="updateReps(i, $event)"/>
+                (input)="updateReps(i, $event)"
+                (keydown.enter)="$event.preventDefault(); toggleDone(i)"/>
               @if (lastSets()?.[i]) {
                 <span class="set-history">&nbsp;</span>
               }
@@ -101,9 +118,37 @@
               class="set-check"
               (click)="$event.stopPropagation(); toggleDone(i)"
               [attr.aria-label]="set.done ? 'Desmarcar' : 'Marcar'">
-              <app-icon name="check" [size]="14"/>
+              <app-icon name="check" [size]="16"/>
             </button>
           </div>
+
+          <!-- Dedicated +/- controls for active set only -->
+          @if (i === activeSetIndex() && isActive() && !set.done) {
+            <div class="active-set-controls" (click)="$event.stopPropagation()">
+              @if (exercise().unit !== 'peso corporal') {
+                <div class="active-ctrl-group">
+                  <span class="active-ctrl-label">
+                    @if (exercise().unit === 'tiempo') { Seg } @else { Peso }
+                  </span>
+                  <button class="active-ctrl-btn"
+                    (click)="stepWeight(i, -weightStep())"
+                    aria-label="Bajar peso">−</button>
+                  <button class="active-ctrl-btn"
+                    (click)="stepWeight(i, weightStep())"
+                    aria-label="Subir peso">+</button>
+                </div>
+              }
+              <div class="active-ctrl-group">
+                <span class="active-ctrl-label">Reps</span>
+                <button class="active-ctrl-btn"
+                  (click)="stepReps(i, -1)"
+                  aria-label="Restar rep">−</button>
+                <button class="active-ctrl-btn"
+                  (click)="stepReps(i, 1)"
+                  aria-label="Agregar rep">+</button>
+              </div>
+            </div>
+          }
         }
       </div>
     </div>

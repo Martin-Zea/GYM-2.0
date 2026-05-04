@@ -1,9 +1,11 @@
 import { Routes } from '@angular/router';
+import { trainingGuard } from './guards/training-guard';
 
 export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./components/home/home.component').then(m => m.HomeComponent),
+    canDeactivate: [trainingGuard],
   },
   {
     path: 'charts',

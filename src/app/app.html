@@ -1,33 +1,39 @@
 <div class="app">
-  <header class="topbar">
+  <header class="topbar" [class.training-active]="uiState.trainingActive()">
     <div class="brand">
       <div class="brand-mark">G</div>
-      <span>Gym</span>
+      <span>{{ T().app_name }}</span>
     </div>
     <div class="topbar-actions">
+      <button class="icon-btn lang-btn" (click)="toggleLang()"
+        [title]="T().settings_language">
+        <span class="lang-label">{{ tr.lang() === 'es' ? 'EN' : 'ES' }}</span>
+      </button>
       <button class="icon-btn" (click)="toggleTheme()"
-        [title]="theme() === 'dark' ? 'Modo claro' : 'Modo oscuro'">
+        [title]="theme() === 'dark' ? T().theme_toggle_dark : T().theme_toggle_light">
         <app-icon [name]="theme() === 'dark' ? 'sun' : 'moon'" [size]="16"/>
       </button>
-      <button class="icon-btn" title="Ajustes" (click)="uiState.showSettings.set(true)">
+      <button class="icon-btn" [title]="T().settings_btn" (click)="uiState.showSettings.set(true)">
         <app-icon name="settings" [size]="16"/>
       </button>
     </div>
   </header>
 
-  <router-outlet/>
-
   <nav class="bottom-nav">
-    <button routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+    <button routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" title="Inicio">
       <app-icon name="home" [size]="18"/>
     </button>
-    <button routerLink="/charts" routerLinkActive="active">
+    <button routerLink="/charts" routerLinkActive="active" title="Gráficos">
       <app-icon name="chart" [size]="18"/>
     </button>
-    <button routerLink="/calendar" routerLinkActive="active">
+    <button routerLink="/calendar" routerLinkActive="active" title="Calendario">
       <app-icon name="calendar" [size]="18"/>
     </button>
   </nav>
+
+  <main class="app-content">
+    <router-outlet/>
+  </main>
 
   @if (uiState.restTimer()) {
     <app-rest-timer/>

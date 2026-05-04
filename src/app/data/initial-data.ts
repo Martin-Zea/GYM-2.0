@@ -38,79 +38,74 @@ function seedSession(dayId: string, exercises: Exercise[], weights: number[][], 
 }
 
 export function createInitialState(): AppState {
-  // ── Day 1: Pecho + Triceps + Core ──────────────────────────────────────
+  // ── Day 1: Pecho y Tríceps ──────────────────────────────────────────────
   const d1: Exercise[] = [
-    ex('Press de Pecho (Maquina)',   2.5, 4,  6, 180),
-    ex('Press Inclinado (Mancuernas)', 2, 4,  8, 120, 'kg por mano'),
-    ex('Aperturas (Mancuernas)',       2, 4, 12,  90, 'kg por mano'),
-    ex('Extension Triceps (Polea)',  2.5, 4, 15,  90),
-    ex('Plancha',                      0, 4, 45,  60, 'tiempo'),
+    ex('Press de Pecho (Máquina)',    2.5, 4,  6, 180),
+    ex('Press Inclinado (Máquina)',   2.5, 3,  8, 120),
+    ex('Cruce/Aperturas (Máquina)',   2.5, 3, 10,  90),
+    ex('Extensión Tríceps (Polea)',   2.5, 3, 12,  90),
   ];
 
-  // ── Day 2: Espalda + Biceps ─────────────────────────────────────────────
+  // ── Day 2: Espalda y Bíceps ─────────────────────────────────────────────
   const d2: Exercise[] = [
-    ex('Remo en Maquina',      2.5, 4,  6, 180),
-    ex('Jalon al Pecho',       2.5, 4,  8, 120),
-    ex('Remo Polea Baja',      2.5, 4, 12,  90),
-    ex('Pullover (Polea)',     2.5, 4, 12,  90),
-    ex('Curl Biceps (Maquina)', 2.5, 4, 15,  90),
+    ex('Remo en Máquina (Sentado)',   2.5, 4,  6, 180),
+    ex('Jalón al Pecho (Polea Alta)', 2.5, 3,  8, 120),
+    ex('Remo Polea Baja',             2.5, 3, 10,  90),
+    ex('Curl de Bíceps (Máquina)',    2.5, 3, 12,  90),
   ];
 
-  // ── Day 3: Hombros + Core ───────────────────────────────────────────────
+  // ── Day 3: Hombros y Core ───────────────────────────────────────────────
   const d3: Exercise[] = [
-    ex('Press Hombros (Maquina)',    2.5, 4,  6, 180),
-    ex('Elevaciones Laterales',        2, 4, 12,  90),
-    ex('Face Pull',                  2.5, 4, 15,  90),
-    ex('Rotacion Externa (Polea)',   2.5, 4, 15,  60),
-    ex('Elevaciones de Piernas',       0, 4, 15,  60, 'peso corporal'),
+    ex('Press de Hombros (Máquina)',       2.5, 4,  6, 180),
+    ex('Elevaciones Laterales (Máquina)',  2.5, 3,  8, 120),
+    ex('Pájaros (Face Pulls)',             2.5, 3, 10,  90),
+    ex('Abdominal (Crunch Máquina)',       2.5, 3, 15,  60),
   ];
 
-  // ── Day 4: Espalda + Triceps ────────────────────────────────────────────
+  // ── Day 4: Espalda (Auxiliar) y Tríceps ────────────────────────────────
   const d4: Exercise[] = [
-    ex('Remo Unilateral',      2.5, 4,  6, 180),
-    ex('Jalon al Pecho',       2.5, 4, 10, 120),
-    ex('Pullover (Polea)',     2.5, 4, 12,  90),
-    ex('Press Frances',        2.5, 4, 12,  90),
-    ex('Plancha',                0, 4, 45,  60, 'tiempo'),
+    ex('Remo Unilateral (Máquina)',      2.5, 4,  6, 180, 'kg por brazo'),
+    ex('Jalón en P (Polea Alta)',         2.5, 3,  8, 120),
+    ex('Press Francés (Máquina)',         2.5, 3, 10,  90),
+    ex('Curl Martillo (Máquina/Polea)',   2.5, 3, 12,  90),
   ];
 
   // ── Day 5: Pierna ───────────────────────────────────────────────────────
   const d5: Exercise[] = [
-    ex('Prensa',                 10, 4,  6, 180),
-    ex('Extension Cuadriceps', 2.5, 4, 12, 120),
-    ex('Curl Femoral',         2.5, 4, 12,  90),
-    ex('Gemelos',                5, 4, 20,  60),
-    ex('Crunch',                 0, 4, 25,  60, 'peso corporal'),
+    ex('Prensa de Piernas',        5, 4,  6, 180),
+    ex('Extensión Cuádriceps',   2.5, 3, 10, 120),
+    ex('Curl Femoral (Acostado)', 2.5, 3, 10,  90),
+    ex('Elevación Gemelos',         5, 4, 15,  60),
   ];
 
   const days: WorkoutDay[] = [
-    { id: uid(), name: 'Pecho + Triceps + Core',  exercises: d1 },
-    { id: uid(), name: 'Espalda + Biceps',         exercises: d2 },
-    { id: uid(), name: 'Hombros + Core',            exercises: d3 },
-    { id: uid(), name: 'Espalda + Triceps',         exercises: d4 },
-    { id: uid(), name: 'Pierna',                    exercises: d5 },
+    { id: uid(), name: 'Pecho y Tríceps',                exercises: d1 },
+    { id: uid(), name: 'Espalda y Bíceps',               exercises: d2 },
+    { id: uid(), name: 'Hombros y Core',                  exercises: d3 },
+    { id: uid(), name: 'Espalda (Auxiliar) y Tríceps',   exercises: d4 },
+    { id: uid(), name: 'Pierna',                          exercises: d5 },
   ];
 
   const sessions: Session[] = [
     seedSession(days[0].id, d1,
-      [[32.5,35,37.5,40],[12,14,16,18],[10,10,12,12],[15,17.5,20,22.5],[0,0,0,0]],
-      [[6,6,6,5],[8,8,8,8],[10,10,10,12],[12,12,12,15],[30,35,40,45]]
+      [[30,30,30,30], [20,20,20], [20,20,20], [15,15,15]],
+      [[6,6,6,6],     [8,8,8],    [10,10,10], [12,12,12]]
     ),
     seedSession(days[1].id, d2,
-      [[37.5,40,42.5,45],[32.5,35,37.5,40],[25,27.5,30,32.5],[20,22.5,25,27.5],[15,17.5,20,22.5]],
-      [[6,6,6,5],[8,8,8,8],[10,10,10,12],[10,10,10,12],[12,12,12,15]]
+      [[35,35,35,35], [30,30,30], [25,25,25], [15,15,15]],
+      [[6,6,6,6],     [8,8,8],    [10,10,10], [12,12,12]]
     ),
     seedSession(days[2].id, d3,
-      [[22.5,25,27.5,30],[10,12,14,16],[15,17.5,20,22.5],[5,7.5,10,10],[0,0,0,0]],
-      [[6,6,6,5],[10,10,10,12],[12,12,12,15],[15,15,15,15],[12,12,15,15]]
+      [[20,20,20,20], [10,10,10], [15,15,15], [20,20,20]],
+      [[6,6,6,6],     [8,8,8],    [10,10,10], [15,15,15]]
     ),
     seedSession(days[3].id, d4,
-      [[17.5,20,22.5,25],[30,32.5,35,37.5],[20,22.5,25,27.5],[15,17.5,20,22.5],[0,0,0,0]],
-      [[6,6,6,6],[8,8,8,10],[10,10,10,12],[10,10,10,12],[30,35,40,45]]
+      [[15,15,15,15], [25,25,25], [15,15,15], [12,12,12]],
+      [[6,6,6,6],     [8,8,8],    [10,10,10], [12,12,12]]
     ),
     seedSession(days[4].id, d5,
-      [[80,90,100,110],[25,27.5,30,32.5],[20,22.5,25,27.5],[45,50,55,60],[0,0,0,0]],
-      [[6,6,6,5],[10,10,10,12],[10,10,10,12],[15,15,15,20],[20,20,25,25]]
+      [[70,70,70,70], [25,25,25], [20,20,20], [40,40,40,40]],
+      [[6,6,6,6],     [10,10,10], [10,10,10], [15,15,15,15]]
     ),
   ];
 
@@ -123,6 +118,7 @@ export function createInitialState(): AppState {
     todayProgress: {},
     settings: {
       apiKey: '',
+      cohereApiKey: '',
       defaultRest: 60,
       sounds: true,
       theme: 'dark',

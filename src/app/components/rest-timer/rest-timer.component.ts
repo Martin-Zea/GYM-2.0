@@ -6,6 +6,7 @@ import { UIStateService } from '../../services/ui-state.service';
   standalone: true,
   imports: [],
   templateUrl: './rest-timer.component.html',
+  styleUrl: './rest-timer.component.scss',
 })
 export class RestTimerComponent implements OnInit, OnDestroy {
   protected readonly uiState = inject(UIStateService);
@@ -51,6 +52,16 @@ export class RestTimerComponent implements OnInit, OnDestroy {
   private onDone(): void {
     this.playBeep();
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+
+    // Trigger auto-scroll + focus on next pending set
+    const timer = this.uiState.restTimer();
+    if (timer && timer.nextSetIndex !== undefined && timer.nextSetIndex >= 0) {
+      this.uiState.focusSet.set({
+        exerciseId: timer.exerciseId,
+        setIndex: timer.nextSetIndex,
+      });
+    }
+
     setTimeout(() => this.uiState.restTimer.set(null), 1500);
   }
 
