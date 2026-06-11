@@ -190,7 +190,7 @@ export class HomeComponent {
   }
 
   protected finishTraining(): void {
-    this.state.advanceRoutine();
+    this.state.advanceRoutine(this.state.activeDayIndex());
     this.showFinishModal.set(false);
     this.showTrainingMenu.set(false);
     this.activeExerciseId.set(null);

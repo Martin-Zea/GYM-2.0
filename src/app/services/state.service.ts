@@ -76,12 +76,20 @@ export class StateService {
     this.state.update(s => ({ ...s, settings }));
   }
 
-  advanceRoutine(): void {
-    this.state.update(s => ({
-      ...s,
-      routinePointer: s.routinePointer + 1,
-      todayProgress: this.pruneTodayProgress(s.todayProgress),
-    }));
+  advanceRoutine(fromDayIndex?: number): void {
+    this.state.update(s => {
+      const days = s.days.length || 1;
+      const base = fromDayIndex !== undefined ? fromDayIndex : s.routinePointer % days;
+      const nextIndex = (base + 1) % days;
+      const rem = s.routinePointer % days;
+      let delta = nextIndex - rem;
+      if (delta <= 0) delta += days;
+      return {
+        ...s,
+        routinePointer: s.routinePointer + delta,
+        todayProgress: this.pruneTodayProgress(s.todayProgress),
+      };
+    });
   }
 
   skipDay(): void {
