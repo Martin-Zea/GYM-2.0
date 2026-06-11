@@ -44,11 +44,17 @@ export interface TodayDayProgress {
   sets: Record<string, TodaySetProgress[]>;
 }
 
+export interface WeightLogEntry {
+  dateISO: string;
+  weightKg: number;
+}
+
 export interface UserProfile {
   weightKg: number | null;
   heightCm: number | null;
   age: number | null;
   sex: 'male' | 'female' | 'other' | null;
+  weightLog: WeightLogEntry[];
 }
 
 export interface AppSettings {

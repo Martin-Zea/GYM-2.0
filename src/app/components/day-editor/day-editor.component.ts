@@ -1,24 +1,27 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
+import { FocusTrapDirective } from '../../directives/focus-trap.directive';
 import { StateService } from '../../services/state.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { StorageService } from '../../services/storage.service';
+import { TranslationService } from '../../services/translation.service';
 import { Exercise, ExerciseUnit, WorkoutDay } from '../../models/workout.model';
 
 @Component({
   selector: 'app-day-editor',
   standalone: true,
-  imports: [IconComponent],
+  imports: [IconComponent, FocusTrapDirective],
   templateUrl: './day-editor.component.html',
 })
 export class DayEditorComponent implements OnInit {
   private readonly state = inject(StateService);
   protected readonly uiState = inject(UIStateService);
   private readonly storage = inject(StorageService);
+  protected readonly tr = inject(TranslationService);
 
   protected readonly dayName = signal('');
   protected readonly exercises = signal<Exercise[]>([]);
-  protected readonly units: ExerciseUnit[] = ['kg', 'kg por mano', 'tiempo', 'peso corporal'];
+  protected readonly units: ExerciseUnit[] = ['kg', 'kg por mano', 'kg por brazo', 'tiempo', 'peso corporal'];
 
   protected get isNew(): boolean {
     return this.uiState.editingDay() === 'new';

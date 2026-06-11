@@ -126,7 +126,7 @@
               <div class="today-ex-row">
                 <div class="today-ex-info">
                   <span class="today-ex-name">{{ ex.name }}</span>
-                  <span class="today-ex-target">{{ ex.defaultSets }}×{{ ex.defaultRepTarget }} · {{ ex.unit }}</span>
+                  <span class="today-ex-target">{{ ex.defaultSets }}×{{ ex.defaultRepTarget }} · {{ tr.unitLabel(ex.unit) }}</span>
                   @if (isRecLoading(ex)) {
                     <span class="today-ex-rec today-ex-rec-loading">
                       <span class="rec-spinner"></span>

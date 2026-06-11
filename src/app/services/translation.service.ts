@@ -1,5 +1,15 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { TRANSLATIONS, Translations } from '../i18n/translations';
+import { ExerciseUnit } from '../models/workout.model';
+
+/** Presentation-only map: stored ExerciseUnit values stay in Spanish (schema compat) */
+const UNIT_KEYS: Record<ExerciseUnit, keyof Translations> = {
+  'kg': 'unit_kg',
+  'kg por mano': 'unit_kg_per_hand',
+  'kg por brazo': 'unit_kg_per_arm',
+  'tiempo': 'unit_time',
+  'peso corporal': 'unit_bodyweight',
+};
 
 @Injectable({ providedIn: 'root' })
 export class TranslationService {
@@ -13,6 +23,11 @@ export class TranslationService {
   setLang(lang: 'es' | 'en'): void {
     this.lang.set(lang);
     localStorage.setItem('gym_lang', lang);
+  }
+
+  /** Localized display label for an ExerciseUnit — never persist the result */
+  unitLabel(unit: ExerciseUnit): string {
+    return this.T()[UNIT_KEYS[unit]];
   }
 
   /** Interpolate a translation key with named params, e.g. tp('days_ago_many', { n: 3 }) */

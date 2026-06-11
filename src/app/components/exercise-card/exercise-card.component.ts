@@ -15,6 +15,7 @@ import { StateService } from '../../services/state.service';
 import { StorageService } from '../../services/storage.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
+import { SoundService } from '../../services/sound.service';
 import { AiRecommendation, Exercise, TodaySetProgress, WorkoutDay } from '../../models/workout.model';
 
 @Component({
@@ -28,6 +29,7 @@ export class ExerciseCardComponent {
   private readonly state = inject(StateService);
   private readonly storage = inject(StorageService);
   private readonly uiState = inject(UIStateService);
+  private readonly sound = inject(SoundService);
   private readonly el = inject(ElementRef);
   protected readonly tr = inject(TranslationService);
   protected readonly T = this.tr.T;
@@ -203,14 +205,20 @@ export class ExerciseCardComponent {
     this.aiPrefilledIndices.update(s => { const n = new Set(s); n.delete(i); return n; });
   }
 
+  /** Sets already celebrated as PR — prevents re-celebrating on undo + redo */
+  private readonly celebratedPrSets = new Set<string>();
+
   protected toggleDone(setIndex: number): void {
     const result = this.state.toggleSetDone(this.day().id, this.exercise(), setIndex);
     if (result === 'done') {
+      this.maybeCelebratePr(setIndex);
       const ex = this.exercise();
       const restSecs = ex.restSeconds || this.state.settings().defaultRest;
       const arr = this.setsArray();
       const nextIdx = arr.findIndex((s, i) => i > setIndex && !s.done);
-      const nextLabel = nextIdx >= 0 ? `Serie ${nextIdx + 1}` : 'Siguiente ejercicio';
+      const nextLabel = nextIdx >= 0
+        ? this.tr.tp('rest_timer_next_set', { n: nextIdx + 1 })
+        : this.T().rest_timer_next_exercise;
       this.uiState.restTimer.set({
         seconds: restSecs,
         exerciseId: ex.id,
@@ -221,6 +229,32 @@ export class ExerciseCardComponent {
         this.exerciseCompleted.emit();
       }
     }
+  }
+
+  private maybeCelebratePr(setIndex: number): void {
+    const ex = this.exercise();
+    // Weight isn't the progress metric for time/bodyweight exercises
+    if (ex.unit === 'tiempo' || ex.unit === 'peso corporal') return;
+
+    const key = `${ex.id}:${setIndex}`;
+    if (this.celebratedPrSets.has(key)) return;
+
+    const set = this.state.getTodayProgress(this.day().id).sets[ex.id]?.[setIndex];
+    const weight = Number(set?.weight) || 0;
+    if (weight <= 0) return;
+
+    // toggleSetDone already committed today's session — exclude it from the historic max
+    const history = this.storage
+      .historyForExercise(this.state.state(), ex.id)
+      .filter(h => h.dateISO < this.state.todayKey);
+    if (!history.length) return;
+
+    const maxWeight = Math.max(...history.map(h => h.topWeight));
+    if (weight <= maxWeight) return;
+
+    this.celebratedPrSets.add(key);
+    if (this.state.settings().sounds) this.sound.playPrBeep();
+    this.uiState.celebratePr(ex.name, weight);
   }
 
   protected ytUrl(): string {

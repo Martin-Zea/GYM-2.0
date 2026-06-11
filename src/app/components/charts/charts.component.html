@@ -4,7 +4,79 @@
     <p class="view-sub">Peso máximo y volumen por sesión</p>
   </div>
 
-  @if (!chartItems().length) {
+  <div class="charts-controls">
+    <div class="charts-seg">
+      <button class="btn btn-sm" [class.btn-primary]="metric() === 'top'"
+        (click)="metric.set('top')">{{ T().charts_metric_top }}</button>
+      <button class="btn btn-sm" [class.btn-primary]="metric() === '1rm'"
+        (click)="metric.set('1rm')">{{ T().charts_metric_1rm }}</button>
+    </div>
+    <div class="charts-seg">
+      <button class="btn btn-sm" [class.btn-primary]="range() === '3m'"
+        (click)="range.set('3m')">{{ T().charts_range_3m }}</button>
+      <button class="btn btn-sm" [class.btn-primary]="range() === '6m'"
+        (click)="range.set('6m')">{{ T().charts_range_6m }}</button>
+      <button class="btn btn-sm" [class.btn-primary]="range() === 'all'"
+        (click)="range.set('all')">{{ T().charts_range_all }}</button>
+    </div>
+  </div>
+
+  @if (bodyweightChart(); as bw) {
+    <div class="chart-card" id="chart-bodyweight">
+      <div class="chart-head">
+        <div>
+          <p class="chart-title">{{ T().bodyweight_chart_title }}</p>
+          <p class="chart-sub">{{ bw.xLabels[0].label }} – {{ bw.xLabels[bw.xLabels.length - 1].label }}</p>
+        </div>
+        <div class="chart-stats-right">
+          <div class="chart-stat">
+            <div class="chart-stat-label">{{ T().settings_weight }}</div>
+            <div class="chart-stat-value">{{ bw.current }} kg</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-svg-wrap">
+        <svg viewBox="0 0 300 110" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="grad-bodyweight" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.25"/>
+              <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+
+          <g class="chart-grid">
+            <line x1="32" y1="8" x2="292" y2="8"/>
+            <line x1="32" y1="48" x2="292" y2="48"/>
+            <line x1="32" y1="88" x2="292" y2="88"/>
+          </g>
+
+          <path [attr.d]="bw.areaPath" fill="url(#grad-bodyweight)" stroke="none"/>
+
+          <polyline [attr.points]="bw.points" class="chart-line" fill="none"/>
+
+          @for (pt of bw.pts; track $index) {
+            <circle [attr.cx]="pt.x.toFixed(1)" [attr.cy]="pt.y.toFixed(1)"
+              r="3" class="chart-dot"/>
+          }
+
+          <g class="chart-axis">
+            @for (lbl of bw.yLabels; track lbl.value) {
+              <text x="28" [attr.y]="lbl.y" text-anchor="end">{{ lbl.value }}</text>
+            }
+          </g>
+
+          <g class="chart-axis">
+            @for (lbl of bw.xLabels; track lbl.label) {
+              <text [attr.x]="lbl.x.toFixed(1)" y="106" text-anchor="middle">{{ lbl.label }}</text>
+            }
+          </g>
+        </svg>
+      </div>
+    </div>
+  }
+
+  @if (!chartItems().length && !bodyweightChart()) {
     <div class="empty">
       <div class="empty-icon">
         <app-icon name="chart" [size]="24"/>
@@ -15,71 +87,80 @@
   } @else {
     @for (item of chartItems(); track item.exercise.id) {
       <div class="chart-card" [id]="'chart-' + item.exercise.id">
-        <div class="chart-head">
-          <div>
-            <p class="chart-title">{{ item.exercise.name }}</p>
-            <p class="chart-sub">{{ item.history.length }} sesiones</p>
-          </div>
-          <div class="chart-stats-right">
-            <div class="chart-stat">
-              <div class="chart-stat-label">PR</div>
-              <div class="chart-stat-value">{{ item.pr }} kg</div>
+        @if (item.chart; as chart) {
+          <div class="chart-head">
+            <div>
+              <p class="chart-title">{{ item.exercise.name }}</p>
+              <p class="chart-sub">{{ chart.history.length }} sesiones</p>
             </div>
-            <div class="chart-stat">
-              <div class="chart-stat-label">Vol. última</div>
-              <div class="chart-stat-value chart-stat-vol">{{ item.volLast }} kg</div>
+            <div class="chart-stats-right">
+              <div class="chart-stat">
+                <div class="chart-stat-label">PR</div>
+                <div class="chart-stat-value">{{ chart.pr }} kg</div>
+              </div>
+              <div class="chart-stat">
+                <div class="chart-stat-label">Vol. última</div>
+                <div class="chart-stat-value chart-stat-vol">{{ chart.volLast }} kg</div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="chart-svg-wrap">
-          <svg viewBox="0 0 300 110" preserveAspectRatio="none">
-            <defs>
-              <linearGradient [attr.id]="'grad-' + item.exercise.id" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.25"/>
-                <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
-              </linearGradient>
-            </defs>
+          <div class="chart-svg-wrap">
+            <svg viewBox="0 0 300 110" preserveAspectRatio="none">
+              <defs>
+                <linearGradient [attr.id]="'grad-' + item.exercise.id" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.25"/>
+                  <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
 
-            <g class="chart-grid">
-              <line x1="32" y1="8" x2="292" y2="8"/>
-              <line x1="32" y1="48" x2="292" y2="48"/>
-              <line x1="32" y1="88" x2="292" y2="88"/>
-            </g>
+              <g class="chart-grid">
+                <line x1="32" y1="8" x2="292" y2="8"/>
+                <line x1="32" y1="48" x2="292" y2="48"/>
+                <line x1="32" y1="88" x2="292" y2="88"/>
+              </g>
 
-            <path [attr.d]="item.areaPath"
-              [attr.fill]="'url(#grad-' + item.exercise.id + ')'"
-              stroke="none"/>
+              <path [attr.d]="chart.areaPath"
+                [attr.fill]="'url(#grad-' + item.exercise.id + ')'"
+                stroke="none"/>
 
-            <polyline [attr.points]="item.points" class="chart-line" fill="none"/>
+              <polyline [attr.points]="chart.points" class="chart-line" fill="none"/>
 
-            @for (pt of item.pts; track $index) {
-              <circle [attr.cx]="pt.x.toFixed(1)" [attr.cy]="pt.y.toFixed(1)"
-                r="3" class="chart-dot"/>
-            }
-
-            <g class="chart-axis">
-              @for (lbl of item.yLabels; track lbl.value) {
-                <text x="28" [attr.y]="lbl.y" text-anchor="end">{{ lbl.value }}</text>
+              @for (pt of chart.pts; track $index) {
+                <circle [attr.cx]="pt.x.toFixed(1)" [attr.cy]="pt.y.toFixed(1)"
+                  r="3" class="chart-dot"/>
               }
-            </g>
 
-            <g class="chart-axis">
-              @for (lbl of item.xLabels; track lbl.label) {
-                <text [attr.x]="lbl.x.toFixed(1)" y="106" text-anchor="middle">{{ lbl.label }}</text>
-              }
-            </g>
-          </svg>
-        </div>
+              <g class="chart-axis">
+                @for (lbl of chart.yLabels; track lbl.value) {
+                  <text x="28" [attr.y]="lbl.y" text-anchor="end">{{ lbl.value }}</text>
+                }
+              </g>
 
-        <div class="chart-vol-bar">
-          <span class="chart-vol-label">Volumen promedio: {{ item.volAvg }} kg</span>
-          <div class="chart-vol-track">
-            <div class="chart-vol-fill"
-              [style.width.%]="item.volAvg > 0 ? (item.volLast / item.volAvg) * 50 : 0">
+              <g class="chart-axis">
+                @for (lbl of chart.xLabels; track lbl.label) {
+                  <text [attr.x]="lbl.x.toFixed(1)" y="106" text-anchor="middle">{{ lbl.label }}</text>
+                }
+              </g>
+            </svg>
+          </div>
+
+          <div class="chart-vol-bar">
+            <span class="chart-vol-label">Volumen promedio: {{ chart.volAvg }} kg</span>
+            <div class="chart-vol-track">
+              <div class="chart-vol-fill"
+                [style.width.%]="chart.volAvg > 0 ? (chart.volLast / chart.volAvg) * 50 : 0">
+              </div>
             </div>
           </div>
-        </div>
+        } @else {
+          <div class="chart-head">
+            <div>
+              <p class="chart-title">{{ item.exercise.name }}</p>
+            </div>
+          </div>
+          <p class="chart-empty-msg">{{ T().charts_empty_exercise }}</p>
+        }
       </div>
     }
   }

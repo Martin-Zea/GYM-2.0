@@ -1,6 +1,6 @@
 <div class="sheet-backdrop" (click)="close()"></div>
 <div class="sheet">
-  <div class="sheet-panel">
+  <div class="sheet-panel" appFocusTrap role="dialog" aria-modal="true">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
       <h3 class="sheet-title">{{ T().settings_title }}</h3>
@@ -71,49 +71,58 @@
           {{ T().settings_profile_ai_note }}
         </p>
         <div class="settings-row">
-          <div class="settings-row-main">
+          <label class="settings-row-main" for="profile-weight">
             <div class="settings-row-label">{{ T().settings_weight }}</div>
-          </div>
+          </label>
           <div style="display:flex;align-items:center;gap:6px">
-            <input class="input" type="number" min="30" max="300" step="0.5"
+            <input id="profile-weight" class="input" type="number" min="30" max="300" step="0.5"
+              inputmode="decimal"
               placeholder="—"
               style="width:75px;text-align:center"
               [value]="settings().userProfile.weightKg ?? ''"
               (input)="patchProfileNum('weightKg', $event)"/>
-            <span style="font-size:12px;color:var(--text-2)">kg</span>
+            <span style="font-size:12px;color:var(--text-2)" aria-hidden="true">kg</span>
           </div>
         </div>
+        @if (weightSummary(); as ws) {
+          <p class="settings-row-desc" style="margin:-4px 0 10px">
+            {{ tr.tp('settings_weight_prev', { weight: ws.prevWeight }) }}
+            · {{ tr.tp('settings_weight_delta', { delta: ws.delta, date: ws.date }) }}
+          </p>
+        }
         <div class="settings-row">
-          <div class="settings-row-main">
+          <label class="settings-row-main" for="profile-height">
             <div class="settings-row-label">{{ T().settings_height }}</div>
-          </div>
+          </label>
           <div style="display:flex;align-items:center;gap:6px">
-            <input class="input" type="number" min="100" max="250"
+            <input id="profile-height" class="input" type="number" min="100" max="250"
+              inputmode="numeric"
               placeholder="—"
               style="width:75px;text-align:center"
               [value]="settings().userProfile.heightCm ?? ''"
               (input)="patchProfileNum('heightCm', $event)"/>
-            <span style="font-size:12px;color:var(--text-2)">cm</span>
+            <span style="font-size:12px;color:var(--text-2)" aria-hidden="true">cm</span>
           </div>
         </div>
         <div class="settings-row">
-          <div class="settings-row-main">
+          <label class="settings-row-main" for="profile-age">
             <div class="settings-row-label">{{ T().settings_age }}</div>
-          </div>
+          </label>
           <div style="display:flex;align-items:center;gap:6px">
-            <input class="input" type="number" min="10" max="100"
+            <input id="profile-age" class="input" type="number" min="10" max="100"
+              inputmode="numeric"
               placeholder="—"
               style="width:75px;text-align:center"
               [value]="settings().userProfile.age ?? ''"
               (input)="patchProfileNum('age', $event)"/>
-            <span style="font-size:12px;color:var(--text-2)">{{ T().settings_age_unit }}</span>
+            <span style="font-size:12px;color:var(--text-2)" aria-hidden="true">{{ T().settings_age_unit }}</span>
           </div>
         </div>
         <div class="settings-row">
-          <div class="settings-row-main">
+          <label class="settings-row-main" for="profile-sex">
             <div class="settings-row-label">{{ T().settings_sex }}</div>
-          </div>
-          <select class="select" style="width:150px"
+          </label>
+          <select id="profile-sex" class="select" style="width:150px"
             [value]="settings().userProfile.sex ?? ''"
             (change)="patchProfileSex($event)">
             <option value="">{{ T().settings_sex_none }}</option>

@@ -1,5 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
+import { FocusTrapDirective } from '../../directives/focus-trap.directive';
 import { StateService } from '../../services/state.service';
 import { StorageService } from '../../services/storage.service';
 import { UIStateService } from '../../services/ui-state.service';
@@ -7,7 +8,7 @@ import { UIStateService } from '../../services/ui-state.service';
 @Component({
   selector: 'app-day-picker-sheet',
   standalone: true,
-  imports: [IconComponent],
+  imports: [IconComponent, FocusTrapDirective],
   templateUrl: './day-picker-sheet.component.html',
   styleUrl: './day-picker-sheet.component.scss',
 })

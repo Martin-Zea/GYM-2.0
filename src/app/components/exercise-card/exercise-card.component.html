@@ -5,7 +5,7 @@
       <div class="exercise-meta">
         {{ exercise().defaultSets }}×{{ exercise().defaultRepTarget }}
         <span class="dot"></span>
-        {{ exercise().unit }}
+        {{ tr.unitLabel(exercise().unit) }}
         @if (exercise().notes) {
           <span class="dot"></span>
           <span>{{ exercise().notes }}</span>
@@ -117,7 +117,7 @@
             <button
               class="set-check"
               (click)="$event.stopPropagation(); toggleDone(i)"
-              [attr.aria-label]="set.done ? 'Desmarcar' : 'Marcar'">
+              [attr.aria-label]="set.done ? T().set_unmark : T().set_mark">
               <app-icon name="check" [size]="16"/>
             </button>
           </div>

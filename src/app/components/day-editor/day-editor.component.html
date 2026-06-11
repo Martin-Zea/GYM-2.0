@@ -1,6 +1,6 @@
 <div class="sheet-backdrop" (click)="close()"></div>
 <div class="sheet">
-  <div class="sheet-panel">
+  <div class="sheet-panel" appFocusTrap role="dialog" aria-modal="true">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
       <h3 class="sheet-title">{{ isNew ? 'Nuevo día' : 'Editar día' }}</h3>
@@ -78,7 +78,7 @@
               [value]="ex.unit"
               (change)="setExUnit(i, $event)">
               @for (unit of units; track unit) {
-                <option [value]="unit">{{ unit }}</option>
+                <option [value]="unit">{{ tr.unitLabel(unit) }}</option>
               }
             </select>
           </div>

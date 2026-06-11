@@ -1,5 +1,8 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { UIStateService } from '../../services/ui-state.service';
+import { StateService } from '../../services/state.service';
+import { TranslationService } from '../../services/translation.service';
+import { SoundService } from '../../services/sound.service';
 
 @Component({
   selector: 'app-rest-timer',
@@ -10,10 +13,19 @@ import { UIStateService } from '../../services/ui-state.service';
 })
 export class RestTimerComponent implements OnInit, OnDestroy {
   protected readonly uiState = inject(UIStateService);
+  private readonly state = inject(StateService);
+  private readonly tr = inject(TranslationService);
+  private readonly sound = inject(SoundService);
 
   protected readonly remaining = signal(0);
   private readonly total = signal(0);
+  private endsAt = 0;
+  private finished = false;
   private timerId: ReturnType<typeof setInterval> | null = null;
+  private wakeLock: WakeLockSentinel | null = null;
+
+  // Ask for notification permission at most once per app session
+  private static notificationAsked = false;
 
   protected readonly progress = computed(() => {
     const t = this.total();
@@ -22,24 +34,40 @@ export class RestTimerComponent implements OnInit, OnDestroy {
 
   protected readonly C = 596.9; // 2π × 95
 
+  private readonly onVisibilityChange = (): void => {
+    if (document.visibilityState !== 'visible') return;
+    // Background tabs throttle/pause setInterval — resync from the wall clock
+    this.tick();
+    if (!this.finished) void this.requestWakeLock();
+  };
+
   ngOnInit(): void {
     const t = this.uiState.restTimer()!;
     this.remaining.set(t.seconds);
     this.total.set(t.seconds);
-    this.timerId = setInterval(() => {
-      const next = this.remaining() - 1;
-      if (next <= 0) {
-        this.remaining.set(0);
-        this.stopTimer();
-        this.onDone();
-      } else {
-        this.remaining.set(next);
-      }
-    }, 1000);
+    this.endsAt = Date.now() + t.seconds * 1000;
+    this.timerId = setInterval(() => this.tick(), 500);
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
+    this.requestNotificationPermissionOnce();
+    void this.requestWakeLock();
   }
 
   ngOnDestroy(): void {
     this.stopTimer();
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
+    this.releaseWakeLock();
+  }
+
+  /** Remaining time is derived from endsAt, so a paused interval can't drift */
+  private tick(): void {
+    if (this.finished) return;
+    const next = Math.max(0, Math.ceil((this.endsAt - Date.now()) / 1000));
+    this.remaining.set(next);
+    if (next <= 0) {
+      this.finished = true;
+      this.stopTimer();
+      this.onDone();
+    }
   }
 
   private stopTimer(): void {
@@ -50,8 +78,10 @@ export class RestTimerComponent implements OnInit, OnDestroy {
   }
 
   private onDone(): void {
-    this.playBeep();
+    if (this.state.settings().sounds) this.sound.playRestBeep();
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    this.notifyIfHidden();
+    this.releaseWakeLock();
 
     // Trigger auto-scroll + focus on next pending set
     const timer = this.uiState.restTimer();
@@ -67,31 +97,55 @@ export class RestTimerComponent implements OnInit, OnDestroy {
 
   protected skip(): void {
     this.stopTimer();
+    this.releaseWakeLock();
     this.uiState.restTimer.set(null);
   }
 
   protected adjust(delta: number): void {
-    const newVal = Math.max(0, this.remaining() + delta);
+    if (this.finished) return;
+    this.endsAt += delta * 1000;
+    const newVal = Math.max(0, Math.ceil((this.endsAt - Date.now()) / 1000));
     this.remaining.set(newVal);
     this.total.update(t => Math.max(t + delta, newVal));
+    if (newVal <= 0) {
+      this.finished = true;
+      this.stopTimer();
+      this.onDone();
+    }
   }
 
-  private playBeep(): void {
+  private requestNotificationPermissionOnce(): void {
+    if (RestTimerComponent.notificationAsked) return;
+    RestTimerComponent.notificationAsked = true;
     try {
-      const ctx = new AudioContext();
-      const play = (freq: number, when: number) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.3, when);
-        gain.gain.exponentialRampToValueAtTime(0.001, when + 0.2);
-        osc.start(when);
-        osc.stop(when + 0.25);
-      };
-      play(880, ctx.currentTime);
-      play(1320, ctx.currentTime + 0.25);
-    } catch { /* AudioContext unavailable */ }
+      if ('Notification' in window && Notification.permission === 'default') {
+        void Promise.resolve(Notification.requestPermission()).catch(() => {});
+      }
+    } catch { /* Notification API unavailable */ }
+  }
+
+  private notifyIfHidden(): void {
+    try {
+      if (!document.hidden) return;
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      const timer = this.uiState.restTimer();
+      const base = this.tr.T().rest_done_notification;
+      const body = timer?.nextLabel ? `${base} — ${timer.nextLabel}` : base;
+      new Notification('GYM 2.0', { body });
+    } catch { /* Notification API unavailable */ }
+  }
+
+  private async requestWakeLock(): Promise<void> {
+    try {
+      if (!('wakeLock' in navigator)) return;
+      this.wakeLock = await navigator.wakeLock.request('screen');
+    } catch { /* wake lock unavailable (iOS, no HTTPS, low battery) */ }
+  }
+
+  private releaseWakeLock(): void {
+    try {
+      void this.wakeLock?.release().catch(() => {});
+    } catch { /* already released */ }
+    this.wakeLock = null;
   }
 }

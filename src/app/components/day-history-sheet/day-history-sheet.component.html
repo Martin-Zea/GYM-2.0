@@ -1,6 +1,6 @@
 <div class="sheet-backdrop" (click)="close()"></div>
 <div class="sheet">
-  <div class="sheet-panel">
+  <div class="sheet-panel" appFocusTrap role="dialog" aria-modal="true">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
       <div>
@@ -22,20 +22,84 @@
           <div class="history-session">
             <div class="history-session-header">
               <span class="history-date">{{ sv.dateLabel }}</span>
-              @if (sv.totalVolume > 0) {
-                <span class="history-vol">{{ sv.totalVolume | number:'1.0-0' }} kg vol.</span>
-              }
+              <div class="history-header-right">
+                @if (sv.totalVolume > 0) {
+                  <span class="history-vol">{{ sv.totalVolume | number:'1.0-0' }} kg vol.</span>
+                }
+                @if (!sv.session.skipped && editingId() !== sv.session.id) {
+                  <button class="icon-btn" [title]="T().history_edit" (click)="startEdit(sv)">
+                    <app-icon name="edit" [size]="14"/>
+                  </button>
+                }
+                @if (confirmDeleteId() !== sv.session.id) {
+                  <button class="icon-btn icon-btn-danger" [title]="T().history_delete" (click)="askDelete(sv.session.id)">
+                    <app-icon name="trash" [size]="14"/>
+                  </button>
+                }
+              </div>
             </div>
 
-            @for (ex of sv.exercises; track ex.name) {
-              <div class="history-ex">
-                <span class="history-ex-name">{{ ex.name }}</span>
-                <div class="history-ex-sets">
-                  @for (set of ex.sets; track $index; let i = $index) {
-                    <span class="detail-set-chip">{{ i + 1 }}. {{ setLabel(set.weight, set.reps, ex.unit) }}</span>
-                  }
+            @if (confirmDeleteId() === sv.session.id) {
+              <div class="history-confirm">
+                <span class="history-confirm-q">{{ T().history_delete_confirm }}</span>
+                <div class="history-confirm-actions">
+                  <button class="btn btn-sm btn-danger" (click)="confirmDelete()">{{ T().confirm }}</button>
+                  <button class="btn btn-sm" (click)="cancelDelete()">{{ T().cancel }}</button>
                 </div>
               </div>
+            }
+
+            @if (sv.session.skipped) {
+              <span class="history-skipped">{{ T().history_skipped }}</span>
+            } @else if (editingId() === sv.session.id) {
+              @for (ex of sv.exercises; track ex.id) {
+                <div class="history-ex">
+                  <span class="history-ex-name">{{ ex.name }}</span>
+                  <div class="history-edit-sets">
+                    @for (set of ex.sets; track set.setIndex; let i = $index) {
+                      <div class="history-edit-row">
+                        <span class="history-edit-idx">{{ i + 1 }}.</span>
+                        <input
+                          class="history-edit-input"
+                          type="number"
+                          inputmode="decimal"
+                          step="any"
+                          min="0"
+                          [value]="set.weight"
+                          (input)="onDraftInput(ex.id, set.setIndex, 'weight', $event)"/>
+                        <span class="history-edit-sep">kg ×</span>
+                        <input
+                          class="history-edit-input"
+                          type="number"
+                          inputmode="numeric"
+                          step="1"
+                          min="0"
+                          [value]="set.reps"
+                          (input)="onDraftInput(ex.id, set.setIndex, 'reps', $event)"/>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+              <div class="history-edit-actions">
+                <button class="btn btn-sm btn-primary" (click)="saveEdit(sv)">
+                  <app-icon name="check" [size]="14"/> {{ T().save }}
+                </button>
+                <button class="btn btn-sm" (click)="cancelEdit()">
+                  <app-icon name="x" [size]="14"/> {{ T().cancel }}
+                </button>
+              </div>
+            } @else {
+              @for (ex of sv.exercises; track ex.id) {
+                <div class="history-ex">
+                  <span class="history-ex-name">{{ ex.name }}</span>
+                  <div class="history-ex-sets">
+                    @for (set of ex.sets; track set.setIndex; let i = $index) {
+                      <span class="detail-set-chip">{{ i + 1 }}. {{ setLabel(set.weight, set.reps, ex.unit) }}</span>
+                    }
+                  </div>
+                </div>
+              }
             }
           </div>
         }

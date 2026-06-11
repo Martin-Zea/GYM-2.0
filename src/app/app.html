@@ -19,14 +19,15 @@
     </div>
   </header>
 
-  <nav class="bottom-nav">
-    <button routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" title="Inicio">
+  <nav class="bottom-nav" [attr.aria-label]="T().nav_main">
+    <button routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
+      [title]="T().nav_home" [attr.aria-label]="T().nav_home">
       <app-icon name="home" [size]="18"/>
     </button>
-    <button routerLink="/charts" routerLinkActive="active" title="Gráficos">
+    <button routerLink="/charts" routerLinkActive="active" [title]="T().nav_charts" [attr.aria-label]="T().nav_charts">
       <app-icon name="chart" [size]="18"/>
     </button>
-    <button routerLink="/calendar" routerLinkActive="active" title="Calendario">
+    <button routerLink="/calendar" routerLinkActive="active" [title]="T().nav_calendar" [attr.aria-label]="T().nav_calendar">
       <app-icon name="calendar" [size]="18"/>
     </button>
   </nav>
@@ -57,5 +58,60 @@
 
   @if (uiState.dayHistory()) {
     <app-day-history-sheet/>
+  }
+
+  @if (uiState.saveError()) {
+    <div class="save-error-toast" role="alert">
+      <span class="save-error-msg">{{ uiState.saveError() }}</span>
+      <button class="save-error-dismiss" (click)="uiState.saveError.set(null)">
+        {{ T().save_error_dismiss }}
+      </button>
+    </div>
+  }
+
+  @if (uiState.appError()) {
+    <div class="save-error-toast" role="alert">
+      <span class="save-error-msg">{{ uiState.appError() }}</span>
+      <button class="save-error-dismiss" (click)="uiState.appError.set(null)">
+        {{ T().save_error_dismiss }}
+      </button>
+    </div>
+  }
+
+  @if (uiState.backupReminder()) {
+    <div class="app-toast backup-toast" role="status">
+      <span class="app-toast-msg">{{ T().backup_reminder }}</span>
+      <button class="app-toast-btn" (click)="exportBackup()">
+        {{ T().backup_export_now }}
+      </button>
+      <button class="app-toast-btn app-toast-dismiss" (click)="dismissBackupReminder()"
+        [attr.aria-label]="T().save_error_dismiss">
+        <app-icon name="x" [size]="14"/>
+      </button>
+    </div>
+  }
+
+  @if (uiState.prCelebration(); as pr) {
+    <div class="app-toast pr-toast" role="status">
+      <app-icon name="sparkle" [size]="16"/>
+      <span class="app-toast-msg">{{ tr.tp('pr_celebration', { exercise: pr.exerciseName, weight: pr.weight }) }}</span>
+      <button class="app-toast-btn app-toast-dismiss" (click)="uiState.prCelebration.set(null)"
+        [attr.aria-label]="T().save_error_dismiss">
+        <app-icon name="x" [size]="14"/>
+      </button>
+    </div>
+  }
+
+  @if (uiState.updateAvailable()) {
+    <div class="app-toast update-toast" role="status">
+      <span class="app-toast-msg">{{ T().update_available }}</span>
+      <button class="app-toast-btn" (click)="appUpdate.applyUpdate()">
+        {{ T().update_reload }}
+      </button>
+      <button class="app-toast-btn app-toast-dismiss" (click)="uiState.updateAvailable.set(false)"
+        [attr.aria-label]="T().save_error_dismiss">
+        <app-icon name="x" [size]="14"/>
+      </button>
+    </div>
   }
 </div>

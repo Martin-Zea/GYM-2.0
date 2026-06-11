@@ -74,9 +74,55 @@ export interface Translations {
 
   // Exercise card
   exercise_yt_title: string;
+  set_mark: string;
+  set_unmark: string;
+
+  // Rest timer next-set labels
+  rest_timer_next_set: string; // {n}
+  rest_timer_next_exercise: string;
+  rest_done_notification: string;
+
+  // Day history sheet — edit/delete sessions
+  history_edit: string;
+  history_delete: string;
+  history_delete_confirm: string;
+  history_skipped: string;
+  save: string;
+  confirm: string;
+
+  // Save error toast
+  save_error_title: string;
+  save_error_dismiss: string;
+
+  // Global error toast (GlobalErrorHandler)
+  app_error_generic: string;
+
+  // App update toast
+  update_available: string;
+  update_reload: string;
+
+  // Backup reminder toast
+  backup_reminder: string;
+  backup_export_now: string;
+
+  // PR celebration toast
+  pr_celebration: string;
 
   // Nav guard
   nav_guard_confirm: string;
+
+  // Bottom nav / topbar navigation
+  nav_main: string;
+  nav_home: string;
+  nav_charts: string;
+  nav_calendar: string;
+
+  // Exercise units (presentation only — stored values stay in Spanish)
+  unit_kg: string;
+  unit_kg_per_hand: string;
+  unit_kg_per_arm: string;
+  unit_time: string;
+  unit_bodyweight: string;
 
   // Settings
   settings_title: string;
@@ -89,6 +135,15 @@ export interface Translations {
   settings_profile: string;
   settings_profile_ai_note: string;
   settings_weight: string;
+  settings_weight_prev: string;
+  settings_weight_delta: string;
+  bodyweight_chart_title: string;
+  charts_metric_top: string;
+  charts_metric_1rm: string;
+  charts_range_3m: string;
+  charts_range_6m: string;
+  charts_range_all: string;
+  charts_empty_exercise: string;
   settings_height: string;
   settings_age: string;
   settings_age_unit: string;
@@ -185,8 +240,45 @@ export const es: Translations = {
   how_step3_desc: 'Cada sesión la app sugiere exactamente qué peso usar para maximizar la ganancia muscular.',
 
   exercise_yt_title: 'Buscar técnica en YouTube',
+  set_mark: 'Marcar serie como completada',
+  set_unmark: 'Desmarcar serie',
+
+  rest_timer_next_set: 'Serie {n}',
+  rest_timer_next_exercise: 'Siguiente ejercicio',
+  rest_done_notification: 'Descanso terminado',
+
+  history_edit: 'Editar sesión',
+  history_delete: 'Eliminar sesión',
+  history_delete_confirm: '¿Eliminar esta sesión?',
+  history_skipped: 'Saltado',
+  save: 'Guardar',
+  confirm: 'Confirmar',
+
+  save_error_title: 'No se pudo guardar',
+  save_error_dismiss: 'Entendido',
+
+  app_error_generic: 'Algo salió mal. Tus datos están a salvo.',
+
+  update_available: '¡Nueva versión disponible!',
+  update_reload: 'Actualizar',
+
+  backup_reminder: 'Hace tiempo que no hacés un backup de tu progreso.',
+  backup_export_now: 'Exportar ahora',
+
+  pr_celebration: '¡Nuevo récord! {exercise}: {weight} kg',
 
   nav_guard_confirm: '¿Salir del entrenamiento? El progreso no guardado se perderá.',
+
+  nav_main: 'Navegación principal',
+  nav_home: 'Inicio',
+  nav_charts: 'Gráficos',
+  nav_calendar: 'Calendario',
+
+  unit_kg: 'kg',
+  unit_kg_per_hand: 'kg por mano',
+  unit_kg_per_arm: 'kg por brazo',
+  unit_time: 'tiempo',
+  unit_bodyweight: 'peso corporal',
 
   settings_title: 'Ajustes',
   settings_appearance: 'Apariencia',
@@ -196,8 +288,17 @@ export const es: Translations = {
   settings_rest_desc: 'segundos entre series',
   settings_sounds: 'Sonido al completar',
   settings_profile: 'Tu perfil',
-  settings_profile_ai_note: 'La IA usa tu perfil para personalizar las recomendaciones.',
+  settings_profile_ai_note: 'Con una API key configurada, la IA usa tu perfil (edad, sexo, peso) para personalizar las sugerencias de carga.',
   settings_weight: 'Peso',
+  settings_weight_prev: 'Anterior: {weight} kg',
+  settings_weight_delta: '{delta} kg desde {date}',
+  bodyweight_chart_title: 'Peso corporal',
+  charts_metric_top: 'Peso máximo',
+  charts_metric_1rm: '1RM estimado',
+  charts_range_3m: '3M',
+  charts_range_6m: '6M',
+  charts_range_all: 'Todo',
+  charts_empty_exercise: 'Entrená este ejercicio al menos 2 veces para ver su progresión.',
   settings_height: 'Altura',
   settings_age: 'Edad',
   settings_age_unit: 'años',
@@ -294,8 +395,45 @@ export const en: Translations = {
   how_step3_desc: 'Every session the app suggests exactly what weight to use to maximize muscle gains.',
 
   exercise_yt_title: 'Search technique on YouTube',
+  set_mark: 'Mark set as done',
+  set_unmark: 'Unmark set',
+
+  rest_timer_next_set: 'Set {n}',
+  rest_timer_next_exercise: 'Next exercise',
+  rest_done_notification: 'Rest finished',
+
+  history_edit: 'Edit session',
+  history_delete: 'Delete session',
+  history_delete_confirm: 'Delete this session?',
+  history_skipped: 'Skipped',
+  save: 'Save',
+  confirm: 'Confirm',
+
+  save_error_title: 'Could not save',
+  save_error_dismiss: 'Dismiss',
+
+  app_error_generic: 'Something went wrong. Your data is safe.',
+
+  update_available: 'New version available!',
+  update_reload: 'Update',
+
+  backup_reminder: "It's been a while since you backed up your progress.",
+  backup_export_now: 'Export now',
+
+  pr_celebration: 'New record! {exercise}: {weight} kg',
 
   nav_guard_confirm: 'Leave training? Unsaved progress will be lost.',
+
+  nav_main: 'Main navigation',
+  nav_home: 'Home',
+  nav_charts: 'Charts',
+  nav_calendar: 'Calendar',
+
+  unit_kg: 'kg',
+  unit_kg_per_hand: 'kg per hand',
+  unit_kg_per_arm: 'kg per arm',
+  unit_time: 'time',
+  unit_bodyweight: 'bodyweight',
 
   settings_title: 'Settings',
   settings_appearance: 'Appearance',
@@ -305,8 +443,17 @@ export const en: Translations = {
   settings_rest_desc: 'seconds between sets',
   settings_sounds: 'Sound on complete',
   settings_profile: 'Your profile',
-  settings_profile_ai_note: 'AI uses your profile to personalize recommendations.',
+  settings_profile_ai_note: 'With an API key configured, AI uses your profile (age, sex, weight) to personalize load suggestions.',
   settings_weight: 'Weight',
+  settings_weight_prev: 'Previous: {weight} kg',
+  settings_weight_delta: '{delta} kg since {date}',
+  bodyweight_chart_title: 'Body weight',
+  charts_metric_top: 'Top weight',
+  charts_metric_1rm: 'Estimated 1RM',
+  charts_range_3m: '3M',
+  charts_range_6m: '6M',
+  charts_range_all: 'All',
+  charts_empty_exercise: 'Train this exercise at least 2 times to see its progression.',
   settings_height: 'Height',
   settings_age: 'Age',
   settings_age_unit: 'years',

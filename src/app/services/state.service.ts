@@ -77,7 +77,11 @@ export class StateService {
   }
 
   advanceRoutine(): void {
-    this.state.update(s => ({ ...s, routinePointer: s.routinePointer + 1 }));
+    this.state.update(s => ({
+      ...s,
+      routinePointer: s.routinePointer + 1,
+      todayProgress: this.pruneTodayProgress(s.todayProgress),
+    }));
   }
 
   skipDay(): void {
@@ -99,6 +103,39 @@ export class StateService {
       }));
     }
     this.advanceRoutine();
+  }
+
+  deleteSession(sessionId: string): void {
+    this.state.update(s => ({
+      ...s,
+      sessions: s.sessions.filter(x => x.id !== sessionId),
+    }));
+    this.invalidateAiCache();
+  }
+
+  updateSessionSet(
+    sessionId: string,
+    exerciseId: string,
+    setIndex: number,
+    patch: Partial<Pick<SetRecord, 'weight' | 'reps'>>,
+  ): void {
+    this.state.update(s => ({
+      ...s,
+      sessions: s.sessions.map(session =>
+        session.id !== sessionId ? session : {
+          ...session,
+          sets: session.sets.map(sr =>
+            sr.exerciseId === exerciseId && sr.setIndex === setIndex ? { ...sr, ...patch } : sr,
+          ),
+        },
+      ),
+    }));
+    this.invalidateAiCache();
+  }
+
+  /** El historial cambió: las recomendaciones cacheadas ya no valen */
+  private invalidateAiCache(): void {
+    localStorage.removeItem('gym_ai_cache_v1');
   }
 
   getTodayProgress(dayId: string): TodayDayProgress {
@@ -192,14 +229,46 @@ export class StateService {
     }
   }
 
-  exportData(): void {
-    const blob = new Blob([JSON.stringify(this.state(), null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+  /** Elimina entradas de todayProgress que no sean del día actual */
+  private pruneTodayProgress(tp: AppState['todayProgress']): AppState['todayProgress'] {
+    const today = this.todayKey;
+    const pruned: AppState['todayProgress'] = {};
+    for (const [dayId, progress] of Object.entries(tp)) {
+      if (progress.dateISO === today) pruned[dayId] = progress;
+    }
+    return pruned;
+  }
+
+  async exportData(): Promise<void> {
+    const exportState = {
+      ...this.state(),
+      exportedAt: new Date().toISOString(),
+      appVersion: '2.0',
+    };
+    const fileName = `gym-backup-${this.todayKey}.json`;
+    const file = new File([JSON.stringify(exportState, null, 2)], fileName, {
+      type: 'application/json',
+    });
+
+    if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: 'GYM 2.0 backup' });
+        localStorage.setItem('gym_last_export', this.todayKey);
+        return;
+      } catch (e) {
+        // El usuario canceló el share: no es un error ni cuenta como export
+        if (e instanceof DOMException && e.name === 'AbortError') return;
+        // Otro fallo del share: cae al download clásico
+      }
+    }
+
+    const url = URL.createObjectURL(file);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `gym-${this.todayKey}.json`;
+    a.download = fileName;
     a.click();
     URL.revokeObjectURL(url);
+    localStorage.setItem('gym_last_export', this.todayKey);
   }
 
   importData(): Promise<void> {
@@ -213,23 +282,8 @@ export class StateService {
         try {
           const text = await file.text();
           const data = JSON.parse(text);
-          if (!data.days) throw new Error('Formato inválido');
-          this.state.update(() => ({
-            schemaVersion: 3,
-            days: data.days ?? [],
-            sessions: data.sessions ?? [],
-            activeDayIndex: data.activeDayIndex ?? 0,
-            routinePointer: data.routinePointer ?? data.activeDayIndex ?? 0,
-            todayProgress: data.todayProgress ?? {},
-            settings: {
-              apiKey: data.settings?.apiKey ?? '',
-              cohereApiKey: data.settings?.cohereApiKey ?? '',
-              defaultRest: data.settings?.defaultRest ?? 60,
-              sounds: data.settings?.sounds ?? true,
-              theme: data.settings?.theme ?? 'dark',
-              userProfile: data.settings?.userProfile ?? { weightKg: null, heightCm: null, sex: null },
-            },
-          }));
+          const validated = this.storage.validateImport(data);
+          this.state.set(validated);
           resolve();
         } catch (e) {
           reject(e);

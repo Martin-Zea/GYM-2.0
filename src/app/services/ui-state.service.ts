@@ -26,4 +26,27 @@ export class UIStateService {
 
   // Set by rest-timer on completion to auto-focus the next pending set input
   readonly focusSet = signal<{ exerciseId: string; setIndex: number } | null>(null);
+
+  // Set when localStorage save fails (quota exceeded or similar)
+  readonly saveError = signal<string | null>(null);
+
+  // Set by GlobalErrorHandler on uncaught errors — generic i18n message, never the stack
+  readonly appError = signal<string | null>(null);
+
+  // Set when the service worker has a new app version ready
+  readonly updateAvailable = signal(false);
+
+  // Set at startup when there are too many sessions since the last export
+  readonly backupReminder = signal(false);
+
+  // Personal record celebration toast — auto-dismissed by celebratePr()
+  readonly prCelebration = signal<{ exerciseName: string; weight: number } | null>(null);
+
+  private prTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  celebratePr(exerciseName: string, weight: number): void {
+    if (this.prTimeout !== null) clearTimeout(this.prTimeout);
+    this.prCelebration.set({ exerciseName, weight });
+    this.prTimeout = setTimeout(() => this.prCelebration.set(null), 2500);
+  }
 }

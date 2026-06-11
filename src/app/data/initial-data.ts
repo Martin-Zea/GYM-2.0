@@ -110,7 +110,7 @@ export function createInitialState(): AppState {
   ];
 
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     days,
     sessions,
     activeDayIndex: 0,
@@ -122,7 +122,7 @@ export function createInitialState(): AppState {
       defaultRest: 60,
       sounds: true,
       theme: 'dark',
-      userProfile: { weightKg: null, heightCm: null, age: null, sex: null },
+      userProfile: { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [] },
     },
   };
 }

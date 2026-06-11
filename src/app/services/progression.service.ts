@@ -4,7 +4,10 @@ import { HistoryEntry, StorageService } from './storage.service';
 
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const COHERE_URL = 'https://api.cohere.com/v2/chat';
 const AI_CACHE_KEY = 'gym_ai_cache_v1';
+const AI_TIMEOUT_MS = 12000;
+const HISTORY_SESSIONS = 5;
 
 interface AiCacheEntry {
   rec: AiRecommendation;
@@ -46,6 +49,91 @@ export class ProgressionService {
     return Math.round(weight / brick) * brick;
   }
 
+  /** Fetch con timeout via AbortController */
+  private async fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /** Valida y normaliza los sets de la respuesta de la IA */
+  private parseAndNormalizeSets(
+    parsed: unknown,
+    setsTarget: number,
+    brick: number,
+    repTarget: number,
+  ): { weight: number; reps: number }[] {
+    if (
+      typeof parsed !== 'object' || parsed === null ||
+      !Array.isArray((parsed as { sets?: unknown }).sets) ||
+      (parsed as { sets: unknown[] }).sets.length === 0
+    ) {
+      throw new Error('JSON IA incompleto');
+    }
+
+    const raw = (parsed as { sets: unknown[] }).sets;
+    const validSets = raw.filter(
+      s => typeof s === 'object' && s !== null &&
+        typeof (s as { weight?: unknown }).weight === 'number' &&
+        typeof (s as { reps?: unknown }).reps === 'number',
+    ) as { weight: number; reps: number }[];
+
+    if (validSets.length === 0) throw new Error('Sets sin valores numéricos');
+
+    const normalized = Array.from(
+      { length: setsTarget },
+      (_, i) => validSets[i] ?? validSets[validSets.length - 1],
+    );
+
+    return normalized.map(s => ({
+      weight: this.roundToBrick(s.weight || 0, brick),
+      reps: Math.max(1, Math.round(s.reps || repTarget)),
+    }));
+  }
+
+  /** Construye el string de perfil de usuario para el prompt */
+  private buildPerfilParts(userProfile: UserProfile): string[] {
+    const parts: string[] = [];
+    if (userProfile.weightKg) parts.push(`peso corporal ${userProfile.weightKg}kg`);
+    if (userProfile.heightCm) parts.push(`altura ${userProfile.heightCm}cm`);
+    if (userProfile.age) parts.push(`edad ${userProfile.age} años`);
+    if (userProfile.sex) {
+      const sexLabel = userProfile.sex === 'male' ? 'masculino' : userProfile.sex === 'female' ? 'femenino' : 'otro';
+      parts.push(`sexo ${sexLabel}`);
+      // Nota clínica para personalización por sexo
+      if (userProfile.sex === 'female') parts.push('(considerar ciclo hormonal en recuperación)');
+    }
+    return parts.filter(p => !p.startsWith('('));
+  }
+
+  /** Nota extendida con contexto de perfil para el prompt */
+  private buildProfileNote(perfilParts: string[], userProfile: UserProfile): string {
+    if (!perfilParts.length) return '';
+
+    const ageTip = userProfile.age
+      ? userProfile.age >= 50
+        ? 'El usuario es mayor de 50 años: priorizá recuperación y evitá incrementos agresivos.'
+        : userProfile.age <= 22
+          ? 'El usuario es joven: puede tolerar progresiones más frecuentes.'
+          : ''
+      : '';
+
+    const sexTip = userProfile.sex === 'female'
+      ? 'Mujeres generalmente necesitan más reps y menos peso absoluto, ajustá en consecuencia.'
+      : '';
+
+    const bwNote = userProfile.weightKg
+      ? `El peso corporal (${userProfile.weightKg}kg) es referencia para evaluar la fuerza relativa.`
+      : '';
+
+    const tips = [ageTip, sexTip, bwNote].filter(Boolean).join(' ');
+    return `- Perfil: ${perfilParts.join(', ')}. ${tips}\n`;
+  }
+
   localRecommendation(
     exercise: Exercise,
     todaySets: TodaySetProgress[],
@@ -81,7 +169,6 @@ export class ProgressionService {
     const maxPossibleReps = setsTarget * repTarget;
     const completionRatio = maxPossibleReps > 0 ? totalRepsAtTop / maxPossibleReps : 0;
 
-    // 100% → últimas 2 series suben 1 ladrillo, el resto mantiene
     if (completionRatio >= 1) {
       const newWeight = this.roundToBrick(topWeight + brick, brick);
       const challengeFrom = Math.max(0, setsTarget - 2);
@@ -96,7 +183,6 @@ export class ProgressionService {
       };
     }
 
-    // 80–99% → mismo peso todas las series
     if (completionRatio >= 0.8) {
       return {
         sets: Array.from({ length: setsTarget }, () => ({ weight: topWeight, reps: repTarget })),
@@ -105,7 +191,6 @@ export class ProgressionService {
       };
     }
 
-    // 50–79% → consolidar
     if (completionRatio >= 0.5) {
       return {
         sets: Array.from({ length: setsTarget }, () => ({ weight: topWeight, reps: repTarget })),
@@ -114,7 +199,6 @@ export class ProgressionService {
       };
     }
 
-    // < 50% → bajar peso + más reps
     const prevWeight = this.roundToBrick(Math.max(topWeight - brick, 0), brick);
     const higherReps = Math.round(repTarget * 1.3);
     return {
@@ -137,13 +221,7 @@ export class ProgressionService {
     const setsTarget = exercise.defaultSets || 3;
 
     const doneSets = todaySets.filter(s => s?.done);
-    const perfilParts: string[] = [];
-    if (userProfile.weightKg) perfilParts.push(`peso corporal ${userProfile.weightKg}kg`);
-    if (userProfile.heightCm) perfilParts.push(`altura ${userProfile.heightCm}cm`);
-    if (userProfile.age) perfilParts.push(`edad ${userProfile.age} años`);
-    if (userProfile.sex) {
-      perfilParts.push(`sexo ${userProfile.sex === 'male' ? 'masculino' : userProfile.sex === 'female' ? 'femenino' : 'otro'}`);
-    }
+    const perfilParts = this.buildPerfilParts(userProfile);
 
     const summary = {
       ejercicio: exercise.name,
@@ -161,7 +239,7 @@ export class ProgressionService {
         peso_kg: s.weight,
         reps: s.reps,
       })),
-      historial_ultimas_sesiones: history.slice(-6).map(h => ({
+      historial_ultimas_sesiones: history.slice(-HISTORY_SESSIONS).map(h => ({
         fecha: h.dateISO,
         peso_top_kg: h.topWeight,
         reps_top: h.topReps,
@@ -169,9 +247,7 @@ export class ProgressionService {
       })),
     };
 
-    const profileNote = perfilParts.length
-      ? `- Considerá el perfil del usuario (${perfilParts.join(', ')}) para personalizar.\n`
-      : '';
+    const profileNote = this.buildProfileNote(perfilParts, userProfile);
 
     const prompt = `Sos un entrenador profesional de hipertrofia muscular. Analizá los datos y devolvé la recomendación serie por serie para la próxima sesión.
 
@@ -190,7 +266,7 @@ ${profileNote}Respondé EXCLUSIVAMENTE con JSON válido (sin markdown):
 {"sets": [{"weight": <number>, "reps": <number>}, ...], "reason": "<string>"}
 El array "sets" debe tener EXACTAMENTE ${setsTarget} elementos.`;
 
-    const resp = await fetch(GROQ_URL, {
+    const resp = await this.fetchWithTimeout(GROQ_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -212,7 +288,7 @@ El array "sets" debe tener EXACTAMENTE ${setsTarget} elementos.`;
 
     const data = await resp.json();
     const text: string = data?.choices?.[0]?.message?.content ?? '';
-    let parsed: { sets: { weight: number; reps: number }[]; reason: string };
+    let parsed: unknown;
     try {
       parsed = JSON.parse(text);
     } catch {
@@ -221,22 +297,9 @@ El array "sets" debe tener EXACTAMENTE ${setsTarget} elementos.`;
       parsed = JSON.parse(m[0]);
     }
 
-    if (!Array.isArray(parsed.sets) || parsed.sets.length === 0) {
-      throw new Error('JSON IA incompleto');
-    }
-
-    // Normalizar a setsTarget elementos
-    const normalizedSets: { weight: number; reps: number }[] = Array.from(
-      { length: setsTarget },
-      (_, i) => parsed.sets[i] ?? parsed.sets[parsed.sets.length - 1],
-    );
-
     return {
-      sets: normalizedSets.map(s => ({
-        weight: this.roundToBrick(s.weight || 0, brick),
-        reps: Math.max(1, Math.round(s.reps || repTarget)),
-      })),
-      reason: parsed.reason,
+      sets: this.parseAndNormalizeSets(parsed, setsTarget, brick, repTarget),
+      reason: (parsed as { reason?: string }).reason ?? '',
       source: 'groq',
     };
   }
@@ -254,13 +317,7 @@ El array "sets" debe tener EXACTAMENTE ${setsTarget} elementos.`;
     const setsTarget = exercise.defaultSets || 3;
 
     const doneSets = todaySets.filter(s => s?.done);
-    const perfilParts: string[] = [];
-    if (userProfile.weightKg) perfilParts.push(`peso corporal ${userProfile.weightKg}kg`);
-    if (userProfile.heightCm) perfilParts.push(`altura ${userProfile.heightCm}cm`);
-    if (userProfile.age) perfilParts.push(`edad ${userProfile.age} años`);
-    if (userProfile.sex) {
-      perfilParts.push(`sexo ${userProfile.sex === 'male' ? 'masculino' : userProfile.sex === 'female' ? 'femenino' : 'otro'}`);
-    }
+    const perfilParts = this.buildPerfilParts(userProfile);
 
     const summary = {
       ejercicio: exercise.name,
@@ -270,16 +327,18 @@ El array "sets" debe tener EXACTAMENTE ${setsTarget} elementos.`;
       ...(perfilParts.length && { perfil: perfilParts.join(', ') }),
       hoy: doneSets.map((s, i) => ({ s: i + 1, kg: typeof s.weight === 'number' ? s.weight : 0, r: typeof s.reps === 'number' ? s.reps : 0 })),
       anterior: (lastSets ?? []).map((s, i) => ({ s: i + 1, kg: s.weight, r: s.reps })),
-      historial: history.slice(-3).map(h => ({ f: h.dateISO, kg: h.topWeight, r: h.topReps, v: h.volume })),
+      historial: history.slice(-HISTORY_SESSIONS).map(h => ({ f: h.dateISO, kg: h.topWeight, r: h.topReps, v: h.volume })),
     };
+
+    const profileNote = this.buildProfileNote(perfilParts, userProfile);
 
     const prompt = `Entrenador de hipertrofia. Datos: ${JSON.stringify(summary)}
 Reglas: 100%→últimas 2 series +${brick}kg; 80-99%→mismo peso; 50-79%→consolidar; <50%→-${brick}kg +30%reps; fallo 2-3 sesiones→deload.
 Peso múltiplo de ${brick}kg. Razón: 1 oración español.
-JSON EXCLUSIVO (sin markdown): {"sets":[{"weight":<n>,"reps":<n>}...],"reason":"<s>"}
+${profileNote}JSON EXCLUSIVO (sin markdown): {"sets":[{"weight":<n>,"reps":<n>}...],"reason":"<s>"}
 Array sets: EXACTAMENTE ${setsTarget} elementos.`;
 
-    const resp = await fetch('https://api.cohere.com/v2/chat', {
+    const resp = await this.fetchWithTimeout(COHERE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
       body: JSON.stringify({
@@ -298,7 +357,7 @@ Array sets: EXACTAMENTE ${setsTarget} elementos.`;
 
     const data = await resp.json();
     const text: string = data?.message?.content?.[0]?.text ?? '';
-    let parsed: { sets: { weight: number; reps: number }[]; reason: string };
+    let parsed: unknown;
     try {
       parsed = JSON.parse(text);
     } catch {
@@ -307,15 +366,9 @@ Array sets: EXACTAMENTE ${setsTarget} elementos.`;
       parsed = JSON.parse(m[0]);
     }
 
-    if (!Array.isArray(parsed.sets) || parsed.sets.length === 0) throw new Error('JSON Cohere incompleto');
-
-    const normalizedSets = Array.from({ length: setsTarget }, (_, i) => parsed.sets[i] ?? parsed.sets[parsed.sets.length - 1]);
     return {
-      sets: normalizedSets.map(s => ({
-        weight: this.roundToBrick(s.weight || 0, brick),
-        reps: Math.max(1, Math.round(s.reps || repTarget)),
-      })),
-      reason: parsed.reason,
+      sets: this.parseAndNormalizeSets(parsed, setsTarget, brick, repTarget),
+      reason: (parsed as { reason?: string }).reason ?? '',
       source: 'cohere',
     };
   }
@@ -330,37 +383,41 @@ Array sets: EXACTAMENTE ${setsTarget} elementos.`;
     const hasDoneOrHistory = lastSets?.length || todaySets.some(s => s?.done);
     const hasAnyKey = settings.apiKey || settings.cohereApiKey;
 
-    if (hasAnyKey && hasDoneOrHistory) {
-      const lastSessionISO = history.at(-1)?.dateISO ?? null;
-      const cached = this.getCached(exercise.id, lastSessionISO, todaySets);
-      if (cached) return cached;
-
-      // Priority: Groq → Cohere → local
-      if (settings.apiKey) {
-        try {
-          const rec = await this.groqRecommendation(settings.apiKey, exercise, todaySets, lastSets, history, settings.userProfile);
-          this.setCached(exercise.id, lastSessionISO, todaySets, rec);
-          return rec;
-        } catch (e) {
-          console.info('Groq falló, intentando Cohere:', (e as Error).message);
-        }
-      }
-
-      if (settings.cohereApiKey) {
-        try {
-          const rec = await this.cohereRecommendation(settings.cohereApiKey, exercise, todaySets, lastSets, history, settings.userProfile);
-          this.setCached(exercise.id, lastSessionISO, todaySets, rec);
-          return rec;
-        } catch (e) {
-          console.info('Cohere falló, usando fallback local:', (e as Error).message);
-        }
-      }
-
-      const local = this.localRecommendation(exercise, todaySets, lastSets);
-      local.reason += ' (modo offline)';
-      return local;
+    if (!hasAnyKey) {
+      return this.localRecommendation(exercise, todaySets, lastSets);
     }
 
-    return this.localRecommendation(exercise, todaySets, lastSets);
+    if (!hasDoneOrHistory) {
+      return this.localRecommendation(exercise, todaySets, lastSets);
+    }
+
+    const lastSessionISO = history.at(-1)?.dateISO ?? null;
+    const cached = this.getCached(exercise.id, lastSessionISO, todaySets);
+    if (cached) return cached;
+
+    if (settings.apiKey) {
+      try {
+        const rec = await this.groqRecommendation(settings.apiKey, exercise, todaySets, lastSets, history, settings.userProfile);
+        this.setCached(exercise.id, lastSessionISO, todaySets, rec);
+        return rec;
+      } catch (e) {
+        console.info('Groq falló, intentando Cohere:', (e as Error).message);
+      }
+    }
+
+    if (settings.cohereApiKey) {
+      try {
+        const rec = await this.cohereRecommendation(settings.cohereApiKey, exercise, todaySets, lastSets, history, settings.userProfile);
+        this.setCached(exercise.id, lastSessionISO, todaySets, rec);
+        return rec;
+      } catch (e) {
+        console.info('Cohere falló, usando fallback local:', (e as Error).message);
+      }
+    }
+
+    // API disponible pero falló: distinguir de "sin key"
+    const local = this.localRecommendation(exercise, todaySets, lastSets);
+    local.reason += ' (API no disponible, modo offline)';
+    return local;
   }
 }
