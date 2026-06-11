@@ -34,7 +34,7 @@ export class ProgressionService {
     if (!entry) return null;
     if (entry.cachedForDate !== this.storage.todayISO()) return null;
     if (entry.lastSessionISO !== lastSessionISO) return null;
-    if (entry.doneSig !== this.doneSig(todaySets)) return null;
+    if (navigator.onLine && entry.doneSig !== this.doneSig(todaySets)) return null;
     return entry.rec;
   }
 
