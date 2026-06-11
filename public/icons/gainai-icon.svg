@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#08090a"/>
+
+  <!-- Dumbbell -->
+  <!-- Left plate outer -->
+  <rect x="60" y="200" width="72" height="112" rx="14" fill="#e0e0e0"/>
+  <!-- Left plate inner -->
+  <rect x="108" y="216" width="28" height="80" rx="8" fill="#b0b0b0"/>
+  <!-- Bar -->
+  <rect x="136" y="236" width="240" height="40" rx="8" fill="#cccccc"/>
+  <!-- Right plate inner -->
+  <rect x="376" y="216" width="28" height="80" rx="8" fill="#b0b0b0"/>
+  <!-- Right plate outer -->
+  <rect x="380" y="200" width="72" height="112" rx="14" fill="#e0e0e0"/>
+
+  <!-- Sparkle top-right (IA indicator) -->
+  <!-- Large star -->
+  <path d="M390 106 L397 88 L404 106 L422 113 L404 120 L397 138 L390 120 L372 113 Z" fill="#c4f542"/>
+  <!-- Small star -->
+  <path d="M430 72 L434 62 L438 72 L448 76 L438 80 L434 90 L430 80 L420 76 Z" fill="#c4f542" opacity="0.75"/>
+  <!-- Tiny dot -->
+  <circle cx="418" cy="58" r="4" fill="#c4f542" opacity="0.45"/>
+</svg>
