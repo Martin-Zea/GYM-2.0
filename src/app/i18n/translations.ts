@@ -175,7 +175,7 @@ export interface Translations {
 }
 
 export const es: Translations = {
-  app_name: 'Gym',
+  app_name: 'GainAI',
   theme_toggle_dark: 'Modo claro',
   theme_toggle_light: 'Modo oscuro',
   settings_btn: 'Ajustes',
@@ -330,7 +330,7 @@ export const es: Translations = {
 };
 
 export const en: Translations = {
-  app_name: 'Gym',
+  app_name: 'GainAI',
   theme_toggle_dark: 'Light mode',
   theme_toggle_light: 'Dark mode',
   settings_btn: 'Settings',

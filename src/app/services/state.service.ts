@@ -260,7 +260,7 @@ export class StateService {
 
     if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
       try {
-        await navigator.share({ files: [file], title: 'GYM 2.0 backup' });
+        await navigator.share({ files: [file], title: 'GainAI backup' });
         localStorage.setItem('gym_last_export', this.todayKey);
         return;
       } catch (e) {

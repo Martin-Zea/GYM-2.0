@@ -136,7 +136,7 @@ export class RestTimerComponent implements OnInit, OnDestroy {
         const body = timer?.nextLabel ? `${base} — ${timer.nextLabel}` : base;
         const reg = await navigator.serviceWorker.ready;
         const opts = { body, vibrate: pattern, tag: 'rest-timer', renotify: true, silent: true } as NotificationOptions;
-        await reg.showNotification('GYM 2.0', opts);
+        await reg.showNotification('GainAI', opts);
         setTimeout(async () => {
           const notes = await reg.getNotifications({ tag: 'rest-timer' });
           notes.forEach(n => n.close());
