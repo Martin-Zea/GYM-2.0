@@ -76,7 +76,7 @@
                 </button>
                 @if (showDayMenu()) {
                   <div class="day-menu-backdrop" (click)="showDayMenu.set(false)"></div>
-                  <div class="day-menu">
+                  <div class="day-menu day-menu--right">
                     <button class="day-menu-item"
                       (click)="uiState.editingDay.set(state.currentDay()!); showDayMenu.set(false)">
                       <app-icon name="edit" [size]="14"/>
