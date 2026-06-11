@@ -79,8 +79,7 @@ export class RestTimerComponent implements OnInit, OnDestroy {
 
   private onDone(): void {
     if (this.state.settings().sounds) this.sound.playRestBeep();
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-    this.notifyIfHidden();
+    void this.triggerAlert();
     this.releaseWakeLock();
 
     // Trigger auto-scroll + focus on next pending set
@@ -124,15 +123,28 @@ export class RestTimerComponent implements OnInit, OnDestroy {
     } catch { /* Notification API unavailable */ }
   }
 
-  private notifyIfHidden(): void {
-    try {
-      if (!document.hidden) return;
-      if (!('Notification' in window) || Notification.permission !== 'granted') return;
-      const timer = this.uiState.restTimer();
-      const base = this.tr.T().rest_done_notification;
-      const body = timer?.nextLabel ? `${base} — ${timer.nextLabel}` : base;
-      new Notification('GYM 2.0', { body });
-    } catch { /* Notification API unavailable */ }
+  /** Vibrates and notifies. When the screen is locked, uses a SW notification so the
+   *  vibration fires through the system (navigator.vibrate is blocked on locked screens). */
+  private async triggerAlert(): Promise<void> {
+    const pattern: VibratePattern = [300, 100, 300, 100, 500];
+
+    if (document.hidden) {
+      try {
+        if (!('serviceWorker' in navigator) || Notification.permission !== 'granted') return;
+        const timer = this.uiState.restTimer();
+        const base = this.tr.T().rest_done_notification;
+        const body = timer?.nextLabel ? `${base} — ${timer.nextLabel}` : base;
+        const reg = await navigator.serviceWorker.ready;
+        const opts = { body, vibrate: pattern, tag: 'rest-timer', renotify: true, silent: true } as NotificationOptions;
+        await reg.showNotification('GYM 2.0', opts);
+        setTimeout(async () => {
+          const notes = await reg.getNotifications({ tag: 'rest-timer' });
+          notes.forEach(n => n.close());
+        }, 4000);
+      } catch { /* SW or Notification unavailable */ }
+    } else {
+      if (navigator.vibrate) navigator.vibrate(pattern);
+    }
   }
 
   private async requestWakeLock(): Promise<void> {
