@@ -1,0 +1,35 @@
+<div class="legal-overlay" role="dialog" [attr.aria-label]="T().legal_gate_title" aria-modal="true">
+  <div class="legal-panel">
+    <div class="legal-icon-wrap">
+      <app-icon name="check" [size]="40" />
+    </div>
+
+    <h2 class="legal-title">{{ T().legal_gate_title }}</h2>
+
+    <p class="legal-disclaimer">{{ T().legal_gate_disclaimer }}</p>
+
+    <div class="legal-links">
+      <a href="/terms.html" target="_blank" rel="noopener noreferrer">
+        {{ T().legal_gate_terms_link }}
+      </a>
+      <span class="legal-links-sep" aria-hidden="true">·</span>
+      <a href="/privacy.html" target="_blank" rel="noopener noreferrer">
+        {{ T().legal_gate_privacy_link }}
+      </a>
+    </div>
+
+    <label class="legal-checkbox-label">
+      <input
+        class="legal-checkbox"
+        type="checkbox"
+        [checked]="checked()"
+        (change)="checked.set(!checked())"
+      />
+      <span class="legal-checkbox-text">{{ T().legal_gate_checkbox }}</span>
+    </label>
+
+    <button class="legal-btn" [disabled]="!checked()" (click)="accept()">
+      {{ T().legal_gate_continue }}
+    </button>
+  </div>
+</div>

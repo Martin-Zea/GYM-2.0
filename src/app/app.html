@@ -119,6 +119,8 @@
 
   @if (showOnboarding()) {
     <app-onboarding (done)="completeOnboarding()" />
+  } @else if (showLegalGate()) {
+    <app-legal-gate (accepted)="acceptLegal()" />
   }
 
   @if (uiState.updateAvailable()) {

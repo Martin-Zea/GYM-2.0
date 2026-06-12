@@ -185,6 +185,7 @@ export interface Translations {
   settings_cohere_key_label: string;
   settings_cohere_key_desc: string;
   settings_cohere_key_free: string;
+  settings_ai_privacy_note: string;
   settings_show: string;
   settings_hide: string;
   settings_data: string;
@@ -199,6 +200,16 @@ export interface Translations {
   settings_language_desc: string;
   import_invalid_backup: string;
   settings_version: string; // {version}
+  settings_privacy_policy: string;
+  settings_terms: string;
+
+  // Legal gate (first launch — shown after onboarding)
+  legal_gate_title: string;
+  legal_gate_disclaimer: string;
+  legal_gate_terms_link: string;
+  legal_gate_privacy_link: string;
+  legal_gate_checkbox: string;
+  legal_gate_continue: string;
 
   // Onboarding (first launch)
   onboarding_slide1_title: string;
@@ -393,6 +404,8 @@ export const es: Translations = {
   settings_cohere_key_label: 'API Key de Cohere',
   settings_cohere_key_desc: 'Fallback de Groq. Si tenés ambas, se usa Groq primero.',
   settings_cohere_key_free: 'Gratis en',
+  settings_ai_privacy_note:
+    'Al introducir una clave y usar las recomendaciones, los datos del ejercicio se envían a Groq/Cohere (terceros) para generar la sugerencia. Sin clave, la app usa cálculo local y no envía ningún dato.',
   settings_show: 'Ver',
   settings_hide: 'Ocultar',
   settings_data: 'Datos',
@@ -407,6 +420,17 @@ export const es: Translations = {
   settings_language_desc: 'Cambia el idioma de la interfaz',
   import_invalid_backup: 'Archivo de respaldo inválido',
   settings_version: 'Versión {version}',
+  settings_privacy_policy: 'Política de privacidad',
+  settings_terms: 'Términos y Condiciones',
+
+  legal_gate_title: 'Antes de continuar',
+  legal_gate_disclaimer:
+    'GainAI es una herramienta de seguimiento personal. No reemplaza el consejo de un entrenador certificado ni de un profesional de la salud. Consultá a un médico antes de iniciar cualquier programa de ejercicio.',
+  legal_gate_terms_link: 'Términos y descargo',
+  legal_gate_privacy_link: 'Política de privacidad',
+  legal_gate_checkbox:
+    'He leído y acepto los Términos, el descargo de responsabilidad y la Política de privacidad.',
+  legal_gate_continue: 'Continuar',
 
   onboarding_slide1_title: '¡Bienvenido a GainAI!',
   onboarding_slide1_desc:
@@ -602,6 +626,8 @@ export const en: Translations = {
   settings_cohere_key_label: 'Cohere API Key',
   settings_cohere_key_desc: 'Groq fallback. If both are set, Groq is tried first.',
   settings_cohere_key_free: 'Free at',
+  settings_ai_privacy_note:
+    'When you enter a key and use recommendations, your exercise data is sent to Groq/Cohere (third parties) to generate suggestions. Without a key, the app uses local calculation and sends no data.',
   settings_show: 'Show',
   settings_hide: 'Hide',
   settings_data: 'Data',
@@ -616,6 +642,17 @@ export const en: Translations = {
   settings_language_desc: 'Change the interface language',
   import_invalid_backup: 'Invalid backup file',
   settings_version: 'Version {version}',
+  settings_privacy_policy: 'Privacy Policy',
+  settings_terms: 'Terms & Conditions',
+
+  legal_gate_title: 'Before you continue',
+  legal_gate_disclaimer:
+    'GainAI is a personal tracking tool. It does not replace the advice of a certified trainer or health professional. Consult a doctor before starting any exercise program.',
+  legal_gate_terms_link: 'Terms & Disclaimer',
+  legal_gate_privacy_link: 'Privacy Policy',
+  legal_gate_checkbox:
+    'I have read and accept the Terms, Disclaimer, and Privacy Policy.',
+  legal_gate_continue: 'Continue',
 
   onboarding_slide1_title: 'Welcome to GainAI!',
   onboarding_slide1_desc:

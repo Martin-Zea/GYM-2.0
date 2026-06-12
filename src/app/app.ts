@@ -16,6 +16,7 @@ import { DayPickerSheetComponent } from './components/day-picker-sheet/day-picke
 import { DayHistorySheetComponent } from './components/day-history-sheet/day-history-sheet.component';
 import { BottomNavComponent } from './components/bottom-nav/bottom-nav.component';
 import { OnboardingComponent } from './components/onboarding/onboarding.component';
+import { LegalGateComponent } from './components/legal-gate/legal-gate.component';
 
 @Component({
   selector: 'app-root',
@@ -31,6 +32,7 @@ import { OnboardingComponent } from './components/onboarding/onboarding.componen
     DayHistorySheetComponent,
     BottomNavComponent,
     OnboardingComponent,
+    LegalGateComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
@@ -49,6 +51,10 @@ export class App {
 
   protected readonly showOnboarding = signal(
     localStorage.getItem('gym_onboarding_done_v1') !== '1',
+  );
+
+  protected readonly showLegalGate = signal(
+    localStorage.getItem('gym_legal_accepted_v1') !== '1',
   );
 
   constructor() {
@@ -108,7 +114,11 @@ export class App {
 
   completeOnboarding(): void {
     localStorage.setItem('gym_onboarding_done_v1', '1');
-    // TODO 6d: show legal gate (terms + disclaimer) before closing onboarding
     this.showOnboarding.set(false);
+  }
+
+  acceptLegal(): void {
+    localStorage.setItem('gym_legal_accepted_v1', '1');
+    this.showLegalGate.set(false);
   }
 }
