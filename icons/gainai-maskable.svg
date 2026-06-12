@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background fills entire canvas (required for maskable) -->
+  <rect width="512" height="512" fill="#08090a"/>
+
+  <!-- All content scaled to ~65% and centered, safe zone = radius 204.8px -->
+  <!-- Scale: 0.65, offset: 90 — keeps all elements well within safe zone -->
+  <g transform="translate(90, 90) scale(0.65)">
+    <!-- Dumbbell -->
+    <rect x="60" y="200" width="72" height="112" rx="14" fill="#e0e0e0"/>
+    <rect x="108" y="216" width="28" height="80" rx="8" fill="#b0b0b0"/>
+    <rect x="136" y="236" width="240" height="40" rx="8" fill="#cccccc"/>
+    <rect x="376" y="216" width="28" height="80" rx="8" fill="#b0b0b0"/>
+    <rect x="380" y="200" width="72" height="112" rx="14" fill="#e0e0e0"/>
+
+    <!-- Sparkle top-right (AI indicator) -->
+    <path d="M390 106 L397 88 L404 106 L422 113 L404 120 L397 138 L390 120 L372 113 Z" fill="#c4f542"/>
+    <path d="M430 72 L434 62 L438 72 L448 76 L438 80 L434 90 L430 80 L420 76 Z" fill="#c4f542" opacity="0.75"/>
+    <circle cx="418" cy="58" r="4" fill="#c4f542" opacity="0.45"/>
+  </g>
+</svg>
