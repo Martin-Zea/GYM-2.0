@@ -44,3 +44,39 @@
   font-weight: 500;
   letter-spacing: 0.03em;
 }
+
+@media (min-width: 1024px) {
+  .bottom-nav {
+    position: static;
+    grid-area: sidenav;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    width: 68px;
+    max-width: none;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 20px 0;
+    gap: 4px;
+    border-top: none;
+    border-right: 1px solid var(--border);
+    border-radius: 0;
+    background: var(--bg-0);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .nav-item {
+    flex: 0 0 auto;
+    width: 48px;
+    height: 48px;
+    min-height: auto;
+    padding: 0;
+    border-radius: var(--radius-md);
+  }
+
+  .nav-label {
+    display: none;
+  }
+}
