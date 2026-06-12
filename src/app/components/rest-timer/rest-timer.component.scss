@@ -25,7 +25,7 @@
 .rest-time-sub { font-size: 13px; color: var(--text-2); margin-top: 6px; }
 .rest-controls { display: flex; gap: 8px; margin-bottom: 14px; }
 .rest-adjust {
-  width: 40px; height: 40px; border-radius: 50%; background: var(--bg-2);
+  width: 44px; height: 44px; border-radius: 50%; background: var(--bg-2);
   border: 1px solid var(--border); display: grid; place-items: center;
   color: var(--text-1); font-weight: 600; font-size: 12px; font-variant-numeric: tabular-nums; transition: background 0.12s;
 }

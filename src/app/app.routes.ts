@@ -15,5 +15,9 @@ export const routes: Routes = [
     path: 'calendar',
     loadComponent: () => import('./components/calendar/calendar.component').then(m => m.CalendarComponent),
   },
+  {
+    path: 'profile',
+    loadComponent: () => import('./components/profile/profile.component').then(m => m.ProfileComponent),
+  },
   { path: '**', redirectTo: '' },
 ];

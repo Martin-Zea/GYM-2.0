@@ -48,7 +48,7 @@ export class SettingsComponent {
 
   @HostListener('document:keydown.escape')
   protected close(): void {
-    this.uiState.showSettings.set(false);
+    this.uiState.closeSettings();
   }
 
   protected patch(p: Partial<AppSettings>): void {
@@ -115,6 +115,6 @@ export class SettingsComponent {
   protected confirmReset(): void {
     if (this.resetInput() !== this.T().settings_reset_word) return;
     this.state.resetAll();
-    this.uiState.showSettings.set(false);
+    this.uiState.closeSettings();
   }
 }

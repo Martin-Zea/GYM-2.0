@@ -1,0 +1,160 @@
+.profile-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  margin: 0 0 14px;
+
+  .section-header & {
+    margin-bottom: 0;
+  }
+}
+
+// Profile data grid
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.profile-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-stat-label {
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.profile-stat-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-0);
+
+  &.mono { font-family: 'JetBrains Mono', monospace; }
+}
+
+// Body weight
+.weight-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.weight-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-0);
+}
+
+.weight-trend {
+  font-size: 13px;
+  color: var(--accent);
+
+  &.neg { color: var(--danger); }
+}
+
+.section-empty {
+  font-size: 13px;
+  color: var(--text-2);
+  margin: 0;
+}
+
+// Achievements
+.achievements-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.achievement-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+
+.achievement-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.achievement-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.achievement-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.achievement-weight {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.achievement-date {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+// Empty state
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 0 4px;
+  color: var(--text-2);
+
+  p {
+    font-size: 13px;
+    text-align: center;
+    margin: 0;
+  }
+}
+
+.empty-icon {
+  color: var(--text-3);
+}
+
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+}

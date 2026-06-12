@@ -62,6 +62,7 @@ export interface AppSettings {
   cohereApiKey: string;
   defaultRest: number;
   sounds: boolean;
+  haptics: boolean;
   theme: 'dark' | 'light';
   userProfile: UserProfile;
 }

@@ -1,0 +1,42 @@
+:host {
+  display: contents;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  background: color-mix(in oklab, var(--bg-1) 92%, transparent);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 30;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 4px 8px;
+  min-height: 56px;
+  color: var(--text-2);
+  text-decoration: none;
+  transition: color 0.15s;
+
+  &:hover { color: var(--text-0); }
+  &.active { color: var(--accent); }
+}
+
+.nav-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}

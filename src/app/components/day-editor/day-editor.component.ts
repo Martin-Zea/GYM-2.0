@@ -18,6 +18,7 @@ export class DayEditorComponent implements OnInit {
   protected readonly uiState = inject(UIStateService);
   private readonly storage = inject(StorageService);
   protected readonly tr = inject(TranslationService);
+  protected readonly T = this.tr.T;
 
   protected readonly dayName = signal('');
   protected readonly exercises = signal<Exercise[]>([]);
@@ -112,7 +113,7 @@ export class DayEditorComponent implements OnInit {
       exercises: this.exercises().filter(e => e.name.trim()),
     };
     this.state.saveDay(day);
-    this.uiState.editingDay.set(null);
+    this.uiState.closeEditingDay();
   }
 
   protected deleteDay(): void {
@@ -120,10 +121,10 @@ export class DayEditorComponent implements OnInit {
     if (editing && editing !== 'new') {
       this.state.deleteDay((editing as WorkoutDay).id);
     }
-    this.uiState.editingDay.set(null);
+    this.uiState.closeEditingDay();
   }
 
   protected close(): void {
-    this.uiState.editingDay.set(null);
+    this.uiState.closeEditingDay();
   }
 }

@@ -68,6 +68,7 @@ export class StorageService {
         cohereApiKey: migrated.settings?.cohereApiKey ?? '',
         defaultRest: migrated.settings?.defaultRest ?? 60,
         sounds: migrated.settings?.sounds ?? true,
+        haptics: migrated.settings?.haptics ?? true,
         theme: migrated.settings?.theme ?? 'dark',
         userProfile: {
           weightKg: profile?.weightKg ?? null,

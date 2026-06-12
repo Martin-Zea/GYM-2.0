@@ -4,7 +4,7 @@
     <div class="sheet-handle"></div>
     <div class="sheet-header">
       <h3 class="sheet-title">{{ T().settings_title }}</h3>
-      <button class="icon-btn" (click)="close()">
+      <button class="icon-btn" (click)="close()" [attr.aria-label]="T().close_btn">
         <app-icon name="x" [size]="16"/>
       </button>
     </div>
@@ -60,6 +60,14 @@
           </div>
           <button class="toggle" [class.on]="settings().sounds"
             (click)="patch({ sounds: !settings().sounds })">
+          </button>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-main">
+            <div class="settings-row-label">{{ T().settings_haptics }}</div>
+          </div>
+          <button class="toggle" [class.on]="settings().haptics"
+            (click)="patch({ haptics: !settings().haptics })">
           </button>
         </div>
       </div>

@@ -251,16 +251,16 @@ export class HomeComponent {
   }
 
   protected openDayDetail(day: WorkoutDay): void {
-    this.uiState.dayDetail.set(day);
+    this.uiState.openDayDetail(day);
   }
 
   protected openDayPicker(): void {
-    this.uiState.showDayPicker.set(true);
+    this.uiState.openDayPicker();
   }
 
   protected openActiveHistory(): void {
     const day = this.state.activeDay();
-    if (day) this.uiState.dayDetail.set(day);
+    if (day) this.uiState.openDayDetail(day);
   }
 
   protected async requestAi(exercise: Exercise): Promise<void> {

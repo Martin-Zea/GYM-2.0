@@ -81,8 +81,8 @@
       <div class="empty-icon">
         <app-icon name="chart" [size]="24"/>
       </div>
-      <h3>Sin datos suficientes</h3>
-      <p>Completá al menos 2 sesiones con un ejercicio para ver su progresión.</p>
+      <h3>{{ T().charts_no_data_title }}</h3>
+      <p>{{ T().charts_no_data_desc }}</p>
     </div>
   } @else {
     @for (item of chartItems(); track item.exercise.id) {

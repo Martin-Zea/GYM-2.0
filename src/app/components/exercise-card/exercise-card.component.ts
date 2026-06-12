@@ -211,6 +211,7 @@ export class ExerciseCardComponent {
   protected toggleDone(setIndex: number): void {
     const result = this.state.toggleSetDone(this.day().id, this.exercise(), setIndex);
     if (result === 'done') {
+      if (this.state.settings().haptics && navigator.vibrate) navigator.vibrate(40);
       this.maybeCelebratePr(setIndex);
       const ex = this.exercise();
       const restSecs = ex.restSeconds || this.state.settings().defaultRest;
@@ -254,7 +255,7 @@ export class ExerciseCardComponent {
 
     this.celebratedPrSets.add(key);
     if (this.state.settings().sounds) this.sound.playPrBeep();
-    this.uiState.celebratePr(ex.name, weight);
+    this.uiState.celebratePr(ex.name, weight, ex.unit);
   }
 
   protected ytUrl(): string {

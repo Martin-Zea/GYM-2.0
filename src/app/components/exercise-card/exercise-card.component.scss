@@ -146,7 +146,7 @@
 
 .chart-icon-btn {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: var(--radius-sm);
+  min-width: 44px; min-height: 44px; border-radius: var(--radius-sm);
   color: var(--text-3); text-decoration: none;
   transition: background 0.12s, color 0.12s;
 }

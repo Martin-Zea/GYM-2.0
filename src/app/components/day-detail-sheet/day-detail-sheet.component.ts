@@ -4,6 +4,7 @@ import { FocusTrapDirective } from '../../directives/focus-trap.directive';
 import { StateService } from '../../services/state.service';
 import { StorageService } from '../../services/storage.service';
 import { UIStateService } from '../../services/ui-state.service';
+import { TranslationService } from '../../services/translation.service';
 import { Session } from '../../models/workout.model';
 
 @Component({
@@ -17,6 +18,7 @@ export class DayDetailSheetComponent {
   protected readonly state = inject(StateService);
   protected readonly storage = inject(StorageService);
   protected readonly uiState = inject(UIStateService);
+  protected readonly T = inject(TranslationService).T;
 
   protected readonly day = computed(() => this.uiState.dayDetail());
 
@@ -51,14 +53,16 @@ export class DayDetailSheetComponent {
   });
 
   protected close(): void {
-    this.uiState.dayDetail.set(null);
+    this.uiState.closeDayDetail();
   }
 
   protected openHistory(): void {
     const d = this.day();
     if (!d) return;
-    this.uiState.dayHistory.set(d);
-    this.uiState.dayDetail.set(null);
+    // Open dayHistory first (pushState), then close dayDetail (history.back via skip).
+    // Net history delta = 0: one overlay swaps for another without changing depth.
+    this.uiState.openDayHistory(d);
+    this.uiState.closeDayDetail();
   }
 
   protected trainDay(): void {
@@ -67,7 +71,7 @@ export class DayDetailSheetComponent {
     const idx = this.state.days().findIndex(day => day.id === d.id);
     if (idx >= 0) this.state.setActiveDay(idx);
     this.uiState.pendingTrainingStart.set(true);
-    this.uiState.dayDetail.set(null);
+    this.uiState.closeDayDetail();
   }
 
   protected setLabel(weight: number, reps: number, unit: string): string {

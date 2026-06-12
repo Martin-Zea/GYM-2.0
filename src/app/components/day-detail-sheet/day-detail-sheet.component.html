@@ -9,7 +9,7 @@
           <p class="sheet-sub">Última sesión · {{ sessionDateLabel() }}</p>
         }
       </div>
-      <button class="icon-btn" (click)="close()">
+      <button class="icon-btn" (click)="close()" [attr.aria-label]="T().close_btn">
         <app-icon name="x" [size]="16"/>
       </button>
     </div>

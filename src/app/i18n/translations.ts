@@ -84,6 +84,7 @@ export interface Translations {
   rest_done_notification: string;
 
   // Day history sheet — edit/delete sessions
+  history_empty: string;
   history_edit: string;
   history_delete: string;
   history_delete_confirm: string;
@@ -112,11 +113,31 @@ export interface Translations {
   // Nav guard
   nav_guard_confirm: string;
 
+  // Accessibility labels (buttons, inputs)
+  close_btn: string;
+  more_options: string;
+  prev_month: string;
+  next_month: string;
+  view_chart: string;
+  exercise_move_up: string;
+  exercise_move_down: string;
+  exercise_remove: string;
+  rest_adjust_minus: string;
+  rest_adjust_plus: string;
+  rest_label: string;
+  rest_seg: string;
+  rest_next_prefix: string;
+  rest_skip_btn: string;
+  set_weight_aria: string; // {n}
+  set_reps_aria: string; // {n}
+  select_day_title: string;
+
   // Bottom nav / topbar navigation
   nav_main: string;
   nav_home: string;
   nav_charts: string;
   nav_calendar: string;
+  nav_profile: string;
 
   // Exercise units (presentation only — stored values stay in Spanish)
   unit_kg: string;
@@ -133,6 +154,7 @@ export interface Translations {
   settings_default_rest: string;
   settings_rest_desc: string;
   settings_sounds: string;
+  settings_haptics: string;
   settings_profile: string;
   settings_profile_ai_note: string;
   settings_weight: string;
@@ -144,6 +166,8 @@ export interface Translations {
   charts_range_3m: string;
   charts_range_6m: string;
   charts_range_all: string;
+  charts_no_data_title: string;
+  charts_no_data_desc: string;
   charts_empty_exercise: string;
   settings_height: string;
   settings_age: string;
@@ -175,6 +199,29 @@ export interface Translations {
   settings_language_desc: string;
   import_invalid_backup: string;
   settings_version: string; // {version}
+
+  // Onboarding (first launch)
+  onboarding_slide1_title: string;
+  onboarding_slide1_desc: string;
+  onboarding_slide2_title: string;
+  onboarding_slide2_desc: string;
+  onboarding_slide3_title: string;
+  onboarding_slide3_desc: string;
+  onboarding_next: string;
+  onboarding_back: string;
+  onboarding_start: string;
+
+  // Profile page
+  profile_data_section: string;
+  profile_no_data: string;
+  profile_edit_settings: string;
+  profile_bodyweight_no_data: string;
+  profile_bodyweight_change: string; // {delta} {days}
+  profile_achievements_title: string;
+  profile_achievements_empty: string;
+  profile_pr_share: string;
+  pr_share_text: string; // {exercise} {weight} {unit} {url}
+  pr_share_fallback_msg: string;
 }
 
 export const es: Translations = {
@@ -251,6 +298,7 @@ export const es: Translations = {
   rest_timer_next_exercise: 'Siguiente ejercicio',
   rest_done_notification: 'Descanso terminado',
 
+  history_empty: 'Todavía no hay sesiones registradas para este día.',
   history_edit: 'Editar sesión',
   history_delete: 'Eliminar sesión',
   history_delete_confirm: '¿Eliminar esta sesión?',
@@ -273,10 +321,29 @@ export const es: Translations = {
 
   nav_guard_confirm: '¿Salir del entrenamiento? El progreso no guardado se perderá.',
 
+  close_btn: 'Cerrar',
+  more_options: 'Más opciones',
+  prev_month: 'Mes anterior',
+  next_month: 'Mes siguiente',
+  view_chart: 'Ver progresión',
+  exercise_move_up: 'Subir ejercicio',
+  exercise_move_down: 'Bajar ejercicio',
+  exercise_remove: 'Eliminar ejercicio',
+  rest_adjust_minus: 'Restar 15 segundos',
+  rest_adjust_plus: 'Agregar 15 segundos',
+  rest_label: 'Descanso',
+  rest_seg: 'seg',
+  rest_next_prefix: 'Sigue:',
+  rest_skip_btn: 'Saltar',
+  set_weight_aria: 'Peso, serie {n}',
+  set_reps_aria: 'Reps, serie {n}',
+  select_day_title: 'Seleccionar día',
+
   nav_main: 'Navegación principal',
   nav_home: 'Inicio',
-  nav_charts: 'Gráficos',
+  nav_charts: 'Progreso',
   nav_calendar: 'Calendario',
+  nav_profile: 'Perfil',
 
   unit_kg: 'kg',
   unit_kg_per_hand: 'kg por mano',
@@ -291,6 +358,7 @@ export const es: Translations = {
   settings_default_rest: 'Descanso por defecto',
   settings_rest_desc: 'segundos entre series',
   settings_sounds: 'Sonido al completar',
+  settings_haptics: 'Vibración al completar',
   settings_profile: 'Tu perfil',
   settings_profile_ai_note: 'Con una API key configurada, la IA usa tu perfil (edad, sexo, peso) para personalizar las sugerencias de carga.',
   settings_weight: 'Peso',
@@ -302,6 +370,8 @@ export const es: Translations = {
   charts_range_3m: '3M',
   charts_range_6m: '6M',
   charts_range_all: 'Todo',
+  charts_no_data_title: 'Sin datos suficientes',
+  charts_no_data_desc: 'Completá al menos 2 sesiones con un ejercicio para ver su progresión.',
   charts_empty_exercise: 'Entrená este ejercicio al menos 2 veces para ver su progresión.',
   settings_height: 'Altura',
   settings_age: 'Edad',
@@ -333,6 +403,27 @@ export const es: Translations = {
   settings_language_desc: 'Cambia el idioma de la interfaz',
   import_invalid_backup: 'Archivo de respaldo inválido',
   settings_version: 'Versión {version}',
+
+  onboarding_slide1_title: '¡Bienvenido a GainAI!',
+  onboarding_slide1_desc: 'Registrá tus entrenamientos en segundos. La app aprende de tu progreso y te dice exactamente qué peso usar en cada sesión.',
+  onboarding_slide2_title: 'IA que te conoce',
+  onboarding_slide2_desc: 'Con lógica local o tu API key de Groq (gratis), GainAI analiza tu historial completo y personaliza cada sugerencia de carga.',
+  onboarding_slide3_title: 'Offline y 100% privado',
+  onboarding_slide3_desc: 'Tus datos viven solo en tu dispositivo — nunca en la nube. La app funciona sin conexión a internet, siempre.',
+  onboarding_next: 'Siguiente',
+  onboarding_back: 'Atrás',
+  onboarding_start: 'Empezar',
+
+  profile_data_section: 'Tus datos',
+  profile_no_data: 'No especificado',
+  profile_edit_settings: 'Editar',
+  profile_bodyweight_no_data: 'Sin registros de peso.',
+  profile_bodyweight_change: '{delta} kg en {days} días',
+  profile_achievements_title: 'Récords personales',
+  profile_achievements_empty: 'Completá al menos 1 sesión para ver tus PRs aquí.',
+  profile_pr_share: 'Compartir',
+  pr_share_text: '🏆 Nuevo récord: {exercise} — {weight} {unit} 💪\nDescargá GainAI: {url}',
+  pr_share_fallback_msg: 'Imagen descargada. Link copiado al portapapeles.',
 };
 
 export const en: Translations = {
@@ -409,6 +500,7 @@ export const en: Translations = {
   rest_timer_next_exercise: 'Next exercise',
   rest_done_notification: 'Rest finished',
 
+  history_empty: 'No sessions recorded for this day yet.',
   history_edit: 'Edit session',
   history_delete: 'Delete session',
   history_delete_confirm: 'Delete this session?',
@@ -431,10 +523,29 @@ export const en: Translations = {
 
   nav_guard_confirm: 'Leave training? Unsaved progress will be lost.',
 
+  close_btn: 'Close',
+  more_options: 'More options',
+  prev_month: 'Previous month',
+  next_month: 'Next month',
+  view_chart: 'View progression',
+  exercise_move_up: 'Move exercise up',
+  exercise_move_down: 'Move exercise down',
+  exercise_remove: 'Delete exercise',
+  rest_adjust_minus: 'Subtract 15 seconds',
+  rest_adjust_plus: 'Add 15 seconds',
+  rest_label: 'Rest',
+  rest_seg: 'sec',
+  rest_next_prefix: 'Next:',
+  rest_skip_btn: 'Skip',
+  set_weight_aria: 'Weight, set {n}',
+  set_reps_aria: 'Reps, set {n}',
+  select_day_title: 'Select day',
+
   nav_main: 'Main navigation',
   nav_home: 'Home',
-  nav_charts: 'Charts',
+  nav_charts: 'Progress',
   nav_calendar: 'Calendar',
+  nav_profile: 'Profile',
 
   unit_kg: 'kg',
   unit_kg_per_hand: 'kg per hand',
@@ -449,6 +560,7 @@ export const en: Translations = {
   settings_default_rest: 'Default rest',
   settings_rest_desc: 'seconds between sets',
   settings_sounds: 'Sound on complete',
+  settings_haptics: 'Haptic feedback',
   settings_profile: 'Your profile',
   settings_profile_ai_note: 'With an API key configured, AI uses your profile (age, sex, weight) to personalize load suggestions.',
   settings_weight: 'Weight',
@@ -460,6 +572,8 @@ export const en: Translations = {
   charts_range_3m: '3M',
   charts_range_6m: '6M',
   charts_range_all: 'All',
+  charts_no_data_title: 'Not enough data',
+  charts_no_data_desc: 'Complete at least 2 sessions with an exercise to see its progression.',
   charts_empty_exercise: 'Train this exercise at least 2 times to see its progression.',
   settings_height: 'Height',
   settings_age: 'Age',
@@ -491,6 +605,27 @@ export const en: Translations = {
   settings_language_desc: 'Change the interface language',
   import_invalid_backup: 'Invalid backup file',
   settings_version: 'Version {version}',
+
+  onboarding_slide1_title: 'Welcome to GainAI!',
+  onboarding_slide1_desc: 'Log your workouts in seconds. The app learns from your progress and tells you exactly what weight to use each session.',
+  onboarding_slide2_title: 'AI That Knows You',
+  onboarding_slide2_desc: 'With built-in logic or your free Groq API key, GainAI analyzes your full history and personalizes every load suggestion.',
+  onboarding_slide3_title: 'Offline & 100% Private',
+  onboarding_slide3_desc: 'Your data lives only on your device — never in the cloud. The app works without an internet connection, always.',
+  onboarding_next: 'Next',
+  onboarding_back: 'Back',
+  onboarding_start: 'Get started',
+
+  profile_data_section: 'Your data',
+  profile_no_data: 'Not specified',
+  profile_edit_settings: 'Edit',
+  profile_bodyweight_no_data: 'No weight records yet.',
+  profile_bodyweight_change: '{delta} kg over {days} days',
+  profile_achievements_title: 'Personal Records',
+  profile_achievements_empty: 'Complete at least 1 session to see your PRs here.',
+  profile_pr_share: 'Share',
+  pr_share_text: '🏆 New record: {exercise} — {weight} {unit} 💪\nDownload GainAI: {url}',
+  pr_share_fallback_msg: 'Image downloaded. Link copied to clipboard.',
 };
 
 export const TRANSLATIONS: Record<string, Translations> = { es, en };

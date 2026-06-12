@@ -4,7 +4,7 @@
     <div class="sheet-handle"></div>
     <div class="sheet-header">
       <h3 class="sheet-title">{{ isNew ? 'Nuevo día' : 'Editar día' }}</h3>
-      <button class="icon-btn" (click)="close()">
+      <button class="icon-btn" (click)="close()" [attr.aria-label]="T().close_btn">
         <app-icon name="x" [size]="16"/>
       </button>
     </div>
@@ -32,11 +32,14 @@
               style="flex:1"
               [value]="ex.name"
               (input)="setExName(i, $event)"/>
-            <button class="icon-btn" (click)="moveUp(i)" title="Subir"
+            <button class="icon-btn" (click)="moveUp(i)"
+              [title]="T().exercise_move_up" [attr.aria-label]="T().exercise_move_up"
               [style.opacity]="i === 0 ? 0.3 : 1">↑</button>
-            <button class="icon-btn" (click)="moveDown(i)" title="Bajar"
+            <button class="icon-btn" (click)="moveDown(i)"
+              [title]="T().exercise_move_down" [attr.aria-label]="T().exercise_move_down"
               [style.opacity]="i === exercises().length - 1 ? 0.3 : 1">↓</button>
-            <button class="icon-btn" (click)="removeExercise(i)" title="Eliminar"
+            <button class="icon-btn" (click)="removeExercise(i)"
+              [title]="T().exercise_remove" [attr.aria-label]="T().exercise_remove"
               style="color:var(--danger)">
               <app-icon name="trash" [size]="14"/>
             </button>

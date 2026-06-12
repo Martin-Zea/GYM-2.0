@@ -1,0 +1,22 @@
+<nav class="bottom-nav" [attr.aria-label]="T().nav_main">
+  <a class="nav-item" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
+    [attr.aria-label]="T().nav_home">
+    <app-icon name="home" [size]="22"/>
+    <span class="nav-label">{{ T().nav_home }}</span>
+  </a>
+  <a class="nav-item" routerLink="/charts" routerLinkActive="active"
+    [attr.aria-label]="T().nav_charts">
+    <app-icon name="chart" [size]="22"/>
+    <span class="nav-label">{{ T().nav_charts }}</span>
+  </a>
+  <a class="nav-item" routerLink="/calendar" routerLinkActive="active"
+    [attr.aria-label]="T().nav_calendar">
+    <app-icon name="calendar" [size]="22"/>
+    <span class="nav-label">{{ T().nav_calendar }}</span>
+  </a>
+  <a class="nav-item" routerLink="/profile" routerLinkActive="active"
+    [attr.aria-label]="T().nav_profile">
+    <app-icon name="user" [size]="22"/>
+    <span class="nav-label">{{ T().nav_profile }}</span>
+  </a>
+</nav>

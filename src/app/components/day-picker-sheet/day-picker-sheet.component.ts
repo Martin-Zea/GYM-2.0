@@ -4,6 +4,7 @@ import { FocusTrapDirective } from '../../directives/focus-trap.directive';
 import { StateService } from '../../services/state.service';
 import { StorageService } from '../../services/storage.service';
 import { UIStateService } from '../../services/ui-state.service';
+import { TranslationService } from '../../services/translation.service';
 
 @Component({
   selector: 'app-day-picker-sheet',
@@ -16,6 +17,7 @@ export class DayPickerSheetComponent {
   protected readonly state = inject(StateService);
   protected readonly storage = inject(StorageService);
   protected readonly uiState = inject(UIStateService);
+  protected readonly T = inject(TranslationService).T;
 
   protected readonly dayItems = computed(() => {
     const s = this.state.state();
@@ -35,10 +37,10 @@ export class DayPickerSheetComponent {
 
   protected select(index: number): void {
     this.state.setActiveDay(index);
-    this.uiState.showDayPicker.set(false);
+    this.uiState.closeDayPicker();
   }
 
   protected close(): void {
-    this.uiState.showDayPicker.set(false);
+    this.uiState.closeDayPicker();
   }
 }

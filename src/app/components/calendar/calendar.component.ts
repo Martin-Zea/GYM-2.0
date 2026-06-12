@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
 import { StateService } from '../../services/state.service';
 import { StorageService } from '../../services/storage.service';
+import { TranslationService } from '../../services/translation.service';
 
 interface CalDay {
   day: number | null;
@@ -27,6 +28,7 @@ interface RoutineDaySummary {
 export class CalendarComponent {
   protected readonly state = inject(StateService);
   private readonly storage = inject(StorageService);
+  protected readonly T = inject(TranslationService).T;
 
   protected readonly viewDate = signal(new Date());
   protected readonly DOW = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];

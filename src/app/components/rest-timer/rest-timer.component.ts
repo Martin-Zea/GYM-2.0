@@ -14,7 +14,8 @@ import { SoundService } from '../../services/sound.service';
 export class RestTimerComponent implements OnInit, OnDestroy {
   protected readonly uiState = inject(UIStateService);
   private readonly state = inject(StateService);
-  private readonly tr = inject(TranslationService);
+  protected readonly tr = inject(TranslationService);
+  protected readonly T = this.tr.T;
   private readonly sound = inject(SoundService);
 
   protected readonly remaining = signal(0);
@@ -143,7 +144,7 @@ export class RestTimerComponent implements OnInit, OnDestroy {
         }, 4000);
       } catch { /* SW or Notification unavailable */ }
     } else {
-      if (navigator.vibrate) navigator.vibrate(pattern);
+      if (this.state.settings().haptics && navigator.vibrate) navigator.vibrate(pattern);
     }
   }
 

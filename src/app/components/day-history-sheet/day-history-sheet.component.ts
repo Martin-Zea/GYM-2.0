@@ -76,7 +76,7 @@ export class DayHistorySheetComponent {
   });
 
   protected close(): void {
-    this.uiState.dayHistory.set(null);
+    this.uiState.closeDayHistory();
   }
 
   protected setLabel(weight: number, reps: number, unit: string): string {

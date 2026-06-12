@@ -1,0 +1,98 @@
+<div class="main">
+  <div class="view-header">
+    <h2 class="view-title">{{ T().nav_profile }}</h2>
+  </div>
+
+  <!-- Datos del usuario -->
+  <section class="profile-section">
+    <div class="section-header">
+      <p class="section-title">{{ T().profile_data_section }}</p>
+      <button class="btn btn-sm" (click)="openSettings()">
+        <app-icon name="settings" [size]="14" />
+        {{ T().profile_edit_settings }}
+      </button>
+    </div>
+    <div class="profile-grid">
+      <div class="profile-stat">
+        <span class="profile-stat-label">{{ T().settings_weight }}</span>
+        <span class="profile-stat-value mono">
+          @if (profile().weightKg !== null) {
+            {{ profile().weightKg }} kg
+          } @else {
+            {{ T().profile_no_data }}
+          }
+        </span>
+      </div>
+      <div class="profile-stat">
+        <span class="profile-stat-label">{{ T().settings_height }}</span>
+        <span class="profile-stat-value mono">
+          @if (profile().heightCm !== null) {
+            {{ profile().heightCm }} cm
+          } @else {
+            {{ T().profile_no_data }}
+          }
+        </span>
+      </div>
+      <div class="profile-stat">
+        <span class="profile-stat-label">{{ T().settings_age }}</span>
+        <span class="profile-stat-value mono">
+          @if (profile().age !== null) {
+            {{ profile().age }} {{ T().settings_age_unit }}
+          } @else {
+            {{ T().profile_no_data }}
+          }
+        </span>
+      </div>
+      <div class="profile-stat">
+        <span class="profile-stat-label">{{ T().settings_sex }}</span>
+        <span class="profile-stat-value">{{ sexLabel(profile().sex) }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Peso corporal -->
+  <section class="profile-section">
+    <p class="section-title">{{ T().bodyweight_chart_title }}</p>
+    @if (weightSummary(); as ws) {
+      <div class="weight-row">
+        <span class="weight-value mono">{{ ws.last }} kg</span>
+        @if (ws.delta !== null && ws.days !== null) {
+          <span class="weight-trend" [class.neg]="ws.delta.startsWith('−')">
+            {{ tr.tp('profile_bodyweight_change', { delta: ws.delta, days: ws.days }) }}
+          </span>
+        }
+      </div>
+    } @else {
+      <p class="section-empty">{{ T().profile_bodyweight_no_data }}</p>
+    }
+  </section>
+
+  <!-- Récords personales -->
+  <section class="profile-section">
+    <p class="section-title">{{ T().profile_achievements_title }}</p>
+    @if (achievements().length > 0) {
+      <ul class="achievements-list">
+        @for (pr of achievements(); track pr.exerciseName) {
+          <li class="achievement-card">
+            <div class="achievement-info">
+              <span class="achievement-name">{{ pr.exerciseName }}</span>
+              <span class="achievement-meta">
+                <span class="achievement-weight mono">{{ pr.weight }} {{ pr.unit }}</span>
+                <span class="achievement-date">{{ formatDate(pr.dateISO) }}</span>
+              </span>
+            </div>
+            <button class="btn btn-sm" (click)="sharePr(pr)">
+              <app-icon name="globe" [size]="14" />
+              {{ T().profile_pr_share }}
+            </button>
+          </li>
+        }
+      </ul>
+    } @else {
+      <div class="empty-state">
+        <div class="empty-icon"><app-icon name="dumbbell" [size]="24" /></div>
+        <p>{{ T().profile_achievements_empty }}</p>
+      </div>
+    }
+  </section>
+</div>

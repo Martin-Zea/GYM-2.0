@@ -6,11 +6,11 @@
 
   <div class="calendar">
     <div class="cal-nav">
-      <button class="icon-btn" (click)="prevMonth()">
+      <button class="icon-btn" (click)="prevMonth()" [attr.aria-label]="T().prev_month">
         <app-icon name="arrow_left" [size]="16"/>
       </button>
       <span class="cal-month">{{ monthLabel() }}</span>
-      <button class="icon-btn" (click)="nextMonth()">
+      <button class="icon-btn" (click)="nextMonth()" [attr.aria-label]="T().next_month">
         <app-icon name="arrow_right" [size]="16"/>
       </button>
     </div>

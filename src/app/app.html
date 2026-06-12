@@ -8,35 +8,26 @@
     </div>
     <div class="topbar-actions">
       <button class="icon-btn lang-btn" (click)="toggleLang()"
-        [title]="T().settings_language">
-        <span class="lang-label">{{ tr.lang() === 'es' ? 'EN' : 'ES' }}</span>
+        [title]="T().settings_language"
+        [attr.aria-label]="T().settings_language">
+        <span class="lang-label" aria-hidden="true">{{ tr.lang() === 'es' ? 'EN' : 'ES' }}</span>
       </button>
       <button class="icon-btn" (click)="toggleTheme()"
-        [title]="theme() === 'dark' ? T().theme_toggle_dark : T().theme_toggle_light">
+        [title]="theme() === 'dark' ? T().theme_toggle_dark : T().theme_toggle_light"
+        [attr.aria-label]="theme() === 'dark' ? T().theme_toggle_dark : T().theme_toggle_light">
         <app-icon [name]="theme() === 'dark' ? 'sun' : 'moon'" [size]="16"/>
       </button>
-      <button class="icon-btn" [title]="T().settings_btn" (click)="uiState.showSettings.set(true)">
+      <button class="icon-btn" [title]="T().settings_btn" [attr.aria-label]="T().settings_btn" (click)="uiState.openSettings()">
         <app-icon name="settings" [size]="16"/>
       </button>
     </div>
   </header>
 
-  <nav class="bottom-nav" [attr.aria-label]="T().nav_main">
-    <button routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
-      [title]="T().nav_home" [attr.aria-label]="T().nav_home">
-      <app-icon name="home" [size]="18"/>
-    </button>
-    <button routerLink="/charts" routerLinkActive="active" [title]="T().nav_charts" [attr.aria-label]="T().nav_charts">
-      <app-icon name="chart" [size]="18"/>
-    </button>
-    <button routerLink="/calendar" routerLinkActive="active" [title]="T().nav_calendar" [attr.aria-label]="T().nav_calendar">
-      <app-icon name="calendar" [size]="18"/>
-    </button>
-  </nav>
-
   <main class="app-content">
     <router-outlet/>
   </main>
+
+  <app-bottom-nav/>
 
   @if (uiState.restTimer()) {
     <app-rest-timer/>
@@ -97,11 +88,18 @@
     <div class="app-toast pr-toast" role="status">
       <app-icon name="sparkle" [size]="16"/>
       <span class="app-toast-msg">{{ tr.tp('pr_celebration', { exercise: pr.exerciseName, weight: pr.weight }) }}</span>
+      <button class="app-toast-btn" (click)="sharePrFromToast()">
+        {{ T().profile_pr_share }}
+      </button>
       <button class="app-toast-btn app-toast-dismiss" (click)="uiState.prCelebration.set(null)"
         [attr.aria-label]="T().save_error_dismiss">
         <app-icon name="x" [size]="14"/>
       </button>
     </div>
+  }
+
+  @if (showOnboarding()) {
+    <app-onboarding (done)="completeOnboarding()"/>
   }
 
   @if (uiState.updateAvailable()) {

@@ -6,7 +6,7 @@
         <div class="empty-icon"><app-icon name="dumbbell" [size]="24"/></div>
         <h3>{{ T().empty_title }}</h3>
         <p>{{ T().empty_desc }}</p>
-        <button class="btn btn-primary" (click)="uiState.editingDay.set('new')">
+        <button class="btn btn-primary" (click)="uiState.openEditingDay('new')">
           <app-icon name="plus" [size]="14"/>
           {{ T().new_day_btn }}
         </button>
@@ -71,14 +71,15 @@
               <div class="day-menu-wrap">
                 <button class="icon-btn day-menu-btn"
                   (click)="$event.stopPropagation(); showDayMenu.update(v => !v)"
-                  title="Más opciones">
+                  [title]="T().more_options"
+                  [attr.aria-label]="T().more_options">
                   <app-icon name="dots" [size]="16"/>
                 </button>
                 @if (showDayMenu()) {
                   <div class="day-menu-backdrop" (click)="showDayMenu.set(false)"></div>
                   <div class="day-menu day-menu--right">
                     <button class="day-menu-item"
-                      (click)="uiState.editingDay.set(state.currentDay()!); showDayMenu.set(false)">
+                      (click)="uiState.openEditingDay(state.currentDay()!); showDayMenu.set(false)">
                       <app-icon name="edit" [size]="14"/>
                       {{ T().edit_routine }}
                     </button>
@@ -144,7 +145,8 @@
                 <a class="today-ex-chart-btn"
                    [routerLink]="['/charts']"
                    [fragment]="ex.id"
-                   title="Ver progresión">
+                   [title]="T().view_chart"
+                   [attr.aria-label]="T().view_chart">
                   <app-icon name="chart" [size]="13"/>
                 </a>
               </div>
@@ -191,13 +193,14 @@
     </button>
 
     <div class="training-bar-actions">
-      <button class="icon-btn" [title]="T().history_title" (click)="openActiveHistory()">
+      <button class="icon-btn" [title]="T().history_title" [attr.aria-label]="T().history_title" (click)="openActiveHistory()">
         <app-icon name="history" [size]="16"/>
       </button>
 
       <div class="day-menu-wrap">
         <button class="icon-btn"
-          title="Más opciones"
+          [title]="T().more_options"
+          [attr.aria-label]="T().more_options"
           (click)="$event.stopPropagation(); showTrainingMenu.update(v => !v)">
           <app-icon name="dots" [size]="16"/>
         </button>
@@ -205,7 +208,7 @@
           <div class="day-menu-backdrop" (click)="showTrainingMenu.set(false)"></div>
           <div class="day-menu day-menu--right">
             <button class="day-menu-item"
-              (click)="showTrainingMenu.set(false); uiState.editingDay.set(state.activeDay()!)">
+              (click)="showTrainingMenu.set(false); uiState.openEditingDay(state.activeDay()!)">
               <app-icon name="edit" [size]="14"/>
               {{ T().edit_routine }}
             </button>
@@ -283,7 +286,7 @@
   @if (showFinishModal()) {
     <div class="sheet-backdrop" (click)="showFinishModal.set(false)"></div>
     <div class="sheet">
-      <div class="sheet-panel finish-sheet">
+      <div class="sheet-panel finish-sheet" role="dialog" aria-modal="true">
         <div class="sheet-handle"></div>
         <div class="sheet-header">
           <h3 class="sheet-title">{{ T().finish_title }}</h3>

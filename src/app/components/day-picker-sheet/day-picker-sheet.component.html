@@ -1,10 +1,10 @@
 <div class="sheet-backdrop" (click)="close()"></div>
 <div class="sheet">
-  <div class="sheet-panel" appFocusTrap role="dialog" aria-modal="true">
+  <div class="sheet-panel" appFocusTrap role="dialog" aria-modal="true" aria-labelledby="picker-title">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <h3 class="sheet-title">Seleccionar día</h3>
-      <button class="icon-btn" (click)="close()">
+      <h3 class="sheet-title" id="picker-title">{{ T().select_day_title }}</h3>
+      <button class="icon-btn" (click)="close()" [attr.aria-label]="T().close_btn">
         <app-icon name="x" [size]="16"/>
       </button>
     </div>

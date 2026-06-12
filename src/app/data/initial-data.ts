@@ -121,6 +121,7 @@ export function createInitialState(): AppState {
       cohereApiKey: '',
       defaultRest: 60,
       sounds: true,
+      haptics: true,
       theme: 'dark',
       userProfile: { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [] },
     },

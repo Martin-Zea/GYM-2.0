@@ -7,7 +7,7 @@
         <h3 class="sheet-title">Historial</h3>
         <p class="sheet-sub">{{ day()?.name }}</p>
       </div>
-      <button class="icon-btn" (click)="close()">
+      <button class="icon-btn" (click)="close()" [attr.aria-label]="T().close_btn">
         <app-icon name="x" [size]="16"/>
       </button>
     </div>
@@ -15,7 +15,7 @@
     <div class="sheet-body">
       @if (!sessions().length) {
         <div class="detail-empty">
-          <p>Todavía no hay sesiones registradas para este día.</p>
+          <p>{{ T().history_empty }}</p>
         </div>
       } @else {
         @for (sv of sessions(); track sv.session.id) {
@@ -27,12 +27,12 @@
                   <span class="history-vol">{{ sv.totalVolume | number:'1.0-0' }} kg vol.</span>
                 }
                 @if (!sv.session.skipped && editingId() !== sv.session.id) {
-                  <button class="icon-btn" [title]="T().history_edit" (click)="startEdit(sv)">
+                  <button class="icon-btn" [title]="T().history_edit" [attr.aria-label]="T().history_edit" (click)="startEdit(sv)">
                     <app-icon name="edit" [size]="14"/>
                   </button>
                 }
                 @if (confirmDeleteId() !== sv.session.id) {
-                  <button class="icon-btn icon-btn-danger" [title]="T().history_delete" (click)="askDelete(sv.session.id)">
+                  <button class="icon-btn icon-btn-danger" [title]="T().history_delete" [attr.aria-label]="T().history_delete" (click)="askDelete(sv.session.id)">
                     <app-icon name="trash" [size]="14"/>
                   </button>
                 }
