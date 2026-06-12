@@ -168,7 +168,7 @@
               <span class="routine-day-name">{{ item.day.name }}</span>
             </div>
             <span class="routine-day-ago" [class.current-label]="item.isCurrent">
-              @if (item.isCurrent) { {{ T().today_label }} } @else { {{ item.lastLabel }} }
+              @if (item.isCurrent && item.trainedToday) { {{ T().today_label }} } @else if (item.isCurrent) { {{ T().next_label }} } @else { {{ item.lastLabel }} }
             </span>
           </button>
         }

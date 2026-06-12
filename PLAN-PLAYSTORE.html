@@ -1,0 +1,898 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GainAI · Plan de profesionalización → Google Play</title>
+<style>
+  :root{
+    --bg:#08090a; --surface:#121416; --surface-2:#1a1d20; --border:#2a2e33;
+    --text:#e8eaed; --muted:#9aa0a6; --accent:#c4f542; --accent-dim:#8fb82f;
+    --ok:#4ade80; --warn:#fbbf24; --code:#0c0e10;
+    --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;font-size:15px}
+  .wrap{max-width:980px;margin:0 auto;padding:32px 20px 120px}
+  header{padding:28px 0 20px;border-bottom:1px solid var(--border);margin-bottom:8px}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:-.5px}
+  h1 .ai{color:var(--accent)}
+  .sub{color:var(--muted);margin:0 0 18px;font-size:15px}
+  .meta{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+  .meta b{color:var(--text);font-weight:600}
+
+  .progress-bar{margin:22px 0 6px;height:10px;background:var(--surface-2);border-radius:999px;overflow:hidden;border:1px solid var(--border)}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent-dim),var(--accent));width:0;transition:width .35s ease}
+  .progress-label{font-size:13px;color:var(--muted);margin-top:6px}
+  .progress-label b{color:var(--accent)}
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin:18px 0 8px;font-size:13px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+  .block-title{margin:40px 0 4px;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent)}
+  .block-desc{color:var(--muted);margin:0 0 14px;font-size:14px}
+
+  .phase{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin:16px 0;overflow:hidden}
+  .phase-head{display:flex;align-items:center;gap:14px;padding:16px 18px;cursor:pointer;user-select:none}
+  .phase-head:hover{background:var(--surface-2)}
+  .phase-num{flex:0 0 auto;width:34px;height:34px;border-radius:9px;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;color:var(--accent);font-size:14px}
+  .phase-titles{flex:1;min-width:0}
+  .phase-titles h3{margin:0;font-size:17px}
+  .phase-titles p{margin:2px 0 0;color:var(--muted);font-size:13px}
+  .phase-count{font-family:var(--mono);font-size:12px;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .chev{transition:transform .2s;color:var(--muted)}
+  .phase.open .chev{transform:rotate(90deg)}
+  .phase-body{display:none;padding:0 18px 10px;border-top:1px solid var(--border)}
+  .phase.open .phase-body{display:block}
+
+  .task{border:1px solid var(--border);border-radius:11px;margin:16px 0;background:var(--surface-2);overflow:hidden}
+  .task-head{display:flex;align-items:flex-start;gap:12px;padding:14px 16px}
+  .task-head input[type=checkbox]{margin-top:4px;width:18px;height:18px;accent-color:var(--accent);cursor:pointer;flex:0 0 auto}
+  .task-meta{flex:1;min-width:0}
+  .task-meta h4{margin:0;font-size:15px}
+  .task-meta .goal{margin:4px 0 0;color:var(--muted);font-size:13.5px}
+  .badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .badge{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
+  .badge.prio-alta{color:#fca5a5;border-color:#5b2b2b;background:#2a1414}
+  .badge.prio-media{color:var(--warn);border-color:#4a3a14;background:#241d0c}
+  .badge.prio-baja{color:#93c5fd;border-color:#234056;background:#0e1f2a}
+  .badge.file{color:var(--accent-dim)}
+
+  .prompt-wrap{margin:0 16px 16px}
+  .prompt-bar{display:flex;align-items:center;justify-content:space-between;background:var(--code);border:1px solid var(--border);border-bottom:none;border-radius:9px 9px 0 0;padding:8px 12px}
+  .prompt-bar span{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.5px}
+  .copy-btn{font-family:var(--sans);font-size:12px;font-weight:600;background:var(--accent);color:#0a0c08;border:none;border-radius:7px;padding:6px 14px;cursor:pointer;transition:.15s}
+  .copy-btn:hover{filter:brightness(1.08)}
+  .copy-btn.done{background:var(--ok)}
+  pre.prompt{margin:0;background:var(--code);border:1px solid var(--border);border-radius:0 0 9px 9px;padding:16px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.65;color:#d6dade;white-space:pre-wrap;word-break:break-word}
+  pre.prompt b{color:var(--accent);font-weight:600}
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+  .tool{font-size:13px;font-weight:600;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 14px;cursor:pointer}
+  .tool:hover{border-color:var(--accent)}
+
+  .note{background:var(--surface);border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:14px 0;font-size:13.5px;color:var(--muted)}
+  .note b{color:var(--text)}
+  footer{margin-top:50px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:12.5px;text-align:center}
+  a{color:var(--accent)}
+  code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:1px 6px;border-radius:5px;border:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Gain<span class="ai">AI</span> · Camino a Google Play</h1>
+  <p class="sub">Plan de profesionalización de la app + prompts listos para ejecutar con Claude Sonnet, paso a paso.</p>
+  <div class="meta">
+    <span><b>App:</b> Angular 21.2 PWA · offline-first · localStorage</span>
+    <span><b>Bloques:</b> A (calidad app) → B (despliegue)</span>
+    <span><b>Tareas:</b> <span id="totalTasks">0</span></span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="pfill"></div></div>
+  <div class="progress-label"><b id="pdone">0</b> / <span id="ptotal">0</span> tareas completadas (<span id="ppct">0%</span>)</div>
+  <div class="legend">
+    <span><span class="dot" style="background:#fca5a5"></span> Prioridad alta</span>
+    <span><span class="dot" style="background:var(--warn)"></span> Media</span>
+    <span><span class="dot" style="background:#93c5fd"></span> Baja</span>
+    <span style="margin-left:auto">El progreso se guarda en este navegador.</span>
+  </div>
+  <div class="toolbar">
+    <button class="tool" onclick="setAll(true)">Expandir todo</button>
+    <button class="tool" onclick="setAll(false)">Colapsar todo</button>
+    <button class="tool" onclick="resetProgress()">Reiniciar progreso</button>
+  </div>
+</header>
+
+<div class="note">
+  <b>Cómo usar este documento.</b> Trabaja de arriba hacia abajo. Para cada tarea: pulsa <b>Copiar prompt</b>, pégalo en una sesión nueva de Claude Sonnet dentro del proyecto, deja que ejecute, verifica los <b>criterios de aceptación</b> que vienen dentro del prompt, y marca la casilla. Cada prompt es autocontenido: incluye contexto, tarea, archivos y criterios de aceptación.
+</div>
+
+<!-- ============ BLOQUE A ============ -->
+<div class="block-title">Bloque A · Profesionalizar la app</div>
+<p class="block-desc">El 80% del trabajo. Dejar la app robusta, offline-real, pulida y con calidad de producción antes de empaquetar.</p>
+
+<div id="phases"></div>
+
+<footer>
+  Generado para el proyecto <b>GainAI / GYM&nbsp;2.0</b> · Plan de despliegue a Google Play.<br>
+  Stack objetivo: Angular 21.2 standalone + signals · Capacitor/TWA en Bloque&nbsp;B.
+</footer>
+</div>
+
+<script>
+// ----- DATA -----
+const CONTEXT = `Contexto del proyecto (no lo modifiques, es para que entiendas el código):
+- App: "GainAI" (GYM 2.0), PWA de seguimiento de gimnasio en Angular 21.2.
+- Patrones OBLIGATORIOS: componentes standalone:true, inject() (sin constructor DI), signals (signal/computed/effect), input()/output() (no @Input/@Output), control de flujo @if/@for/@switch (nunca *ngIf/*ngFor). TypeScript strict, ES2022.
+- Persistencia: localStorage clave "gym_app_state_v2", schemaVersion 4 (StorageService/StateService auto-persisten).
+- i18n: TODO texto de UI vive en src/app/i18n/translations.ts (interface Translations + objetos es/en). Para agregar una clave: (1) añadirla a la interface, (2) añadirla a es Y a en. En templates se usa T().clave. Nunca hardcodees texto visible.
+- Estilos: SCSS con CSS vars, tema dark por defecto + [data-theme="light"], max-width:720px. Acento --color-accent (#c4f542 dark / #65a30d light). Fuentes: Inter (texto), JetBrains Mono (números).
+- Tests: Vitest 4 (npm test). Build: npm run build, objetivo CERO errores y CERO warnings.
+- Modelos: todas las interfaces en src/app/models/workout.model.ts (fuente de verdad).`;
+
+const PHASES = [
+  {
+    n:1, title:"Robustez y manejo de errores",
+    desc:"Que la app nunca quede en blanco ni pierda datos por estado corrupto.",
+    tasks:[
+      {
+        id:"1a", title:"ErrorHandler global", prio:"alta", files:["app.config.ts","services/"],
+        goal:"Capturar errores no controlados y mostrar una pantalla de error amable en vez de pantalla en blanco.",
+        prompt:`${'$CTX'}
+
+TAREA: Implementa un manejo global de errores en la app.
+
+Requisitos:
+1. Crea un servicio "ErrorService" (src/app/services/error.service.ts) con una signal "lastError: WritableSignal<{message:string,when:string}|null>" y un método "report(err:unknown)" que la setea.
+2. Crea una clase que implemente ErrorHandler de @angular/core (GlobalErrorHandler) que llame a errorService.report() y además haga console.error del error original. Regístrala en app.config.ts con { provide: ErrorHandler, useClass: GlobalErrorHandler }.
+3. En app.html (o un componente raíz), muestra un overlay no intrusivo @if (errorService.lastError()) con un mensaje genérico traducido ("Algo salió mal. Tus datos están a salvo.") y un botón "Reintentar"/"Cerrar" que limpie la signal. NADA de stacktraces visibles al usuario.
+4. Añade las claves i18n necesarias a translations.ts (es + en).
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] Forzar un throw en cualquier componente muestra el overlay, NO una pantalla en blanco.
+- [ ] El overlay usa textos desde translations.ts (es y en), no hardcodeados.
+- [ ] El botón cierra el overlay y la app sigue usable.
+- [ ] npm run build pasa con 0 errores y 0 warnings.
+- [ ] Los tests existentes siguen pasando (npm test).`
+      },
+      {
+        id:"1b", title:"Validación de estado e importaciones", prio:"alta", files:["storage.service.ts","state.service.ts"],
+        goal:"Blindar load() e importData() contra JSON corrupto o de versión inválida sin romper la app.",
+        prompt:`${'$CTX'}
+
+TAREA: Endurece la carga y la importación de datos contra estado corrupto.
+
+Requisitos:
+1. En StorageService.load(): si JSON.parse falla, si el objeto no tiene la forma esperada (faltan days/sessions/settings o no son del tipo correcto), o si schemaVersion es desconocido, debe recuperarse con createInitialState() SIN lanzar excepción, y registrar un console.warn.
+2. Crea un validador "isValidAppState(x:unknown): boolean" (puede vivir en storage.service.ts) que compruebe las propiedades clave de AppState.
+3. En StateService.importData(): valida el archivo importado con ese validador ANTES de aplicarlo. Si es inválido, NO sobrescribas el estado actual y notifica al usuario con un mensaje traducido ("Archivo de respaldo inválido").
+4. Añade claves i18n necesarias (es + en).
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] Poner basura en localStorage["gym_app_state_v2"] y recargar => la app arranca con estado inicial, sin crash.
+- [ ] Importar un archivo no-JSON o con estructura inválida => el estado actual se conserva intacto y se muestra el mensaje de error traducido.
+- [ ] Importar un backup válido sigue funcionando igual que antes.
+- [ ] Añade tests en storage.service.spec.ts cubriendo: JSON corrupto, objeto inválido, y backup válido.
+- [ ] npm test y npm run build pasan limpios.`
+      },
+      {
+        id:"1c", title:"Versionado real de la app", prio:"media", files:["package.json","settings"],
+        goal:"Reemplazar version 0.0.0 por un esquema de versión visible y usable para versionCode/versionName.",
+        prompt:`${'$CTX'}
+
+TAREA: Introduce versionado real y muéstralo en la UI.
+
+Requisitos:
+1. Cambia "version" en package.json de "0.0.0" a "1.0.0".
+2. Crea src/environments o un archivo src/app/version.ts que exponga "export const APP_VERSION = '1.0.0';". Si usas un import de package.json, asegúrate de que resolveJsonModule esté habilitado; si no, define la constante manualmente (preferido para evitar exponer package.json en el bundle).
+3. Muestra la versión en el sheet de Settings (SettingsComponent), en un pie pequeño y discreto ("Versión 1.0.0"), texto traducido.
+4. Añade la clave i18n necesaria (es + en).
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] El Settings muestra "Versión 1.0.0" (traducido) al abrirlo.
+- [ ] No se importa package.json completo dentro del bundle de la app.
+- [ ] npm run build pasa con 0 errores y 0 warnings.`
+      }
+    ]
+  },
+  {
+    n:2, title:"Offline real (sin dependencias de red)",
+    desc:"Una app empaquetada debe funcionar sin internet y sin llamadas a CDNs externos.",
+    tasks:[
+      {
+        id:"2a", title:"Auto-hospedar fuentes (Inter + JetBrains Mono)", prio:"alta", files:["index.html","styles.scss","public/"],
+        goal:"Eliminar la dependencia de fonts.googleapis.com para que la tipografía cargue offline.",
+        prompt:`${'$CTX'}
+
+TAREA: Auto-hospeda las fuentes y elimina la dependencia de Google Fonts CDN.
+
+Situación actual: src/index.html carga Inter y JetBrains Mono desde https://fonts.googleapis.com (líneas de <link rel="preconnect"> y el <link href="...css2?family=Inter...">). Eso rompe el modo offline y agrega tracking externo.
+
+Requisitos:
+1. Descarga/añade los archivos .woff2 de Inter (weights 400,500,600,700) y JetBrains Mono (400,500) a public/fonts/.
+2. Define @font-face en styles.scss apuntando a /fonts/*.woff2 con font-display: swap.
+3. Elimina de index.html los <link> a fonts.googleapis.com y los preconnect asociados.
+4. Verifica que ngsw-config.json ya cachea woff2 (assetGroup "assets" incluye woff2) — si no, ajústalo.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] index.html NO contiene ninguna referencia a fonts.googleapis.com ni fonts.gstatic.com.
+- [ ] Con el navegador en modo offline (DevTools > Network > Offline), los textos siguen mostrándose con Inter y los números con JetBrains Mono.
+- [ ] No hay peticiones de red salientes a Google al cargar la app (verificar en pestaña Network).
+- [ ] npm run build pasa con 0 errores y 0 warnings.`
+      },
+      {
+        id:"2b", title:"Auditar llamadas de red y degradación offline", prio:"media", files:["progression.service.ts"],
+        goal:"Confirmar que toda función crítica opera offline y que la IA degrada con elegancia.",
+        prompt:`${'$CTX'}
+
+TAREA: Audita y asegura la degradación offline de las funciones de red.
+
+Contexto: ProgressionService.recommend() llama a Groq y Cohere por HTTP (BYOK). Ya existe fallback local y caché (gym_ai_cache_v1). Queremos garantizar que SIN internet todo funcione.
+
+Requisitos:
+1. Revisa ProgressionService: cuando navigator.onLine === false, debe ir directo a localRecommendation() sin intentar fetch (evita esperas/timeouts innecesarios).
+2. Asegura que el badge/UI de la recomendación indique claramente cuando la fuente es "local" / "modo offline".
+3. Busca en TODO el código cualquier otra llamada fetch/XHR/CDN además de la IA y documenta en un comentario o repórtame si encuentras alguna.
+4. No rompas la lógica de caché existente ni la cadena Groq → Cohere → local.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] En modo offline, pedir recomendación responde de inmediato con la fuente local (sin esperar el timeout de 12s).
+- [ ] La UI muestra que la recomendación es local/offline cuando corresponde.
+- [ ] Me reportas por escrito la lista completa de llamadas de red salientes que existan en la app.
+- [ ] npm test y npm run build pasan limpios.`
+      }
+    ]
+  },
+  {
+    n:3, title:"Identidad visual nativa",
+    desc:"Que se vea y se sienta como una app nativa: colores de sistema, splash, safe-areas.",
+    tasks:[
+      {
+        id:"3a", title:"Unificar theme_color y colores de sistema", prio:"alta", files:["index.html","manifest.webmanifest"],
+        goal:"Corregir la inconsistencia entre manifest (#c4f542) e index.html (#08090a) para barra de estado y splash correctos.",
+        prompt:`${'$CTX'}
+
+TAREA: Unifica los colores de tema del sistema operativo.
+
+Problema actual: public/manifest.webmanifest tiene "theme_color":"#c4f542" (lima) pero src/index.html tiene <meta name="theme-color" content="#08090a"> (casi negro). Esto da barra de estado y splash inconsistentes en Android.
+
+Decisión de diseño: el color de la barra de estado / chrome del sistema debe ser el fondo oscuro (#08090a), NO el acento lima (que cegaría). El acento lima se reserva para detalles de UI.
+
+Requisitos:
+1. Cambia "theme_color" en manifest.webmanifest a "#08090a" para que coincida con index.html.
+2. Mantén "background_color":"#08090a" (ya correcto) para el splash.
+3. Verifica que no haya otras metaetiquetas theme-color contradictorias.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] manifest.webmanifest e index.html declaran el MISMO theme color (#08090a).
+- [ ] El manifest sigue siendo JSON válido.
+- [ ] npm run build pasa con 0 errores y 0 warnings.`
+      },
+      {
+        id:"3b", title:"Safe-areas y notch (env(safe-area-inset))", prio:"media", files:["styles.scss","app.html"],
+        goal:"Que el contenido no quede tapado por el notch ni la barra de gestos en móviles.",
+        prompt:`${'$CTX'}
+
+TAREA: Aplica soporte de safe-areas para pantallas con notch / barra de gestos.
+
+Contexto: index.html ya tiene viewport-fit=cover. Falta usar env(safe-area-inset-*) en el layout.
+
+Requisitos:
+1. En styles.scss, aplica padding con env(safe-area-inset-top) al topbar/header y env(safe-area-inset-bottom) a la barra de navegación inferior y a los bottom sheets, usando max() para combinar con el padding existente. Ej: padding-bottom: max(16px, env(safe-area-inset-bottom)).
+2. Revisa los bottom sheets (day-editor, settings, day-detail-sheet, etc.) para que el botón inferior no quede bajo la barra de gestos.
+3. No alteres el max-width:720px ni el diseño en desktop.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] En un emulador/dispositivo con notch, ni el header ni la navegación inferior quedan tapados.
+- [ ] Los bottom sheets respetan el inset inferior.
+- [ ] En desktop el layout se ve idéntico a antes.
+- [ ] npm run build pasa con 0 errores y 0 warnings.`
+      },
+      {
+        id:"3c", title:"Verificar iconos maskable y splash", prio:"baja", files:["public/icons/","manifest.webmanifest"],
+        goal:"Asegurar que los iconos adaptativos se recortan bien en Android (zona segura).",
+        prompt:`${'$CTX'}
+
+TAREA: Verifica la calidad de los iconos maskable.
+
+Contexto: manifest.webmanifest declara los iconos con purpose:"maskable any". Android recorta los maskable a círculo/squircle y exige que el contenido importante esté dentro del "safe zone" (~80% central).
+
+Requisitos:
+1. Revisa los PNG en public/icons/ (especialmente 192 y 512). Si el logo llega al borde, el recorte circular de Android lo cortará.
+2. Si detectas que el contenido toca los bordes, regenera/ajusta los iconos para que el logo ocupe ~66-80% central con padding del color de fondo (#08090a). Reporta qué encontraste.
+3. Considera separar el icono "any" (logo a sangre) del "maskable" (con padding) si conviene, declarándolos por separado en el manifest.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] Me reportas si los iconos actuales respetan la safe-zone o no.
+- [ ] Si no la respetaban, quedan corregidos con padding adecuado.
+- [ ] El manifest sigue siendo JSON válido y npm run build pasa limpio.`
+      }
+    ]
+  },
+  {
+    n:4, title:"Navegación, UX, accesibilidad y social",
+    desc:"Navegación completa tipo app nativa, perfil, accesibilidad y compartir logros.",
+    tasks:[
+      {
+        id:"4a", title:"Botón atrás de Android coherente", prio:"alta", files:["app.ts","ui-state.service.ts","guards/"],
+        goal:"Que el botón físico/gesto Atrás cierre sheets y overlays antes de salir de la app.",
+        prompt:`${'$CTX'}
+
+TAREA: Haz que el botón Atrás de Android cierre overlays/sheets en vez de salir de la app.
+
+Contexto: existen varios bottom sheets y overlays controlados por UIStateService signals (showSettings, editingDay, restTimer, dayDetail, showDayPicker, dayHistory, prCelebration). En Android, el botón Atrás debería cerrar el de más arriba antes de navegar/salir. También existe training-guard que confirma salida durante entrenamiento.
+
+Requisitos:
+1. Implementa manejo del evento de retroceso (popstate / pushState pattern, o el History API) de forma que: si hay algún sheet/overlay abierto, el Atrás cierre el más reciente y NO navegue. Solo si no hay nada abierto se comporta normal.
+2. Respeta el training-guard existente (no lo dupliques: si hay entrenamiento activo y nada abierto, debe seguir confirmando).
+3. Mantén el patrón signals; no agregues librerías.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] Con Settings abierto, pulsar Atrás cierra Settings y deja la app donde estaba.
+- [ ] Con varios sheets, Atrás los cierra en orden inverso a como se abrieron.
+- [ ] Sin nada abierto y con entrenamiento activo, Atrás dispara la confirmación del guard existente.
+- [ ] Funciona en navegador (probar con history/back) y no rompe la navegación de rutas /charts /calendar.
+- [ ] npm run build pasa con 0 errores y 0 warnings.`
+      },
+      {
+        id:"4b", title:"Accesibilidad: labels, roles y touch targets", prio:"media", files:["components/*"],
+        goal:"Contraste, aria-labels en botones de icono y áreas táctiles ≥48px.",
+        prompt:`${'$CTX'}
+
+TAREA: Pasa una capa de accesibilidad sobre los componentes.
+
+Requisitos:
+1. Todo botón que solo tenga un icono (app-icon) debe tener aria-label traducido (usa T() de translations.ts). Revisa: home, exercise-card, rest-timer, settings, bottom sheets, topbar.
+2. Asegura áreas táctiles mínimas de 48x48px en botones interactivos (padding/min-height en SCSS) sin romper el diseño compacto.
+3. Inputs (weight/reps) deben tener label asociado o aria-label.
+4. Verifica contraste del texto --color-muted sobre el fondo; si algún texto baja de ratio 4.5:1 en cuerpo de texto, ajústalo (reporta los cambios).
+5. Los overlays/sheets deben tener role="dialog" y aria-modal="true".
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] Ningún botón de solo-icono queda sin aria-label (revisado componente por componente).
+- [ ] Los botones interactivos tienen al menos 48px de área táctil.
+- [ ] Los sheets/overlays tienen role="dialog" y aria-modal.
+- [ ] Me reportas la lista de ajustes de contraste hechos (si los hubo).
+- [ ] Todas las etiquetas nuevas están en es Y en de translations.ts.
+- [ ] npm run build pasa con 0 errores y 0 warnings.`
+      },
+      {
+        id:"4c", title:"Estados de carga, vacío y feedback táctil", prio:"baja", files:["components/*","sound.service.ts"],
+        goal:"Skeletons/spinners en la IA, estados vacíos claros y vibración opcional.",
+        prompt:`${'$CTX'}
+
+TAREA: Mejora los estados de carga/vacío y el feedback.
+
+Requisitos:
+1. Mientras la recomendación IA está cargando (AiRecommendation.loading), muestra un indicador sutil (skeleton o pulso) en el badge del exercise-card, en vez de texto estático.
+2. Revisa pantallas/estados vacíos (p.ej. sin sesiones en historial, charts sin datos): que muestren un mensaje guía traducido, no un espacio en blanco.
+3. Añade feedback háptico OPCIONAL usando navigator.vibrate() en acciones clave (marcar set como done, fin del rest timer), respetando la preferencia de sonidos existente en AppSettings (o agrega una preferencia "haptics" si lo ves limpio). En navegadores que no soportan vibrate, no debe fallar.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] El badge de IA muestra estado de carga animado mientras loading=true.
+- [ ] Los estados vacíos relevantes muestran mensaje traducido (es + en).
+- [ ] navigator.vibrate se usa de forma segura (feature-detect) y respeta la preferencia del usuario.
+- [ ] npm run build pasa con 0 errores y 0 warnings.`
+      },
+      {
+        id:"4d", title:"Barra de navegación inferior persistente + transiciones", prio:"alta", files:["app.html","app.routes.ts","components/"],
+        goal:"Tab bar fija (Inicio · Progreso · Calendario · Perfil) con estado activo, tipo app nativa, y transiciones de ruta suaves.",
+        prompt:`${'$CTX'}
+
+TAREA: Implementa una barra de navegación inferior persistente tipo app nativa.
+
+Requisitos:
+1. Crea un componente standalone "BottomNavComponent" con 4 pestañas: Inicio (ruta /), Progreso (/charts), Calendario (/calendar) y Perfil (/profile). Usa routerLink + routerLinkActive para marcar la pestaña activa. Iconos del registro existente (home, chart, calendar, user) y labels traducidos desde translations.ts.
+2. La nueva ruta /profile se cablea aquí (la pantalla Perfil se construye en la tarea 4e; deja un placeholder lazy si aún no existe).
+3. Renderiza la barra de forma global en app.html, fija al fondo, respetando env(safe-area-inset-bottom). No debe tapar el contenido (añade padding-bottom al contenedor scrollable).
+4. Mantén el max-width:720px centrado también para la barra.
+5. Añade una transición suave entre rutas (animación corta de fade/slide) sin librerías externas.
+6. No rompas el manejo del botón Atrás de Android (tarea 4a) ni el training-guard.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] La barra inferior es visible en /, /charts, /calendar y /profile, con la pestaña activa correctamente resaltada.
+- [ ] Iconos del registro existente + labels traducidos (es y en).
+- [ ] Respeta safe-area-inset-bottom y no tapa el contenido.
+- [ ] La navegación entre pestañas no recarga la app y el botón Atrás sigue funcionando.
+- [ ] En desktop respeta el max-width:720px.
+- [ ] npm run build pasa con 0 errores y 0 warnings.`
+      },
+      {
+        id:"4e", title:"Sección Perfil (datos, peso y logros)", prio:"alta", files:["components/profile/","app.routes.ts"],
+        goal:"Pantalla Perfil que centraliza datos del usuario, peso corporal y logros (PRs), con botón de compartir por logro.",
+        prompt:`${'$CTX'}
+
+TAREA: Crea la sección Perfil como ruta lazy /profile.
+
+Requisitos:
+1. Crea ProfileComponent (standalone, lazy en app.routes.ts) accesible desde la pestaña Perfil.
+2. Muestra: (a) datos del UserProfile (weightKg, heightCm, age, sex) con acceso a editarlos (puede abrir Settings o editar inline); (b) resumen del peso corporal (último valor + tendencia desde weightLog); (c) lista de LOGROS/PRs reales derivados del historial: por cada ejercicio, el mejor topWeight usando StorageService.historyForExercise, ordenados por relevancia/fecha. Excluye unidades 'tiempo' y 'peso corporal' de los PRs de peso (coherente con la lógica de PR existente).
+3. Cada logro muestra ejercicio, peso, unidad y fecha, y un botón "Compartir" (que invocará el ShareService de la tarea 4g).
+4. Estados vacíos traducidos si aún no hay logros.
+5. Usa signals, inject(), translations.ts (es + en) y los servicios existentes (StateService, StorageService). No dupliques lógica de historial: reutiliza StorageService.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] /profile muestra datos del usuario, peso corporal y una lista de logros (PRs) derivados del historial real.
+- [ ] Cada logro tiene un botón "Compartir".
+- [ ] Si no hay logros, se muestra un estado vacío traducido.
+- [ ] Todos los textos están en es y en de translations.ts.
+- [ ] npm test y npm run build pasan limpios.`
+      },
+      {
+        id:"4f", title:"Onboarding de primer uso", prio:"media", files:["components/","app.ts"],
+        goal:"Tarjetas de bienvenida en el primer arranque que expliquen el valor de la app.",
+        prompt:`${'$CTX'}
+
+TAREA: Implementa un onboarding de primer uso.
+
+Requisitos:
+1. Crea un flujo de bienvenida de 2-3 tarjetas que aparezca solo en el primer arranque, explicando: rutina inteligente, progresión con IA, funcionamiento offline y privacidad (datos locales). Textos traducidos.
+2. Al finalizar, persiste un flag en localStorage (por ejemplo gym_onboarding_done_v1) para que no vuelva a mostrarse. Puedes apoyarte en el patrón del componente HowItWorks existente, pero esto es una bienvenida más completa a pantalla.
+3. IMPORTANTE: la aceptación legal (Términos + descargo) se implementa en la tarea 6d y debe mostrarse como paso final OBLIGATORIO del onboarding o inmediatamente después. Deja el onboarding preparado para encadenar ese paso (no dupliques dos pantallas de primer uso que compitan).
+4. No debe interferir con el ErrorHandler ni con la barra de navegación.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] En el primer arranque aparece el onboarding; tras completarlo no reaparece (flag persistido).
+- [ ] Borrar el flag y recargar vuelve a mostrarlo.
+- [ ] Textos en es y en.
+- [ ] Queda un punto de enganche claro para el gate legal de la tarea 6d.
+- [ ] npm run build pasa con 0 errores y 0 warnings.`
+      },
+      {
+        id:"4g", title:"Compartir PR: tarjeta de imagen + Web Share + link de descarga", prio:"alta", files:["services/","exercise-card/","profile/"],
+        goal:"Generar una tarjeta de imagen del logro y compartirla (WhatsApp/genérico) incluyendo un link para descargar la app.",
+        prompt:`${'$CTX'}
+
+TAREA: Implementa el compartir de logros (PRs) con tarjeta de imagen y link de descarga.
+
+Contexto: ya existe la detección de PR (UIStateService.prCelebration, celebratePr(), y ExerciseCardComponent.maybeCelebratePr()). Queremos que el usuario pueda compartir el logro como una imagen bonita, y que esa imagen/texto incluya un enlace para descargar la app (es el canal de difusión de la app).
+
+Requisitos:
+1. Crea un "ShareService" (src/app/services/share.service.ts). Método para generar una imagen del logro con HTMLCanvas: fondo oscuro (#08090a), acento lima (#c4f542), marca GainAI (dibuja el nombre o carga el icono de public/icons), y los datos del logro (nombre del ejercicio, peso + unidad, fecha). En el pie de la imagen: el nombre de la app y un CTA de descarga. Exporta la imagen como Blob PNG.
+2. Define una constante central APP_DOWNLOAD_URL (en un archivo de config, p.ej. src/app/config.ts) con un placeholder (ejemplo: la URL de Play Store con el applicationId; déjala fácil de actualizar tras publicar).
+3. Método share(): usa navigator.share con archivos (Web Share API nivel 2) cuando navigator.canShare con files esté disponible, abriendo el menú nativo (WhatsApp, Instagram, etc.) con la imagen + un texto que incluya APP_DOWNLOAD_URL. Fallbacks: si no soporta compartir archivos, comparte solo texto + link; si no hay Web Share API, descarga la imagen y copia el link al portapapeles, avisando al usuario.
+4. Añade un botón "Compartir" en: (a) el toast de celebración de PR, y (b) cada logro de la pantalla Perfil (tarea 4e).
+5. Coherencia con la lógica de PR existente: no ofrecer compartir como PR de peso en unidades 'tiempo' / 'peso corporal'.
+6. Todos los textos traducidos (es + en).
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] Al lograr un PR aparece un botón "Compartir"; en móvil abre el menú nativo del sistema con la imagen del logro adjunta.
+- [ ] La imagen generada incluye la marca GainAI y un CTA/enlace de descarga.
+- [ ] El texto compartido incluye APP_DOWNLOAD_URL (constante configurable en un solo lugar).
+- [ ] Fallback correcto en navegadores sin Web Share (descarga de imagen + copia de link).
+- [ ] No se ofrece compartir PR de peso en unidades 'tiempo'/'peso corporal'.
+- [ ] Textos en es y en; npm run build pasa con 0 errores y 0 warnings.`
+      }
+    ]
+  },
+  {
+    n:5, title:"Calidad de código y CI",
+    desc:"Tests con cobertura, formato consistente y build verificado automáticamente.",
+    tasks:[
+      {
+        id:"5a", title:"Ampliar cobertura de tests", prio:"media", files:["*.spec.ts"],
+        goal:"Cubrir la lógica crítica: progresión, migraciones de estado, mutadores de StateService.",
+        prompt:`${'$CTX'}
+
+TAREA: Amplía la cobertura de tests con Vitest sobre la lógica crítica.
+
+Contexto: ya existen spec para app, state.service, storage.service y progression.service. Queremos subir cobertura en la lógica de negocio (no UI).
+
+Requisitos (añade tests, no rompas los existentes):
+1. StorageService: migrate() de v1/v2/v3 → v4 (verifica que v3→v4 siembra userProfile.weightLog con weightKg en la fecha de hoy), roundToBrick, lastSetsForExercise, weeklyStats, historyForExercise.
+2. StateService: toggleSetDone (casos 'done'/'undone'/'needs_reps'), advanceRoutine, skipDay, updateSet, deleteDay.
+3. ProgressionService: localRecommendation con distintos historiales; comportamiento de caché (getCached/setCached) y degradación offline.
+4. Usa el patrón de testing ya presente en los spec actuales (mismo estilo de setup).
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] npm test pasa al 100% (incluidos los nuevos).
+- [ ] Hay tests nuevos para migrate v3→v4, toggleSetDone y localRecommendation como mínimo.
+- [ ] Reporta el resumen de qué casos se agregaron.`
+      },
+      {
+        id:"5b", title:"Lint, formato y build sin warnings", prio:"media", files:["package.json",".prettierrc"],
+        goal:"Scripts de calidad y un build limpio reproducible.",
+        prompt:`${'$CTX'}
+
+TAREA: Establece scripts de calidad y deja el build totalmente limpio.
+
+Requisitos:
+1. Añade a package.json scripts: "format" (prettier --write .), "format:check" (prettier --check .), y si es viable en el proyecto, "lint" (ng lint; si no hay ESLint configurado, instálalo con @angular-eslint y deja una config mínima alineada a los patrones del proyecto, sin reglas que rompan el código actual).
+2. Crea/ajusta .prettierrc acorde al estilo existente del código (revisa archivos actuales: comillas simples, ancho de línea, etc.).
+3. Ejecuta el formateo y corrige cualquier warning de build.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] npm run format:check pasa sin diferencias.
+- [ ] npm run build termina con 0 errores y 0 warnings.
+- [ ] Si agregaste lint: npm run lint pasa (o reportas las excepciones justificadas).
+- [ ] El comportamiento de la app no cambió (tests verdes).`
+      },
+      {
+        id:"5c", title:"CI básico en GitHub Actions", prio:"baja", files:[".github/workflows/"],
+        goal:"Que cada push verifique build + tests automáticamente.",
+        prompt:`${'$CTX'}
+
+TAREA: Crea un workflow de CI.
+
+Requisitos:
+1. Crea .github/workflows/ci.yml que en push y pull_request a main: haga checkout, setup Node (versión acorde a packageManager npm@11), npm ci, npm run build y npm test.
+2. Si configuraste lint/format:check en la tarea anterior, inclúyelos como pasos.
+3. El job debe fallar si build o tests fallan.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] El archivo ci.yml es YAML válido y usa cache de npm.
+- [ ] Ejecuta build + test (+ lint/format si existen).
+- [ ] Documenta en una línea del README cómo se dispara.
+- [ ] (No requiere que el repo sea público; solo dejar el workflow listo.)`
+      }
+    ]
+  },
+  {
+    n:6, title:"Legal y privacidad",
+    desc:"Requisitos obligatorios de Google Play antes de publicar.",
+    tasks:[
+      {
+        id:"6a", title:"Política de privacidad", prio:"alta", files:["public/","components/settings/"],
+        goal:"Documento de privacidad accesible (obligatorio para Play Store).",
+        prompt:`${'$CTX'}
+
+TAREA: Redacta e integra una política de privacidad.
+
+Contexto real de datos de la app (descríbelo con precisión, no inventes): todos los datos de entrenamiento se guardan LOCALMENTE en el dispositivo (localStorage), no hay servidor propio. Las API keys de Groq y Cohere las introduce el usuario (BYOK) y se guardan localmente; cuando el usuario pide una recomendación, se envían datos del ejercicio a Groq y/o Cohere para generar la sugerencia. No hay analítica de terceros ni cuentas.
+
+Requisitos:
+1. Crea public/privacy.html (y/o privacy-es.html / privacy-en.html) con una política clara que cubra: datos almacenados localmente, BYOK y envío de datos de ejercicio a Groq/Cohere al usar IA, ausencia de tracking, cómo exportar/borrar datos, contacto (placeholder de email).
+2. Añade en SettingsComponent un enlace "Política de privacidad" (traducido) que abra ese documento.
+3. Añade las claves i18n necesarias (es + en).
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] Existe public/privacy.html accesible y legible en ambos idiomas.
+- [ ] La política describe con exactitud el flujo de datos real (local + envío a Groq/Cohere en IA), sin afirmaciones falsas.
+- [ ] Settings tiene un enlace visible a la política.
+- [ ] npm run build pasa limpio.`
+      },
+      {
+        id:"6b", title:"Consentimiento y aviso del uso de IA (BYOK)", prio:"media", files:["components/settings/","progression.service.ts"],
+        goal:"Avisar al usuario que al usar IA sus datos de ejercicio salen a un tercero.",
+        prompt:`${'$CTX'}
+
+TAREA: Añade un aviso claro sobre el envío de datos al usar IA.
+
+Requisitos:
+1. En la sección de API keys de Settings, muestra una nota traducida explicando que al introducir una clave y usar las recomendaciones, los datos del ejercicio se envían a Groq/Cohere (terceros) para generar la sugerencia, y que sin clave la app usa cálculo local sin enviar nada.
+2. Asegura que SIN claves, la app nunca hace peticiones a las APIs (verifica la lógica en ProgressionService).
+3. Añade las claves i18n necesarias (es + en).
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] La nota de privacidad de IA aparece junto a los campos de API key (es + en).
+- [ ] Sin API keys, no se realiza ninguna petición a Groq/Cohere (la fuente siempre es local).
+- [ ] npm run build pasa limpio y los tests verdes.`
+      },
+      {
+        id:"6c", title:"Términos y Condiciones + descargo (no reemplaza a un entrenador)", prio:"alta", files:["public/","components/settings/"],
+        goal:"Documento de T&C con descargo de salud/fitness claro, accesible desde Settings.",
+        prompt:`${'$CTX'}
+
+TAREA: Redacta e integra los Términos y Condiciones con un descargo de responsabilidad.
+
+Requisitos:
+1. Crea public/terms.html (en es y en, p.ej. un terms.html con ambos idiomas o terms-es/terms-en) con: Términos y Condiciones de uso y un DESCARGO destacado con este sentido exacto: "GainAI no reemplaza a un entrenador personal ni a un profesional de la salud. Es una herramienta que potencia tus entrenamientos con inteligencia artificial. Las recomendaciones son orientativas y no constituyen consejo médico. Consulta a un profesional de la salud antes de comenzar cualquier programa de ejercicio. El uso de la app es bajo tu propia responsabilidad."
+2. Cubre además: licencia/propiedad de la app, modelo BYOK (claves de IA del usuario), exactitud no garantizada de la IA, limitación de responsabilidad y un placeholder de jurisdicción/contacto.
+3. Añade en SettingsComponent un enlace "Términos y Condiciones" (traducido), junto al de Política de privacidad.
+4. Añade las claves i18n necesarias (es + en).
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] Existe public/terms.html accesible y legible en es y en.
+- [ ] El descargo deja explícito que la app NO reemplaza a un entrenador ni a un profesional de la salud, y que potencia el entrenamiento con IA.
+- [ ] Settings enlaza a los Términos y Condiciones.
+- [ ] npm run build pasa limpio.`
+      },
+      {
+        id:"6d", title:"Gate de aceptación legal obligatorio (1 vez)", prio:"alta", files:["app.ts","services/","components/"],
+        goal:"Pantalla bloqueante de aceptación de T&C + descargo + privacidad en el primer uso; luego accesible en Settings.",
+        prompt:`${'$CTX'}
+
+TAREA: Implementa el gate de aceptación legal obligatorio en el primer uso.
+
+Depende de: la Política de privacidad (tarea 6a) y los Términos + descargo (tarea 6c) ya creados.
+
+Requisitos:
+1. En el primer arranque, si no existe el flag gym_legal_accepted_v1, muestra una pantalla bloqueante que: resuma el descargo (no reemplaza a un entrenador/profesional de salud), enlace a Términos (6c) y a Privacidad (6a), incluya un checkbox "He leído y acepto los Términos, el descargo y la Política de privacidad" y un botón "Continuar" deshabilitado hasta marcar el checkbox.
+2. Al aceptar, persiste el flag con versión (gym_legal_accepted_v1) para poder volver a pedir aceptación si en el futuro cambian los términos (incrementando la versión del flag).
+3. Intégralo con el onboarding (tarea 4f): preséntalo como paso final obligatorio del onboarding o inmediatamente después; debe mostrarse una sola vez. La app NO debe ser utilizable hasta aceptar.
+4. Añade las claves i18n necesarias (es + en).
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] En el primer arranque la app no es utilizable hasta aceptar (checkbox + Continuar).
+- [ ] Tras aceptar, el flag persiste y el gate no reaparece.
+- [ ] Los enlaces a Términos y a Privacidad funcionan desde el gate.
+- [ ] Si se incrementa la versión del flag legal, el gate vuelve a mostrarse.
+- [ ] Textos en es y en; npm run build pasa con 0 errores y 0 warnings.`
+      }
+    ]
+  },
+  // ============ BLOQUE B ============
+  {
+    n:7, title:"Empaquetado nativo (decisión + integración)", block:"B",
+    desc:"Convertir la PWA en una app instalable. Aquí se decide Capacitor vs TWA.",
+    tasks:[
+      {
+        id:"7a", title:"Decisión Capacitor vs TWA", prio:"alta", files:["—"],
+        goal:"Elegir la tecnología de empaquetado con criterio, documentando el porqué.",
+        prompt:`${'$CTX'}
+
+TAREA: Ayúdame a decidir y documentar la estrategia de empaquetado para Google Play.
+
+Contexto clave: la app es offline-first, SIN backend, todo en localStorage, BYOK para IA. No tengo (todavía) hosting público obligatorio.
+
+Requisitos:
+1. Compara para ESTE caso concreto: Capacitor vs TWA (Bubblewrap/PWABuilder). Cubre: necesidad o no de hosting, comportamiento offline, acceso a notificaciones locales nativas, tamaño del APK, complejidad de mantenimiento, y proceso de actualización.
+2. Da una recomendación clara y justificada (mi expectativa, por ser offline sin backend, es Capacitor — confírmalo o rebátelo).
+3. Entrega el resultado como un archivo docs/empaquetado.md con la decisión, los pros/cons y los pasos de alto nivel siguientes.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] Existe docs/empaquetado.md con la comparación y una recomendación inequívoca.
+- [ ] La recomendación considera explícitamente el carácter offline-first y sin backend de la app.
+- [ ] No se modifica código de la app en esta tarea (solo análisis y documento).`
+      },
+      {
+        id:"7b", title:"Integrar Capacitor (asumiendo esa decisión)", prio:"alta", files:["capacitor.config.ts","android/"],
+        goal:"Añadir Capacitor y generar el proyecto Android que envuelve el build de Angular.",
+        prompt:`${'$CTX'}
+
+TAREA: Integra Capacitor en el proyecto para generar el proyecto Android. (Solo si en docs/empaquetado.md se decidió Capacitor.)
+
+Requisitos:
+1. Instala @capacitor/core, @capacitor/cli, @capacitor/android.
+2. Inicializa Capacitor: appId "com.gainai.app" (o el que defina docs/empaquetado.md), appName "GainAI", y webDir apuntando a la carpeta de salida del build de Angular (revisa angular.json para la ruta real de dist, p.ej. dist/gym-2.0/browser).
+3. npx cap add android.
+4. Crea un script npm "build:android" que haga: npm run build && npx cap sync android.
+5. Documenta en docs/empaquetado.md cómo abrir el proyecto en Android Studio (npx cap open android).
+6. Asegura que .gitignore ignore lo apropiado del proyecto android (build artifacts) pero versione la config.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] Existe capacitor.config.ts con appId/appName/webDir correctos (webDir coincide con la salida real del build).
+- [ ] Existe la carpeta android/ generada.
+- [ ] npm run build:android genera el build web y sincroniza Capacitor sin errores.
+- [ ] El build web de Angular sigue funcionando standalone (no se rompió nada).`
+      },
+      {
+        id:"7c", title:"Notificaciones locales nativas para el rest-timer", prio:"media", files:["rest-timer/","services/"],
+        goal:"Reemplazar/complementar las notificaciones del service worker con @capacitor/local-notifications.",
+        prompt:`${'$CTX'}
+
+TAREA: Migra las alertas del rest-timer a notificaciones locales nativas cuando se corre dentro de Capacitor.
+
+Contexto: hoy el rest-timer usa el service worker + Web Audio (sound.service.ts) para avisar al terminar el descanso. En background en Android, eso es poco fiable. Capacitor permite notificaciones locales reales.
+
+Requisitos:
+1. Instala @capacitor/local-notifications.
+2. Detecta el entorno nativo con Capacitor.isNativePlatform(). Si es nativo, programa una notificación local para el fin del descanso (con sonido/vibración). Si NO es nativo (web/PWA), conserva el comportamiento actual (service worker + Web Audio) intacto.
+3. Solicita permiso de notificaciones de forma adecuada (al primer uso del timer, no al arrancar).
+4. Cancela la notificación si el usuario detiene/omite el descanso antes de tiempo.
+5. Mantén el patrón signals y la arquitectura existente.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] En web/PWA el comportamiento del rest-timer es idéntico al actual.
+- [ ] En build nativo, al terminar el descanso llega una notificación local aunque la app esté en background.
+- [ ] El permiso se pide en el primer uso, no al iniciar la app.
+- [ ] Detener el descanso cancela la notificación pendiente.
+- [ ] npm run build pasa limpio.`
+      },
+      {
+        id:"7d", title:"Compartir a Instagram Stories (intent nativo)", prio:"media", files:["android/","services/"],
+        goal:"En build nativo, compartir la tarjeta del PR directamente a Instagram Stories, con el link de descarga.",
+        prompt:`${'$CTX'}
+
+TAREA: Añade compartir directo a Instagram Stories en el build nativo (Capacitor).
+
+Depende de: el ShareService con generación de imagen del logro (tarea 4g) y el proyecto android/ de Capacitor (tarea 7b).
+
+Requisitos:
+1. En ShareService, cuando Capacitor.isNativePlatform() sea true, ofrece la opción "Compartir a Instagram Stories" usando el intent de Android com.instagram.share.ADD_TO_STORY, pasando la imagen del logro generada como contenido (sticker o fondo) e incluyendo el identificador de la app de origen. Donde la API lo permita, adjunta el link de descarga (APP_DOWNLOAD_URL).
+2. Puedes usar un plugin de Capacitor de la comunidad adecuado o un pequeño puente/plugin propio que dispare el intent. Documenta la decisión.
+3. Si Instagram no está instalado o el intent falla, cae con elegancia al menú de compartir genérico (Web Share) de la tarea 4g.
+4. En web/PWA, el comportamiento de la tarea 4g NO debe cambiar.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] En build nativo con Instagram instalado, "Compartir a Stories" abre Instagram Stories con la imagen del logro.
+- [ ] Si Instagram no está instalado, cae al menú de compartir genérico sin error.
+- [ ] El link de descarga acompaña el contenido donde la API lo permita.
+- [ ] En web/PWA el comportamiento de compartir (4g) permanece igual.
+- [ ] npm run build:android sincroniza sin errores.`
+      }
+    ]
+  },
+  {
+    n:8, title:"Build firmado (AAB)", block:"B",
+    desc:"Generar el Android App Bundle firmado que se sube a Play.",
+    tasks:[
+      {
+        id:"8a", title:"Keystore y configuración de firma", prio:"alta", files:["android/"],
+        goal:"Crear el keystore de release y configurar gradle para firmar el AAB.",
+        prompt:`${'$CTX'}
+
+TAREA: Guíame para crear el keystore de release y configurar la firma del AAB. (Requiere el proyecto android/ de Capacitor ya generado.)
+
+Requisitos:
+1. Dame el comando keytool exacto para generar un keystore de release (RSA 2048, validez larga) y explica qué guardar y proteger (NO subir el keystore ni las contraseñas al repo).
+2. Indica cómo configurar android/app/build.gradle (signingConfigs release) leyendo las credenciales desde un archivo keystore.properties que esté en .gitignore (NO hardcodear contraseñas).
+3. Añade keystore.properties y *.keystore/*.jks a .gitignore.
+4. Documenta todo en docs/release-android.md.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] docs/release-android.md contiene el paso a paso del keystore y la firma.
+- [ ] .gitignore excluye el keystore y keystore.properties.
+- [ ] La config de gradle lee credenciales desde archivo externo, sin secretos en el repo.
+- [ ] Me adviertes claramente sobre el riesgo de perder el keystore (no se puede actualizar la app sin él).`
+      },
+      {
+        id:"8b", title:"Generar AAB de release", prio:"alta", files:["android/"],
+        goal:"Producir el .aab firmado listo para subir.",
+        prompt:`${'$CTX'}
+
+TAREA: Genera el Android App Bundle (.aab) de release firmado.
+
+Requisitos:
+1. Indica los comandos exactos (gradlew bundleRelease desde la carpeta android/, en Windows usar .\\gradlew.bat) y dónde queda el .aab resultante.
+2. Verifica versionCode/versionName en android/app/build.gradle alineados con APP_VERSION (1.0.0, versionCode 1). Documenta cómo incrementarlos en futuras releases.
+3. Explica cómo probar el AAB localmente con bundletool antes de subirlo.
+4. Actualiza docs/release-android.md con estos pasos.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] Se genera app-release.aab firmado sin errores.
+- [ ] versionCode=1 / versionName="1.0.0" coherentes con la app.
+- [ ] docs/release-android.md explica cómo regenerar y cómo subir versión.`
+      }
+    ]
+  },
+  {
+    n:9, title:"Publicación en Google Play", block:"B",
+    desc:"Cuenta, ficha de tienda, cumplimiento y lanzamiento progresivo.",
+    tasks:[
+      {
+        id:"9a", title:"Cuenta y ficha de Play Console", prio:"alta", files:["—"],
+        goal:"Checklist completo de la ficha de tienda y los requisitos de cumplimiento.",
+        prompt:`${'$CTX'}
+
+TAREA: Genera el checklist completo para publicar en Google Play Console y los textos de la ficha.
+
+Requisitos:
+1. Lista de prerequisitos: cuenta Google Play Developer (pago único 25 USD, verificación de identidad que puede tardar), aceptar acuerdos.
+2. Redacta los textos de la ficha en es y en: nombre (GainAI), descripción breve (≤80 chars), descripción completa (destacando: progresión con IA, offline, sin cuentas, privacidad local), basados en la app real.
+3. Lista de assets gráficos requeridos con sus tamaños exactos: icono 512x512, feature graphic 1024x500, mínimo 2 capturas de teléfono. Indica cómo obtener las capturas.
+4. Guía para completar: cuestionario de Content Rating, sección Data Safety (declarando que los datos se guardan local y que la IA envía datos de ejercicio a Groq/Cohere — coherente con la política de privacidad), Target Audience, y enlace a la política de privacidad (de la tarea 6a; necesita estar accesible por URL pública — indícame opciones gratuitas de hosting solo para ese HTML).
+5. Entrega todo como docs/play-store-listing.md.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] docs/play-store-listing.md incluye textos es+en, lista de assets con tamaños, y guía de Data Safety/Content Rating.
+- [ ] La sección Data Safety coincide con la política de privacidad real (sin contradicciones).
+- [ ] Se indican opciones para publicar el privacy.html en una URL pública.`
+      },
+      {
+        id:"9b", title:"Internal testing → producción", prio:"media", files:["—"],
+        goal:"Lanzamiento progresivo y seguro (closed/internal antes de abrir a todos).",
+        prompt:`${'$CTX'}
+
+TAREA: Dame el plan de lanzamiento progresivo en Play Console.
+
+Requisitos:
+1. Explica el flujo recomendado: Internal testing (testers por email) → Closed/Open testing → Production con staged rollout (p.ej. 20% → 50% → 100%).
+2. Indica qué revisar en cada etapa (instalación limpia, offline, notificaciones del timer, importación/exportación de datos, cambio de idioma, modo claro/oscuro).
+3. Explica el proceso de revisión de Google (tiempos típicos) y errores comunes de rechazo a evitar (política de privacidad inaccesible, permisos no justificados, metadatos engañosos).
+4. Entrega como docs/play-store-rollout.md con un checklist de pruebas pre-lanzamiento.
+
+CRITERIOS DE ACEPTACIÓN:
+- [ ] docs/play-store-rollout.md contiene el flujo de tracks y el staged rollout.
+- [ ] Incluye un checklist de QA manual de la app en dispositivo real.
+- [ ] Lista los motivos comunes de rechazo y cómo evitarlos.`
+      }
+    ]
+  }
+];
+
+// ----- RENDER -----
+const phasesEl = document.getElementById('phases');
+let totalTasks = 0;
+let blockBInserted = false;
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+PHASES.forEach(ph=>{
+  if(ph.block==='B' && !blockBInserted){
+    const bt=document.createElement('div'); bt.className='block-title'; bt.style.marginTop='52px'; bt.textContent='Bloque B · Despliegue a Google Play';
+    const bd=document.createElement('p'); bd.className='block-desc'; bd.textContent='El 20% final. Empaquetar, firmar y publicar. Se aborda cuando el Bloque A está completo.';
+    phasesEl.appendChild(bt); phasesEl.appendChild(bd);
+    blockBInserted=true;
+  }
+  const div=document.createElement('div'); div.className='phase'; div.id='phase-'+ph.n;
+  let tasksHtml='';
+  ph.tasks.forEach(t=>{
+    totalTasks++;
+    const promptText = t.prompt.replace('$CTX', CONTEXT);
+    const filesHtml = t.files.map(f=>`<span class="badge file">${esc(f)}</span>`).join('');
+    tasksHtml += `
+      <div class="task" id="task-${t.id}">
+        <div class="task-head">
+          <input type="checkbox" data-task="${t.id}" onchange="onCheck(this)">
+          <div class="task-meta">
+            <h4>${esc(t.title)}</h4>
+            <p class="goal">${esc(t.goal)}</p>
+            <div class="badges">
+              <span class="badge prio-${t.prio}">prioridad ${t.prio}</span>
+              ${filesHtml}
+            </div>
+          </div>
+        </div>
+        <div class="prompt-wrap">
+          <div class="prompt-bar">
+            <span>PROMPT PARA CLAUDE SONNET · tarea ${t.id}</span>
+            <button class="copy-btn" onclick="copyPrompt(this,'${t.id}')">Copiar prompt</button>
+          </div>
+          <pre class="prompt" id="prompt-${t.id}">${esc(promptText)}</pre>
+        </div>
+      </div>`;
+  });
+  div.innerHTML = `
+    <div class="phase-head" onclick="togglePhase(${ph.n})">
+      <div class="phase-num">${ph.block==='B'?'B'+ph.n:ph.n}</div>
+      <div class="phase-titles"><h3>Fase ${ph.n} · ${esc(ph.title)}</h3><p>${esc(ph.desc)}</p></div>
+      <span class="phase-count" id="count-${ph.n}">0/${ph.tasks.length}</span>
+      <span class="chev">▶</span>
+    </div>
+    <div class="phase-body">${tasksHtml}</div>`;
+  phasesEl.appendChild(div);
+});
+
+document.getElementById('totalTasks').textContent = totalTasks;
+document.getElementById('ptotal').textContent = totalTasks;
+
+// ----- INTERACTIONS -----
+const LS_KEY='gainai_playstore_plan_v1';
+function loadState(){ try{return JSON.parse(localStorage.getItem(LS_KEY)||'{}');}catch{return{};} }
+function saveState(s){ localStorage.setItem(LS_KEY,JSON.stringify(s)); }
+
+function togglePhase(n){ document.getElementById('phase-'+n).classList.toggle('open'); }
+function setAll(open){ document.querySelectorAll('.phase').forEach(p=>p.classList.toggle('open',open)); }
+
+function copyPrompt(btn,id){
+  const txt=document.getElementById('prompt-'+id).textContent;
+  navigator.clipboard.writeText(txt).then(()=>{
+    btn.textContent='✓ Copiado'; btn.classList.add('done');
+    setTimeout(()=>{btn.textContent='Copiar prompt';btn.classList.remove('done');},1600);
+  });
+}
+
+function onCheck(cb){
+  const s=loadState(); s[cb.dataset.task]=cb.checked; saveState(s); refresh();
+}
+
+function refresh(){
+  const s=loadState();
+  let done=0;
+  PHASES.forEach(ph=>{
+    let pdone=0;
+    ph.tasks.forEach(t=>{ if(s[t.id]){done++;pdone++;} });
+    document.getElementById('count-'+ph.n).textContent=pdone+'/'+ph.tasks.length;
+  });
+  const pct = totalTasks?Math.round(done/totalTasks*100):0;
+  document.getElementById('pfill').style.width=pct+'%';
+  document.getElementById('pdone').textContent=done;
+  document.getElementById('ppct').textContent=pct+'%';
+}
+
+function resetProgress(){ if(confirm('¿Reiniciar el progreso de todas las tareas?')){ saveState({}); document.querySelectorAll('input[type=checkbox][data-task]').forEach(c=>c.checked=false); refresh(); } }
+
+// restore
+(function(){
+  const s=loadState();
+  document.querySelectorAll('input[type=checkbox][data-task]').forEach(c=>{ c.checked=!!s[c.dataset.task]; });
+  document.getElementById('phase-1').classList.add('open');
+  refresh();
+})();
+</script>
+</body>
+</html>

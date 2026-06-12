@@ -51,6 +51,7 @@ export interface Translations {
   // Routine section
   routine_section_title: string;
   today_label: string;
+  next_label: string;
   first_time_label: string;
   days_ago_one: string;
   days_ago_many: string; // {n}
@@ -220,6 +221,7 @@ export const es: Translations = {
 
   routine_section_title: 'Tu rutina',
   today_label: 'HOY',
+  next_label: 'SIGUIENTE',
   first_time_label: 'Primera vez',
   days_ago_one: 'Hace 1 día',
   days_ago_many: 'Hace {n} días',
@@ -375,6 +377,7 @@ export const en: Translations = {
 
   routine_section_title: 'Your routine',
   today_label: 'TODAY',
+  next_label: 'NEXT',
   first_time_label: 'First time',
   days_ago_one: '1 day ago',
   days_ago_many: '{n} days ago',

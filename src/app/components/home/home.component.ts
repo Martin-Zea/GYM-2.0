@@ -118,7 +118,8 @@ export class HomeComponent {
             ? T.days_ago_one
             : this.tr.tp('days_ago_many', { n: daysAgo });
       }
-      return { day, index: i, lastLabel, isCurrent: i === this.state.currentDayIndex() };
+      const trainedToday = !!last && last.dateISO === todayISO;
+      return { day, index: i, lastLabel, isCurrent: i === this.state.currentDayIndex(), trainedToday };
     });
   });
 
