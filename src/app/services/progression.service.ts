@@ -1,5 +1,13 @@
 import { Injectable, inject } from '@angular/core';
-import { AiRecommendation, AppSettings, Exercise, SetRecommendation, SetRecord, TodaySetProgress, UserProfile } from '../models/workout.model';
+import {
+  AiRecommendation,
+  AppSettings,
+  Exercise,
+  SetRecommendation,
+  SetRecord,
+  TodaySetProgress,
+  UserProfile,
+} from '../models/workout.model';
 import { HistoryEntry, StorageService } from './storage.service';
 
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
@@ -21,15 +29,25 @@ export class ProgressionService {
   private readonly storage = inject(StorageService);
 
   private readCache(): Partial<Record<string, AiCacheEntry>> {
-    try { return JSON.parse(localStorage.getItem(AI_CACHE_KEY) ?? '{}'); }
-    catch { return {}; }
+    try {
+      return JSON.parse(localStorage.getItem(AI_CACHE_KEY) ?? '{}');
+    } catch {
+      return {};
+    }
   }
 
   private doneSig(todaySets: TodaySetProgress[]): string {
-    return todaySets.filter(s => s.done).map(s => `${s.weight}x${s.reps}`).join(',');
+    return todaySets
+      .filter((s) => s.done)
+      .map((s) => `${s.weight}x${s.reps}`)
+      .join(',');
   }
 
-  private getCached(exerciseId: string, lastSessionISO: string | null, todaySets: TodaySetProgress[]): AiRecommendation | null {
+  private getCached(
+    exerciseId: string,
+    lastSessionISO: string | null,
+    todaySets: TodaySetProgress[],
+  ): AiRecommendation | null {
     const entry = this.readCache()[exerciseId];
     if (!entry) return null;
     if (entry.cachedForDate !== this.storage.todayISO()) return null;
@@ -38,9 +56,19 @@ export class ProgressionService {
     return entry.rec;
   }
 
-  private setCached(exerciseId: string, lastSessionISO: string | null, todaySets: TodaySetProgress[], rec: AiRecommendation): void {
+  private setCached(
+    exerciseId: string,
+    lastSessionISO: string | null,
+    todaySets: TodaySetProgress[],
+    rec: AiRecommendation,
+  ): void {
     const cache = this.readCache();
-    cache[exerciseId] = { rec, lastSessionISO, cachedForDate: this.storage.todayISO(), doneSig: this.doneSig(todaySets) };
+    cache[exerciseId] = {
+      rec,
+      lastSessionISO,
+      cachedForDate: this.storage.todayISO(),
+      doneSig: this.doneSig(todaySets),
+    };
     localStorage.setItem(AI_CACHE_KEY, JSON.stringify(cache));
   }
 
@@ -68,7 +96,8 @@ export class ProgressionService {
     repTarget: number,
   ): { weight: number; reps: number }[] {
     if (
-      typeof parsed !== 'object' || parsed === null ||
+      typeof parsed !== 'object' ||
+      parsed === null ||
       !Array.isArray((parsed as { sets?: unknown }).sets) ||
       (parsed as { sets: unknown[] }).sets.length === 0
     ) {
@@ -77,7 +106,9 @@ export class ProgressionService {
 
     const raw = (parsed as { sets: unknown[] }).sets;
     const validSets = raw.filter(
-      s => typeof s === 'object' && s !== null &&
+      (s) =>
+        typeof s === 'object' &&
+        s !== null &&
         typeof (s as { weight?: unknown }).weight === 'number' &&
         typeof (s as { reps?: unknown }).reps === 'number',
     ) as { weight: number; reps: number }[];
@@ -89,7 +120,7 @@ export class ProgressionService {
       (_, i) => validSets[i] ?? validSets[validSets.length - 1],
     );
 
-    return normalized.map(s => ({
+    return normalized.map((s) => ({
       weight: this.roundToBrick(s.weight || 0, brick),
       reps: Math.max(1, Math.round(s.reps || repTarget)),
     }));
@@ -102,12 +133,17 @@ export class ProgressionService {
     if (userProfile.heightCm) parts.push(`altura ${userProfile.heightCm}cm`);
     if (userProfile.age) parts.push(`edad ${userProfile.age} años`);
     if (userProfile.sex) {
-      const sexLabel = userProfile.sex === 'male' ? 'masculino' : userProfile.sex === 'female' ? 'femenino' : 'otro';
+      const sexLabel =
+        userProfile.sex === 'male'
+          ? 'masculino'
+          : userProfile.sex === 'female'
+            ? 'femenino'
+            : 'otro';
       parts.push(`sexo ${sexLabel}`);
       // Nota clínica para personalización por sexo
       if (userProfile.sex === 'female') parts.push('(considerar ciclo hormonal en recuperación)');
     }
-    return parts.filter(p => !p.startsWith('('));
+    return parts.filter((p) => !p.startsWith('('));
   }
 
   /** Nota extendida con contexto de perfil para el prompt */
@@ -122,9 +158,10 @@ export class ProgressionService {
           : ''
       : '';
 
-    const sexTip = userProfile.sex === 'female'
-      ? 'Mujeres generalmente necesitan más reps y menos peso absoluto, ajustá en consecuencia.'
-      : '';
+    const sexTip =
+      userProfile.sex === 'female'
+        ? 'Mujeres generalmente necesitan más reps y menos peso absoluto, ajustá en consecuencia.'
+        : '';
 
     const bwNote = userProfile.weightKg
       ? `El peso corporal (${userProfile.weightKg}kg) es referencia para evaluar la fuerza relativa.`
@@ -144,8 +181,8 @@ export class ProgressionService {
     const setsTarget = exercise.defaultSets || 3;
 
     const doneSets = todaySets
-      .filter(s => s?.done)
-      .map(s => ({
+      .filter((s) => s?.done)
+      .map((s) => ({
         exerciseId: exercise.id,
         setIndex: 0,
         weight: typeof s.weight === 'number' ? s.weight : 0,
@@ -162,9 +199,9 @@ export class ProgressionService {
       };
     }
 
-    const topWeight = Math.max(...baseSets.map(s => s.weight || 0));
+    const topWeight = Math.max(...baseSets.map((s) => s.weight || 0));
     const totalRepsAtTop = baseSets
-      .filter(s => (s.weight || 0) === topWeight)
+      .filter((s) => (s.weight || 0) === topWeight)
       .reduce((sum, s) => sum + (s.reps || 0), 0);
     const maxPossibleReps = setsTarget * repTarget;
     const completionRatio = maxPossibleReps > 0 ? totalRepsAtTop / maxPossibleReps : 0;
@@ -220,7 +257,7 @@ export class ProgressionService {
     const repTarget = exercise.defaultRepTarget || 10;
     const setsTarget = exercise.defaultSets || 3;
 
-    const doneSets = todaySets.filter(s => s?.done);
+    const doneSets = todaySets.filter((s) => s?.done);
     const perfilParts = this.buildPerfilParts(userProfile);
 
     const summary = {
@@ -239,7 +276,7 @@ export class ProgressionService {
         peso_kg: s.weight,
         reps: s.reps,
       })),
-      historial_ultimas_sesiones: history.slice(-HISTORY_SESSIONS).map(h => ({
+      historial_ultimas_sesiones: history.slice(-HISTORY_SESSIONS).map((h) => ({
         fecha: h.dateISO,
         peso_top_kg: h.topWeight,
         reps_top: h.topReps,
@@ -270,7 +307,7 @@ El array "sets" debe tener EXACTAMENTE ${setsTarget} elementos.`;
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: GROQ_MODEL,
@@ -316,7 +353,7 @@ El array "sets" debe tener EXACTAMENTE ${setsTarget} elementos.`;
     const repTarget = exercise.defaultRepTarget || 10;
     const setsTarget = exercise.defaultSets || 3;
 
-    const doneSets = todaySets.filter(s => s?.done);
+    const doneSets = todaySets.filter((s) => s?.done);
     const perfilParts = this.buildPerfilParts(userProfile);
 
     const summary = {
@@ -325,9 +362,15 @@ El array "sets" debe tener EXACTAMENTE ${setsTarget} elementos.`;
       objetivo: `${setsTarget}x${repTarget}`,
       ladrillo_kg: brick,
       ...(perfilParts.length && { perfil: perfilParts.join(', ') }),
-      hoy: doneSets.map((s, i) => ({ s: i + 1, kg: typeof s.weight === 'number' ? s.weight : 0, r: typeof s.reps === 'number' ? s.reps : 0 })),
+      hoy: doneSets.map((s, i) => ({
+        s: i + 1,
+        kg: typeof s.weight === 'number' ? s.weight : 0,
+        r: typeof s.reps === 'number' ? s.reps : 0,
+      })),
       anterior: (lastSets ?? []).map((s, i) => ({ s: i + 1, kg: s.weight, r: s.reps })),
-      historial: history.slice(-HISTORY_SESSIONS).map(h => ({ f: h.dateISO, kg: h.topWeight, r: h.topReps, v: h.volume })),
+      historial: history
+        .slice(-HISTORY_SESSIONS)
+        .map((h) => ({ f: h.dateISO, kg: h.topWeight, r: h.topReps, v: h.volume })),
     };
 
     const profileNote = this.buildProfileNote(perfilParts, userProfile);
@@ -340,7 +383,7 @@ Array sets: EXACTAMENTE ${setsTarget} elementos.`;
 
     const resp = await this.fetchWithTimeout(COHERE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
         model: 'command-r7b-12-2024',
         messages: [{ role: 'user', content: prompt }],
@@ -380,7 +423,7 @@ Array sets: EXACTAMENTE ${setsTarget} elementos.`;
     lastSets: SetRecord[] | null,
     history: HistoryEntry[],
   ): Promise<AiRecommendation> {
-    const hasDoneOrHistory = lastSets?.length || todaySets.some(s => s?.done);
+    const hasDoneOrHistory = lastSets?.length || todaySets.some((s) => s?.done);
     const hasAnyKey = settings.apiKey || settings.cohereApiKey;
 
     if (!hasAnyKey) {
@@ -403,7 +446,14 @@ Array sets: EXACTAMENTE ${setsTarget} elementos.`;
 
     if (settings.apiKey) {
       try {
-        const rec = await this.groqRecommendation(settings.apiKey, exercise, todaySets, lastSets, history, settings.userProfile);
+        const rec = await this.groqRecommendation(
+          settings.apiKey,
+          exercise,
+          todaySets,
+          lastSets,
+          history,
+          settings.userProfile,
+        );
         this.setCached(exercise.id, lastSessionISO, todaySets, rec);
         return rec;
       } catch (e) {
@@ -413,7 +463,14 @@ Array sets: EXACTAMENTE ${setsTarget} elementos.`;
 
     if (settings.cohereApiKey) {
       try {
-        const rec = await this.cohereRecommendation(settings.cohereApiKey, exercise, todaySets, lastSets, history, settings.userProfile);
+        const rec = await this.cohereRecommendation(
+          settings.cohereApiKey,
+          exercise,
+          todaySets,
+          lastSets,
+          history,
+          settings.userProfile,
+        );
         this.setCached(exercise.id, lastSessionISO, todaySets, rec);
         return rec;
       } catch (e) {

@@ -8,7 +8,7 @@
         <p class="sheet-sub">{{ day()?.name }}</p>
       </div>
       <button class="icon-btn" (click)="close()" [attr.aria-label]="T().close_btn">
-        <app-icon name="x" [size]="16"/>
+        <app-icon name="x" [size]="16" />
       </button>
     </div>
 
@@ -24,16 +24,26 @@
               <span class="history-date">{{ sv.dateLabel }}</span>
               <div class="history-header-right">
                 @if (sv.totalVolume > 0) {
-                  <span class="history-vol">{{ sv.totalVolume | number:'1.0-0' }} kg vol.</span>
+                  <span class="history-vol">{{ sv.totalVolume | number: '1.0-0' }} kg vol.</span>
                 }
                 @if (!sv.session.skipped && editingId() !== sv.session.id) {
-                  <button class="icon-btn" [title]="T().history_edit" [attr.aria-label]="T().history_edit" (click)="startEdit(sv)">
-                    <app-icon name="edit" [size]="14"/>
+                  <button
+                    class="icon-btn"
+                    [title]="T().history_edit"
+                    [attr.aria-label]="T().history_edit"
+                    (click)="startEdit(sv)"
+                  >
+                    <app-icon name="edit" [size]="14" />
                   </button>
                 }
                 @if (confirmDeleteId() !== sv.session.id) {
-                  <button class="icon-btn icon-btn-danger" [title]="T().history_delete" [attr.aria-label]="T().history_delete" (click)="askDelete(sv.session.id)">
-                    <app-icon name="trash" [size]="14"/>
+                  <button
+                    class="icon-btn icon-btn-danger"
+                    [title]="T().history_delete"
+                    [attr.aria-label]="T().history_delete"
+                    (click)="askDelete(sv.session.id)"
+                  >
+                    <app-icon name="trash" [size]="14" />
                   </button>
                 }
               </div>
@@ -43,7 +53,9 @@
               <div class="history-confirm">
                 <span class="history-confirm-q">{{ T().history_delete_confirm }}</span>
                 <div class="history-confirm-actions">
-                  <button class="btn btn-sm btn-danger" (click)="confirmDelete()">{{ T().confirm }}</button>
+                  <button class="btn btn-sm btn-danger" (click)="confirmDelete()">
+                    {{ T().confirm }}
+                  </button>
                   <button class="btn btn-sm" (click)="cancelDelete()">{{ T().cancel }}</button>
                 </div>
               </div>
@@ -66,7 +78,8 @@
                           step="any"
                           min="0"
                           [value]="set.weight"
-                          (input)="onDraftInput(ex.id, set.setIndex, 'weight', $event)"/>
+                          (input)="onDraftInput(ex.id, set.setIndex, 'weight', $event)"
+                        />
                         <span class="history-edit-sep">kg ×</span>
                         <input
                           class="history-edit-input"
@@ -75,7 +88,8 @@
                           step="1"
                           min="0"
                           [value]="set.reps"
-                          (input)="onDraftInput(ex.id, set.setIndex, 'reps', $event)"/>
+                          (input)="onDraftInput(ex.id, set.setIndex, 'reps', $event)"
+                        />
                       </div>
                     }
                   </div>
@@ -83,10 +97,10 @@
               }
               <div class="history-edit-actions">
                 <button class="btn btn-sm btn-primary" (click)="saveEdit(sv)">
-                  <app-icon name="check" [size]="14"/> {{ T().save }}
+                  <app-icon name="check" [size]="14" /> {{ T().save }}
                 </button>
                 <button class="btn btn-sm" (click)="cancelEdit()">
-                  <app-icon name="x" [size]="14"/> {{ T().cancel }}
+                  <app-icon name="x" [size]="14" /> {{ T().cancel }}
                 </button>
               </div>
             } @else {
@@ -95,7 +109,9 @@
                   <span class="history-ex-name">{{ ex.name }}</span>
                   <div class="history-ex-sets">
                     @for (set of ex.sets; track set.setIndex; let i = $index) {
-                      <span class="detail-set-chip">{{ i + 1 }}. {{ setLabel(set.weight, set.reps, ex.unit) }}</span>
+                      <span class="detail-set-chip"
+                        >{{ i + 1 }}. {{ setLabel(set.weight, set.reps, ex.unit) }}</span
+                      >
                     }
                   </div>
                 </div>

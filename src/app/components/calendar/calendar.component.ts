@@ -34,8 +34,18 @@ export class CalendarComponent {
   protected readonly DOW = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
   private static readonly MONTHS = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre',
   ];
 
   protected readonly monthLabel = computed(() => {
@@ -43,12 +53,24 @@ export class CalendarComponent {
     return `${CalendarComponent.MONTHS[d.getMonth()]} ${d.getFullYear()}`;
   });
 
-  private readonly realTrainedIsos = computed(() =>
-    new Set(this.state.sessions().filter(s => !s.skipped).map(s => s.dateISO)),
+  private readonly realTrainedIsos = computed(
+    () =>
+      new Set(
+        this.state
+          .sessions()
+          .filter((s) => !s.skipped)
+          .map((s) => s.dateISO),
+      ),
   );
 
-  private readonly skippedIsos = computed(() =>
-    new Set(this.state.sessions().filter(s => s.skipped).map(s => s.dateISO)),
+  private readonly skippedIsos = computed(
+    () =>
+      new Set(
+        this.state
+          .sessions()
+          .filter((s) => s.skipped)
+          .map((s) => s.dateISO),
+      ),
   );
 
   protected readonly calDays = computed<CalDay[]>(() => {
@@ -107,9 +129,9 @@ export class CalendarComponent {
     const sessions = this.state.sessions();
     const today = this.storage.todayISO();
 
-    return this.state.days().map(day => {
+    return this.state.days().map((day) => {
       const last = sessions
-        .filter(s => s.dayId === day.id && !s.skipped)
+        .filter((s) => s.dayId === day.id && !s.skipped)
         .sort((a, b) => b.dateISO.localeCompare(a.dateISO))[0];
 
       if (!last) return { id: day.id, name: day.name, daysAgo: null };
@@ -130,10 +152,10 @@ export class CalendarComponent {
   }
 
   protected prevMonth(): void {
-    this.viewDate.update(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+    this.viewDate.update((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
   }
 
   protected nextMonth(): void {
-    this.viewDate.update(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+    this.viewDate.update((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
   }
 }

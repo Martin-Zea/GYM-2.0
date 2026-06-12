@@ -1,13 +1,13 @@
 <div class="onboarding-overlay" role="dialog" [attr.aria-label]="T().app_name" aria-modal="true">
   <div class="onboarding-panel">
-
     <div class="slides-viewport">
-      <div class="slides-track"
-           [style.transform]="'translateX(calc(-' + current() + ' * 100% / ' + slideCount + '))'">
-
+      <div
+        class="slides-track"
+        [style.transform]="'translateX(calc(-' + current() + ' * 100% / ' + slideCount + '))'"
+      >
         <div class="slide">
           <div class="slide-icon-wrap">
-            <app-icon name="dumbbell" [size]="52"/>
+            <app-icon name="dumbbell" [size]="52" />
           </div>
           <h2 class="slide-title">{{ T().onboarding_slide1_title }}</h2>
           <p class="slide-desc">{{ T().onboarding_slide1_desc }}</p>
@@ -15,7 +15,7 @@
 
         <div class="slide">
           <div class="slide-icon-wrap">
-            <app-icon name="sparkle" [size]="52"/>
+            <app-icon name="sparkle" [size]="52" />
           </div>
           <h2 class="slide-title">{{ T().onboarding_slide2_title }}</h2>
           <p class="slide-desc">{{ T().onboarding_slide2_desc }}</p>
@@ -23,12 +23,11 @@
 
         <div class="slide">
           <div class="slide-icon-wrap slide-icon-wrap--privacy">
-            <app-icon name="check" [size]="52"/>
+            <app-icon name="check" [size]="52" />
           </div>
           <h2 class="slide-title">{{ T().onboarding_slide3_title }}</h2>
           <p class="slide-desc">{{ T().onboarding_slide3_desc }}</p>
         </div>
-
       </div>
     </div>
 
@@ -39,9 +38,11 @@
     </div>
 
     <div class="onboarding-nav">
-      <button class="btn-ghost"
-              [style.visibility]="current() > 0 ? 'visible' : 'hidden'"
-              (click)="back()">
+      <button
+        class="btn-ghost"
+        [style.visibility]="current() > 0 ? 'visible' : 'hidden'"
+        (click)="back()"
+      >
         {{ T().onboarding_back }}
       </button>
       <button class="btn-primary" (click)="next()">
@@ -52,6 +53,5 @@
         }
       </button>
     </div>
-
   </div>
 </div>

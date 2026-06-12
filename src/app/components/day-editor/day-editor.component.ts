@@ -22,7 +22,13 @@ export class DayEditorComponent implements OnInit {
 
   protected readonly dayName = signal('');
   protected readonly exercises = signal<Exercise[]>([]);
-  protected readonly units: ExerciseUnit[] = ['kg', 'kg por mano', 'kg por brazo', 'tiempo', 'peso corporal'];
+  protected readonly units: ExerciseUnit[] = [
+    'kg',
+    'kg por mano',
+    'kg por brazo',
+    'tiempo',
+    'peso corporal',
+  ];
 
   protected get isNew(): boolean {
     return this.uiState.editingDay() === 'new';
@@ -54,16 +60,16 @@ export class DayEditorComponent implements OnInit {
   }
 
   protected addExercise(): void {
-    this.exercises.update(arr => [...arr, this.makeExercise()]);
+    this.exercises.update((arr) => [...arr, this.makeExercise()]);
   }
 
   protected removeExercise(i: number): void {
-    this.exercises.update(arr => arr.filter((_, idx) => idx !== i));
+    this.exercises.update((arr) => arr.filter((_, idx) => idx !== i));
   }
 
   protected moveUp(i: number): void {
     if (i <= 0) return;
-    this.exercises.update(arr => {
+    this.exercises.update((arr) => {
       const copy = [...arr];
       [copy[i - 1], copy[i]] = [copy[i], copy[i - 1]];
       return copy;
@@ -71,7 +77,7 @@ export class DayEditorComponent implements OnInit {
   }
 
   protected moveDown(i: number): void {
-    this.exercises.update(arr => {
+    this.exercises.update((arr) => {
       if (i >= arr.length - 1) return arr;
       const copy = [...arr];
       [copy[i], copy[i + 1]] = [copy[i + 1], copy[i]];
@@ -100,7 +106,7 @@ export class DayEditorComponent implements OnInit {
   }
 
   private patch(i: number, p: Partial<Exercise>): void {
-    this.exercises.update(arr => arr.map((ex, idx) => idx === i ? { ...ex, ...p } : ex));
+    this.exercises.update((arr) => arr.map((ex, idx) => (idx === i ? { ...ex, ...p } : ex)));
   }
 
   protected save(): void {
@@ -110,7 +116,7 @@ export class DayEditorComponent implements OnInit {
     const day: WorkoutDay = {
       id: editing === 'new' ? this.storage.uid() : (editing as WorkoutDay).id,
       name,
-      exercises: this.exercises().filter(e => e.name.trim()),
+      exercises: this.exercises().filter((e) => e.name.trim()),
     };
     this.state.saveDay(day);
     this.uiState.closeEditingDay();

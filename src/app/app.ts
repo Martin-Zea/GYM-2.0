@@ -22,8 +22,13 @@ import { OnboardingComponent } from './components/onboarding/onboarding.componen
   standalone: true,
   imports: [
     RouterOutlet,
-    IconComponent, RestTimerComponent, DayEditorComponent, SettingsComponent,
-    DayDetailSheetComponent, DayPickerSheetComponent, DayHistorySheetComponent,
+    IconComponent,
+    RestTimerComponent,
+    DayEditorComponent,
+    SettingsComponent,
+    DayDetailSheetComponent,
+    DayPickerSheetComponent,
+    DayHistorySheetComponent,
     BottomNavComponent,
     OnboardingComponent,
   ],
@@ -66,9 +71,9 @@ export class App {
   private checkBackupReminder(): void {
     if (localStorage.getItem('gym_backup_dismissed') === this.storage.todayISO()) return;
     const lastExport = localStorage.getItem('gym_last_export');
-    const sessions = this.state.sessions().filter(s => !s.skipped);
+    const sessions = this.state.sessions().filter((s) => !s.skipped);
     const count = lastExport
-      ? sessions.filter(s => s.dateISO > lastExport).length
+      ? sessions.filter((s) => s.dateISO > lastExport).length
       : sessions.length;
     if (count >= (lastExport ? 8 : 10)) {
       this.uiState.backupReminder.set(true);

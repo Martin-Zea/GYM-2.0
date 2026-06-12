@@ -2,55 +2,66 @@
   <header class="topbar" [class.training-active]="uiState.trainingActive()">
     <div class="brand">
       <div class="brand-mark">
-        <app-icon name="dumbbell" [size]="14"/>
+        <app-icon name="dumbbell" [size]="14" />
       </div>
       <span>{{ T().app_name }}</span>
     </div>
     <div class="topbar-actions">
-      <button class="icon-btn lang-btn" (click)="toggleLang()"
+      <button
+        class="icon-btn lang-btn"
+        (click)="toggleLang()"
         [title]="T().settings_language"
-        [attr.aria-label]="T().settings_language">
+        [attr.aria-label]="T().settings_language"
+      >
         <span class="lang-label" aria-hidden="true">{{ tr.lang() === 'es' ? 'EN' : 'ES' }}</span>
       </button>
-      <button class="icon-btn" (click)="toggleTheme()"
+      <button
+        class="icon-btn"
+        (click)="toggleTheme()"
         [title]="theme() === 'dark' ? T().theme_toggle_dark : T().theme_toggle_light"
-        [attr.aria-label]="theme() === 'dark' ? T().theme_toggle_dark : T().theme_toggle_light">
-        <app-icon [name]="theme() === 'dark' ? 'sun' : 'moon'" [size]="16"/>
+        [attr.aria-label]="theme() === 'dark' ? T().theme_toggle_dark : T().theme_toggle_light"
+      >
+        <app-icon [name]="theme() === 'dark' ? 'sun' : 'moon'" [size]="16" />
       </button>
-      <button class="icon-btn" [title]="T().settings_btn" [attr.aria-label]="T().settings_btn" (click)="uiState.openSettings()">
-        <app-icon name="settings" [size]="16"/>
+      <button
+        class="icon-btn"
+        [title]="T().settings_btn"
+        [attr.aria-label]="T().settings_btn"
+        (click)="uiState.openSettings()"
+      >
+        <app-icon name="settings" [size]="16" />
       </button>
     </div>
   </header>
 
   <main class="app-content">
-    <router-outlet/>
+    <router-outlet />
   </main>
 
-  <app-bottom-nav/>
+  <app-bottom-nav />
 
   @if (uiState.restTimer()) {
-    <app-rest-timer/>
+    <app-rest-timer />
   }
 
   @if (uiState.editingDay() !== null) {
-    <app-day-editor/>
+    <app-day-editor />
   }
 
   @if (uiState.showSettings()) {
-    <app-settings/>
+    <app-settings />
   }
 
   @if (uiState.dayDetail()) {
-    <app-day-detail-sheet/>
+    <app-day-detail-sheet />
   }
 
   @if (uiState.showDayPicker()) {
-    <app-day-picker-sheet/>
+    <app-day-picker-sheet />
   }
 
   @if (uiState.dayHistory()) {
-    <app-day-history-sheet/>
+    <app-day-history-sheet />
   }
 
   @if (uiState.saveError()) {
@@ -77,29 +88,37 @@
       <button class="app-toast-btn" (click)="exportBackup()">
         {{ T().backup_export_now }}
       </button>
-      <button class="app-toast-btn app-toast-dismiss" (click)="dismissBackupReminder()"
-        [attr.aria-label]="T().save_error_dismiss">
-        <app-icon name="x" [size]="14"/>
+      <button
+        class="app-toast-btn app-toast-dismiss"
+        (click)="dismissBackupReminder()"
+        [attr.aria-label]="T().save_error_dismiss"
+      >
+        <app-icon name="x" [size]="14" />
       </button>
     </div>
   }
 
   @if (uiState.prCelebration(); as pr) {
     <div class="app-toast pr-toast" role="status">
-      <app-icon name="sparkle" [size]="16"/>
-      <span class="app-toast-msg">{{ tr.tp('pr_celebration', { exercise: pr.exerciseName, weight: pr.weight }) }}</span>
+      <app-icon name="sparkle" [size]="16" />
+      <span class="app-toast-msg">{{
+        tr.tp('pr_celebration', { exercise: pr.exerciseName, weight: pr.weight })
+      }}</span>
       <button class="app-toast-btn" (click)="sharePrFromToast()">
         {{ T().profile_pr_share }}
       </button>
-      <button class="app-toast-btn app-toast-dismiss" (click)="uiState.prCelebration.set(null)"
-        [attr.aria-label]="T().save_error_dismiss">
-        <app-icon name="x" [size]="14"/>
+      <button
+        class="app-toast-btn app-toast-dismiss"
+        (click)="uiState.prCelebration.set(null)"
+        [attr.aria-label]="T().save_error_dismiss"
+      >
+        <app-icon name="x" [size]="14" />
       </button>
     </div>
   }
 
   @if (showOnboarding()) {
-    <app-onboarding (done)="completeOnboarding()"/>
+    <app-onboarding (done)="completeOnboarding()" />
   }
 
   @if (uiState.updateAvailable()) {
@@ -108,9 +127,12 @@
       <button class="app-toast-btn" (click)="appUpdate.applyUpdate()">
         {{ T().update_reload }}
       </button>
-      <button class="app-toast-btn app-toast-dismiss" (click)="uiState.updateAvailable.set(false)"
-        [attr.aria-label]="T().save_error_dismiss">
-        <app-icon name="x" [size]="14"/>
+      <button
+        class="app-toast-btn app-toast-dismiss"
+        (click)="uiState.updateAvailable.set(false)"
+        [attr.aria-label]="T().save_error_dismiss"
+      >
+        <app-icon name="x" [size]="14" />
       </button>
     </div>
   }

@@ -18,6 +18,7 @@ function baseState(overrides: Partial<AppState> = {}): AppState {
       cohereApiKey: '',
       defaultRest: 60,
       sounds: true,
+      haptics: true,
       theme: 'dark',
       userProfile: { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [] },
     },
@@ -29,7 +30,13 @@ function makeSet(exerciseId: string, setIndex: number, weight: number, reps: num
   return { exerciseId, setIndex, weight, reps };
 }
 
-function makeSession(id: string, dayId: string, dateISO: string, sets: SetRecord[], skipped = false): Session {
+function makeSession(
+  id: string,
+  dayId: string,
+  dateISO: string,
+  sets: SetRecord[],
+  skipped = false,
+): Session {
   return skipped ? { id, dayId, dateISO, sets, skipped: true } : { id, dayId, dateISO, sets };
 }
 
@@ -64,8 +71,12 @@ describe('StorageService', () => {
     });
 
     it('lanza Error si todayProgress existe y no es un objeto', () => {
-      expect(() => service.validateImport({ days: [], todayProgress: 'x' })).toThrow(/todayProgress/);
-      expect(() => service.validateImport({ days: [], todayProgress: null })).toThrow(/todayProgress/);
+      expect(() => service.validateImport({ days: [], todayProgress: 'x' })).toThrow(
+        /todayProgress/,
+      );
+      expect(() => service.validateImport({ days: [], todayProgress: null })).toThrow(
+        /todayProgress/,
+      );
     });
 
     it('acepta un estado válido mínimo y rellena defaults', () => {
@@ -79,6 +90,7 @@ describe('StorageService', () => {
         cohereApiKey: '',
         defaultRest: 60,
         sounds: true,
+        haptics: true,
         theme: 'dark',
         userProfile: { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [] },
       });
@@ -101,7 +113,12 @@ describe('StorageService', () => {
     const sessions = [makeSession('s1', 'd1', '2026-06-01', [makeSet('e1', 0, 20, 10)])];
 
     it('migra schemaVersion 1 a 4 sin perder days ni sessions', () => {
-      const result = service.validateImport({ schemaVersion: 1, days, sessions, activeDayIndex: 2 });
+      const result = service.validateImport({
+        schemaVersion: 1,
+        days,
+        sessions,
+        activeDayIndex: 2,
+      });
       expect(result.schemaVersion).toBe(4);
       expect(result.days).toEqual(days);
       expect(result.sessions).toEqual(sessions);
@@ -110,7 +127,12 @@ describe('StorageService', () => {
     });
 
     it('migra schemaVersion 2 a 4 sin perder days ni sessions', () => {
-      const result = service.validateImport({ schemaVersion: 2, days, sessions, activeDayIndex: 1 });
+      const result = service.validateImport({
+        schemaVersion: 2,
+        days,
+        sessions,
+        activeDayIndex: 1,
+      });
       expect(result.schemaVersion).toBe(4);
       expect(result.days).toEqual(days);
       expect(result.sessions).toEqual(sessions);
@@ -123,7 +145,11 @@ describe('StorageService', () => {
         schemaVersion: 3,
         days,
         settings: {
-          apiKey: '', cohereApiKey: '', defaultRest: 60, sounds: true, theme: 'dark',
+          apiKey: '',
+          cohereApiKey: '',
+          defaultRest: 60,
+          sounds: true,
+          theme: 'dark',
           userProfile: { weightKg: 78.5, heightCm: 175, age: 34, sex: 'male' },
         },
       });
@@ -139,7 +165,11 @@ describe('StorageService', () => {
         schemaVersion: 3,
         days,
         settings: {
-          apiKey: '', cohereApiKey: '', defaultRest: 60, sounds: true, theme: 'dark',
+          apiKey: '',
+          cohereApiKey: '',
+          defaultRest: 60,
+          sounds: true,
+          theme: 'dark',
           userProfile: { weightKg: null, heightCm: null, age: null, sex: null },
         },
       });
@@ -171,7 +201,11 @@ describe('StorageService', () => {
         schemaVersion: 4,
         days,
         settings: {
-          apiKey: '', cohereApiKey: '', defaultRest: 60, sounds: true, theme: 'dark',
+          apiKey: '',
+          cohereApiKey: '',
+          defaultRest: 60,
+          sounds: true,
+          theme: 'dark',
           userProfile: { weightKg: 78.5, heightCm: null, age: null, sex: null, weightLog },
         },
       });
@@ -213,7 +247,9 @@ describe('StorageService', () => {
     it('devuelve el estado inicial sin lanzar si el JSON está corrupto', () => {
       localStorage.setItem(STORAGE_KEY, '{esto no es JSON válido');
       let state!: AppState;
-      expect(() => { state = service.load(); }).not.toThrow();
+      expect(() => {
+        state = service.load();
+      }).not.toThrow();
       expect(state.schemaVersion).toBe(4);
       expect(state.days.length).toBe(5);
     });
@@ -221,7 +257,9 @@ describe('StorageService', () => {
     it('devuelve el estado inicial sin lanzar si el objeto no tiene la forma esperada', () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ foo: 'bar' }));
       let state!: AppState;
-      expect(() => { state = service.load(); }).not.toThrow();
+      expect(() => {
+        state = service.load();
+      }).not.toThrow();
       expect(state.schemaVersion).toBe(4);
       expect(state.days.length).toBe(5);
     });
@@ -271,8 +309,8 @@ describe('StorageService', () => {
       const state = baseState({
         sessions: [
           makeSession('dom-prev', 'd1', '2026-06-07', [makeSet('e1', 0, 10, 10)]), // fuera
-          makeSession('lun', 'd1', '2026-06-08', [makeSet('e1', 0, 20, 10)]),      // vol 200
-          makeSession('dom-hoy', 'd1', '2026-06-14', [makeSet('e1', 0, 5, 10)]),   // vol 50
+          makeSession('lun', 'd1', '2026-06-08', [makeSet('e1', 0, 20, 10)]), // vol 200
+          makeSession('dom-hoy', 'd1', '2026-06-14', [makeSet('e1', 0, 5, 10)]), // vol 50
         ],
       });
       expect(service.weeklyStats(state).weeklyVolume).toBe(250);
@@ -312,11 +350,11 @@ describe('StorageService', () => {
           makeSession('a', 'd1', '2026-06-01', []),
           makeSession('b', 'd1', '2026-06-05', [], true), // skipped
           makeSession('c', 'd1', '2026-06-03', []),
-          makeSession('d', 'd2', '2026-06-04', []),       // otro día
+          makeSession('d', 'd2', '2026-06-04', []), // otro día
         ],
       });
       const result = service.allSessionsForDay(state, 'd1');
-      expect(result.map(s => s.id)).toEqual(['c', 'a']);
+      expect(result.map((s) => s.id)).toEqual(['c', 'a']);
     });
   });
 
@@ -324,7 +362,10 @@ describe('StorageService', () => {
     it('excluye sesiones skipped y calcula topWeight/volume por sesión', () => {
       const state = baseState({
         sessions: [
-          makeSession('s1', 'd1', '2026-06-01', [makeSet('e1', 0, 20, 10), makeSet('e1', 1, 22.5, 8)]),
+          makeSession('s1', 'd1', '2026-06-01', [
+            makeSet('e1', 0, 20, 10),
+            makeSet('e1', 1, 22.5, 8),
+          ]),
           makeSession('s2', 'd1', '2026-06-03', [], true), // skipped
           makeSession('s3', 'd1', '2026-06-05', [makeSet('e1', 0, 25, 6), makeSet('e2', 0, 99, 5)]),
         ],
@@ -332,13 +373,80 @@ describe('StorageService', () => {
       const history = service.historyForExercise(state, 'e1');
       expect(history.length).toBe(2);
       // Orden ascendente por fecha
-      expect(history.map(h => h.dateISO)).toEqual(['2026-06-01', '2026-06-05']);
+      expect(history.map((h) => h.dateISO)).toEqual(['2026-06-01', '2026-06-05']);
       expect(history[0].topWeight).toBe(22.5);
       expect(history[0].totalReps).toBe(18);
       expect(history[0].volume).toBe(20 * 10 + 22.5 * 8);
       // Solo sets del ejercicio pedido
-      expect(history[1].sets.every(s => s.exerciseId === 'e1')).toBe(true);
+      expect(history[1].sets.every((s) => s.exerciseId === 'e1')).toBe(true);
       expect(history[1].volume).toBe(150);
+    });
+  });
+
+  describe('lastSetsForExercise()', () => {
+    it('devuelve null cuando no hay sesiones para ese ejercicio', () => {
+      const state = baseState({ sessions: [] });
+      expect(service.lastSetsForExercise(state, 'e1')).toBeNull();
+    });
+
+    it('devuelve los sets del ejercicio de la sesión más reciente', () => {
+      const state = baseState({
+        sessions: [
+          makeSession('s1', 'd1', '2026-06-01', [makeSet('e1', 0, 20, 10)]),
+          makeSession('s2', 'd1', '2026-06-05', [makeSet('e1', 0, 25, 8), makeSet('e1', 1, 25, 7)]),
+        ],
+      });
+      const sets = service.lastSetsForExercise(state, 'e1');
+      expect(sets).not.toBeNull();
+      expect(sets!.length).toBe(2);
+      expect(sets!.every((s) => s.weight === 25)).toBe(true);
+    });
+
+    it('ignora sesiones skipped al buscar la más reciente', () => {
+      const state = baseState({
+        sessions: [
+          makeSession('s1', 'd1', '2026-06-01', [makeSet('e1', 0, 20, 10)]),
+          makeSession('s2', 'd1', '2026-06-05', [], true), // skipped — debe ignorarse
+        ],
+      });
+      const sets = service.lastSetsForExercise(state, 'e1');
+      expect(sets).not.toBeNull();
+      expect(sets![0].weight).toBe(20);
+    });
+
+    it('con beforeISO excluye sesiones a partir de esa fecha (exclusive)', () => {
+      const state = baseState({
+        sessions: [
+          makeSession('s1', 'd1', '2026-06-01', [makeSet('e1', 0, 15, 12)]),
+          makeSession('s2', 'd1', '2026-06-05', [makeSet('e1', 0, 20, 10)]),
+          makeSession('s3', 'd1', '2026-06-10', [makeSet('e1', 0, 25, 8)]),
+        ],
+      });
+      // beforeISO='2026-06-10' → excluye s3; la más reciente válida es s2
+      const sets = service.lastSetsForExercise(state, 'e1', '2026-06-10');
+      expect(sets).not.toBeNull();
+      expect(sets![0].weight).toBe(20);
+    });
+
+    it('devuelve null si solo hay sesiones ≥ beforeISO', () => {
+      const state = baseState({
+        sessions: [makeSession('s1', 'd1', '2026-06-10', [makeSet('e1', 0, 30, 5)])],
+      });
+      expect(service.lastSetsForExercise(state, 'e1', '2026-06-10')).toBeNull();
+    });
+
+    it('devuelve solo los sets del ejercicio pedido, no otros del mismo session', () => {
+      const state = baseState({
+        sessions: [
+          makeSession('s1', 'd1', '2026-06-01', [
+            makeSet('e1', 0, 20, 10),
+            makeSet('e2', 0, 50, 5),
+          ]),
+        ],
+      });
+      const sets = service.lastSetsForExercise(state, 'e1');
+      expect(sets!.every((s) => s.exerciseId === 'e1')).toBe(true);
+      expect(sets!.length).toBe(1);
     });
   });
 });

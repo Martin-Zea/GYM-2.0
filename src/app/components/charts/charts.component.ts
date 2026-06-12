@@ -7,7 +7,10 @@ import { HistoryEntry, StorageService } from '../../services/storage.service';
 import { TranslationService } from '../../services/translation.service';
 import { Exercise, WeightLogEntry } from '../../models/workout.model';
 
-interface Pt { x: number; y: number; }
+interface Pt {
+  x: number;
+  y: number;
+}
 
 type ChartMetric = 'top' | '1rm';
 type ChartRange = '3m' | '6m' | 'all';
@@ -64,15 +67,16 @@ export class ChartsComponent {
 
     for (const day of s.days) {
       for (const ex of day.exercises) {
-        const history = this.storage.historyForExercise(s, ex.id)
-          .filter(h => h.topWeight > 0 && (!cutoff || h.dateISO >= cutoff));
+        const history = this.storage
+          .historyForExercise(s, ex.id)
+          .filter((h) => h.topWeight > 0 && (!cutoff || h.dateISO >= cutoff));
         if (history.length < 2) {
           result.push({ exercise: ex, chart: null });
           continue;
         }
         // 1RM (Epley) no aplica a ejercicios por tiempo ni de peso corporal: siempre peso máximo
         const exMetric = ex.unit === 'tiempo' || ex.unit === 'peso corporal' ? 'top' : metric;
-        const values = history.map(h => this.metricValue(h, exMetric));
+        const values = history.map((h) => this.metricValue(h, exMetric));
         // PR sigue la métrica activa (máximo del valor graficado); el volumen (peso × reps)
         // es independiente de la métrica, así que volLast/volAvg quedan sobre los datos reales.
         const pr = Math.max(...values);
@@ -91,17 +95,25 @@ export class ChartsComponent {
   protected readonly bodyweightChart = computed<BodyweightChart | null>(() => {
     const cutoff = this.rangeCutoff(this.range());
     const log = [...this.state.settings().userProfile.weightLog]
-      .filter(e => !cutoff || e.dateISO >= cutoff)
+      .filter((e) => !cutoff || e.dateISO >= cutoff)
       .sort((a, b) => a.dateISO.localeCompare(b.dateISO));
     if (log.length < 2) return null;
     // Adaptar el log al shape de HistoryEntry para reusar buildChart()
-    const history: HistoryEntry[] = log.map(e => ({
-      dateISO: e.dateISO, sets: [], topWeight: e.weightKg, topReps: 0, totalReps: 0, volume: 0,
+    const history: HistoryEntry[] = log.map((e) => ({
+      dateISO: e.dateISO,
+      sets: [],
+      topWeight: e.weightKg,
+      topReps: 0,
+      totalReps: 0,
+      volume: 0,
     }));
     return {
       entries: log,
       current: log[log.length - 1].weightKg,
-      ...this.buildChart(history, history.map(h => h.topWeight)),
+      ...this.buildChart(
+        history,
+        history.map((h) => h.topWeight),
+      ),
     };
   });
 
@@ -133,9 +145,16 @@ export class ChartsComponent {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
-  private buildChart(history: HistoryEntry[], values: number[]): Omit<ChartData, 'history' | 'pr' | 'volLast' | 'volAvg'> {
-    const x0 = 32, x1 = 292, y0 = 8, y1 = 88;
-    const pw = x1 - x0, ph = y1 - y0;
+  private buildChart(
+    history: HistoryEntry[],
+    values: number[],
+  ): Omit<ChartData, 'history' | 'pr' | 'volLast' | 'volAvg'> {
+    const x0 = 32,
+      x1 = 292,
+      y0 = 8,
+      y1 = 88;
+    const pw = x1 - x0,
+      ph = y1 - y0;
     const n = history.length;
 
     const minW = Math.min(...values);
@@ -147,10 +166,10 @@ export class ChartsComponent {
       y: y1 - ((v - minW) / range) * ph,
     }));
 
-    const points = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    const points = pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
     const areaPath = [
       `M${pts[0].x.toFixed(1)},${y1}`,
-      ...pts.map(p => `L${p.x.toFixed(1)},${p.y.toFixed(1)}`),
+      ...pts.map((p) => `L${p.x.toFixed(1)},${p.y.toFixed(1)}`),
       `L${pts[pts.length - 1].x.toFixed(1)},${y1}Z`,
     ].join(' ');
 
@@ -160,7 +179,7 @@ export class ChartsComponent {
     ];
 
     const indices = [...new Set([0, Math.floor((n - 1) / 2), n - 1])];
-    const xLabels = indices.map(i => ({
+    const xLabels = indices.map((i) => ({
       label: history[i].dateISO.slice(5),
       x: pts[i].x,
     }));

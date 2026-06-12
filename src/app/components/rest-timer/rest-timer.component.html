@@ -3,12 +3,17 @@
 
   <div class="rest-ring">
     <svg viewBox="0 0 220 220">
-      <circle cx="110" cy="110" r="95"
-        fill="none" stroke-width="8" class="rest-ring-bg"/>
-      <circle cx="110" cy="110" r="95"
-        fill="none" stroke-width="8" class="rest-ring-fg"
+      <circle cx="110" cy="110" r="95" fill="none" stroke-width="8" class="rest-ring-bg" />
+      <circle
+        cx="110"
+        cy="110"
+        r="95"
+        fill="none"
+        stroke-width="8"
+        class="rest-ring-fg"
         [attr.stroke-dasharray]="C"
-        [attr.stroke-dashoffset]="C * (1 - progress())"/>
+        [attr.stroke-dashoffset]="C * (1 - progress())"
+      />
     </svg>
     <div class="rest-time">
       <span class="rest-time-value">{{ remaining() }}</span>
@@ -23,8 +28,12 @@
   }
 
   <div class="rest-controls">
-    <button class="rest-adjust" (click)="adjust(-15)" [attr.aria-label]="T().rest_adjust_minus">−15</button>
+    <button class="rest-adjust" (click)="adjust(-15)" [attr.aria-label]="T().rest_adjust_minus">
+      −15
+    </button>
     <button class="rest-skip" (click)="skip()">{{ T().rest_skip_btn }}</button>
-    <button class="rest-adjust" (click)="adjust(15)" [attr.aria-label]="T().rest_adjust_plus">+15</button>
+    <button class="rest-adjust" (click)="adjust(15)" [attr.aria-label]="T().rest_adjust_plus">
+      +15
+    </button>
   </div>
 </div>

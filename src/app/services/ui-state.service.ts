@@ -39,7 +39,9 @@ export class UIStateService {
   readonly backupReminder = signal(false);
 
   // Personal record celebration toast — auto-dismissed by celebratePr()
-  readonly prCelebration = signal<{ exerciseName: string; weight: number; unit: string } | null>(null);
+  readonly prCelebration = signal<{ exerciseName: string; weight: number; unit: string } | null>(
+    null,
+  );
 
   private prTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -64,19 +66,44 @@ export class UIStateService {
 
   // --- Open methods: push to stack + push history entry ---
 
-  openSettings(): void { this._push('settings'); this.showSettings.set(true); }
-  openEditingDay(day: EditingDayState): void { this._push('editingDay'); this.editingDay.set(day); }
-  openDayDetail(day: WorkoutDay): void { this._push('dayDetail'); this.dayDetail.set(day); }
-  openDayPicker(): void { this._push('dayPicker'); this.showDayPicker.set(true); }
-  openDayHistory(day: WorkoutDay): void { this._push('dayHistory'); this.dayHistory.set(day); }
+  openSettings(): void {
+    this._push('settings');
+    this.showSettings.set(true);
+  }
+  openEditingDay(day: EditingDayState): void {
+    this._push('editingDay');
+    this.editingDay.set(day);
+  }
+  openDayDetail(day: WorkoutDay): void {
+    this._push('dayDetail');
+    this.dayDetail.set(day);
+  }
+  openDayPicker(): void {
+    this._push('dayPicker');
+    this.showDayPicker.set(true);
+  }
+  openDayHistory(day: WorkoutDay): void {
+    this._push('dayHistory');
+    this.dayHistory.set(day);
+  }
 
   // --- Close methods: pop from stack + pop history entry ---
 
-  closeSettings(): void { this._close('settings'); }
-  closeEditingDay(): void { this._close('editingDay'); }
-  closeDayDetail(): void { this._close('dayDetail'); }
-  closeDayPicker(): void { this._close('dayPicker'); }
-  closeDayHistory(): void { this._close('dayHistory'); }
+  closeSettings(): void {
+    this._close('settings');
+  }
+  closeEditingDay(): void {
+    this._close('editingDay');
+  }
+  closeDayDetail(): void {
+    this._close('dayDetail');
+  }
+  closeDayPicker(): void {
+    this._close('dayPicker');
+  }
+  closeDayHistory(): void {
+    this._close('dayHistory');
+  }
 
   // Called by the AppComponent popstate handler when the user pressed back.
   // The browser already popped the history entry, so we only close the signal.
@@ -102,11 +129,21 @@ export class UIStateService {
 
   private _applyClose(name: OverlayName): void {
     switch (name) {
-      case 'settings':   this.showSettings.set(false); break;
-      case 'editingDay': this.editingDay.set(null); break;
-      case 'dayDetail':  this.dayDetail.set(null); break;
-      case 'dayPicker':  this.showDayPicker.set(false); break;
-      case 'dayHistory': this.dayHistory.set(null); break;
+      case 'settings':
+        this.showSettings.set(false);
+        break;
+      case 'editingDay':
+        this.editingDay.set(null);
+        break;
+      case 'dayDetail':
+        this.dayDetail.set(null);
+        break;
+      case 'dayPicker':
+        this.showDayPicker.set(false);
+        break;
+      case 'dayHistory':
+        this.dayHistory.set(null);
+        break;
     }
   }
 

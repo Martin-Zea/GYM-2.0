@@ -61,10 +61,7 @@ export class FocusTrapDirective implements AfterViewInit, OnDestroy {
   /** Elementos enfocables visibles, no disabled y con tabindex no negativo */
   private focusables(): HTMLElement[] {
     return Array.from(this.host.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-      el =>
-        !el.hasAttribute('disabled') &&
-        el.tabIndex >= 0 &&
-        el.getClientRects().length > 0,
+      (el) => !el.hasAttribute('disabled') && el.tabIndex >= 0 && el.getClientRects().length > 0,
     );
   }
 }

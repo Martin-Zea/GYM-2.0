@@ -16,7 +16,12 @@ import { StorageService } from '../../services/storage.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
 import { SoundService } from '../../services/sound.service';
-import { AiRecommendation, Exercise, TodaySetProgress, WorkoutDay } from '../../models/workout.model';
+import {
+  AiRecommendation,
+  Exercise,
+  TodaySetProgress,
+  WorkoutDay,
+} from '../../models/workout.model';
 
 @Component({
   selector: 'app-exercise-card',
@@ -46,9 +51,7 @@ export class ExerciseCardComponent {
   /** Indices where AI wrote the initial value — cleared on user edit */
   protected readonly aiPrefilledIndices = signal<ReadonlySet<number>>(new Set());
 
-  protected readonly activeSetIndex = computed(() =>
-    this.setsArray().findIndex(s => !s.done),
-  );
+  protected readonly activeSetIndex = computed(() => this.setsArray().findIndex((s) => !s.done));
 
   protected weightStep(): number {
     const brick = this.exercise().brick;
@@ -64,12 +67,11 @@ export class ExerciseCardComponent {
       if (saved[i]) return saved[i];
       const prev = last?.[i];
       return {
-        weight: prev && ex.unit !== 'peso corporal' && (prev.weight as number) > 0
-          ? prev.weight
-          : ('' as unknown as number),
-        reps: prev && (prev.reps as number) > 0
-          ? prev.reps
-          : ('' as unknown as number),
+        weight:
+          prev && ex.unit !== 'peso corporal' && (prev.weight as number) > 0
+            ? prev.weight
+            : ('' as unknown as number),
+        reps: prev && (prev.reps as number) > 0 ? prev.reps : ('' as unknown as number),
         done: false,
       };
     });
@@ -79,13 +81,11 @@ export class ExerciseCardComponent {
     this.storage.lastSetsForExercise(this.state.state(), this.exercise().id),
   );
 
-  protected readonly doneSetsCount = computed(() =>
-    this.setsArray().filter(s => s.done).length,
-  );
+  protected readonly doneSetsCount = computed(() => this.setsArray().filter((s) => s.done).length);
 
   protected readonly isDone = computed(() => {
     const arr = this.setsArray();
-    return arr.length > 0 && arr.every(s => s.done);
+    return arr.length > 0 && arr.every((s) => s.done);
   });
 
   protected readonly aiRecLabel = computed(() => {
@@ -169,7 +169,7 @@ export class ExerciseCardComponent {
 
   protected toggle(): void {
     const expanding = !this.expanded();
-    this.expanded.update(v => !v);
+    this.expanded.update((v) => !v);
     if (expanding && !this.aiRec()) {
       this.requestAi.emit();
     }
@@ -179,14 +179,22 @@ export class ExerciseCardComponent {
     const val = (event.target as HTMLInputElement).value;
     const weight = val === '' ? ('' as unknown as number) : Number(val);
     this.state.updateSet(this.day().id, this.exercise().id, i, { weight });
-    this.aiPrefilledIndices.update(s => { const n = new Set(s); n.delete(i); return n; });
+    this.aiPrefilledIndices.update((s) => {
+      const n = new Set(s);
+      n.delete(i);
+      return n;
+    });
   }
 
   protected updateReps(i: number, event: Event): void {
     const val = (event.target as HTMLInputElement).value;
     const reps = val === '' ? ('' as unknown as number) : Number(val);
     this.state.updateSet(this.day().id, this.exercise().id, i, { reps });
-    this.aiPrefilledIndices.update(s => { const n = new Set(s); n.delete(i); return n; });
+    this.aiPrefilledIndices.update((s) => {
+      const n = new Set(s);
+      n.delete(i);
+      return n;
+    });
   }
 
   protected stepWeight(i: number, delta: number): void {
@@ -194,7 +202,11 @@ export class ExerciseCardComponent {
     const base = current !== '' && current !== undefined ? Number(current) : 0;
     const next = Math.max(0, Math.round((base + delta) * 4) / 4);
     this.state.updateSet(this.day().id, this.exercise().id, i, { weight: next });
-    this.aiPrefilledIndices.update(s => { const n = new Set(s); n.delete(i); return n; });
+    this.aiPrefilledIndices.update((s) => {
+      const n = new Set(s);
+      n.delete(i);
+      return n;
+    });
   }
 
   protected stepReps(i: number, delta: number): void {
@@ -202,7 +214,11 @@ export class ExerciseCardComponent {
     const base = current !== '' && current !== undefined ? Number(current) : 0;
     const next = Math.max(1, base + delta);
     this.state.updateSet(this.day().id, this.exercise().id, i, { reps: next });
-    this.aiPrefilledIndices.update(s => { const n = new Set(s); n.delete(i); return n; });
+    this.aiPrefilledIndices.update((s) => {
+      const n = new Set(s);
+      n.delete(i);
+      return n;
+    });
   }
 
   /** Sets already celebrated as PR — prevents re-celebrating on undo + redo */
@@ -217,9 +233,10 @@ export class ExerciseCardComponent {
       const restSecs = ex.restSeconds || this.state.settings().defaultRest;
       const arr = this.setsArray();
       const nextIdx = arr.findIndex((s, i) => i > setIndex && !s.done);
-      const nextLabel = nextIdx >= 0
-        ? this.tr.tp('rest_timer_next_set', { n: nextIdx + 1 })
-        : this.T().rest_timer_next_exercise;
+      const nextLabel =
+        nextIdx >= 0
+          ? this.tr.tp('rest_timer_next_set', { n: nextIdx + 1 })
+          : this.T().rest_timer_next_exercise;
       this.uiState.restTimer.set({
         seconds: restSecs,
         exerciseId: ex.id,
@@ -247,10 +264,10 @@ export class ExerciseCardComponent {
     // toggleSetDone already committed today's session — exclude it from the historic max
     const history = this.storage
       .historyForExercise(this.state.state(), ex.id)
-      .filter(h => h.dateISO < this.state.todayKey);
+      .filter((h) => h.dateISO < this.state.todayKey);
     if (!history.length) return;
 
-    const maxWeight = Math.max(...history.map(h => h.topWeight));
+    const maxWeight = Math.max(...history.map((h) => h.topWeight));
     if (weight <= maxWeight) return;
 
     this.celebratedPrSets.add(key);
@@ -259,7 +276,9 @@ export class ExerciseCardComponent {
   }
 
   protected ytUrl(): string {
-    return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(this.exercise().name);
+    return (
+      'https://www.youtube.com/results?search_query=' + encodeURIComponent(this.exercise().name)
+    );
   }
 
   protected onRequestAi(): void {

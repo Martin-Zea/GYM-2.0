@@ -86,7 +86,10 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  transition: background 0.2s ease, width 0.2s ease, border-radius 0.2s ease;
+  transition:
+    background 0.2s ease,
+    width 0.2s ease,
+    border-radius 0.2s ease;
 }
 
 .dot--active {
@@ -113,7 +116,9 @@
   flex-shrink: 0;
   transition: color 0.15s;
 
-  &:hover { color: var(--text-0); }
+  &:hover {
+    color: var(--text-0);
+  }
 }
 
 .btn-primary {
@@ -128,6 +133,10 @@
   cursor: pointer;
   transition: opacity 0.15s;
 
-  &:hover { opacity: 0.88; }
-  &:active { opacity: 0.76; }
+  &:hover {
+    opacity: 0.88;
+  }
+  &:active {
+    opacity: 0.76;
+  }
 }

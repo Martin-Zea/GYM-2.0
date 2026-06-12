@@ -51,15 +51,15 @@ export class StateService {
   }
 
   setActiveDay(index: number): void {
-    this.state.update(s => ({ ...s, activeDayIndex: index }));
+    this.state.update((s) => ({ ...s, activeDayIndex: index }));
   }
 
   saveDay(day: WorkoutDay): void {
-    this.state.update(s => {
-      const exists = s.days.find(d => d.id === day.id);
+    this.state.update((s) => {
+      const exists = s.days.find((d) => d.id === day.id);
       let days: WorkoutDay[];
       if (exists) {
-        days = s.days.map(d => d.id === day.id ? day : d);
+        days = s.days.map((d) => (d.id === day.id ? day : d));
       } else {
         days = [...s.days, { ...day, id: day.id || this.storage.uid() }];
       }
@@ -68,18 +68,22 @@ export class StateService {
   }
 
   deleteDay(dayId: string): void {
-    this.state.update(s => {
-      const days = s.days.filter(d => d.id !== dayId);
-      return { ...s, days, activeDayIndex: Math.min(s.activeDayIndex, Math.max(0, days.length - 1)) };
+    this.state.update((s) => {
+      const days = s.days.filter((d) => d.id !== dayId);
+      return {
+        ...s,
+        days,
+        activeDayIndex: Math.min(s.activeDayIndex, Math.max(0, days.length - 1)),
+      };
     });
   }
 
   saveSettings(settings: AppSettings): void {
-    this.state.update(s => ({ ...s, settings }));
+    this.state.update((s) => ({ ...s, settings }));
   }
 
   advanceRoutine(fromDayIndex?: number): void {
-    this.state.update(s => {
+    this.state.update((s) => {
       const days = s.days.length || 1;
       const base = fromDayIndex !== undefined ? fromDayIndex : s.routinePointer % days;
       const nextIndex = (base + 1) % days;
@@ -98,27 +102,30 @@ export class StateService {
     const day = this.currentDay();
     if (!day) return;
     const alreadySkipped = this.state().sessions.some(
-      s => s.dayId === day.id && s.dateISO === this.todayKey && s.skipped,
+      (s) => s.dayId === day.id && s.dateISO === this.todayKey && s.skipped,
     );
     if (!alreadySkipped) {
-      this.state.update(s => ({
+      this.state.update((s) => ({
         ...s,
-        sessions: [...s.sessions, {
-          id: this.storage.uid(),
-          dayId: day.id,
-          dateISO: this.todayKey,
-          sets: [],
-          skipped: true,
-        }],
+        sessions: [
+          ...s.sessions,
+          {
+            id: this.storage.uid(),
+            dayId: day.id,
+            dateISO: this.todayKey,
+            sets: [],
+            skipped: true,
+          },
+        ],
       }));
     }
     this.advanceRoutine();
   }
 
   deleteSession(sessionId: string): void {
-    this.state.update(s => ({
+    this.state.update((s) => ({
       ...s,
-      sessions: s.sessions.filter(x => x.id !== sessionId),
+      sessions: s.sessions.filter((x) => x.id !== sessionId),
     }));
     this.invalidateAiCache();
   }
@@ -129,15 +136,17 @@ export class StateService {
     setIndex: number,
     patch: Partial<Pick<SetRecord, 'weight' | 'reps'>>,
   ): void {
-    this.state.update(s => ({
+    this.state.update((s) => ({
       ...s,
-      sessions: s.sessions.map(session =>
-        session.id !== sessionId ? session : {
-          ...session,
-          sets: session.sets.map(sr =>
-            sr.exerciseId === exerciseId && sr.setIndex === setIndex ? { ...sr, ...patch } : sr,
-          ),
-        },
+      sessions: s.sessions.map((session) =>
+        session.id !== sessionId
+          ? session
+          : {
+              ...session,
+              sets: session.sets.map((sr) =>
+                sr.exerciseId === exerciseId && sr.setIndex === setIndex ? { ...sr, ...patch } : sr,
+              ),
+            },
       ),
     }));
     this.invalidateAiCache();
@@ -156,8 +165,13 @@ export class StateService {
     return tp;
   }
 
-  updateSet(dayId: string, exerciseId: string, setIndex: number, patch: Partial<TodaySetProgress>): void {
-    this.state.update(s => {
+  updateSet(
+    dayId: string,
+    exerciseId: string,
+    setIndex: number,
+    patch: Partial<TodaySetProgress>,
+  ): void {
+    this.state.update((s) => {
       const today: TodayDayProgress =
         s.todayProgress[dayId]?.dateISO === this.todayKey
           ? JSON.parse(JSON.stringify(s.todayProgress[dayId]))
@@ -171,7 +185,11 @@ export class StateService {
     });
   }
 
-  toggleSetDone(dayId: string, exercise: Exercise, setIndex: number): 'done' | 'undone' | 'needs_reps' {
+  toggleSetDone(
+    dayId: string,
+    exercise: Exercise,
+    setIndex: number,
+  ): 'done' | 'undone' | 'needs_reps' {
     const tp = this.getTodayProgress(dayId);
     const cur = tp.sets[exercise.id]?.[setIndex] ?? { weight: '', reps: '', done: false };
 
@@ -191,20 +209,20 @@ export class StateService {
   }
 
   private commitSession(dayId: string): void {
-    const day = this.state().days.find(d => d.id === dayId);
+    const day = this.state().days.find((d) => d.id === dayId);
     if (!day) return;
 
     const tp = this.state().todayProgress[dayId];
     if (!tp || tp.dateISO !== this.todayKey) return;
 
-    const hasAnyDone = Object.values(tp.sets).some(arr => arr.some(s => s?.done));
+    const hasAnyDone = Object.values(tp.sets).some((arr) => arr.some((s) => s?.done));
     if (!hasAnyDone) return;
 
     const setsList: SetRecord[] = [];
     Object.entries(tp.sets).forEach(([exId, arr]) => {
       arr.forEach((s, i) => {
         if (s?.done) {
-          const ex = day.exercises.find(e => e.id === exId);
+          const ex = day.exercises.find((e) => e.id === exId);
           setsList.push({
             exerciseId: exId,
             setIndex: i,
@@ -217,24 +235,27 @@ export class StateService {
     });
 
     const existing = this.state().sessions.find(
-      s => s.dayId === dayId && s.dateISO === this.todayKey,
+      (s) => s.dayId === dayId && s.dateISO === this.todayKey,
     );
 
     if (existing) {
       if (JSON.stringify(existing.sets) === JSON.stringify(setsList)) return;
-      this.state.update(s => ({
+      this.state.update((s) => ({
         ...s,
-        sessions: s.sessions.map(x => x.id === existing.id ? { ...x, sets: setsList } : x),
+        sessions: s.sessions.map((x) => (x.id === existing.id ? { ...x, sets: setsList } : x)),
       }));
     } else {
-      this.state.update(s => ({
+      this.state.update((s) => ({
         ...s,
-        sessions: [...s.sessions, {
-          id: this.storage.uid(),
-          dayId,
-          dateISO: this.todayKey,
-          sets: setsList,
-        }],
+        sessions: [
+          ...s.sessions,
+          {
+            id: this.storage.uid(),
+            dayId,
+            dateISO: this.todayKey,
+            sets: setsList,
+          },
+        ],
       }));
     }
   }
@@ -288,12 +309,19 @@ export class StateService {
       input.accept = 'application/json';
       input.onchange = async () => {
         const file = input.files?.[0];
-        if (!file) { resolve(); return; }
+        if (!file) {
+          resolve();
+          return;
+        }
         const invalidMsg = this.tr.T().import_invalid_backup;
         try {
           const text = await file.text();
           let data: unknown;
-          try { data = JSON.parse(text); } catch { throw new Error(invalidMsg); }
+          try {
+            data = JSON.parse(text);
+          } catch {
+            throw new Error(invalidMsg);
+          }
           if (!isValidAppState(data)) throw new Error(invalidMsg);
           const validated = this.storage.validateImport(data);
           this.state.set(validated);

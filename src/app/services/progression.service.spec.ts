@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ProgressionService } from './progression.service';
-import { AppSettings, Exercise, SetRecord } from '../models/workout.model';
+import { AppSettings, Exercise, SetRecord, TodaySetProgress } from '../models/workout.model';
+import { StorageService } from './storage.service';
 
 function makeExercise(overrides: Partial<Exercise> = {}): Exercise {
   return {
@@ -22,14 +23,24 @@ function makeSettings(overrides: Partial<AppSettings> = {}): AppSettings {
     cohereApiKey: '',
     defaultRest: 60,
     sounds: true,
+    haptics: true,
     theme: 'dark',
     userProfile: { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [] },
     ...overrides,
   };
 }
 
+function makeDoneSet(weight: number, reps: number): TodaySetProgress {
+  return { weight, reps, done: true };
+}
+
 function lastSetsAt(weight: number, reps: number, count = 3): SetRecord[] {
-  return Array.from({ length: count }, (_, i) => ({ exerciseId: 'ex1', setIndex: i, weight, reps }));
+  return Array.from({ length: count }, (_, i) => ({
+    exerciseId: 'ex1',
+    setIndex: i,
+    weight,
+    reps,
+  }));
 }
 
 /** Respuesta con la forma de la API de Groq cuyo content es el JSON dado */
@@ -85,14 +96,14 @@ describe('ProgressionService', () => {
     it('completion < 50%: baja 1 brick y sube reps ~30%', () => {
       // 3 reps de 30 posibles → ratio 0.1
       const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(20, 1));
-      expect(rec.sets.every(s => s.weight === 17.5)).toBe(true);
-      expect(rec.sets.every(s => s.reps === 13)).toBe(true); // round(10 * 1.3)
+      expect(rec.sets.every((s) => s.weight === 17.5)).toBe(true);
+      expect(rec.sets.every((s) => s.reps === 13)).toBe(true); // round(10 * 1.3)
     });
 
     it('completion 80-99%: repite el mismo peso con el rep target', () => {
       // 24 reps de 30 posibles → ratio 0.8
       const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(20, 8));
-      expect(rec.sets.every(s => s.weight === 20 && s.reps === 10)).toBe(true);
+      expect(rec.sets.every((s) => s.weight === 20 && s.reps === 10)).toBe(true);
     });
   });
 
@@ -101,9 +112,20 @@ describe('ProgressionService', () => {
 
     it('ajusta la cantidad de sets al objetivo y redondea pesos al brick', async () => {
       // La IA devuelve 2 sets para un objetivo de 3, con un peso fuera de brick
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(groqResponse(
-        JSON.stringify({ sets: [{ weight: 20, reps: 10 }, { weight: 22.6, reps: 10 }], reason: 'ok' }),
-      )));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          groqResponse(
+            JSON.stringify({
+              sets: [
+                { weight: 20, reps: 10 },
+                { weight: 22.6, reps: 10 },
+              ],
+              reason: 'ok',
+            }),
+          ),
+        ),
+      );
 
       const rec = await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), []);
       expect(rec.source).toBe('groq');
@@ -113,16 +135,21 @@ describe('ProgressionService', () => {
     });
 
     it('descarta sets sin weight/reps numéricos', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(groqResponse(
-        JSON.stringify({
-          sets: [
-            { weight: '20', reps: 10 },   // weight string → descartado
-            { weight: 25, reps: null },   // reps no numérico → descartado
-            { weight: 25, reps: 8 },      // válido
-          ],
-          reason: 'ok',
-        }),
-      )));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          groqResponse(
+            JSON.stringify({
+              sets: [
+                { weight: '20', reps: 10 }, // weight string → descartado
+                { weight: 25, reps: null }, // reps no numérico → descartado
+                { weight: 25, reps: 8 }, // válido
+              ],
+              reason: 'ok',
+            }),
+          ),
+        ),
+      );
 
       const rec = await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), []);
       expect(rec.source).toBe('groq');
@@ -144,9 +171,16 @@ describe('ProgressionService', () => {
 
     it('ante respuesta sin ningún set válido cae al fallback local', async () => {
       vi.spyOn(console, 'info').mockImplementation(() => {});
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(groqResponse(
-        JSON.stringify({ sets: [{ weight: 'mucho', reps: 'pocas' }], reason: 'x' }),
-      )));
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn()
+          .mockResolvedValue(
+            groqResponse(
+              JSON.stringify({ sets: [{ weight: 'mucho', reps: 'pocas' }], reason: 'x' }),
+            ),
+          ),
+      );
 
       const rec = await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), []);
       expect(rec.source).toBe('local');
@@ -168,9 +202,139 @@ describe('ProgressionService', () => {
       const fetchMock = vi.fn();
       vi.stubGlobal('fetch', fetchMock);
 
-      const rec = await service.recommend(makeSettings(), makeExercise(), [], lastSetsAt(20, 10), []);
+      const rec = await service.recommend(
+        makeSettings(),
+        makeExercise(),
+        [],
+        lastSetsAt(20, 10),
+        [],
+      );
       expect(rec.source).toBe('local');
       expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('localRecommendation() — casos de ratio 50-79%', () => {
+    it('50-79%: repite el mismo peso con el rep target y mensaje de consolidación', () => {
+      // 3 sets × 5 reps = 15 / (3 × 10) = 0.5 → rama consolidar
+      const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(20, 5));
+      expect(rec.sets.every((s) => s.weight === 20 && s.reps === 10)).toBe(true);
+      expect(rec.reason).toContain('consolidando');
+    });
+
+    it('70%: también cae en la rama 50-79% (no baja peso)', () => {
+      // 3 sets × 7 reps = 21 / 30 = 0.7
+      const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(20, 7));
+      expect(rec.sets.every((s) => s.weight === 20)).toBe(true);
+      expect(rec.sets.every((s) => s.reps === 10)).toBe(true);
+    });
+  });
+
+  describe('localRecommendation() — prioridad todaySets sobre lastSets', () => {
+    it('si todaySets tiene sets hechos, los usa en lugar de lastSets', () => {
+      // todaySets: completó 3 series a 30kg (100% objetivo)
+      const todaySets = [makeDoneSet(30, 10), makeDoneSet(30, 10), makeDoneSet(30, 10)];
+      // lastSets: sesión previa a 20kg (no debe usarse como base)
+      const rec = service.localRecommendation(makeExercise(), todaySets, lastSetsAt(20, 10));
+      // La base es 30kg → sube brick a 32.5
+      expect(rec.sets[rec.sets.length - 1].weight).toBe(32.5);
+    });
+
+    it('si todaySets está vacío, cae en lastSets normalmente', () => {
+      const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(20, 10));
+      // Completó al 100% → sube a 22.5
+      expect(rec.sets[rec.sets.length - 1].weight).toBe(22.5);
+    });
+  });
+
+  describe('caché de IA (via recommend())', () => {
+    const settings = makeSettings({ apiKey: 'test-key' });
+    const history = [
+      { dateISO: '2026-06-01', sets: [], topWeight: 20, topReps: 10, totalReps: 30, volume: 200 },
+    ];
+
+    it('segundo recommend() con mismos parámetros no llama a fetch (cache hit)', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        groqResponse(
+          JSON.stringify({
+            sets: [
+              { weight: 22.5, reps: 10 },
+              { weight: 22.5, reps: 10 },
+              { weight: 22.5, reps: 10 },
+            ],
+            reason: 'ok',
+          }),
+        ),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), history);
+      await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), history);
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('cache miss si cambia la fecha (cachedForDate difiere)', async () => {
+      const storage = TestBed.inject(StorageService);
+      vi.spyOn(storage, 'todayISO').mockReturnValue('2026-06-10');
+
+      const fetchMock = vi.fn().mockResolvedValue(
+        groqResponse(
+          JSON.stringify({
+            sets: [
+              { weight: 22.5, reps: 10 },
+              { weight: 22.5, reps: 10 },
+              { weight: 22.5, reps: 10 },
+            ],
+            reason: 'ok',
+          }),
+        ),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), history);
+
+      // Simulamos que el día cambió
+      vi.spyOn(storage, 'todayISO').mockReturnValue('2026-06-11');
+      await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), history);
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('cache miss si cambia la última sesión del historial (lastSessionISO difiere)', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        groqResponse(
+          JSON.stringify({
+            sets: [
+              { weight: 22.5, reps: 10 },
+              { weight: 22.5, reps: 10 },
+              { weight: 22.5, reps: 10 },
+            ],
+            reason: 'ok',
+          }),
+        ),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const history1 = [
+        { dateISO: '2026-06-01', sets: [], topWeight: 20, topReps: 10, totalReps: 30, volume: 200 },
+      ];
+      const history2 = [
+        ...history1,
+        {
+          dateISO: '2026-06-08',
+          sets: [],
+          topWeight: 22.5,
+          topReps: 10,
+          totalReps: 30,
+          volume: 225,
+        },
+      ];
+
+      await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), history1);
+      await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), history2);
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
     });
   });
 });

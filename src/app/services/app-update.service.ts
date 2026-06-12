@@ -12,7 +12,7 @@ export class AppUpdateService {
     if (!this.swUpdate.isEnabled) return;
 
     this.swUpdate.versionUpdates
-      .pipe(filter(e => e.type === 'VERSION_READY'))
+      .pipe(filter((e) => e.type === 'VERSION_READY'))
       .subscribe(() => this.uiState.updateAvailable.set(true));
 
     document.addEventListener('visibilitychange', () => {

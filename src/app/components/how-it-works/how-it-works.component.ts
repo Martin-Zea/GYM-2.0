@@ -12,9 +12,7 @@ import { TranslationService } from '../../services/translation.service';
 export class HowItWorksComponent {
   protected readonly T = inject(TranslationService).T;
 
-  protected readonly visible = signal(
-    localStorage.getItem('gym_hiw_dismissed') !== '1',
-  );
+  protected readonly visible = signal(localStorage.getItem('gym_hiw_dismissed') !== '1');
 
   protected dismiss(): void {
     localStorage.setItem('gym_hiw_dismissed', '1');

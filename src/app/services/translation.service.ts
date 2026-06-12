@@ -4,10 +4,10 @@ import { ExerciseUnit } from '../models/workout.model';
 
 /** Presentation-only map: stored ExerciseUnit values stay in Spanish (schema compat) */
 const UNIT_KEYS: Record<ExerciseUnit, keyof Translations> = {
-  'kg': 'unit_kg',
+  kg: 'unit_kg',
   'kg por mano': 'unit_kg_per_hand',
   'kg por brazo': 'unit_kg_per_arm',
-  'tiempo': 'unit_time',
+  tiempo: 'unit_time',
   'peso corporal': 'unit_bodyweight',
 };
 

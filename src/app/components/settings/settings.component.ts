@@ -31,8 +31,9 @@ export class SettingsComponent {
 
   /** Resumen bajo el input de peso: medición anterior y delta vs. la última */
   protected readonly weightSummary = computed(() => {
-    const log = [...this.settings().userProfile.weightLog]
-      .sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+    const log = [...this.settings().userProfile.weightLog].sort((a, b) =>
+      a.dateISO.localeCompare(b.dateISO),
+    );
     if (log.length < 2) return null;
     const prev = log[log.length - 2];
     const last = log[log.length - 1];
@@ -74,7 +75,7 @@ export class SettingsComponent {
       // Upsert de la entrada de hoy en weightLog: nunca dos entradas del mismo día
       const today = this.state.todayKey;
       const weightLog = [
-        ...this.settings().userProfile.weightLog.filter(e => e.dateISO !== today),
+        ...this.settings().userProfile.weightLog.filter((e) => e.dateISO !== today),
         { dateISO: today, weightKg: num },
       ];
       this.patchProfile({ weightKg: num, weightLog });

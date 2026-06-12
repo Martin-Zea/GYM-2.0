@@ -8,10 +8,7 @@ describe('App', () => {
     localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [
-        provideRouter([]),
-        provideServiceWorker('ngsw-worker.js', { enabled: false }),
-      ],
+      providers: [provideRouter([]), provideServiceWorker('ngsw-worker.js', { enabled: false })],
     }).compileComponents();
   });
 
@@ -26,6 +23,6 @@ describe('App', () => {
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.brand span')?.textContent).toContain('GainAI');
-    expect(compiled.querySelectorAll('.bottom-nav button').length).toBe(3);
+    expect(compiled.querySelectorAll('.bottom-nav a.nav-item').length).toBe(4);
   });
 });

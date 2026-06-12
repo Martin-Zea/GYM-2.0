@@ -5,12 +5,11 @@
     <div class="sheet-header">
       <h3 class="sheet-title">{{ T().settings_title }}</h3>
       <button class="icon-btn" (click)="close()" [attr.aria-label]="T().close_btn">
-        <app-icon name="x" [size]="16"/>
+        <app-icon name="x" [size]="16" />
       </button>
     </div>
 
     <div class="sheet-body">
-
       <!-- Idioma / Language -->
       <div class="settings-section">
         <p class="settings-section-title">{{ T().settings_language }}</p>
@@ -18,11 +17,21 @@
           <div class="settings-row-main">
             <div class="settings-row-label">{{ T().settings_language_desc }}</div>
           </div>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-sm" [class.btn-primary]="tr.lang() === 'es'"
-              (click)="tr.setLang('es')">ES</button>
-            <button class="btn btn-sm" [class.btn-primary]="tr.lang() === 'en'"
-              (click)="tr.setLang('en')">EN</button>
+          <div style="display: flex; gap: 6px">
+            <button
+              class="btn btn-sm"
+              [class.btn-primary]="tr.lang() === 'es'"
+              (click)="tr.setLang('es')"
+            >
+              ES
+            </button>
+            <button
+              class="btn btn-sm"
+              [class.btn-primary]="tr.lang() === 'en'"
+              (click)="tr.setLang('en')"
+            >
+              EN
+            </button>
           </div>
         </div>
       </div>
@@ -34,10 +43,11 @@
           <div class="settings-row-main">
             <div class="settings-row-label">{{ T().settings_dark_theme }}</div>
           </div>
-          <button class="toggle"
+          <button
+            class="toggle"
             [class.on]="settings().theme === 'dark'"
-            (click)="patch({ theme: settings().theme === 'dark' ? 'light' : 'dark' })">
-          </button>
+            (click)="patch({ theme: settings().theme === 'dark' ? 'light' : 'dark' })"
+          ></button>
         </div>
       </div>
 
@@ -49,51 +59,67 @@
             <div class="settings-row-label">{{ T().settings_default_rest }}</div>
             <div class="settings-row-desc">{{ T().settings_rest_desc }}</div>
           </div>
-          <input class="input" type="number" min="15" step="15"
-            style="width:70px;text-align:center"
+          <input
+            class="input"
+            type="number"
+            min="15"
+            step="15"
+            style="width: 70px; text-align: center"
             [value]="settings().defaultRest"
-            (input)="patchDefaultRest($event)"/>
+            (input)="patchDefaultRest($event)"
+          />
         </div>
         <div class="settings-row">
           <div class="settings-row-main">
             <div class="settings-row-label">{{ T().settings_sounds }}</div>
           </div>
-          <button class="toggle" [class.on]="settings().sounds"
-            (click)="patch({ sounds: !settings().sounds })">
-          </button>
+          <button
+            class="toggle"
+            [class.on]="settings().sounds"
+            (click)="patch({ sounds: !settings().sounds })"
+          ></button>
         </div>
         <div class="settings-row">
           <div class="settings-row-main">
             <div class="settings-row-label">{{ T().settings_haptics }}</div>
           </div>
-          <button class="toggle" [class.on]="settings().haptics"
-            (click)="patch({ haptics: !settings().haptics })">
-          </button>
+          <button
+            class="toggle"
+            [class.on]="settings().haptics"
+            (click)="patch({ haptics: !settings().haptics })"
+          ></button>
         </div>
       </div>
 
       <!-- Perfil -->
       <div class="settings-section">
         <p class="settings-section-title">{{ T().settings_profile }}</p>
-        <p class="settings-row-desc" style="margin-bottom:12px">
+        <p class="settings-row-desc" style="margin-bottom: 12px">
           {{ T().settings_profile_ai_note }}
         </p>
         <div class="settings-row">
           <label class="settings-row-main" for="profile-weight">
             <div class="settings-row-label">{{ T().settings_weight }}</div>
           </label>
-          <div style="display:flex;align-items:center;gap:6px">
-            <input id="profile-weight" class="input" type="number" min="30" max="300" step="0.5"
+          <div style="display: flex; align-items: center; gap: 6px">
+            <input
+              id="profile-weight"
+              class="input"
+              type="number"
+              min="30"
+              max="300"
+              step="0.5"
               inputmode="decimal"
               placeholder="—"
-              style="width:75px;text-align:center"
+              style="width: 75px; text-align: center"
               [value]="settings().userProfile.weightKg ?? ''"
-              (input)="patchProfileNum('weightKg', $event)"/>
-            <span style="font-size:12px;color:var(--text-2)" aria-hidden="true">kg</span>
+              (input)="patchProfileNum('weightKg', $event)"
+            />
+            <span style="font-size: 12px; color: var(--text-2)" aria-hidden="true">kg</span>
           </div>
         </div>
         @if (weightSummary(); as ws) {
-          <p class="settings-row-desc" style="margin:-4px 0 10px">
+          <p class="settings-row-desc" style="margin: -4px 0 10px">
             {{ tr.tp('settings_weight_prev', { weight: ws.prevWeight }) }}
             · {{ tr.tp('settings_weight_delta', { delta: ws.delta, date: ws.date }) }}
           </p>
@@ -102,37 +128,55 @@
           <label class="settings-row-main" for="profile-height">
             <div class="settings-row-label">{{ T().settings_height }}</div>
           </label>
-          <div style="display:flex;align-items:center;gap:6px">
-            <input id="profile-height" class="input" type="number" min="100" max="250"
+          <div style="display: flex; align-items: center; gap: 6px">
+            <input
+              id="profile-height"
+              class="input"
+              type="number"
+              min="100"
+              max="250"
               inputmode="numeric"
               placeholder="—"
-              style="width:75px;text-align:center"
+              style="width: 75px; text-align: center"
               [value]="settings().userProfile.heightCm ?? ''"
-              (input)="patchProfileNum('heightCm', $event)"/>
-            <span style="font-size:12px;color:var(--text-2)" aria-hidden="true">cm</span>
+              (input)="patchProfileNum('heightCm', $event)"
+            />
+            <span style="font-size: 12px; color: var(--text-2)" aria-hidden="true">cm</span>
           </div>
         </div>
         <div class="settings-row">
           <label class="settings-row-main" for="profile-age">
             <div class="settings-row-label">{{ T().settings_age }}</div>
           </label>
-          <div style="display:flex;align-items:center;gap:6px">
-            <input id="profile-age" class="input" type="number" min="10" max="100"
+          <div style="display: flex; align-items: center; gap: 6px">
+            <input
+              id="profile-age"
+              class="input"
+              type="number"
+              min="10"
+              max="100"
               inputmode="numeric"
               placeholder="—"
-              style="width:75px;text-align:center"
+              style="width: 75px; text-align: center"
               [value]="settings().userProfile.age ?? ''"
-              (input)="patchProfileNum('age', $event)"/>
-            <span style="font-size:12px;color:var(--text-2)" aria-hidden="true">{{ T().settings_age_unit }}</span>
+              (input)="patchProfileNum('age', $event)"
+            />
+            <span style="font-size: 12px; color: var(--text-2)" aria-hidden="true">{{
+              T().settings_age_unit
+            }}</span>
           </div>
         </div>
         <div class="settings-row">
           <label class="settings-row-main" for="profile-sex">
             <div class="settings-row-label">{{ T().settings_sex }}</div>
           </label>
-          <select id="profile-sex" class="select" style="width:150px"
+          <select
+            id="profile-sex"
+            class="select"
+            style="width: 150px"
             [value]="settings().userProfile.sex ?? ''"
-            (change)="patchProfileSex($event)">
+            (change)="patchProfileSex($event)"
+          >
             <option value="">{{ T().settings_sex_none }}</option>
             <option value="male">{{ T().settings_sex_male }}</option>
             <option value="female">{{ T().settings_sex_female }}</option>
@@ -144,42 +188,59 @@
       <!-- IA -->
       <div class="settings-section">
         <p class="settings-section-title">{{ T().settings_ai_section }}</p>
-        <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 8px">
           <div class="settings-row-label">{{ T().settings_api_key_label }}</div>
           <div class="settings-row-desc">
             {{ T().settings_api_key_free }}
-            <a class="muted-link" href="https://console.groq.com/keys"
-              target="_blank" rel="noopener">console.groq.com</a>.
+            <a
+              class="muted-link"
+              href="https://console.groq.com/keys"
+              target="_blank"
+              rel="noopener"
+              >console.groq.com</a
+            >.
             {{ T().settings_api_key_desc }}
           </div>
-          <div style="display:flex;gap:8px">
-            <input class="input"
+          <div style="display: flex; gap: 8px">
+            <input
+              class="input"
               [type]="showApiKey() ? 'text' : 'password'"
               placeholder="gsk_..."
-              style="flex:1"
+              style="flex: 1"
               [value]="settings().apiKey"
-              (input)="patchApiKey($event)"/>
-            <button class="btn btn-ghost btn-sm" (click)="showApiKey.update(v => !v)">
+              (input)="patchApiKey($event)"
+            />
+            <button class="btn btn-ghost btn-sm" (click)="showApiKey.update((v) => !v)">
               {{ showApiKey() ? T().settings_hide : T().settings_show }}
             </button>
           </div>
         </div>
-        <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px;margin-top:12px">
+        <div
+          class="settings-row"
+          style="flex-direction: column; align-items: stretch; gap: 8px; margin-top: 12px"
+        >
           <div class="settings-row-label">{{ T().settings_cohere_key_label }}</div>
           <div class="settings-row-desc">
             {{ T().settings_cohere_key_free }}
-            <a class="muted-link" href="https://dashboard.cohere.com/api-keys"
-              target="_blank" rel="noopener">dashboard.cohere.com</a>.
+            <a
+              class="muted-link"
+              href="https://dashboard.cohere.com/api-keys"
+              target="_blank"
+              rel="noopener"
+              >dashboard.cohere.com</a
+            >.
             {{ T().settings_cohere_key_desc }}
           </div>
-          <div style="display:flex;gap:8px">
-            <input class="input"
+          <div style="display: flex; gap: 8px">
+            <input
+              class="input"
               [type]="showCohereKey() ? 'text' : 'password'"
               placeholder="..."
-              style="flex:1"
+              style="flex: 1"
               [value]="settings().cohereApiKey"
-              (input)="patchCohereApiKey($event)"/>
-            <button class="btn btn-ghost btn-sm" (click)="showCohereKey.update(v => !v)">
+              (input)="patchCohereApiKey($event)"
+            />
+            <button class="btn btn-ghost btn-sm" (click)="showCohereKey.update((v) => !v)">
               {{ showCohereKey() ? T().settings_hide : T().settings_show }}
             </button>
           </div>
@@ -189,41 +250,45 @@
       <!-- Datos -->
       <div class="settings-section">
         <p class="settings-section-title">{{ T().settings_data }}</p>
-        <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
           <button class="btn btn-sm" (click)="state.exportData()">
-            <app-icon name="arrow_right" [size]="13"/>
+            <app-icon name="arrow_right" [size]="13" />
             {{ T().settings_export }}
           </button>
           <button class="btn btn-sm" (click)="importData()">
-            <app-icon name="arrow_left" [size]="13"/>
+            <app-icon name="arrow_left" [size]="13" />
             {{ T().settings_import }}
           </button>
           @if (!resetConfirm()) {
             <button class="btn btn-danger btn-sm" (click)="openResetConfirm()">
-              <app-icon name="refresh" [size]="13"/>
+              <app-icon name="refresh" [size]="13" />
               {{ T().settings_reset }}
             </button>
           }
         </div>
         @if (importError()) {
-          <p style="color:var(--danger);font-size:12px;margin-top:8px">{{ importError() }}</p>
+          <p style="color: var(--danger); font-size: 12px; margin-top: 8px">{{ importError() }}</p>
         }
         @if (resetConfirm()) {
           <div class="reset-confirm">
             <p class="reset-confirm-label">
-              {{ T().settings_reset_warning }}<br>
+              {{ T().settings_reset_warning }}<br />
               {{ tr.tp('settings_reset_type', { word: T().settings_reset_word }) }}
             </p>
             <div class="reset-confirm-row">
-              <input class="input reset-confirm-input"
+              <input
+                class="input reset-confirm-input"
                 type="text"
                 [placeholder]="T().settings_reset_word"
                 autocomplete="off"
                 [value]="resetInput()"
-                (input)="resetInput.set($any($event.target).value)"/>
-              <button class="btn btn-danger btn-sm"
+                (input)="resetInput.set($any($event.target).value)"
+              />
+              <button
+                class="btn btn-danger btn-sm"
                 [attr.disabled]="resetInput() !== T().settings_reset_word ? true : null"
-                (click)="confirmReset()">
+                (click)="confirmReset()"
+              >
                 {{ T().settings_reset_do }}
               </button>
               <button class="btn btn-ghost btn-sm" (click)="cancelReset()">

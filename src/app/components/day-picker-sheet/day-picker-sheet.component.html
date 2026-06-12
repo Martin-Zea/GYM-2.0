@@ -1,11 +1,17 @@
 <div class="sheet-backdrop" (click)="close()"></div>
 <div class="sheet">
-  <div class="sheet-panel" appFocusTrap role="dialog" aria-modal="true" aria-labelledby="picker-title">
+  <div
+    class="sheet-panel"
+    appFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="picker-title"
+  >
     <div class="sheet-handle"></div>
     <div class="sheet-header">
       <h3 class="sheet-title" id="picker-title">{{ T().select_day_title }}</h3>
       <button class="icon-btn" (click)="close()" [attr.aria-label]="T().close_btn">
-        <app-icon name="x" [size]="16"/>
+        <app-icon name="x" [size]="16" />
       </button>
     </div>
 
@@ -14,7 +20,8 @@
         <button
           class="picker-day-row"
           [class.active]="item.index === state.activeDayIndex()"
-          (click)="select(item.index)">
+          (click)="select(item.index)"
+        >
           <div class="picker-day-info">
             <span class="picker-day-num">Día {{ item.index + 1 }}</span>
             <span class="picker-day-name">{{ item.day.name }}</span>
@@ -23,7 +30,7 @@
             {{ item.lastLabel }}
           </span>
           @if (item.index === state.activeDayIndex()) {
-            <app-icon name="check" [size]="14" class="picker-check"/>
+            <app-icon name="check" [size]="14" class="picker-check" />
           }
         </button>
       }

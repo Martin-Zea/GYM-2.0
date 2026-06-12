@@ -38,16 +38,24 @@ const ICONS: Record<string, string> = {
     [attr.height]="size()"
     viewBox="0 0 24 24"
     fill="none"
-    [innerHTML]="content()">
-  </svg>`,
-  styles: [`:host { display: inline-flex; align-items: center; justify-content: center; }`],
+    [innerHTML]="content()"
+  ></svg>`,
+  styles: [
+    `
+      :host {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+    `,
+  ],
 })
 export class IconComponent {
   private readonly sanitizer = inject(DomSanitizer);
   name = input.required<string>();
   size = input(16);
 
-  content = computed((): SafeHtml =>
-    this.sanitizer.bypassSecurityTrustHtml(ICONS[this.name()] ?? ''),
+  content = computed(
+    (): SafeHtml => this.sanitizer.bypassSecurityTrustHtml(ICONS[this.name()] ?? ''),
   );
 }

@@ -106,7 +106,7 @@ export class RestTimerComponent implements OnInit, OnDestroy {
     this.endsAt += delta * 1000;
     const newVal = Math.max(0, Math.ceil((this.endsAt - Date.now()) / 1000));
     this.remaining.set(newVal);
-    this.total.update(t => Math.max(t + delta, newVal));
+    this.total.update((t) => Math.max(t + delta, newVal));
     if (newVal <= 0) {
       this.finished = true;
       this.stopTimer();
@@ -121,7 +121,9 @@ export class RestTimerComponent implements OnInit, OnDestroy {
       if ('Notification' in window && Notification.permission === 'default') {
         void Promise.resolve(Notification.requestPermission()).catch(() => {});
       }
-    } catch { /* Notification API unavailable */ }
+    } catch {
+      /* Notification API unavailable */
+    }
   }
 
   /** Vibrates and notifies. When the screen is locked, uses a SW notification so the
@@ -136,13 +138,21 @@ export class RestTimerComponent implements OnInit, OnDestroy {
         const base = this.tr.T().rest_done_notification;
         const body = timer?.nextLabel ? `${base} — ${timer.nextLabel}` : base;
         const reg = await navigator.serviceWorker.ready;
-        const opts = { body, vibrate: pattern, tag: 'rest-timer', renotify: true, silent: true } as NotificationOptions;
+        const opts = {
+          body,
+          vibrate: pattern,
+          tag: 'rest-timer',
+          renotify: true,
+          silent: true,
+        } as NotificationOptions;
         await reg.showNotification('GainAI', opts);
         setTimeout(async () => {
           const notes = await reg.getNotifications({ tag: 'rest-timer' });
-          notes.forEach(n => n.close());
+          notes.forEach((n) => n.close());
         }, 4000);
-      } catch { /* SW or Notification unavailable */ }
+      } catch {
+        /* SW or Notification unavailable */
+      }
     } else {
       if (this.state.settings().haptics && navigator.vibrate) navigator.vibrate(pattern);
     }
@@ -152,13 +162,17 @@ export class RestTimerComponent implements OnInit, OnDestroy {
     try {
       if (!('wakeLock' in navigator)) return;
       this.wakeLock = await navigator.wakeLock.request('screen');
-    } catch { /* wake lock unavailable (iOS, no HTTPS, low battery) */ }
+    } catch {
+      /* wake lock unavailable (iOS, no HTTPS, low battery) */
+    }
   }
 
   private releaseWakeLock(): void {
     try {
       void this.wakeLock?.release().catch(() => {});
-    } catch { /* already released */ }
+    } catch {
+      /* already released */
+    }
     this.wakeLock = null;
   }
 }

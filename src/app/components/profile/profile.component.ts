@@ -33,8 +33,7 @@ export class ProfileComponent {
   protected readonly profile = computed(() => this.stateService.settings().userProfile);
 
   protected readonly weightSummary = computed(() => {
-    const log = [...this.profile().weightLog]
-      .sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+    const log = [...this.profile().weightLog].sort((a, b) => a.dateISO.localeCompare(b.dateISO));
     if (!log.length) return null;
     const last = log[log.length - 1];
     if (log.length < 2) return { last: last.weightKg, delta: null, days: null };
@@ -90,10 +89,14 @@ export class ProfileComponent {
   protected sexLabel(sex: string | null): string {
     const t = this.T();
     switch (sex) {
-      case 'male': return t.settings_sex_male;
-      case 'female': return t.settings_sex_female;
-      case 'other': return t.settings_sex_other;
-      default: return t.profile_no_data;
+      case 'male':
+        return t.settings_sex_male;
+      case 'female':
+        return t.settings_sex_female;
+      case 'other':
+        return t.settings_sex_other;
+      default:
+        return t.profile_no_data;
     }
   }
 }

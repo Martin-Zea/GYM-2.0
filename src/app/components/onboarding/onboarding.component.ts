@@ -22,14 +22,14 @@ export class OnboardingComponent {
 
   protected next(): void {
     if (this.current() < SLIDE_COUNT - 1) {
-      this.current.update(s => s + 1);
+      this.current.update((s) => s + 1);
     } else {
       this.done.emit();
     }
   }
 
   protected back(): void {
-    this.current.update(s => Math.max(0, s - 1));
+    this.current.update((s) => Math.max(0, s - 1));
   }
 
   protected goTo(index: number): void {

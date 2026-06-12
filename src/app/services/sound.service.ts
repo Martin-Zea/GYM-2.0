@@ -14,14 +14,22 @@ export class SoundService {
 
   /** Personal record: ascending major arpeggio, distinct from the rest beep */
   playPrBeep(): void {
-    this.play([
-      { freq: 523.25, at: 0 },
-      { freq: 659.25, at: 0.12 },
-      { freq: 783.99, at: 0.24 },
-    ], 0.3);
+    this.play(
+      [
+        { freq: 523.25, at: 0 },
+        { freq: 659.25, at: 0.12 },
+        { freq: 783.99, at: 0.24 },
+      ],
+      0.3,
+    );
   }
 
-  private play(notes: { freq: number; at: number }[], decay: number, type: OscillatorType = 'sine', maxGain = 0.3): void {
+  private play(
+    notes: { freq: number; at: number }[],
+    decay: number,
+    type: OscillatorType = 'sine',
+    maxGain = 0.3,
+  ): void {
     try {
       const ctx = new AudioContext();
       for (const { freq, at } of notes) {
@@ -37,6 +45,8 @@ export class SoundService {
         osc.start(when);
         osc.stop(when + decay + 0.05);
       }
-    } catch { /* AudioContext unavailable */ }
+    } catch {
+      /* AudioContext unavailable */
+    }
   }
 }

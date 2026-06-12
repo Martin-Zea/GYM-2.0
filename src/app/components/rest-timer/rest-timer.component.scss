@@ -1,44 +1,119 @@
 .rest-overlay {
-  position: fixed; inset: 0; z-index: 100;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
   background: color-mix(in oklab, var(--bg-0) 88%, transparent);
-  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 24px; animation: fadeIn 0.2s ease;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.2s ease;
 }
 
 .rest-label {
-  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
-  color: var(--text-2); font-weight: 500; margin-bottom: 18px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  font-weight: 500;
+  margin-bottom: 18px;
 }
-.rest-ring { position: relative; width: 220px; height: 220px; margin-bottom: 28px; }
-.rest-ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
-.rest-ring-bg { stroke: var(--bg-3); }
+.rest-ring {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin-bottom: 28px;
+}
+.rest-ring svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+.rest-ring-bg {
+  stroke: var(--bg-3);
+}
 .rest-ring-fg {
-  stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset 0.95s linear;
+  stroke: var(--accent);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.95s linear;
   filter: drop-shadow(0 0 8px color-mix(in oklab, var(--accent) 40%, transparent));
 }
 .rest-time {
-  position: absolute; inset: 0; display: flex;
-  flex-direction: column; align-items: center; justify-content: center; font-variant-numeric: tabular-nums;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
 }
-.rest-time-value { font-size: 56px; font-weight: 600; letter-spacing: -0.04em; color: var(--text-0); line-height: 1; }
-.rest-time-sub { font-size: 13px; color: var(--text-2); margin-top: 6px; }
-.rest-controls { display: flex; gap: 8px; margin-bottom: 14px; }
+.rest-time-value {
+  font-size: 56px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  color: var(--text-0);
+  line-height: 1;
+}
+.rest-time-sub {
+  font-size: 13px;
+  color: var(--text-2);
+  margin-top: 6px;
+}
+.rest-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
 .rest-adjust {
-  width: 44px; height: 44px; border-radius: 50%; background: var(--bg-2);
-  border: 1px solid var(--border); display: grid; place-items: center;
-  color: var(--text-1); font-weight: 600; font-size: 12px; font-variant-numeric: tabular-nums; transition: background 0.12s;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  color: var(--text-1);
+  font-weight: 600;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  transition: background 0.12s;
 }
-.rest-adjust:hover { background: var(--bg-hover); }
+.rest-adjust:hover {
+  background: var(--bg-hover);
+}
 .rest-skip {
-  padding: 10px 24px; border-radius: 999px; background: var(--bg-2);
-  border: 1px solid var(--border); color: var(--text-0); font-weight: 500; font-size: 13px; transition: background 0.12s;
+  padding: 10px 24px;
+  border-radius: 999px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text-0);
+  font-weight: 500;
+  font-size: 13px;
+  transition: background 0.12s;
 }
-.rest-skip:hover { background: var(--bg-hover); }
-.rest-next { margin-top: 24px; text-align: center; font-size: 12px; color: var(--text-2); }
-.rest-next strong { color: var(--text-0); font-weight: 600; }
+.rest-skip:hover {
+  background: var(--bg-hover);
+}
+.rest-next {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.rest-next strong {
+  color: var(--text-0);
+  font-weight: 600;
+}
 
 @media (max-width: 480px) {
-  .rest-ring { width: 200px; height: 200px; }
-  .rest-time-value { font-size: 48px; }
+  .rest-ring {
+    width: 200px;
+    height: 200px;
+  }
+  .rest-time-value {
+    font-size: 48px;
+  }
 }

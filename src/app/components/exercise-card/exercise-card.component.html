@@ -1,4 +1,9 @@
-<div class="exercise" [class.done]="isDone()" [class.expanded]="expanded()" [class.is-active]="isActive()">
+<div
+  class="exercise"
+  [class.done]="isDone()"
+  [class.expanded]="expanded()"
+  [class.is-active]="isActive()"
+>
   <div class="exercise-head" (click)="toggle()">
     <div class="exercise-name-wrap">
       <p class="exercise-name">{{ exercise().name }}</p>
@@ -14,30 +19,33 @@
     </div>
     <div class="exercise-status">
       <span class="set-pill">{{ doneSetsCount() }}/{{ exercise().defaultSets }}</span>
-      <a class="chart-icon-btn"
-         [href]="ytUrl()"
-         target="_blank"
-         rel="noopener"
-         [title]="T().exercise_yt_title"
-         [attr.aria-label]="T().exercise_yt_title"
-         (click)="$event.stopPropagation()">
-        <app-icon name="youtube" [size]="13"/>
+      <a
+        class="chart-icon-btn"
+        [href]="ytUrl()"
+        target="_blank"
+        rel="noopener"
+        [title]="T().exercise_yt_title"
+        [attr.aria-label]="T().exercise_yt_title"
+        (click)="$event.stopPropagation()"
+      >
+        <app-icon name="youtube" [size]="13" />
       </a>
-      <a class="chart-icon-btn"
-         [routerLink]="['/charts']"
-         [fragment]="exercise().id"
-         [title]="T().view_chart"
-         [attr.aria-label]="T().view_chart"
-         (click)="$event.stopPropagation()">
-        <app-icon name="chart" [size]="13"/>
+      <a
+        class="chart-icon-btn"
+        [routerLink]="['/charts']"
+        [fragment]="exercise().id"
+        [title]="T().view_chart"
+        [attr.aria-label]="T().view_chart"
+        (click)="$event.stopPropagation()"
+      >
+        <app-icon name="chart" [size]="13" />
       </a>
     </div>
-    <app-icon name="chevron" [size]="16" class="chevron"/>
+    <app-icon name="chevron" [size]="16" class="chevron" />
   </div>
 
   @if (expanded()) {
     <div class="exercise-body">
-
       <!-- AI nudge: shows source badge (sparkle = Groq, ruler = local) -->
       <div class="ai-nudge">
         @if (aiRec()?.loading) {
@@ -50,11 +58,16 @@
             [name]="aiRec()!.source !== 'local' ? 'sparkle' : 'ruler'"
             [size]="11"
             class="ai-nudge-icon"
-            [class.ai-nudge-icon--local]="aiRec()!.source === 'local'"/>
+            [class.ai-nudge-icon--local]="aiRec()!.source === 'local'"
+          />
           <span class="ai-nudge-text">
-            <strong>{{ aiRec()!.source !== 'local' ? T().ai_source_badge : T().ai_local_badge }}:
-              {{ aiRecLabel() }}</strong>
-            @if (aiRec()!.reason) { — {{ aiRec()!.reason }} }
+            <strong
+              >{{ aiRec()!.source !== 'local' ? T().ai_source_badge : T().ai_local_badge }}:
+              {{ aiRecLabel() }}</strong
+            >
+            @if (aiRec()!.reason) {
+              — {{ aiRec()!.reason }}
+            }
           </span>
         }
       </div>
@@ -63,18 +76,26 @@
         <div class="sets-header">
           <span>#</span>
           @switch (exercise().unit) {
-            @case ('peso corporal') { <span>—</span> }
-            @case ('tiempo') { <span>Seg</span> }
-            @default { <span>Peso</span> }
+            @case ('peso corporal') {
+              <span>—</span>
+            }
+            @case ('tiempo') {
+              <span>Seg</span>
+            }
+            @default {
+              <span>Peso</span>
+            }
           }
           <span>Reps</span>
           <span></span>
         </div>
 
         @for (set of setsArray(); track $index; let i = $index) {
-          <div class="set-row"
-               [class.done]="set.done"
-               [class.active-set]="i === activeSetIndex() && isActive() && !set.done">
+          <div
+            class="set-row"
+            [class.done]="set.done"
+            [class.active-set]="i === activeSetIndex() && isActive() && !set.done"
+          >
             <span class="set-num">{{ i + 1 }}</span>
 
             <!-- Weight column -->
@@ -90,12 +111,15 @@
                   [value]="set.weight !== '' ? set.weight : null"
                   [placeholder]="set.weight === '' ? '0' : ''"
                   [attr.disabled]="set.done ? true : null"
-                  (input)="updateWeight(i, $event)"/>
+                  (input)="updateWeight(i, $event)"
+                />
               } @else {
                 <span class="set-input set-input-bw">—</span>
               }
               @if (lastSets()?.[i]) {
-                <span class="set-history">{{ lastSets()![i].weight }}×{{ lastSets()![i].reps }}</span>
+                <span class="set-history"
+                  >{{ lastSets()![i].weight }}×{{ lastSets()![i].reps }}</span
+                >
               }
             </div>
 
@@ -112,7 +136,8 @@
                 [placeholder]="'' + exercise().defaultRepTarget"
                 [attr.disabled]="set.done ? true : null"
                 (input)="updateReps(i, $event)"
-                (keydown.enter)="$event.preventDefault(); toggleDone(i)"/>
+                (keydown.enter)="$event.preventDefault(); toggleDone(i)"
+              />
               @if (lastSets()?.[i]) {
                 <span class="set-history">&nbsp;</span>
               }
@@ -121,8 +146,9 @@
             <button
               class="set-check"
               (click)="$event.stopPropagation(); toggleDone(i)"
-              [attr.aria-label]="set.done ? T().set_unmark : T().set_mark">
-              <app-icon name="check" [size]="16"/>
+              [attr.aria-label]="set.done ? T().set_unmark : T().set_mark"
+            >
+              <app-icon name="check" [size]="16" />
             </button>
           </div>
 
@@ -132,24 +158,36 @@
               @if (exercise().unit !== 'peso corporal') {
                 <div class="active-ctrl-group">
                   <span class="active-ctrl-label">
-                    @if (exercise().unit === 'tiempo') { Seg } @else { Peso }
+                    @if (exercise().unit === 'tiempo') {
+                      Seg
+                    } @else {
+                      Peso
+                    }
                   </span>
-                  <button class="active-ctrl-btn"
+                  <button
+                    class="active-ctrl-btn"
                     (click)="stepWeight(i, -weightStep())"
-                    aria-label="Bajar peso">−</button>
-                  <button class="active-ctrl-btn"
+                    aria-label="Bajar peso"
+                  >
+                    −
+                  </button>
+                  <button
+                    class="active-ctrl-btn"
                     (click)="stepWeight(i, weightStep())"
-                    aria-label="Subir peso">+</button>
+                    aria-label="Subir peso"
+                  >
+                    +
+                  </button>
                 </div>
               }
               <div class="active-ctrl-group">
                 <span class="active-ctrl-label">Reps</span>
-                <button class="active-ctrl-btn"
-                  (click)="stepReps(i, -1)"
-                  aria-label="Restar rep">−</button>
-                <button class="active-ctrl-btn"
-                  (click)="stepReps(i, 1)"
-                  aria-label="Agregar rep">+</button>
+                <button class="active-ctrl-btn" (click)="stepReps(i, -1)" aria-label="Restar rep">
+                  −
+                </button>
+                <button class="active-ctrl-btn" (click)="stepReps(i, 1)" aria-label="Agregar rep">
+                  +
+                </button>
               </div>
             </div>
           }

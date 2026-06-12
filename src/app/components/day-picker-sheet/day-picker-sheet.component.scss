@@ -1,14 +1,52 @@
 .picker-day-row {
-  display: flex; align-items: center; padding: 14px 12px;
-  border-radius: var(--radius-lg); gap: 12px; width: 100%; text-align: left;
-  transition: background 0.12s; position: relative;
+  display: flex;
+  align-items: center;
+  padding: 14px 12px;
+  border-radius: var(--radius-lg);
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  transition: background 0.12s;
+  position: relative;
 }
-.picker-day-row:hover { background: var(--bg-hover); }
-.picker-day-row.active { background: var(--accent-bg); }
-.picker-day-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-.picker-day-num { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); font-weight: 500; }
-.picker-day-row.active .picker-day-num { color: var(--accent); }
-.picker-day-name { font-size: 14px; font-weight: 500; color: var(--text-0); }
-.picker-day-ago { font-size: 12px; color: var(--text-3); flex-shrink: 0; }
-.picker-day-ago.fresh { color: var(--accent); font-weight: 600; }
-.picker-check { color: var(--accent); flex-shrink: 0; }
+.picker-day-row:hover {
+  background: var(--bg-hover);
+}
+.picker-day-row.active {
+  background: var(--accent-bg);
+}
+.picker-day-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.picker-day-num {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  font-weight: 500;
+}
+.picker-day-row.active .picker-day-num {
+  color: var(--accent);
+}
+.picker-day-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-0);
+}
+.picker-day-ago {
+  font-size: 12px;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+.picker-day-ago.fresh {
+  color: var(--accent);
+  font-weight: 600;
+}
+.picker-check {
+  color: var(--accent);
+  flex-shrink: 0;
+}

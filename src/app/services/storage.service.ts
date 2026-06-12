@@ -11,7 +11,11 @@ export function isValidAppState(x: unknown): boolean {
   const d = x as Record<string, unknown>;
   if (!Array.isArray(d['days'])) return false;
   if ('sessions' in d && !Array.isArray(d['sessions'])) return false;
-  if ('todayProgress' in d && (typeof d['todayProgress'] !== 'object' || d['todayProgress'] === null)) return false;
+  if (
+    'todayProgress' in d &&
+    (typeof d['todayProgress'] !== 'object' || d['todayProgress'] === null)
+  )
+    return false;
   return true;
 }
 
@@ -43,8 +47,9 @@ export class StorageService {
     // v3 → v4: userProfile.weightLog; se siembra con el weightKg actual si existe
     if (version < 4 && m.settings?.userProfile) {
       const profile = m.settings.userProfile;
-      const weightLog: WeightLogEntry[] = profile.weightLog
-        ?? (typeof profile.weightKg === 'number'
+      const weightLog: WeightLogEntry[] =
+        profile.weightLog ??
+        (typeof profile.weightKg === 'number'
           ? [{ dateISO: this.todayISO(), weightKg: profile.weightKg }]
           : []);
       m = { ...m, settings: { ...m.settings, userProfile: { ...profile, weightLog } } };
@@ -87,7 +92,9 @@ export class StorageService {
     try {
       const p: unknown = JSON.parse(raw);
       if (!isValidAppState(p)) {
-        console.warn('StorageService.load: estado inválido en localStorage, usando estado inicial.');
+        console.warn(
+          'StorageService.load: estado inválido en localStorage, usando estado inicial.',
+        );
         return createInitialState();
       }
       return this.buildState(p as Partial<AppState>);
@@ -103,9 +110,10 @@ export class StorageService {
       // Limpiar error previo si el guardado volvió a funcionar
       if (this.uiState.saveError()) this.uiState.saveError.set(null);
     } catch (e) {
-      const msg = e instanceof DOMException && e.name === 'QuotaExceededError'
-        ? 'No se pudo guardar: almacenamiento lleno. Exportá tus datos y limpiá el historial.'
-        : 'No se pudo guardar el estado de la app.';
+      const msg =
+        e instanceof DOMException && e.name === 'QuotaExceededError'
+          ? 'No se pudo guardar: almacenamiento lleno. Exportá tus datos y limpiá el historial.'
+          : 'No se pudo guardar el estado de la app.';
       console.warn('StorageService.save falló:', e);
       this.uiState.saveError.set(msg);
     }
@@ -126,7 +134,10 @@ export class StorageService {
     if ('sessions' in d && !Array.isArray(d['sessions'])) {
       throw new Error('Formato inválido: el campo "sessions" debe ser un array.');
     }
-    if ('todayProgress' in d && (typeof d['todayProgress'] !== 'object' || d['todayProgress'] === null)) {
+    if (
+      'todayProgress' in d &&
+      (typeof d['todayProgress'] !== 'object' || d['todayProgress'] === null)
+    ) {
       throw new Error('Formato inválido: el campo "todayProgress" debe ser un objeto.');
     }
     return this.buildState(d as Partial<AppState>);
@@ -147,9 +158,9 @@ export class StorageService {
 
   lastSessionForExercise(state: AppState, exerciseId: string, beforeISO?: string): Session | null {
     const sessions = state.sessions
-      .filter(s => !s.skipped)
-      .filter(s => s.sets.some(set => set.exerciseId === exerciseId))
-      .filter(s => !beforeISO || s.dateISO < beforeISO)
+      .filter((s) => !s.skipped)
+      .filter((s) => s.sets.some((set) => set.exerciseId === exerciseId))
+      .filter((s) => !beforeISO || s.dateISO < beforeISO)
       .sort((a, b) => b.dateISO.localeCompare(a.dateISO));
     return sessions[0] ?? null;
   }
@@ -157,18 +168,20 @@ export class StorageService {
   lastSetsForExercise(state: AppState, exerciseId: string, beforeISO?: string): SetRecord[] | null {
     const session = this.lastSessionForExercise(state, exerciseId, beforeISO);
     if (!session) return null;
-    return session.sets.filter(s => s.exerciseId === exerciseId);
+    return session.sets.filter((s) => s.exerciseId === exerciseId);
   }
 
   lastSessionForDay(state: AppState, dayId: string): Session | null {
-    return state.sessions
-      .filter(s => s.dayId === dayId && !s.skipped)
-      .sort((a, b) => b.dateISO.localeCompare(a.dateISO))[0] ?? null;
+    return (
+      state.sessions
+        .filter((s) => s.dayId === dayId && !s.skipped)
+        .sort((a, b) => b.dateISO.localeCompare(a.dateISO))[0] ?? null
+    );
   }
 
   allSessionsForDay(state: AppState, dayId: string): Session[] {
     return state.sessions
-      .filter(s => s.dayId === dayId && !s.skipped)
+      .filter((s) => s.dayId === dayId && !s.skipped)
       .sort((a, b) => b.dateISO.localeCompare(a.dateISO));
   }
 
@@ -208,14 +221,14 @@ export class StorageService {
 
   historyForExercise(state: AppState, exerciseId: string): HistoryEntry[] {
     const sessions = state.sessions
-      .filter(s => !s.skipped)
-      .filter(s => s.sets.some(set => set.exerciseId === exerciseId))
+      .filter((s) => !s.skipped)
+      .filter((s) => s.sets.some((set) => set.exerciseId === exerciseId))
       .sort((a, b) => a.dateISO.localeCompare(b.dateISO));
 
-    return sessions.map(session => {
-      const sets = session.sets.filter(s => s.exerciseId === exerciseId);
-      const topWeight = Math.max(...sets.map(s => s.weight || 0));
-      const topReps = Math.max(...sets.map(s => s.reps || 0));
+    return sessions.map((session) => {
+      const sets = session.sets.filter((s) => s.exerciseId === exerciseId);
+      const topWeight = Math.max(...sets.map((s) => s.weight || 0));
+      const topReps = Math.max(...sets.map((s) => s.reps || 0));
       const totalReps = sets.reduce((sum, s) => sum + (s.reps || 0), 0);
       const volume = sets.reduce((sum, s) => sum + (s.weight || 0) * (s.reps || 0), 0);
       return { dateISO: session.dateISO, sets, topWeight, topReps, totalReps, volume };

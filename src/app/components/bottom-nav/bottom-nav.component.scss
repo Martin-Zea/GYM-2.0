@@ -31,8 +31,12 @@
   text-decoration: none;
   transition: color 0.15s;
 
-  &:hover { color: var(--text-0); }
-  &.active { color: var(--accent); }
+  &:hover {
+    color: var(--text-0);
+  }
+  &.active {
+    color: var(--accent);
+  }
 }
 
 .nav-label {

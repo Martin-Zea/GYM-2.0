@@ -6,18 +6,31 @@
 
   <div class="charts-controls">
     <div class="charts-seg">
-      <button class="btn btn-sm" [class.btn-primary]="metric() === 'top'"
-        (click)="metric.set('top')">{{ T().charts_metric_top }}</button>
-      <button class="btn btn-sm" [class.btn-primary]="metric() === '1rm'"
-        (click)="metric.set('1rm')">{{ T().charts_metric_1rm }}</button>
+      <button
+        class="btn btn-sm"
+        [class.btn-primary]="metric() === 'top'"
+        (click)="metric.set('top')"
+      >
+        {{ T().charts_metric_top }}
+      </button>
+      <button
+        class="btn btn-sm"
+        [class.btn-primary]="metric() === '1rm'"
+        (click)="metric.set('1rm')"
+      >
+        {{ T().charts_metric_1rm }}
+      </button>
     </div>
     <div class="charts-seg">
-      <button class="btn btn-sm" [class.btn-primary]="range() === '3m'"
-        (click)="range.set('3m')">{{ T().charts_range_3m }}</button>
-      <button class="btn btn-sm" [class.btn-primary]="range() === '6m'"
-        (click)="range.set('6m')">{{ T().charts_range_6m }}</button>
-      <button class="btn btn-sm" [class.btn-primary]="range() === 'all'"
-        (click)="range.set('all')">{{ T().charts_range_all }}</button>
+      <button class="btn btn-sm" [class.btn-primary]="range() === '3m'" (click)="range.set('3m')">
+        {{ T().charts_range_3m }}
+      </button>
+      <button class="btn btn-sm" [class.btn-primary]="range() === '6m'" (click)="range.set('6m')">
+        {{ T().charts_range_6m }}
+      </button>
+      <button class="btn btn-sm" [class.btn-primary]="range() === 'all'" (click)="range.set('all')">
+        {{ T().charts_range_all }}
+      </button>
     </div>
   </div>
 
@@ -26,7 +39,9 @@
       <div class="chart-head">
         <div>
           <p class="chart-title">{{ T().bodyweight_chart_title }}</p>
-          <p class="chart-sub">{{ bw.xLabels[0].label }} – {{ bw.xLabels[bw.xLabels.length - 1].label }}</p>
+          <p class="chart-sub">
+            {{ bw.xLabels[0].label }} – {{ bw.xLabels[bw.xLabels.length - 1].label }}
+          </p>
         </div>
         <div class="chart-stats-right">
           <div class="chart-stat">
@@ -40,24 +55,28 @@
         <svg viewBox="0 0 300 110" preserveAspectRatio="none">
           <defs>
             <linearGradient id="grad-bodyweight" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.25"/>
-              <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+              <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.25" />
+              <stop offset="100%" stop-color="var(--accent)" stop-opacity="0" />
             </linearGradient>
           </defs>
 
           <g class="chart-grid">
-            <line x1="32" y1="8" x2="292" y2="8"/>
-            <line x1="32" y1="48" x2="292" y2="48"/>
-            <line x1="32" y1="88" x2="292" y2="88"/>
+            <line x1="32" y1="8" x2="292" y2="8" />
+            <line x1="32" y1="48" x2="292" y2="48" />
+            <line x1="32" y1="88" x2="292" y2="88" />
           </g>
 
-          <path [attr.d]="bw.areaPath" fill="url(#grad-bodyweight)" stroke="none"/>
+          <path [attr.d]="bw.areaPath" fill="url(#grad-bodyweight)" stroke="none" />
 
-          <polyline [attr.points]="bw.points" class="chart-line" fill="none"/>
+          <polyline [attr.points]="bw.points" class="chart-line" fill="none" />
 
           @for (pt of bw.pts; track $index) {
-            <circle [attr.cx]="pt.x.toFixed(1)" [attr.cy]="pt.y.toFixed(1)"
-              r="3" class="chart-dot"/>
+            <circle
+              [attr.cx]="pt.x.toFixed(1)"
+              [attr.cy]="pt.y.toFixed(1)"
+              r="3"
+              class="chart-dot"
+            />
           }
 
           <g class="chart-axis">
@@ -79,7 +98,7 @@
   @if (!chartItems().length && !bodyweightChart()) {
     <div class="empty">
       <div class="empty-icon">
-        <app-icon name="chart" [size]="24"/>
+        <app-icon name="chart" [size]="24" />
       </div>
       <h3>{{ T().charts_no_data_title }}</h3>
       <p>{{ T().charts_no_data_desc }}</p>
@@ -109,26 +128,32 @@
             <svg viewBox="0 0 300 110" preserveAspectRatio="none">
               <defs>
                 <linearGradient [attr.id]="'grad-' + item.exercise.id" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.25"/>
-                  <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+                  <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.25" />
+                  <stop offset="100%" stop-color="var(--accent)" stop-opacity="0" />
                 </linearGradient>
               </defs>
 
               <g class="chart-grid">
-                <line x1="32" y1="8" x2="292" y2="8"/>
-                <line x1="32" y1="48" x2="292" y2="48"/>
-                <line x1="32" y1="88" x2="292" y2="88"/>
+                <line x1="32" y1="8" x2="292" y2="8" />
+                <line x1="32" y1="48" x2="292" y2="48" />
+                <line x1="32" y1="88" x2="292" y2="88" />
               </g>
 
-              <path [attr.d]="chart.areaPath"
+              <path
+                [attr.d]="chart.areaPath"
                 [attr.fill]="'url(#grad-' + item.exercise.id + ')'"
-                stroke="none"/>
+                stroke="none"
+              />
 
-              <polyline [attr.points]="chart.points" class="chart-line" fill="none"/>
+              <polyline [attr.points]="chart.points" class="chart-line" fill="none" />
 
               @for (pt of chart.pts; track $index) {
-                <circle [attr.cx]="pt.x.toFixed(1)" [attr.cy]="pt.y.toFixed(1)"
-                  r="3" class="chart-dot"/>
+                <circle
+                  [attr.cx]="pt.x.toFixed(1)"
+                  [attr.cy]="pt.y.toFixed(1)"
+                  r="3"
+                  class="chart-dot"
+                />
               }
 
               <g class="chart-axis">
@@ -139,7 +164,9 @@
 
               <g class="chart-axis">
                 @for (lbl of chart.xLabels; track lbl.label) {
-                  <text [attr.x]="lbl.x.toFixed(1)" y="106" text-anchor="middle">{{ lbl.label }}</text>
+                  <text [attr.x]="lbl.x.toFixed(1)" y="106" text-anchor="middle">
+                    {{ lbl.label }}
+                  </text>
                 }
               </g>
             </svg>
@@ -148,9 +175,10 @@
           <div class="chart-vol-bar">
             <span class="chart-vol-label">Volumen promedio: {{ chart.volAvg }} kg</span>
             <div class="chart-vol-track">
-              <div class="chart-vol-fill"
-                [style.width.%]="chart.volAvg > 0 ? (chart.volLast / chart.volAvg) * 50 : 0">
-              </div>
+              <div
+                class="chart-vol-fill"
+                [style.width.%]="chart.volAvg > 0 ? (chart.volLast / chart.volAvg) * 50 : 0"
+              ></div>
             </div>
           </div>
         } @else {

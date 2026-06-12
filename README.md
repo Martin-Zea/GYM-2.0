@@ -69,6 +69,10 @@ src/app/
     icon/              # SVG icon por nombre
 ```
 
+## CI
+
+El workflow `.github/workflows/ci.yml` se dispara en cada push y pull request a `main`: ejecuta format:check → lint → build → test; el job falla si cualquier paso falla.
+
 ## Datos
 
 El estado completo se persiste en `localStorage`. Al exportar se descarga un `.json` con toda la historia de sesiones, rutina y configuración.

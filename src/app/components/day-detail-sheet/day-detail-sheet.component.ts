@@ -32,10 +32,10 @@ export class DayDetailSheetComponent {
     const d = this.day();
     const session = this.lastSession();
     if (!d || !session) return [];
-    return d.exercises.map(ex => ({
+    return d.exercises.map((ex) => ({
       exercise: ex,
       sets: session.sets
-        .filter(s => s.exerciseId === ex.id)
+        .filter((s) => s.exerciseId === ex.id)
         .sort((a, b) => a.setIndex - b.setIndex),
     }));
   });
@@ -68,7 +68,7 @@ export class DayDetailSheetComponent {
   protected trainDay(): void {
     const d = this.day();
     if (!d) return;
-    const idx = this.state.days().findIndex(day => day.id === d.id);
+    const idx = this.state.days().findIndex((day) => day.id === d.id);
     if (idx >= 0) this.state.setActiveDay(idx);
     this.uiState.pendingTrainingStart.set(true);
     this.uiState.closeDayDetail();

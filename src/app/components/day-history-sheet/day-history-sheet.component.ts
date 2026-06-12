@@ -49,27 +49,34 @@ export class DayHistorySheetComponent {
     if (!d) return [];
     const todayISO = this.storage.todayISO();
     // Incluye sesiones skipped (solo eliminables desde acá)
-    const allSessions = this.state.sessions()
-      .filter(s => s.dayId === d.id)
+    const allSessions = this.state
+      .sessions()
+      .filter((s) => s.dayId === d.id)
       .sort((a, b) => b.dateISO.localeCompare(a.dateISO));
 
-    return allSessions.map(session => {
+    return allSessions.map((session) => {
       const daysAgo = Math.floor(
         (new Date(todayISO).getTime() - new Date(session.dateISO).getTime()) / 86_400_000,
       );
-      const dateLabel = daysAgo === 0 ? 'Hoy' : daysAgo === 1 ? 'Ayer' : session.dateISO.slice(5).replace('-', '/');
+      const dateLabel =
+        daysAgo === 0 ? 'Hoy' : daysAgo === 1 ? 'Ayer' : session.dateISO.slice(5).replace('-', '/');
 
-      const exercises = d.exercises.map(ex => ({
-        id: ex.id,
-        name: ex.name,
-        unit: ex.unit,
-        sets: session.sets
-          .filter(sr => sr.exerciseId === ex.id)
-          .sort((a, b) => a.setIndex - b.setIndex)
-          .map(sr => ({ setIndex: sr.setIndex, weight: sr.weight, reps: sr.reps })),
-      })).filter(ex => ex.sets.length > 0);
+      const exercises = d.exercises
+        .map((ex) => ({
+          id: ex.id,
+          name: ex.name,
+          unit: ex.unit,
+          sets: session.sets
+            .filter((sr) => sr.exerciseId === ex.id)
+            .sort((a, b) => a.setIndex - b.setIndex)
+            .map((sr) => ({ setIndex: sr.setIndex, weight: sr.weight, reps: sr.reps })),
+        }))
+        .filter((ex) => ex.sets.length > 0);
 
-      const totalVolume = session.sets.reduce((sum, sr) => sum + (sr.weight || 0) * (sr.reps || 0), 0);
+      const totalVolume = session.sets.reduce(
+        (sum, sr) => sum + (sr.weight || 0) * (sr.reps || 0),
+        0,
+      );
 
       return { session, dateLabel, daysAgo, exercises, totalVolume };
     });
@@ -102,7 +109,12 @@ export class DayHistorySheetComponent {
     this.drafts = {};
   }
 
-  protected onDraftInput(exerciseId: string, setIndex: number, field: 'weight' | 'reps', event: Event): void {
+  protected onDraftInput(
+    exerciseId: string,
+    setIndex: number,
+    field: 'weight' | 'reps',
+    event: Event,
+  ): void {
     const draft = this.drafts[`${exerciseId}:${setIndex}`];
     if (!draft) return;
     const num = Number((event.target as HTMLInputElement).value);

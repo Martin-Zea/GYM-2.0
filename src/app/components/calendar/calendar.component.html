@@ -7,11 +7,11 @@
   <div class="calendar">
     <div class="cal-nav">
       <button class="icon-btn" (click)="prevMonth()" [attr.aria-label]="T().prev_month">
-        <app-icon name="arrow_left" [size]="16"/>
+        <app-icon name="arrow_left" [size]="16" />
       </button>
       <span class="cal-month">{{ monthLabel() }}</span>
       <button class="icon-btn" (click)="nextMonth()" [attr.aria-label]="T().next_month">
-        <app-icon name="arrow_right" [size]="16"/>
+        <app-icon name="arrow_right" [size]="16" />
       </button>
     </div>
 
@@ -20,11 +20,13 @@
         <div class="cal-dow">{{ d }}</div>
       }
       @for (cell of calDays(); track $index) {
-        <div class="cal-day"
+        <div
+          class="cal-day"
           [class.outside]="!cell.day"
           [class.today]="cell.isToday"
           [class.trained]="cell.trained"
-          [class.skipped]="cell.skipped">
+          [class.skipped]="cell.skipped"
+        >
           {{ cell.day ?? '' }}
         </div>
       }

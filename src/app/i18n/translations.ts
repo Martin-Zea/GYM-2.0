@@ -284,11 +284,14 @@ export const es: Translations = {
   hiw_dismiss: 'Entendido',
   how_title: 'Cómo funciona',
   how_step1_title: 'Registro Rápido',
-  how_step1_desc: 'Anotá series y pesos en segundos. Tus datos se guardan automáticamente sin cuenta ni login.',
+  how_step1_desc:
+    'Anotá series y pesos en segundos. Tus datos se guardan automáticamente sin cuenta ni login.',
   how_step2_title: 'Inteligencia Adaptativa',
-  how_step2_desc: 'Lógica local con reglas de progresión probadas. Con tu API key de Groq (gratis), la IA analiza tu historial completo.',
+  how_step2_desc:
+    'Lógica local con reglas de progresión probadas. Con tu API key de Groq (gratis), la IA analiza tu historial completo.',
   how_step3_title: 'Progresión Real',
-  how_step3_desc: 'Cada sesión la app sugiere exactamente qué peso usar para maximizar la ganancia muscular.',
+  how_step3_desc:
+    'Cada sesión la app sugiere exactamente qué peso usar para maximizar la ganancia muscular.',
 
   exercise_yt_title: 'Buscar técnica en YouTube',
   set_mark: 'Marcar serie como completada',
@@ -360,7 +363,8 @@ export const es: Translations = {
   settings_sounds: 'Sonido al completar',
   settings_haptics: 'Vibración al completar',
   settings_profile: 'Tu perfil',
-  settings_profile_ai_note: 'Con una API key configurada, la IA usa tu perfil (edad, sexo, peso) para personalizar las sugerencias de carga.',
+  settings_profile_ai_note:
+    'Con una API key configurada, la IA usa tu perfil (edad, sexo, peso) para personalizar las sugerencias de carga.',
   settings_weight: 'Peso',
   settings_weight_prev: 'Anterior: {weight} kg',
   settings_weight_delta: '{delta} kg desde {date}',
@@ -405,11 +409,14 @@ export const es: Translations = {
   settings_version: 'Versión {version}',
 
   onboarding_slide1_title: '¡Bienvenido a GainAI!',
-  onboarding_slide1_desc: 'Registrá tus entrenamientos en segundos. La app aprende de tu progreso y te dice exactamente qué peso usar en cada sesión.',
+  onboarding_slide1_desc:
+    'Registrá tus entrenamientos en segundos. La app aprende de tu progreso y te dice exactamente qué peso usar en cada sesión.',
   onboarding_slide2_title: 'IA que te conoce',
-  onboarding_slide2_desc: 'Con lógica local o tu API key de Groq (gratis), GainAI analiza tu historial completo y personaliza cada sugerencia de carga.',
+  onboarding_slide2_desc:
+    'Con lógica local o tu API key de Groq (gratis), GainAI analiza tu historial completo y personaliza cada sugerencia de carga.',
   onboarding_slide3_title: 'Offline y 100% privado',
-  onboarding_slide3_desc: 'Tus datos viven solo en tu dispositivo — nunca en la nube. La app funciona sin conexión a internet, siempre.',
+  onboarding_slide3_desc:
+    'Tus datos viven solo en tu dispositivo — nunca en la nube. La app funciona sin conexión a internet, siempre.',
   onboarding_next: 'Siguiente',
   onboarding_back: 'Atrás',
   onboarding_start: 'Empezar',
@@ -468,7 +475,7 @@ export const en: Translations = {
   days_streak_one: 'day in a row',
   days_streak_many: '{n} days in a row',
   this_week: 'this week',
-  first_week_prompt: 'First week! Let\'s go',
+  first_week_prompt: "First week! Let's go",
 
   routine_section_title: 'Your routine',
   today_label: 'TODAY',
@@ -486,11 +493,14 @@ export const en: Translations = {
   hiw_dismiss: 'Got it',
   how_title: 'How it works',
   how_step1_title: 'Quick Logging',
-  how_step1_desc: 'Log sets and weights in seconds. Data is saved automatically — no account needed.',
+  how_step1_desc:
+    'Log sets and weights in seconds. Data is saved automatically — no account needed.',
   how_step2_title: 'Adaptive Intelligence',
-  how_step2_desc: 'Local logic with proven progression rules. Add a free Groq API key and AI analyzes your full history.',
+  how_step2_desc:
+    'Local logic with proven progression rules. Add a free Groq API key and AI analyzes your full history.',
   how_step3_title: 'Real Progression',
-  how_step3_desc: 'Every session the app suggests exactly what weight to use to maximize muscle gains.',
+  how_step3_desc:
+    'Every session the app suggests exactly what weight to use to maximize muscle gains.',
 
   exercise_yt_title: 'Search technique on YouTube',
   set_mark: 'Mark set as done',
@@ -562,7 +572,8 @@ export const en: Translations = {
   settings_sounds: 'Sound on complete',
   settings_haptics: 'Haptic feedback',
   settings_profile: 'Your profile',
-  settings_profile_ai_note: 'With an API key configured, AI uses your profile (age, sex, weight) to personalize load suggestions.',
+  settings_profile_ai_note:
+    'With an API key configured, AI uses your profile (age, sex, weight) to personalize load suggestions.',
   settings_weight: 'Weight',
   settings_weight_prev: 'Previous: {weight} kg',
   settings_weight_delta: '{delta} kg since {date}',
@@ -607,11 +618,14 @@ export const en: Translations = {
   settings_version: 'Version {version}',
 
   onboarding_slide1_title: 'Welcome to GainAI!',
-  onboarding_slide1_desc: 'Log your workouts in seconds. The app learns from your progress and tells you exactly what weight to use each session.',
+  onboarding_slide1_desc:
+    'Log your workouts in seconds. The app learns from your progress and tells you exactly what weight to use each session.',
   onboarding_slide2_title: 'AI That Knows You',
-  onboarding_slide2_desc: 'With built-in logic or your free Groq API key, GainAI analyzes your full history and personalizes every load suggestion.',
+  onboarding_slide2_desc:
+    'With built-in logic or your free Groq API key, GainAI analyzes your full history and personalizes every load suggestion.',
   onboarding_slide3_title: 'Offline & 100% Private',
-  onboarding_slide3_desc: 'Your data lives only on your device — never in the cloud. The app works without an internet connection, always.',
+  onboarding_slide3_desc:
+    'Your data lives only on your device — never in the cloud. The app works without an internet connection, always.',
   onboarding_next: 'Next',
   onboarding_back: 'Back',
   onboarding_start: 'Get started',

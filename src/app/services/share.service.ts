@@ -6,7 +6,12 @@ import { APP_DOWNLOAD_URL } from '../config';
 export class ShareService {
   private readonly tr = inject(TranslationService);
 
-  async generatePrImage(exerciseName: string, weight: number, unit: string, dateISO: string): Promise<Blob> {
+  async generatePrImage(
+    exerciseName: string,
+    weight: number,
+    unit: string,
+    dateISO: string,
+  ): Promise<Blob> {
     const W = 1080;
     const H = 1080;
     const canvas = document.createElement('canvas');
@@ -76,7 +81,7 @@ export class ShareService {
     ctx.fillText(APP_DOWNLOAD_URL, W / 2, 882);
 
     return new Promise<Blob>((resolve, reject) =>
-      canvas.toBlob(b => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png'),
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png'),
     );
   }
 
@@ -124,7 +129,11 @@ export class ShareService {
       const file = new File([blob], 'pr-gainai.png', { type: 'image/png' });
       if (navigator.canShare?.({ files: [file] })) {
         try {
-          await navigator.share({ files: [file], text: shareText, title: 'GainAI — Personal Record' });
+          await navigator.share({
+            files: [file],
+            text: shareText,
+            title: 'GainAI — Personal Record',
+          });
           return;
         } catch (e) {
           if ((e as DOMException)?.name === 'AbortError') return;
