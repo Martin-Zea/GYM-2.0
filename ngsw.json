@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1781297960236,
+  "timestamp": 1781298231659,
   "index": "/GYM-2.0/index.html",
   "assetGroups": [
     {
@@ -13,15 +13,15 @@
       "urls": [
         "/GYM-2.0/chunk-2CR5JKDG.js",
         "/GYM-2.0/chunk-2POMETJI.js",
+        "/GYM-2.0/chunk-B57FE7IX.js",
         "/GYM-2.0/chunk-HFNYCWML.js",
         "/GYM-2.0/chunk-JVZBI2OU.js",
         "/GYM-2.0/chunk-KBJUFA4B.js",
-        "/GYM-2.0/chunk-NBHW6ZEN.js",
         "/GYM-2.0/chunk-QELJDFWX.js",
         "/GYM-2.0/chunk-ZL5UVQXK.js",
         "/GYM-2.0/favicon.ico",
         "/GYM-2.0/index.html",
-        "/GYM-2.0/main-OANZ257K.js",
+        "/GYM-2.0/main-VT43I56X.js",
         "/GYM-2.0/manifest.webmanifest",
         "/GYM-2.0/styles-2QU7PADO.css"
       ],
@@ -82,10 +82,10 @@
     "/GYM-2.0/apple-touch-icon.png": "84b753511f91c81e9e10a431d775bedd08bf9f36",
     "/GYM-2.0/chunk-2CR5JKDG.js": "f660d975f4796fa6914aef60836145f963c9b990",
     "/GYM-2.0/chunk-2POMETJI.js": "c833594691345423c42884b7cf197477f447c344",
+    "/GYM-2.0/chunk-B57FE7IX.js": "50b80c56046b4cf12035a454c88686be16654b15",
     "/GYM-2.0/chunk-HFNYCWML.js": "19badedb2f9aacfea354257d21f112c6889eb38f",
     "/GYM-2.0/chunk-JVZBI2OU.js": "55969759c846d4db56ef5f0a587544760d0a2c0a",
     "/GYM-2.0/chunk-KBJUFA4B.js": "9b0c0f55be773ef1cc25d6eaa8a5c754f1a7d149",
-    "/GYM-2.0/chunk-NBHW6ZEN.js": "976792e80dbef4ecaed2dc07fa19369228f413af",
     "/GYM-2.0/chunk-QELJDFWX.js": "ccef6e8aa842b876d3d860eccb2626738a952b49",
     "/GYM-2.0/chunk-ZL5UVQXK.js": "888151d1fa128de9f3bae6c2f7156322dea4cf73",
     "/GYM-2.0/favicon-16x16.png": "189047f15d6700abbbd5f8e5924b9df0fd9072fc",
@@ -122,8 +122,8 @@
     "/GYM-2.0/icons/gainai-maskable-72x72.png": "0b0f41d966bdaa037028ad8dfefc83e76fc32bae",
     "/GYM-2.0/icons/gainai-maskable-96x96.png": "88f28a3c5cc3ed7663f9f3ed08894ea950c53539",
     "/GYM-2.0/icons/gainai-maskable.svg": "4ada5e0f771b75a937c5dd2d679b75b30b6496d9",
-    "/GYM-2.0/index.html": "4de1ccfab9b5a2260e617aec0a11515d1df339b7",
-    "/GYM-2.0/main-OANZ257K.js": "82a02809c5fff4c0019603766047fbf240cb20c1",
+    "/GYM-2.0/index.html": "7989d6f4d0b8f27af6937bda37d019d323df81b5",
+    "/GYM-2.0/main-VT43I56X.js": "12ac6bc34a7d00abc4feaa45892f8a70ac1612e2",
     "/GYM-2.0/manifest.webmanifest": "347d778acecce3cebc1eff3066b8cb6c5cd4870c",
     "/GYM-2.0/styles-2QU7PADO.css": "3a0f9b80415c7fc8a9a3269766d7840e725f0f14"
   },
