@@ -156,7 +156,7 @@ input[type="number"] { -moz-appearance: textfield; }
 .topbar {
   position: sticky; top: 0; z-index: 50;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 20px 12px;
+  padding: max(14px, env(safe-area-inset-top)) 20px 12px;
   background: color-mix(in oklab, var(--bg-0) 88%, transparent);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
@@ -202,7 +202,7 @@ input[type="number"] { -moz-appearance: textfield; }
   display: flex; gap: 2px; padding: 8px 16px 0;
   overflow-x: auto; scrollbar-width: none;
   border-bottom: 1px solid var(--border); background: var(--bg-0);
-  position: sticky; top: 55px; z-index: 40;
+  position: sticky; top: calc(55px + env(safe-area-inset-top)); z-index: 40;
 }
 .tabs::-webkit-scrollbar { display: none; }
 
@@ -225,11 +225,11 @@ input[type="number"] { -moz-appearance: textfield; }
 .tab-add:hover { color: var(--text-0); }
 
 /* ============ Main content ============ */
-.main { flex: 1; padding: 16px 16px 100px; }
+.main { flex: 1; padding: 16px 16px calc(100px + env(safe-area-inset-bottom)); }
 
 /* ============ Bottom nav ============ */
 .bottom-nav {
-  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+  position: fixed; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
   display: flex; gap: 2px; padding: 4px;
   background: color-mix(in oklab, var(--bg-1) 92%, transparent);
   border: 1px solid var(--border); border-radius: 999px;
@@ -294,7 +294,7 @@ button.btn[disabled] { opacity: 0.4; cursor: not-allowed; }
 }
 .sheet-title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
 .sheet-body { flex: 1; overflow-y: auto; padding: 16px 18px; }
-.sheet-footer { border-top: 1px solid var(--border); padding: 12px 18px; display: flex; justify-content: flex-end; gap: 8px; }
+.sheet-footer { border-top: 1px solid var(--border); padding: 12px 18px max(12px, env(safe-area-inset-bottom)); display: flex; justify-content: flex-end; gap: 8px; }
 
 /* ============ Form fields ============ */
 .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
@@ -343,8 +343,8 @@ button.btn[disabled] { opacity: 0.4; cursor: not-allowed; }
 
 /* ============ Mobile ============ */
 @media (max-width: 480px) {
-  .topbar { padding: 12px 14px 10px; }
-  .main { padding: 14px 12px 100px; }
+  .topbar { padding: max(12px, env(safe-area-inset-top)) 14px 10px; }
+  .main { padding: 14px 12px calc(100px + env(safe-area-inset-bottom)); }
 }
 
 /* ============ Desktop ≥ 1024px — shell layout only ============ */
@@ -366,7 +366,7 @@ button.btn[disabled] { opacity: 0.4; cursor: not-allowed; }
     position: relative;
     top: auto;
     max-width: none;
-    padding: 14px 32px 12px;
+    padding: max(14px, env(safe-area-inset-top)) 32px 12px;
   }
 
   .bottom-nav {
@@ -398,7 +398,7 @@ button.btn[disabled] { opacity: 0.4; cursor: not-allowed; }
     height: 100%;
   }
 
-  .main { padding: 16px 32px 48px; }
+  .main { padding: 16px 32px 48px; } /* no bottom-nav in desktop */
 
   .tabs { top: 0; }
 }
@@ -407,7 +407,7 @@ button.btn[disabled] { opacity: 0.4; cursor: not-allowed; }
 .app-toast,
 .save-error-toast {
   position: fixed;
-  bottom: calc(64px + 12px); /* above bottom-nav */
+  bottom: calc(64px + 12px + env(safe-area-inset-bottom)); /* above bottom-nav */
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
