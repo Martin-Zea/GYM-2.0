@@ -5,6 +5,7 @@ import { StateService } from '../../services/state.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
 import { AppSettings, UserProfile } from '../../models/workout.model';
+import { APP_VERSION } from '../../version';
 
 @Component({
   selector: 'app-settings',
@@ -19,6 +20,7 @@ export class SettingsComponent {
   protected readonly tr = inject(TranslationService);
   protected readonly T = this.tr.T;
 
+  protected readonly appVersion = APP_VERSION;
   protected readonly showApiKey = signal(false);
   protected readonly showCohereKey = signal(false);
   protected readonly importError = signal('');

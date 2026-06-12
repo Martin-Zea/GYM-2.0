@@ -26,3 +26,5 @@
 .reset-confirm-label strong { color: var(--danger); }
 .reset-confirm-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .reset-confirm-input { max-width: 120px; font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+.settings-version { font-size: 11px; color: var(--text-2); text-align: center; margin: 8px 0 0; }

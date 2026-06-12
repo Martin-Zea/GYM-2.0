@@ -174,6 +174,7 @@ export interface Translations {
   settings_language: string;
   settings_language_desc: string;
   import_invalid_backup: string;
+  settings_version: string; // {version}
 }
 
 export const es: Translations = {
@@ -331,6 +332,7 @@ export const es: Translations = {
   settings_language: 'Idioma',
   settings_language_desc: 'Cambia el idioma de la interfaz',
   import_invalid_backup: 'Archivo de respaldo inválido',
+  settings_version: 'Versión {version}',
 };
 
 export const en: Translations = {
@@ -488,6 +490,7 @@ export const en: Translations = {
   settings_language: 'Language',
   settings_language_desc: 'Change the interface language',
   import_invalid_backup: 'Invalid backup file',
+  settings_version: 'Version {version}',
 };
 
 export const TRANSLATIONS: Record<string, Translations> = { es, en };
