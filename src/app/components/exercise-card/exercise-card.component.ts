@@ -177,7 +177,17 @@ export class ExerciseCardComponent {
 
   protected updateWeight(i: number, event: Event): void {
     const val = (event.target as HTMLInputElement).value;
-    const weight = val === '' ? ('' as unknown as number) : Number(val);
+    let weight: number | string;
+    if (val === '') {
+      weight = '' as unknown as number;
+    } else if (val.endsWith('.')) {
+      // Preserve "32." while user is mid-decimal — Number("32.") = 32 would lose the dot
+      // and Angular re-rendering [value]="32" moves the cursor to the start
+      weight = val as unknown as number;
+    } else {
+      const num = Number(val);
+      weight = isNaN(num) ? ('' as unknown as number) : num;
+    }
     this.state.updateSet(this.day().id, this.exercise().id, i, { weight });
     this.aiPrefilledIndices.update((s) => {
       const n = new Set(s);

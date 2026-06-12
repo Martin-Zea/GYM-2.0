@@ -104,8 +104,9 @@
                 <input
                   class="set-input set-input-weight"
                   [class.ai-prefilled]="aiPrefilledIndices().has(i) && !set.done"
-                  type="number"
+                  type="text"
                   inputmode="decimal"
+                  autocomplete="off"
                   [attr.data-set-index]="i"
                   [attr.aria-label]="tr.tp('set_weight_aria', { n: i + 1 })"
                   [value]="set.weight !== '' ? set.weight : null"
