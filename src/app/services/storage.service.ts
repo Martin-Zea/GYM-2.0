@@ -6,6 +6,15 @@ import { UIStateService } from './ui-state.service';
 const STORAGE_KEY = 'gym_app_state_v2';
 const CURRENT_SCHEMA = 4;
 
+export function isValidAppState(x: unknown): boolean {
+  if (typeof x !== 'object' || x === null) return false;
+  const d = x as Record<string, unknown>;
+  if (!Array.isArray(d['days'])) return false;
+  if ('sessions' in d && !Array.isArray(d['sessions'])) return false;
+  if ('todayProgress' in d && (typeof d['todayProgress'] !== 'object' || d['todayProgress'] === null)) return false;
+  return true;
+}
+
 export interface HistoryEntry {
   dateISO: string;
   sets: SetRecord[];
@@ -75,9 +84,14 @@ export class StorageService {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return createInitialState();
     try {
-      const p = JSON.parse(raw) as Partial<AppState>;
-      return this.buildState(p);
+      const p: unknown = JSON.parse(raw);
+      if (!isValidAppState(p)) {
+        console.warn('StorageService.load: estado inválido en localStorage, usando estado inicial.');
+        return createInitialState();
+      }
+      return this.buildState(p as Partial<AppState>);
     } catch {
+      console.warn('StorageService.load: JSON inválido en localStorage, usando estado inicial.');
       return createInitialState();
     }
   }

@@ -5,6 +5,7 @@ import { StorageService } from './services/storage.service';
 import { UIStateService } from './services/ui-state.service';
 import { TranslationService } from './services/translation.service';
 import { AppUpdateService } from './services/app-update.service';
+import { ErrorService } from './services/error.service';
 import { IconComponent } from './components/icon/icon.component';
 import { RestTimerComponent } from './components/rest-timer/rest-timer.component';
 import { DayEditorComponent } from './components/day-editor/day-editor.component';
@@ -29,6 +30,7 @@ export class App {
   protected readonly uiState = inject(UIStateService);
   protected readonly tr = inject(TranslationService);
   protected readonly appUpdate = inject(AppUpdateService);
+  protected readonly errorService = inject(ErrorService);
   private readonly storage = inject(StorageService);
 
   protected readonly theme = computed(() => this.state.settings().theme);

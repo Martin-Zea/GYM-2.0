@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { StorageService } from './storage.service';
+import { StorageService, isValidAppState } from './storage.service';
 import { UIStateService } from './ui-state.service';
 import { AppState, Session, SetRecord } from '../models/workout.model';
 
@@ -179,6 +179,36 @@ describe('StorageService', () => {
     });
   });
 
+  describe('isValidAppState()', () => {
+    it('devuelve false para null, string y número', () => {
+      expect(isValidAppState(null)).toBe(false);
+      expect(isValidAppState('texto')).toBe(false);
+      expect(isValidAppState(42)).toBe(false);
+    });
+
+    it('devuelve false si days falta o no es un array', () => {
+      expect(isValidAppState({})).toBe(false);
+      expect(isValidAppState({ days: 'no-array' })).toBe(false);
+    });
+
+    it('devuelve false si sessions existe y no es un array', () => {
+      expect(isValidAppState({ days: [], sessions: {} })).toBe(false);
+    });
+
+    it('devuelve false si todayProgress existe y no es un objeto', () => {
+      expect(isValidAppState({ days: [], todayProgress: 'x' })).toBe(false);
+      expect(isValidAppState({ days: [], todayProgress: null })).toBe(false);
+    });
+
+    it('devuelve true para un estado mínimo válido', () => {
+      expect(isValidAppState({ days: [] })).toBe(true);
+    });
+
+    it('devuelve true para un backup completo válido', () => {
+      expect(isValidAppState(baseState())).toBe(true);
+    });
+  });
+
   describe('load()', () => {
     it('devuelve el estado inicial sin lanzar si el JSON está corrupto', () => {
       localStorage.setItem(STORAGE_KEY, '{esto no es JSON válido');
@@ -186,6 +216,22 @@ describe('StorageService', () => {
       expect(() => { state = service.load(); }).not.toThrow();
       expect(state.schemaVersion).toBe(4);
       expect(state.days.length).toBe(5);
+    });
+
+    it('devuelve el estado inicial sin lanzar si el objeto no tiene la forma esperada', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ foo: 'bar' }));
+      let state!: AppState;
+      expect(() => { state = service.load(); }).not.toThrow();
+      expect(state.schemaVersion).toBe(4);
+      expect(state.days.length).toBe(5);
+    });
+
+    it('carga correctamente un backup válido', () => {
+      const saved = baseState({ days: [{ id: 'd1', name: 'Pecho', exercises: [] }] });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+      const state = service.load();
+      expect(state.days.length).toBe(1);
+      expect(state.days[0].name).toBe('Pecho');
     });
   });
 

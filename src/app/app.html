@@ -71,10 +71,10 @@
     </div>
   }
 
-  @if (uiState.appError()) {
+  @if (errorService.lastError()) {
     <div class="save-error-toast" role="alert">
-      <span class="save-error-msg">{{ uiState.appError() }}</span>
-      <button class="save-error-dismiss" (click)="uiState.appError.set(null)">
+      <span class="save-error-msg">{{ T().app_error_generic }}</span>
+      <button class="save-error-dismiss" (click)="errorService.lastError.set(null)">
         {{ T().save_error_dismiss }}
       </button>
     </div>

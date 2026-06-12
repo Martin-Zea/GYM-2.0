@@ -8,12 +8,14 @@ import {
   TodaySetProgress,
   WorkoutDay,
 } from '../models/workout.model';
-import { StorageService } from './storage.service';
+import { StorageService, isValidAppState } from './storage.service';
+import { TranslationService } from './translation.service';
 import { createInitialState } from '../data/initial-data';
 
 @Injectable({ providedIn: 'root' })
 export class StateService {
   private readonly storage = inject(StorageService);
+  private readonly tr = inject(TranslationService);
 
   readonly state = signal<AppState>(this.storage.load());
 
@@ -287,9 +289,12 @@ export class StateService {
       input.onchange = async () => {
         const file = input.files?.[0];
         if (!file) { resolve(); return; }
+        const invalidMsg = this.tr.T().import_invalid_backup;
         try {
           const text = await file.text();
-          const data = JSON.parse(text);
+          let data: unknown;
+          try { data = JSON.parse(text); } catch { throw new Error(invalidMsg); }
+          if (!isValidAppState(data)) throw new Error(invalidMsg);
           const validated = this.storage.validateImport(data);
           this.state.set(validated);
           resolve();

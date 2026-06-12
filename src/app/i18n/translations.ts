@@ -173,6 +173,7 @@ export interface Translations {
   settings_reset_do: string;
   settings_language: string;
   settings_language_desc: string;
+  import_invalid_backup: string;
 }
 
 export const es: Translations = {
@@ -329,6 +330,7 @@ export const es: Translations = {
   settings_reset_do: 'Borrar todo',
   settings_language: 'Idioma',
   settings_language_desc: 'Cambia el idioma de la interfaz',
+  import_invalid_backup: 'Archivo de respaldo inválido',
 };
 
 export const en: Translations = {
@@ -485,6 +487,7 @@ export const en: Translations = {
   settings_reset_do: 'Delete all',
   settings_language: 'Language',
   settings_language_desc: 'Change the interface language',
+  import_invalid_backup: 'Invalid backup file',
 };
 
 export const TRANSLATIONS: Record<string, Translations> = { es, en };

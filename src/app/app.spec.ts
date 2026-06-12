@@ -25,7 +25,7 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.brand span')?.textContent).toContain('Gym');
+    expect(compiled.querySelector('.brand span')?.textContent).toContain('GainAI');
     expect(compiled.querySelectorAll('.bottom-nav button').length).toBe(3);
   });
 });

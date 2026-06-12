@@ -30,9 +30,6 @@ export class UIStateService {
   // Set when localStorage save fails (quota exceeded or similar)
   readonly saveError = signal<string | null>(null);
 
-  // Set by GlobalErrorHandler on uncaught errors — generic i18n message, never the stack
-  readonly appError = signal<string | null>(null);
-
   // Set when the service worker has a new app version ready
   readonly updateAvailable = signal(false);
 
