@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1781294944713,
+  "timestamp": 1781296770915,
   "index": "/GYM-2.0/index.html",
   "assetGroups": [
     {
@@ -11,19 +11,19 @@
         "ignoreVary": true
       },
       "urls": [
-        "/GYM-2.0/chunk-A4GLCWOG.js",
+        "/GYM-2.0/chunk-6LQWTBCR.js",
         "/GYM-2.0/chunk-DDDB3UPF.js",
         "/GYM-2.0/chunk-IDOMEUW6.js",
         "/GYM-2.0/chunk-KD3NNDPJ.js",
-        "/GYM-2.0/chunk-NABLTV7K.js",
+        "/GYM-2.0/chunk-RHEI6BDK.js",
         "/GYM-2.0/chunk-TW2KZ7H2.js",
         "/GYM-2.0/chunk-WOZUFY6A.js",
         "/GYM-2.0/chunk-Z5KL2VZP.js",
         "/GYM-2.0/favicon.ico",
         "/GYM-2.0/index.html",
-        "/GYM-2.0/main-6OVXKCH6.js",
+        "/GYM-2.0/main-7KJKUADI.js",
         "/GYM-2.0/manifest.webmanifest",
-        "/GYM-2.0/styles-NFUBGZHR.css"
+        "/GYM-2.0/styles-2QU7PADO.css"
       ],
       "patterns": []
     },
@@ -80,11 +80,11 @@
     "/GYM-2.0/android-chrome-192x192.png": "52484fb748558c99463d54d60ee27020980c5027",
     "/GYM-2.0/android-chrome-512x512.png": "abcf6cb18e543149ba006efe1281db75f5be4f75",
     "/GYM-2.0/apple-touch-icon.png": "84b753511f91c81e9e10a431d775bedd08bf9f36",
-    "/GYM-2.0/chunk-A4GLCWOG.js": "61f92f20808d446bfb2d45be37435f2778f37a8a",
+    "/GYM-2.0/chunk-6LQWTBCR.js": "dbec1047c9ca5706580a5b0fe7a663112bd95f4a",
     "/GYM-2.0/chunk-DDDB3UPF.js": "84a046cfdfc6c130f1e88e5db6d8a96374e34d30",
     "/GYM-2.0/chunk-IDOMEUW6.js": "acb7f9f8cd9168754fc0512b97e6f9849236d236",
     "/GYM-2.0/chunk-KD3NNDPJ.js": "a554ab247558e83e7b416acd4d42b5f9f8f833dc",
-    "/GYM-2.0/chunk-NABLTV7K.js": "1c814d19ba08dac8a5d7649fbcd55ef088877a7d",
+    "/GYM-2.0/chunk-RHEI6BDK.js": "6ba0dadef821c78a67d949f4b9e577a7bd01cf36",
     "/GYM-2.0/chunk-TW2KZ7H2.js": "faaf6ddc71e13b39d558495925a094e95390c090",
     "/GYM-2.0/chunk-WOZUFY6A.js": "f44a5a71732319f01567c469e60d54a149fec3f3",
     "/GYM-2.0/chunk-Z5KL2VZP.js": "e9f09132f99d1d17dbd8da8ad0ab856ad8752edb",
@@ -122,10 +122,10 @@
     "/GYM-2.0/icons/gainai-maskable-72x72.png": "0b0f41d966bdaa037028ad8dfefc83e76fc32bae",
     "/GYM-2.0/icons/gainai-maskable-96x96.png": "88f28a3c5cc3ed7663f9f3ed08894ea950c53539",
     "/GYM-2.0/icons/gainai-maskable.svg": "4ada5e0f771b75a937c5dd2d679b75b30b6496d9",
-    "/GYM-2.0/index.html": "2419d80ee4a064ca2f58bd619e3af42051a1f61e",
-    "/GYM-2.0/main-6OVXKCH6.js": "2845fb411c9b973306d83018aa4e8fd593e06e68",
+    "/GYM-2.0/index.html": "75d3b6221600be036003240264a5796edf0a16b1",
+    "/GYM-2.0/main-7KJKUADI.js": "881cf01072fbeb13444c484ea543dcb89ff79be3",
     "/GYM-2.0/manifest.webmanifest": "347d778acecce3cebc1eff3066b8cb6c5cd4870c",
-    "/GYM-2.0/styles-NFUBGZHR.css": "9893f0bdcb8fb564b1e60dc85a1d57e0a6da5831"
+    "/GYM-2.0/styles-2QU7PADO.css": "3a0f9b80415c7fc8a9a3269766d7840e725f0f14"
   },
   "navigationUrls": [
     {
