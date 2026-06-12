@@ -26,6 +26,8 @@
           [class.today]="cell.isToday"
           [class.trained]="cell.trained"
           [class.skipped]="cell.skipped"
+          [class.clickable]="cell.trained"
+          (click)="onDayClick(cell)"
         >
           {{ cell.day ?? '' }}
         </div>
@@ -60,7 +62,7 @@
     <div class="routine-summary">
       <p class="routine-summary-title">Estado de la rutina</p>
       @for (item of routineSummary(); track item.id) {
-        <div class="routine-day-row">
+        <div class="routine-day-row clickable" (click)="onRoutineRowClick(item.id)">
           <span class="routine-day-name">{{ item.name }}</span>
           <span class="routine-day-ago" [class.fresh]="item.daysAgo !== null && item.daysAgo <= 2">
             {{ daysAgoLabel(item.daysAgo) }}

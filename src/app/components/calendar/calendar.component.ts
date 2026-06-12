@@ -3,6 +3,7 @@ import { IconComponent } from '../icon/icon.component';
 import { StateService } from '../../services/state.service';
 import { StorageService } from '../../services/storage.service';
 import { TranslationService } from '../../services/translation.service';
+import { UIStateService } from '../../services/ui-state.service';
 
 interface CalDay {
   day: number | null;
@@ -29,6 +30,7 @@ export class CalendarComponent {
   protected readonly state = inject(StateService);
   private readonly storage = inject(StorageService);
   protected readonly T = inject(TranslationService).T;
+  private readonly uiState = inject(UIStateService);
 
   protected readonly viewDate = signal(new Date());
   protected readonly DOW = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
@@ -149,6 +151,20 @@ export class CalendarComponent {
     if (daysAgo === 0) return 'Hoy';
     if (daysAgo === 1) return 'Ayer';
     return `Hace ${daysAgo} días`;
+  }
+
+  protected onDayClick(cell: CalDay): void {
+    if (!cell.trained || !cell.iso) return;
+    const sessions = this.state.sessions();
+    const session = sessions.find((s) => s.dateISO === cell.iso && !s.skipped);
+    if (!session) return;
+    const day = this.state.days().find((d) => d.id === session.dayId);
+    if (day) this.uiState.openDayHistory(day);
+  }
+
+  protected onRoutineRowClick(dayId: string): void {
+    const day = this.state.days().find((d) => d.id === dayId);
+    if (day) this.uiState.openDayDetail(day);
   }
 
   protected prevMonth(): void {
