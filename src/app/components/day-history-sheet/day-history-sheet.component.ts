@@ -48,10 +48,11 @@ export class DayHistorySheetComponent {
     const d = this.day();
     if (!d) return [];
     const todayISO = this.storage.todayISO();
+    const filterISO = this.uiState.dayHistoryFilterISO();
     // Incluye sesiones skipped (solo eliminables desde acá)
     const allSessions = this.state
       .sessions()
-      .filter((s) => s.dayId === d.id)
+      .filter((s) => s.dayId === d.id && (!filterISO || s.dateISO === filterISO))
       .sort((a, b) => b.dateISO.localeCompare(a.dateISO));
 
     return allSessions.map((session) => {

@@ -159,7 +159,7 @@ export class CalendarComponent {
     const session = sessions.find((s) => s.dateISO === cell.iso && !s.skipped);
     if (!session) return;
     const day = this.state.days().find((d) => d.id === session.dayId);
-    if (day) this.uiState.openDayHistory(day);
+    if (day) this.uiState.openDayHistory(day, cell.iso);
   }
 
   protected onRoutineRowClick(dayId: string): void {

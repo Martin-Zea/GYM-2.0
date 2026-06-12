@@ -19,6 +19,8 @@ export class UIStateService {
 
   // Day history sheet: full session history for a day
   readonly dayHistory = signal<WorkoutDay | null>(null);
+  // When set, DayHistorySheet shows only the session for this ISO date
+  readonly dayHistoryFilterISO = signal<string | null>(null);
 
   // Signal set by DayDetailSheet to trigger training start in HomeComponent
   readonly pendingTrainingStart = signal(false);
@@ -82,9 +84,10 @@ export class UIStateService {
     this._push('dayPicker');
     this.showDayPicker.set(true);
   }
-  openDayHistory(day: WorkoutDay): void {
+  openDayHistory(day: WorkoutDay, filterISO?: string): void {
     this._push('dayHistory');
     this.dayHistory.set(day);
+    this.dayHistoryFilterISO.set(filterISO ?? null);
   }
 
   // --- Close methods: pop from stack + pop history entry ---
@@ -143,6 +146,7 @@ export class UIStateService {
         break;
       case 'dayHistory':
         this.dayHistory.set(null);
+        this.dayHistoryFilterISO.set(null);
         break;
     }
   }
