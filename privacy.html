@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Política de privacidad · Privacy Policy — GainAI</title>
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --text-1: #f0f0f0;
+      --text-2: #a0a0a0;
+      --accent: #c4f542;
+      --border: #2a2a2a;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f5f5f5;
+        --surface: #ffffff;
+        --text-1: #111111;
+        --text-2: #555555;
+        --accent: #4a7c0a;
+        --border: #e0e0e0;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text-1);
+      line-height: 1.6;
+      padding: 24px 16px 64px;
+    }
+    .container { max-width: 720px; margin: 0 auto; }
+    .lang-switch {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+    .lang-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .lang-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    section { display: none; }
+    section.visible { display: block; }
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      color: var(--text-2);
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+    h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 28px 0 8px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    p { margin-bottom: 12px; color: var(--text-1); font-size: 15px; }
+    ul { padding-left: 20px; margin-bottom: 12px; }
+    li { font-size: 15px; margin-bottom: 6px; color: var(--text-1); }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .callout {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin: 16px 0;
+      font-size: 14px;
+      color: var(--text-2);
+    }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 24px;
+      font-size: 14px;
+      color: var(--text-2);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="lang-switch">
+      <button class="lang-btn active" id="btn-es" onclick="setLang('es')">Español</button>
+      <button class="lang-btn" id="btn-en" onclick="setLang('en')">English</button>
+    </div>
+
+    <!-- ===== ESPAÑOL ===== -->
+    <section id="sec-es" class="visible">
+      <a class="back-link" href="/">&larr; Volver a GainAI</a>
+      <h1>Política de privacidad</h1>
+      <p class="subtitle">GainAI · Última actualización: junio 2026</p>
+
+      <div class="callout">
+        Resumen: tus datos de entrenamiento nunca salen de tu dispositivo. La única excepción es cuando usás IA con tu propia API key (BYOK): en ese caso enviamos datos del ejercicio a Groq o Cohere para generar la sugerencia.
+      </div>
+
+      <h2>1. Datos que almacenamos localmente</h2>
+      <p>GainAI guarda toda la información en el almacenamiento local de tu navegador (<code>localStorage</code>), bajo la clave <code>gym_app_state_v2</code>. Nosotros <strong>no tenemos servidores propios</strong> y nunca recibimos ni accedemos a tus datos.</p>
+      <p>Los datos almacenados incluyen:</p>
+      <ul>
+        <li>Rutinas de entrenamiento (días, ejercicios y configuración)</li>
+        <li>Historial de sesiones (series, pesos, repeticiones y fechas)</li>
+        <li>Perfil personal opcional: peso corporal, altura, edad y sexo (usados solo para personalizar sugerencias de IA)</li>
+        <li>Preferencias de la app: tema, idioma, tiempo de descanso, sonido y vibración</li>
+        <li>API keys de Groq y Cohere que el usuario introduce (ver sección 2)</li>
+      </ul>
+      <p>Todo permanece en tu dispositivo. Si borrás el caché del navegador o desinstalás la PWA, esos datos se eliminan permanentemente.</p>
+
+      <h2>2. Uso de IA y envío de datos a terceros</h2>
+      <p>GainAI ofrece sugerencias de carga inteligentes. La cadena de prioridad es:</p>
+      <ul>
+        <li><strong>Lógica local</strong> (sin internet, sin datos externos): siempre disponible.</li>
+        <li><strong>Groq</strong> (<a href="https://groq.com" target="_blank" rel="noopener">groq.com</a>): si el usuario provee su propia API key, al solicitar una recomendación se envía a Groq: nombre del ejercicio, historial reciente de series (peso y repeticiones) y, si está configurado, el perfil personal (edad, sexo, peso corporal). <strong>No se envía información de identificación personal.</strong></li>
+        <li><strong>Cohere</strong> (<a href="https://cohere.com" target="_blank" rel="noopener">cohere.com</a>): idéntico al flujo de Groq. Se usa como fallback si Groq falla o no hay key configurada.</li>
+      </ul>
+      <p>Las API keys se guardan localmente en tu dispositivo y se envían directamente a Groq/Cohere como cabecera de autenticación en cada solicitud. GainAI nunca las almacena ni las transmite a ningún otro servidor.</p>
+      <p>Consultá la política de privacidad de cada proveedor para entender cómo procesan los datos que reciben:</p>
+      <ul>
+        <li><a href="https://groq.com/privacy-policy" target="_blank" rel="noopener">Política de privacidad de Groq</a></li>
+        <li><a href="https://cohere.com/privacy" target="_blank" rel="noopener">Política de privacidad de Cohere</a></li>
+      </ul>
+
+      <h2>3. Analítica y tracking</h2>
+      <p>GainAI <strong>no incluye analítica de terceros</strong>, cookies de seguimiento, píxeles de conversión ni ninguna otra tecnología de rastreo. No creamos perfiles de usuario ni vendemos datos.</p>
+
+      <h2>4. Cuentas de usuario</h2>
+      <p>GainAI no requiere ni ofrece cuentas de usuario. No hay registro, login ni servicio de autenticación de ningún tipo.</p>
+
+      <h2>5. Cómo exportar o borrar tus datos</h2>
+      <p><strong>Exportar:</strong> en Ajustes → Datos → "Exportar JSON" descargás un archivo con todo tu historial.</p>
+      <p><strong>Borrar:</strong> en Ajustes → Datos → "Reiniciar todo" eliminás permanentemente todos los datos locales. Podés también borrar el caché del sitio desde las opciones de tu navegador.</p>
+
+      <h2>6. Menores de edad</h2>
+      <p>GainAI no está dirigida a menores de 13 años. No recopilamos intencionalmente información de menores.</p>
+
+      <h2>7. Cambios a esta política</h2>
+      <p>Si realizamos cambios relevantes, actualizaremos la fecha en la parte superior de este documento. Como no tenemos forma de contactarte (no hay cuentas), te recomendamos revisar esta página ocasionalmente.</p>
+
+      <h2>8. Contacto</h2>
+      <p>Si tenés preguntas sobre esta política escribinos a: <a href="mailto:mzeacardenas@gmail.com">mzeacardenas@gmail.com</a></p>
+    </section>
+
+    <!-- ===== ENGLISH ===== -->
+    <section id="sec-en">
+      <a class="back-link" href="/">&larr; Back to GainAI</a>
+      <h1>Privacy Policy</h1>
+      <p class="subtitle">GainAI · Last updated: June 2026</p>
+
+      <div class="callout">
+        Summary: your workout data never leaves your device. The only exception is when you use AI with your own API key (BYOK): in that case we send exercise data to Groq or Cohere to generate the suggestion.
+      </div>
+
+      <h2>1. Data stored locally</h2>
+      <p>GainAI stores all information in your browser's local storage (<code>localStorage</code>), under the key <code>gym_app_state_v2</code>. We <strong>have no servers of our own</strong> and never receive or access your data.</p>
+      <p>Stored data includes:</p>
+      <ul>
+        <li>Workout routines (days, exercises, and configuration)</li>
+        <li>Session history (sets, weights, reps, and dates)</li>
+        <li>Optional personal profile: body weight, height, age, and sex (used only to personalize AI suggestions)</li>
+        <li>App preferences: theme, language, rest timer, sound, and haptics</li>
+        <li>Groq and Cohere API keys entered by the user (see section 2)</li>
+      </ul>
+      <p>Everything stays on your device. If you clear browser cache or uninstall the PWA, that data is permanently deleted.</p>
+
+      <h2>2. AI usage and data sent to third parties</h2>
+      <p>GainAI offers intelligent load suggestions. The priority chain is:</p>
+      <ul>
+        <li><strong>Local logic</strong> (no internet, no external data): always available.</li>
+        <li><strong>Groq</strong> (<a href="https://groq.com" target="_blank" rel="noopener">groq.com</a>): if the user provides their own API key, when requesting a recommendation the following is sent to Groq: exercise name, recent set history (weight and reps), and, if configured, the personal profile (age, sex, body weight). <strong>No personally identifying information is sent.</strong></li>
+        <li><strong>Cohere</strong> (<a href="https://cohere.com" target="_blank" rel="noopener">cohere.com</a>): identical flow to Groq. Used as a fallback if Groq fails or no key is configured.</li>
+      </ul>
+      <p>API keys are stored locally on your device and sent directly to Groq/Cohere as an authentication header in each request. GainAI never stores them on or transmits them to any other server.</p>
+      <p>See each provider's privacy policy to understand how they process received data:</p>
+      <ul>
+        <li><a href="https://groq.com/privacy-policy" target="_blank" rel="noopener">Groq Privacy Policy</a></li>
+        <li><a href="https://cohere.com/privacy" target="_blank" rel="noopener">Cohere Privacy Policy</a></li>
+      </ul>
+
+      <h2>3. Analytics and tracking</h2>
+      <p>GainAI <strong>does not include third-party analytics</strong>, tracking cookies, conversion pixels, or any other tracking technology. We do not build user profiles or sell data.</p>
+
+      <h2>4. User accounts</h2>
+      <p>GainAI does not require or offer user accounts. There is no registration, login, or authentication service of any kind.</p>
+
+      <h2>5. How to export or delete your data</h2>
+      <p><strong>Export:</strong> go to Settings → Data → "Export JSON" to download a file with your full history.</p>
+      <p><strong>Delete:</strong> go to Settings → Data → "Reset all" to permanently erase all local data. You can also clear the site cache from your browser settings.</p>
+
+      <h2>6. Children</h2>
+      <p>GainAI is not directed at children under 13. We do not knowingly collect information from minors.</p>
+
+      <h2>7. Changes to this policy</h2>
+      <p>If we make significant changes, we will update the date at the top of this document. Since we have no way to contact you (no accounts), we recommend checking this page occasionally.</p>
+
+      <h2>8. Contact</h2>
+      <p>If you have questions about this policy, write to us at: <a href="mailto:mzeacardenas@gmail.com">mzeacardenas@gmail.com</a></p>
+    </section>
+  </div>
+
+  <script>
+    function setLang(lang) {
+      document.getElementById('sec-es').className = lang === 'es' ? 'visible' : '';
+      document.getElementById('sec-en').className = lang === 'en' ? 'visible' : '';
+      document.getElementById('btn-es').className = 'lang-btn' + (lang === 'es' ? ' active' : '');
+      document.getElementById('btn-en').className = 'lang-btn' + (lang === 'en' ? ' active' : '');
+    }
+    // Auto-select language based on browser preference
+    const preferredLang = (navigator.language || '').startsWith('es') ? 'es' : 'en';
+    setLang(preferredLang);
+  </script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Términos y Condiciones · Terms &amp; Conditions — GainAI</title>
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --text-1: #f0f0f0;
+      --text-2: #a0a0a0;
+      --accent: #c4f542;
+      --border: #2a2a2a;
+      --warning: #f59e0b;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f5f5f5;
+        --surface: #ffffff;
+        --text-1: #111111;
+        --text-2: #555555;
+        --accent: #4a7c0a;
+        --border: #e0e0e0;
+        --warning: #92400e;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text-1);
+      line-height: 1.6;
+      padding: 24px 16px 64px;
+    }
+    .container { max-width: 720px; margin: 0 auto; }
+    .lang-switch {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+    .lang-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .lang-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    section { display: none; }
+    section.visible { display: block; }
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      color: var(--text-2);
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+    h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 28px 0 8px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    p { margin-bottom: 12px; color: var(--text-1); font-size: 15px; }
+    ul { padding-left: 20px; margin-bottom: 12px; }
+    li { font-size: 15px; margin-bottom: 6px; color: var(--text-1); }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .callout {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin: 16px 0;
+      font-size: 14px;
+      color: var(--text-2);
+    }
+    .disclaimer {
+      background: var(--surface);
+      border: 2px solid var(--warning);
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 20px 0;
+    }
+    .disclaimer-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--warning);
+      margin-bottom: 10px;
+    }
+    .disclaimer p {
+      font-size: 15px;
+      color: var(--text-1);
+      margin-bottom: 8px;
+    }
+    .disclaimer p:last-child { margin-bottom: 0; }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 24px;
+      font-size: 14px;
+      color: var(--text-2);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="lang-switch">
+      <button class="lang-btn active" id="btn-es" onclick="setLang('es')">Español</button>
+      <button class="lang-btn" id="btn-en" onclick="setLang('en')">English</button>
+    </div>
+
+    <!-- ===== ESPAÑOL ===== -->
+    <section id="sec-es" class="visible">
+      <a class="back-link" href="/">&larr; Volver a GainAI</a>
+      <h1>Términos y Condiciones</h1>
+      <p class="subtitle">GainAI · Última actualización: junio 2026</p>
+
+      <div class="disclaimer">
+        <div class="disclaimer-title">⚠ Descargo de responsabilidad — Salud y ejercicio</div>
+        <p><strong>GainAI no reemplaza a un entrenador personal ni a un profesional de la salud.</strong> Es una herramienta que potencia tus entrenamientos con inteligencia artificial.</p>
+        <p>Las recomendaciones de carga generadas por la app son <strong>orientativas</strong> y no constituyen consejo médico, diagnóstico ni tratamiento. Los resultados pueden variar según cada persona.</p>
+        <p>Consultá a un profesional de la salud o un entrenador certificado antes de comenzar cualquier programa de ejercicio, especialmente si tenés alguna condición médica preexistente, lesión o si llevás tiempo sin actividad física.</p>
+        <p><strong>El uso de la app es bajo tu propia responsabilidad.</strong></p>
+      </div>
+
+      <h2>1. Aceptación de los términos</h2>
+      <p>Al instalar o usar GainAI (la "App"), aceptás estos Términos y Condiciones. Si no estás de acuerdo con alguno de ellos, no uses la App.</p>
+
+      <h2>2. Descripción del servicio</h2>
+      <p>GainAI es una aplicación web progresiva (PWA) gratuita para el registro y seguimiento de entrenamientos de fuerza. La App ofrece sugerencias de progresión mediante lógica local y, opcionalmente, a través de servicios de inteligencia artificial de terceros (Groq, Cohere) usando las claves de API aportadas por el propio usuario (<em>Bring Your Own Key</em> — BYOK).</p>
+
+      <h2>3. Propiedad intelectual</h2>
+      <p>GainAI, su código fuente, diseño, logotipos y contenidos son propiedad de sus creadores y están protegidos por las leyes de propiedad intelectual aplicables. Se concede al usuario una licencia limitada, no exclusiva e intransferible para usar la App con fines personales y no comerciales.</p>
+      <p>Queda prohibida la reproducción, distribución, modificación o explotación comercial de cualquier parte de la App sin autorización previa por escrito.</p>
+
+      <h2>4. Modelo BYOK — Claves de API de terceros</h2>
+      <p>Para acceder a las funciones de IA avanzada, el usuario puede configurar sus propias claves de API de Groq y/o Cohere. Al hacerlo:</p>
+      <ul>
+        <li>Las claves se almacenan <strong>únicamente en tu dispositivo</strong> (localStorage) y se envían directamente al proveedor correspondiente al realizar cada consulta.</li>
+        <li>GainAI no almacena ni transmite esas claves a ningún servidor propio.</li>
+        <li>El usuario es responsable de mantener sus claves confidenciales y de cumplir con los términos de servicio de Groq y Cohere.</li>
+        <li>Los costos derivados del uso de esas claves son exclusiva responsabilidad del usuario.</li>
+      </ul>
+
+      <h2>5. Exactitud de las recomendaciones de IA</h2>
+      <p>Las sugerencias de carga generadas por GainAI (tanto por lógica local como por IA) son estimaciones basadas en el historial registrado. <strong>No garantizamos su exactitud, idoneidad ni aplicabilidad a ningún caso particular.</strong> El usuario asume la total responsabilidad de evaluar y aplicar dichas sugerencias.</p>
+
+      <h2>6. Limitación de responsabilidad</h2>
+      <p>En la máxima medida permitida por la ley aplicable, los creadores de GainAI <strong>no serán responsables</strong> de ningún daño directo, indirecto, incidental, especial o consecuente que surja del uso o la imposibilidad de uso de la App, incluyendo pero no limitado a: lesiones físicas, pérdida de datos, o daños derivados de seguir recomendaciones de entrenamiento.</p>
+      <p>La App se proporciona <strong>"tal cual"</strong> (<em>as-is</em>) sin garantías de ningún tipo, ya sean expresas o implícitas.</p>
+
+      <h2>7. Privacidad y datos</h2>
+      <p>El tratamiento de los datos personales se describe en nuestra <a href="/privacy.html">Política de privacidad</a>, que forma parte integrante de estos Términos.</p>
+
+      <h2>8. Modificaciones</h2>
+      <p>Nos reservamos el derecho de modificar estos Términos en cualquier momento. Los cambios serán efectivos al publicar la versión actualizada en esta página. El uso continuado de la App tras la publicación implica la aceptación de los nuevos Términos.</p>
+
+      <h2>9. Jurisdicción y contacto</h2>
+      <p>Estos Términos se rigen por las leyes de la República Argentina. Cualquier controversia será sometida a los tribunales competentes de la Ciudad Autónoma de Buenos Aires, Argentina.</p>
+      <p>Para consultas sobre estos Términos escribinos a: <a href="mailto:mzeacardenas@gmail.com">mzeacardenas@gmail.com</a></p>
+    </section>
+
+    <!-- ===== ENGLISH ===== -->
+    <section id="sec-en">
+      <a class="back-link" href="/">&larr; Back to GainAI</a>
+      <h1>Terms &amp; Conditions</h1>
+      <p class="subtitle">GainAI · Last updated: June 2026</p>
+
+      <div class="disclaimer">
+        <div class="disclaimer-title">⚠ Disclaimer — Health &amp; Exercise</div>
+        <p><strong>GainAI does not replace a personal trainer or a healthcare professional.</strong> It is a tool that enhances your workouts with artificial intelligence.</p>
+        <p>The load recommendations generated by the app are <strong>guidelines only</strong> and do not constitute medical advice, diagnosis, or treatment. Results may vary by individual.</p>
+        <p>Consult a healthcare professional or certified trainer before starting any exercise program, especially if you have a pre-existing medical condition, injury, or have been inactive for an extended period.</p>
+        <p><strong>Use of the app is at your own risk.</strong></p>
+      </div>
+
+      <h2>1. Acceptance of terms</h2>
+      <p>By installing or using GainAI (the "App"), you agree to these Terms and Conditions. If you do not agree with any of them, do not use the App.</p>
+
+      <h2>2. Description of service</h2>
+      <p>GainAI is a free Progressive Web App (PWA) for logging and tracking strength training workouts. The App offers progression suggestions through local logic and, optionally, through third-party artificial intelligence services (Groq, Cohere) using API keys provided by the user themselves (<em>Bring Your Own Key</em> — BYOK).</p>
+
+      <h2>3. Intellectual property</h2>
+      <p>GainAI, its source code, design, logos, and content are the property of its creators and are protected by applicable intellectual property laws. The user is granted a limited, non-exclusive, non-transferable license to use the App for personal, non-commercial purposes.</p>
+      <p>Reproduction, distribution, modification, or commercial exploitation of any part of the App without prior written authorization is prohibited.</p>
+
+      <h2>4. BYOK model — Third-party API keys</h2>
+      <p>To access advanced AI features, users may configure their own Groq and/or Cohere API keys. By doing so:</p>
+      <ul>
+        <li>Keys are stored <strong>only on your device</strong> (localStorage) and sent directly to the respective provider with each request.</li>
+        <li>GainAI does not store or transmit those keys to any server of its own.</li>
+        <li>The user is responsible for keeping their keys confidential and for complying with the terms of service of Groq and Cohere.</li>
+        <li>Any costs arising from the use of those keys are the sole responsibility of the user.</li>
+      </ul>
+
+      <h2>5. Accuracy of AI recommendations</h2>
+      <p>Load suggestions generated by GainAI (both by local logic and AI) are estimates based on logged history. <strong>We do not guarantee their accuracy, suitability, or applicability to any particular case.</strong> The user assumes full responsibility for evaluating and applying such suggestions.</p>
+
+      <h2>6. Limitation of liability</h2>
+      <p>To the maximum extent permitted by applicable law, the creators of GainAI <strong>shall not be liable</strong> for any direct, indirect, incidental, special, or consequential damages arising from the use or inability to use the App, including but not limited to: physical injury, data loss, or damages resulting from following training recommendations.</p>
+      <p>The App is provided <strong>"as-is"</strong> without warranties of any kind, express or implied.</p>
+
+      <h2>7. Privacy and data</h2>
+      <p>The handling of personal data is described in our <a href="/privacy.html">Privacy Policy</a>, which forms an integral part of these Terms.</p>
+
+      <h2>8. Modifications</h2>
+      <p>We reserve the right to modify these Terms at any time. Changes take effect upon posting the updated version on this page. Continued use of the App after posting constitutes acceptance of the new Terms.</p>
+
+      <h2>9. Jurisdiction and contact</h2>
+      <p>These Terms are governed by the laws of the Argentine Republic. Any dispute shall be submitted to the competent courts of the Autonomous City of Buenos Aires, Argentina.</p>
+      <p>For questions about these Terms, write to us at: <a href="mailto:mzeacardenas@gmail.com">mzeacardenas@gmail.com</a></p>
+    </section>
+  </div>
+
+  <script>
+    function setLang(lang) {
+      document.getElementById('sec-es').className = lang === 'es' ? 'visible' : '';
+      document.getElementById('sec-en').className = lang === 'en' ? 'visible' : '';
+      document.getElementById('btn-es').className = 'lang-btn' + (lang === 'es' ? ' active' : '');
+      document.getElementById('btn-en').className = 'lang-btn' + (lang === 'en' ? ' active' : '');
+    }
+    const preferredLang = (navigator.language || '').startsWith('es') ? 'es' : 'en';
+    setLang(preferredLang);
+  </script>
+</body>
+</html>
