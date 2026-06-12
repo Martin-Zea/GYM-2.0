@@ -395,6 +395,12 @@ Array sets: EXACTAMENTE ${setsTarget} elementos.`;
     const cached = this.getCached(exercise.id, lastSessionISO, todaySets);
     if (cached) return cached;
 
+    if (!navigator.onLine) {
+      const local = this.localRecommendation(exercise, todaySets, lastSets);
+      local.reason += ' (modo offline)';
+      return local;
+    }
+
     if (settings.apiKey) {
       try {
         const rec = await this.groqRecommendation(settings.apiKey, exercise, todaySets, lastSets, history, settings.userProfile);

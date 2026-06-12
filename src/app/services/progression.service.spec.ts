@@ -153,6 +153,17 @@ describe('ProgressionService', () => {
       expect(rec.reason).toContain('modo offline');
     });
 
+    it('con navigator.onLine=false no llama a fetch y retorna local inmediatamente', async () => {
+      vi.stubGlobal('navigator', { onLine: false });
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+
+      const rec = await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), []);
+      expect(rec.source).toBe('local');
+      expect(rec.reason).toContain('modo offline');
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it('sin API keys no llama a fetch y usa la recomendación local', async () => {
       const fetchMock = vi.fn();
       vi.stubGlobal('fetch', fetchMock);
