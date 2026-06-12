@@ -53,9 +53,7 @@ export class App {
     localStorage.getItem('gym_onboarding_done_v1') !== '1',
   );
 
-  protected readonly showLegalGate = signal(
-    localStorage.getItem('gym_legal_accepted_v1') !== '1',
-  );
+  protected readonly showLegalGate = signal(localStorage.getItem('gym_legal_accepted_v1') !== '1');
 
   constructor() {
     this.checkBackupReminder();

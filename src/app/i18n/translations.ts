@@ -650,8 +650,7 @@ export const en: Translations = {
     'GainAI is a personal tracking tool. It does not replace the advice of a certified trainer or health professional. Consult a doctor before starting any exercise program.',
   legal_gate_terms_link: 'Terms & Disclaimer',
   legal_gate_privacy_link: 'Privacy Policy',
-  legal_gate_checkbox:
-    'I have read and accept the Terms, Disclaimer, and Privacy Policy.',
+  legal_gate_checkbox: 'I have read and accept the Terms, Disclaimer, and Privacy Policy.',
   legal_gate_continue: 'Continue',
 
   onboarding_slide1_title: 'Welcome to GainAI!',
