@@ -6,6 +6,11 @@ export interface Translations {
   app_name: string;
   theme_toggle_dark: string;
   theme_toggle_light: string;
+  theme_toggle_high_contrast: string;
+  nav_guard_exit: string;
+  settings_theme_dark: string;
+  settings_theme_light: string;
+  settings_theme_hc: string;
   settings_btn: string;
 
   // Empty state

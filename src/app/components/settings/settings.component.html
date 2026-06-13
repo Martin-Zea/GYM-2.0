@@ -43,11 +43,29 @@
           <div class="settings-row-main">
             <div class="settings-row-label">{{ T().settings_dark_theme }}</div>
           </div>
-          <button
-            class="toggle"
-            [class.on]="settings().theme === 'dark'"
-            (click)="patch({ theme: settings().theme === 'dark' ? 'light' : 'dark' })"
-          ></button>
+          <div style="display: flex; gap: 6px">
+            <button
+              class="btn btn-sm"
+              [class.btn-primary]="settings().theme === 'dark'"
+              (click)="patch({ theme: 'dark' })"
+            >
+              {{ T().settings_theme_dark }}
+            </button>
+            <button
+              class="btn btn-sm"
+              [class.btn-primary]="settings().theme === 'light'"
+              (click)="patch({ theme: 'light' })"
+            >
+              {{ T().settings_theme_light }}
+            </button>
+            <button
+              class="btn btn-sm"
+              [class.btn-primary]="settings().theme === 'high-contrast'"
+              (click)="patch({ theme: 'high-contrast' })"
+            >
+              {{ T().settings_theme_hc }}
+            </button>
+          </div>
         </div>
       </div>
 

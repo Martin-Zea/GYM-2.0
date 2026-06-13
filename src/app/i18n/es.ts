@@ -3,7 +3,12 @@ import type { Translations } from './translations';
 export const es: Translations = {
   app_name: 'GainAI',
   theme_toggle_dark: 'Modo claro',
-  theme_toggle_light: 'Modo oscuro',
+  theme_toggle_light: 'Alto contraste',
+  theme_toggle_high_contrast: 'Modo oscuro',
+  nav_guard_exit: 'Salir',
+  settings_theme_dark: 'Oscuro',
+  settings_theme_light: 'Claro',
+  settings_theme_hc: 'AAA',
   settings_btn: 'Ajustes',
 
   empty_title: 'Sin rutinas',

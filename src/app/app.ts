@@ -96,7 +96,8 @@ export class App {
 
   toggleTheme(): void {
     const s = this.state.settings();
-    this.state.saveSettings({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' });
+    const next = s.theme === 'dark' ? 'light' : s.theme === 'light' ? 'high-contrast' : 'dark';
+    this.state.saveSettings({ ...s, theme: next });
   }
 
   toggleLang(): void {

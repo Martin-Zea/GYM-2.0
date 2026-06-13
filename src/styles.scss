@@ -123,23 +123,27 @@
 
 /* ============ Design tokens — dark (default) ============ */
 :root {
-  --bg-0: #08090a;
-  --bg-1: #0e0f11;
-  --bg-2: #141517;
-  --bg-3: #1c1d20;
-  --bg-hover: #202125;
-  --border: #232428;
-  --border-strong: #2e2f33;
-  --text-0: #f7f8f8;
-  --text-1: #b4b8bf;
-  --text-2: #9aa0a8;
-  --text-3: #71757c;
-  --accent: #c4f542;
-  --accent-dim: #9bc41f;
-  --accent-fg: #0a0b0c;
-  --accent-bg: rgba(196, 245, 66, 0.08);
-  --accent-border: rgba(196, 245, 66, 0.22);
-  --danger: #ef6464;
+  --bg-0: #0f172a;
+  --bg-1: #1e293b;
+  --bg-2: #263244;
+  --bg-3: #334155;
+  --bg-hover: #3a4a63;
+  --border: #334155;
+  --border-strong: #475569;
+  --text-0: #f1f5f9;
+  --text-1: #cbd5e1;
+  --text-2: #94a3b8;
+  --text-3: #64748b;
+  --accent: #3b82f6;
+  --accent-dim: #2563eb;
+  --accent-fg: #ffffff;
+  --accent-bg: rgba(59, 130, 246, 0.1);
+  --accent-border: rgba(59, 130, 246, 0.25);
+  --secondary: #f97316;
+  --secondary-fg: #ffffff;
+  --success: #34d399;
+  --success-fg: #0f172a;
+  --danger: #f87171;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
@@ -150,25 +154,57 @@
 }
 
 [data-theme='light'] {
-  --bg-0: #fafafa;
+  --bg-0: #f8f9fa;
   --bg-1: #ffffff;
-  --bg-2: #f4f4f5;
-  --bg-3: #ececee;
-  --bg-hover: #e6e6e9;
-  --border: #e4e4e7;
-  --border-strong: #d4d4d8;
-  --text-0: #0a0a0a;
-  --text-1: #3f3f46;
-  --text-2: #52525b;
-  --text-3: #71717a;
-  --accent: #65a30d;
-  --accent-dim: #4d7c0f;
+  --bg-2: #f1f5f9;
+  --bg-3: #e2e8f0;
+  --bg-hover: #dde3ec;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --text-0: #1e293b;
+  --text-1: #334155;
+  --text-2: #64748b;
+  --text-3: #94a3b8;
+  --accent: #2a6dff;
+  --accent-dim: #1a5ce0;
   --accent-fg: #ffffff;
-  --accent-bg: rgba(101, 163, 13, 0.08);
-  --accent-border: rgba(101, 163, 13, 0.25);
+  --accent-bg: rgba(42, 109, 255, 0.08);
+  --accent-border: rgba(42, 109, 255, 0.25);
+  --secondary: #ff8c42;
+  --secondary-fg: #ffffff;
+  --success: #10b981;
+  --success-fg: #ffffff;
+  --danger: #ef4444;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme='high-contrast'] {
+  --bg-0: #000000;
+  --bg-1: #0a0a0a;
+  --bg-2: #111111;
+  --bg-3: #1a1a1a;
+  --bg-hover: #222222;
+  --border: #ffffff;
+  --border-strong: #ffff00;
+  --text-0: #ffffff;
+  --text-1: #ffff00;
+  --text-2: #ffff00;
+  --text-3: #aaaaaa;
+  --accent: #ffff00;
+  --accent-dim: #cccc00;
+  --accent-fg: #000000;
+  --accent-bg: rgba(255, 255, 0, 0.15);
+  --accent-border: rgba(255, 255, 0, 0.5);
+  --secondary: #ff00ff;
+  --secondary-fg: #000000;
+  --success: #00ff00;
+  --success-fg: #000000;
+  --danger: #ff4444;
+  --shadow-sm: 0 1px 2px rgba(255, 255, 255, 0.1);
+  --shadow-md: 0 4px 14px rgba(255, 255, 255, 0.1);
+  --shadow-lg: 0 16px 40px rgba(255, 255, 255, 0.15);
 }
 
 /* ============ Resets ============ */
@@ -340,6 +376,10 @@ input[type='number'] {
 }
 .tabs::-webkit-scrollbar {
   display: none;
+}
+.tabs {
+  mask-image: linear-gradient(to right, black 0, black calc(100% - 40px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 40px), transparent 100%);
 }
 
 .tab {
@@ -796,6 +836,39 @@ button.btn[disabled] {
   .tabs {
     top: 0;
   }
+}
+
+/* ============ Exit-training confirm dialog ============ */
+.exit-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.65);
+  animation: fadeIn 0.15s ease;
+}
+.exit-confirm-panel {
+  background: var(--bg-1);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  max-width: 320px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+}
+.exit-confirm-msg {
+  font-size: 14px;
+  color: var(--text-0);
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+.exit-confirm-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 /* ============ Toasts ============ */

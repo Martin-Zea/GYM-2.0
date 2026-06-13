@@ -8,20 +8,27 @@
     </div>
     <div class="topbar-actions">
       <button
-        class="icon-btn lang-btn"
-        (click)="toggleLang()"
-        [title]="T().settings_language"
-        [attr.aria-label]="T().settings_language"
-      >
-        <span class="lang-label" aria-hidden="true">{{ tr.lang() === 'es' ? 'EN' : 'ES' }}</span>
-      </button>
-      <button
         class="icon-btn"
         (click)="toggleTheme()"
-        [title]="theme() === 'dark' ? T().theme_toggle_dark : T().theme_toggle_light"
-        [attr.aria-label]="theme() === 'dark' ? T().theme_toggle_dark : T().theme_toggle_light"
+        [title]="
+          theme() === 'dark'
+            ? T().theme_toggle_dark
+            : theme() === 'light'
+              ? T().theme_toggle_light
+              : T().theme_toggle_high_contrast
+        "
+        [attr.aria-label]="
+          theme() === 'dark'
+            ? T().theme_toggle_dark
+            : theme() === 'light'
+              ? T().theme_toggle_light
+              : T().theme_toggle_high_contrast
+        "
       >
-        <app-icon [name]="theme() === 'dark' ? 'sun' : 'moon'" [size]="16" />
+        <app-icon
+          [name]="theme() === 'dark' ? 'sun' : theme() === 'light' ? 'sparkle' : 'moon'"
+          [size]="16"
+        />
       </button>
       <button
         class="icon-btn"
@@ -121,6 +128,27 @@
     <app-onboarding (done)="completeOnboarding()" />
   } @else if (showLegalGate()) {
     <app-legal-gate (accepted)="acceptLegal()" />
+  }
+
+  @if (uiState.showExitConfirm()) {
+    <div class="exit-confirm-overlay" (click)="uiState.resolveExitConfirm(false)">
+      <div
+        class="exit-confirm-panel"
+        (click)="$event.stopPropagation()"
+        role="alertdialog"
+        aria-modal="true"
+      >
+        <p class="exit-confirm-msg">{{ T().nav_guard_confirm }}</p>
+        <div class="exit-confirm-actions">
+          <button class="btn btn-ghost" (click)="uiState.resolveExitConfirm(false)">
+            {{ T().close_btn }}
+          </button>
+          <button class="btn btn-danger" (click)="uiState.resolveExitConfirm(true)">
+            {{ T().nav_guard_exit }}
+          </button>
+        </div>
+      </div>
+    </div>
   }
 
   @if (uiState.updateAvailable()) {

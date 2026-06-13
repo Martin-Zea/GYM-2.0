@@ -63,7 +63,7 @@ export interface AppSettings {
   defaultRest: number;
   sounds: boolean;
   haptics: boolean;
-  theme: 'dark' | 'light';
+  theme: 'dark' | 'light' | 'high-contrast';
   userProfile: UserProfile;
 }
 

@@ -151,6 +151,23 @@ export class UIStateService {
     }
   }
 
+  // Exit-training confirmation dialog
+  readonly showExitConfirm = signal(false);
+  private _exitResolve: ((v: boolean) => void) | null = null;
+
+  requestTrainingExit(): Promise<boolean> {
+    this.showExitConfirm.set(true);
+    return new Promise((resolve) => {
+      this._exitResolve = resolve;
+    });
+  }
+
+  resolveExitConfirm(confirmed: boolean): void {
+    this.showExitConfirm.set(false);
+    this._exitResolve?.(confirmed);
+    this._exitResolve = null;
+  }
+
   celebratePr(exerciseName: string, weight: number, unit: string): void {
     if (this.prTimeout !== null) clearTimeout(this.prTimeout);
     this.prCelebration.set({ exerciseName, weight, unit });
