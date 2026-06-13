@@ -1,11 +1,13 @@
-import { Component, HostListener, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, computed, inject, signal } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
 import { FocusTrapDirective } from '../../directives/focus-trap.directive';
 import { StateService } from '../../services/state.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
-import { AppSettings, UserProfile } from '../../models/workout.model';
+import { AppSettings, UserProfile, WeightLogEntry } from '../../models/workout.model';
 import { APP_VERSION } from '../../version';
+
+const PAST_LOG_LIMIT = 3;
 
 @Component({
   selector: 'app-settings',
@@ -14,7 +16,7 @@ import { APP_VERSION } from '../../version';
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss',
 })
-export class SettingsComponent {
+export class SettingsComponent implements OnDestroy {
   protected readonly state = inject(StateService);
   protected readonly uiState = inject(UIStateService);
   protected readonly tr = inject(TranslationService);
@@ -29,23 +31,28 @@ export class SettingsComponent {
 
   protected readonly settings = computed(() => this.state.settings());
 
-  /** Resumen bajo el input de peso: medición anterior y delta vs. la última */
-  protected readonly weightSummary = computed(() => {
-    const log = [...this.settings().userProfile.weightLog].sort((a, b) =>
-      a.dateISO.localeCompare(b.dateISO),
-    );
-    if (log.length < 2) return null;
-    const prev = log[log.length - 2];
-    const last = log[log.length - 1];
-    const diff = last.weightKg - prev.weightKg;
-    const abs = Math.abs(diff);
-    const delta = (diff < 0 ? '−' : '+') + (Number.isInteger(abs) ? String(abs) : abs.toFixed(1));
-    return {
-      prevWeight: prev.weightKg,
-      delta,
-      date: `${prev.dateISO.slice(8, 10)}/${prev.dateISO.slice(5, 7)}`,
-    };
-  });
+  protected readonly weightLogDesc = computed(() =>
+    [...this.settings().userProfile.weightLog].sort((a, b) => b.dateISO.localeCompare(a.dateISO)),
+  );
+
+  protected readonly todayEntry = computed(
+    () => this.weightLogDesc().find((e) => e.dateISO === this.state.todayKey) ?? null,
+  );
+
+  // Tope fijo: las correcciones reales son siempre recientes; un dato viejo errado
+  // es ruido de tendencia. Sin "ver más" — Ajustes se mantiene corto.
+  protected readonly pastLogDisplayed = computed(() =>
+    this.weightLogDesc()
+      .filter((e) => e.dateISO !== this.state.todayKey)
+      .slice(0, PAST_LOG_LIMIT),
+  );
+
+  protected readonly undoEntry = signal<WeightLogEntry | null>(null);
+  private undoTimer: ReturnType<typeof setTimeout> | null = null;
+
+  ngOnDestroy(): void {
+    if (this.undoTimer) clearTimeout(this.undoTimer);
+  }
 
   @HostListener('document:keydown.escape')
   protected close(): void {
@@ -68,25 +75,65 @@ export class SettingsComponent {
     this.patch({ cohereApiKey: (event.target as HTMLInputElement).value });
   }
 
-  protected patchProfileNum(key: 'weightKg' | 'heightCm' | 'age', event: Event): void {
+  protected patchProfileNum(key: 'heightCm' | 'age', event: Event): void {
     const val = (event.target as HTMLInputElement).value;
     const num = val === '' ? null : Number(val);
-    if (key === 'weightKg' && num !== null && !Number.isNaN(num)) {
-      // Upsert de la entrada de hoy en weightLog: nunca dos entradas del mismo día
-      const today = this.state.todayKey;
-      const weightLog = [
-        ...this.settings().userProfile.weightLog.filter((e) => e.dateISO !== today),
-        { dateISO: today, weightKg: num },
-      ];
-      this.patchProfile({ weightKg: num, weightLog });
-      return;
-    }
     this.patchProfile({ [key]: num } as Partial<UserProfile>);
   }
 
   protected patchProfileSex(event: Event): void {
     const val = (event.target as HTMLSelectElement).value;
     this.patchProfile({ sex: (val || null) as UserProfile['sex'] });
+  }
+
+  protected saveTodayWeight(event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    const num = val === '' ? null : Number(val);
+    if (num === null || isNaN(num) || num <= 0) return;
+    const today = this.state.todayKey;
+    const weightLog = [
+      ...this.settings().userProfile.weightLog.filter((e) => e.dateISO !== today),
+      { dateISO: today, weightKg: num },
+    ];
+    this.patchProfile({ weightKg: num, weightLog });
+  }
+
+  protected updateWeightEntry(dateISO: string, event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    const num = val === '' ? null : Number(val);
+    if (num === null || isNaN(num) || num <= 0) return;
+    const updated = this.settings().userProfile.weightLog.map((e) =>
+      e.dateISO === dateISO ? { ...e, weightKg: num } : e,
+    );
+    const sorted = [...updated].sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+    this.patchProfile({ weightKg: sorted[sorted.length - 1].weightKg, weightLog: updated });
+  }
+
+  protected deleteWeightEntry(dateISO: string): void {
+    const entry = this.settings().userProfile.weightLog.find((e) => e.dateISO === dateISO);
+    if (!entry) return;
+    const filtered = this.settings().userProfile.weightLog.filter((e) => e.dateISO !== dateISO);
+    const sorted = [...filtered].sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+    const weightKg = sorted.length ? sorted[sorted.length - 1].weightKg : null;
+    this.patchProfile({ weightKg, weightLog: filtered });
+    if (this.undoTimer) clearTimeout(this.undoTimer);
+    this.undoEntry.set(entry);
+    this.undoTimer = setTimeout(() => this.undoEntry.set(null), 3000);
+  }
+
+  protected undoDelete(): void {
+    const entry = this.undoEntry();
+    if (!entry) return;
+    if (this.undoTimer) clearTimeout(this.undoTimer);
+    const existing = this.settings().userProfile.weightLog;
+    const restored = [...existing.filter((e) => e.dateISO !== entry.dateISO), entry];
+    const sorted = [...restored].sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+    this.patchProfile({ weightKg: sorted[sorted.length - 1].weightKg, weightLog: restored });
+    this.undoEntry.set(null);
+  }
+
+  protected formatLogDate(dateISO: string): string {
+    return `${dateISO.slice(8, 10)}/${dateISO.slice(5, 7)}/${dateISO.slice(2, 4)}`;
   }
 
   private patchProfile(p: Partial<UserProfile>): void {

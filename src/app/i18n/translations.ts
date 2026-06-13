@@ -173,6 +173,10 @@ export interface Translations {
   settings_weight: string;
   settings_weight_prev: string;
   settings_weight_delta: string;
+  weight_log_today: string;
+  weight_log_delete: string;
+  weight_log_deleted: string; // {weight}
+  weight_log_undo: string;
   bodyweight_chart_title: string;
   charts_label_metric: string;
   charts_label_range: string;

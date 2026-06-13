@@ -97,32 +97,73 @@
         <p class="settings-row-desc" style="margin-bottom: 12px">
           {{ T().settings_profile_ai_note }}
         </p>
-        <div class="settings-row">
-          <label class="settings-row-main" for="profile-weight">
-            <div class="settings-row-label">{{ T().settings_weight }}</div>
-          </label>
-          <div style="display: flex; align-items: center; gap: 6px">
-            <input
-              id="profile-weight"
-              class="input"
-              type="number"
-              min="30"
-              max="300"
-              step="0.5"
-              inputmode="decimal"
-              placeholder="—"
-              style="width: 75px; text-align: center"
-              [value]="settings().userProfile.weightKg ?? ''"
-              (input)="patchProfileNum('weightKg', $event)"
-            />
-            <span style="font-size: 12px; color: var(--text-2)" aria-hidden="true">kg</span>
+        <!-- Peso: lista unificada de mediciones -->
+        <div class="settings-row-label" style="margin-bottom: 8px">{{ T().settings_weight }}</div>
+        <div class="weight-log">
+          <!-- Fila de hoy: siempre visible, crea o actualiza la entrada de hoy -->
+          <div class="weight-log-row weight-log-today">
+            <span class="weight-log-date weight-log-today-label">{{ T().weight_log_today }}</span>
+            <div class="weight-log-val-wrap">
+              <input
+                class="weight-log-input mono"
+                type="number"
+                min="30"
+                max="300"
+                step="0.5"
+                inputmode="decimal"
+                placeholder="—"
+                [value]="todayEntry()?.weightKg ?? ''"
+                (change)="saveTodayWeight($event)"
+              />
+              <span class="weight-log-unit">kg</span>
+            </div>
+            @if (todayEntry()) {
+              <button
+                class="icon-btn weight-log-del"
+                (click)="deleteWeightEntry(state.todayKey)"
+                [attr.aria-label]="T().weight_log_delete"
+              >
+                <app-icon name="x" [size]="13" />
+              </button>
+            } @else {
+              <span class="weight-log-del-placeholder"></span>
+            }
           </div>
+          <!-- Entradas anteriores -->
+          @for (entry of pastLogDisplayed(); track entry.dateISO) {
+            <div class="weight-log-row">
+              <span class="weight-log-date mono">{{ formatLogDate(entry.dateISO) }}</span>
+              <div class="weight-log-val-wrap">
+                <input
+                  class="weight-log-input mono"
+                  type="number"
+                  min="30"
+                  max="300"
+                  step="0.5"
+                  inputmode="decimal"
+                  [value]="entry.weightKg"
+                  (change)="updateWeightEntry(entry.dateISO, $event)"
+                />
+                <span class="weight-log-unit">kg</span>
+              </div>
+              <button
+                class="icon-btn weight-log-del"
+                (click)="deleteWeightEntry(entry.dateISO)"
+                [attr.aria-label]="T().weight_log_delete"
+              >
+                <app-icon name="x" [size]="13" />
+              </button>
+            </div>
+          }
         </div>
-        @if (weightSummary(); as ws) {
-          <p class="settings-row-desc" style="margin: -4px 0 10px">
-            {{ tr.tp('settings_weight_prev', { weight: ws.prevWeight }) }}
-            · {{ tr.tp('settings_weight_delta', { delta: ws.delta, date: ws.date }) }}
-          </p>
+        <!-- Undo toast -->
+        @if (undoEntry(); as undo) {
+          <div class="weight-log-undo">
+            <span>{{ tr.tp('weight_log_deleted', { weight: undo.weightKg }) }}</span>
+            <button class="btn btn-ghost btn-sm" (click)="undoDelete()">
+              {{ T().weight_log_undo }}
+            </button>
+          </div>
         }
         <div class="settings-row">
           <label class="settings-row-main" for="profile-height">
