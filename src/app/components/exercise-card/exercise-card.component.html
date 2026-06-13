@@ -95,11 +95,19 @@
             class="set-row"
             [class.done]="set.done"
             [class.active-set]="i === activeSetIndex() && isActive() && !set.done"
+            [class.future-set]="i > activeSetIndex() && isActive() && !set.done"
           >
             <span class="set-num">{{ i + 1 }}</span>
 
-            <!-- Weight column -->
+            <!-- Weight column: [ − ] input [ + ] -->
             <div class="set-input-wrap">
+              @if (exercise().unit !== 'peso corporal' && !set.done) {
+                <button
+                  class="inline-ctrl-btn"
+                  (click)="$event.stopPropagation(); stepWeight(i, -weightStep())"
+                  [attr.aria-label]="T().ctrl_weight_down"
+                >−</button>
+              }
               @if (exercise().unit !== 'peso corporal') {
                 <input
                   class="set-input set-input-weight"
@@ -117,15 +125,26 @@
               } @else {
                 <span class="set-input set-input-bw">—</span>
               }
-              @if (lastSets()?.[i]) {
-                <span class="set-history"
-                  >{{ lastSets()![i].weight }}×{{ lastSets()![i].reps }}</span
+              @if (exercise().unit !== 'peso corporal' && !set.done) {
+                <button
+                  class="inline-ctrl-btn inline-ctrl-btn--plus"
+                  (click)="$event.stopPropagation(); stepWeight(i, weightStep())"
+                  [attr.aria-label]="T().ctrl_weight_up"
                 >
+                  +<span class="step-hint">{{ weightStep() }}</span>
+                </button>
               }
             </div>
 
-            <!-- Reps column -->
+            <!-- Reps column: [ − ] input [ + ] -->
             <div class="set-input-wrap">
+              @if (!set.done) {
+                <button
+                  class="inline-ctrl-btn"
+                  (click)="$event.stopPropagation(); stepReps(i, -1)"
+                  [attr.aria-label]="T().ctrl_rep_down"
+                >−</button>
+              }
               <input
                 class="set-input set-input-reps"
                 [class.ai-prefilled]="aiPrefilledIndices().has(i) && !set.done"
@@ -139,8 +158,12 @@
                 (input)="updateReps(i, $event)"
                 (keydown.enter)="$event.preventDefault(); toggleDone(i)"
               />
-              @if (lastSets()?.[i]) {
-                <span class="set-history">&nbsp;</span>
+              @if (!set.done) {
+                <button
+                  class="inline-ctrl-btn"
+                  (click)="$event.stopPropagation(); stepReps(i, 1)"
+                  [attr.aria-label]="T().ctrl_rep_up"
+                >+</button>
               }
             </div>
 
@@ -152,54 +175,6 @@
               <app-icon name="check" [size]="16" />
             </button>
           </div>
-
-          <!-- +/- controls for every pending set -->
-          @if (!set.done) {
-            <div class="active-set-controls" (click)="$event.stopPropagation()">
-              @if (exercise().unit !== 'peso corporal') {
-                <div class="active-ctrl-group">
-                  <span class="active-ctrl-label">
-                    @if (exercise().unit === 'tiempo') {
-                      {{ T().col_seconds }}
-                    } @else {
-                      {{ T().col_weight }}
-                    }
-                  </span>
-                  <button
-                    class="active-ctrl-btn"
-                    (click)="stepWeight(i, -weightStep())"
-                    [attr.aria-label]="T().ctrl_weight_down"
-                  >
-                    −
-                  </button>
-                  <button
-                    class="active-ctrl-btn"
-                    (click)="stepWeight(i, weightStep())"
-                    [attr.aria-label]="T().ctrl_weight_up"
-                  >
-                    +
-                  </button>
-                </div>
-              }
-              <div class="active-ctrl-group">
-                <span class="active-ctrl-label">{{ T().col_reps }}</span>
-                <button
-                  class="active-ctrl-btn"
-                  (click)="stepReps(i, -1)"
-                  [attr.aria-label]="T().ctrl_rep_down"
-                >
-                  −
-                </button>
-                <button
-                  class="active-ctrl-btn"
-                  (click)="stepReps(i, 1)"
-                  [attr.aria-label]="T().ctrl_rep_up"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          }
         }
       </div>
     </div>

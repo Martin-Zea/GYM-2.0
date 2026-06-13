@@ -77,10 +77,6 @@ export class ExerciseCardComponent {
     });
   });
 
-  protected readonly lastSets = computed(() =>
-    this.storage.lastSetsForExercise(this.state.state(), this.exercise().id),
-  );
-
   protected readonly doneSetsCount = computed(() => this.setsArray().filter((s) => s.done).length);
 
   protected readonly isDone = computed(() => {
