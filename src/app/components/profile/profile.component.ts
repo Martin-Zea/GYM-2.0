@@ -74,8 +74,12 @@ export class ProfileComponent {
   });
 
   protected formatDate(iso: string): string {
-    const [y, m, d] = iso.split('-');
-    return `${d}/${m}/${y}`;
+    const d = new Date(iso + 'T12:00:00Z');
+    return new Intl.DateTimeFormat(this.tr.lang(), {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }).format(d);
   }
 
   protected sharePr(pr: PrRecord): void {

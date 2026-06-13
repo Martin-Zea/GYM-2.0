@@ -29,30 +29,29 @@ interface RoutineDaySummary {
 export class CalendarComponent {
   protected readonly state = inject(StateService);
   private readonly storage = inject(StorageService);
-  protected readonly T = inject(TranslationService).T;
+  protected readonly tr = inject(TranslationService);
+  protected readonly T = this.tr.T;
   private readonly uiState = inject(UIStateService);
 
   protected readonly viewDate = signal(new Date());
-  protected readonly DOW = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
-  private static readonly MONTHS = [
-    'Enero',
-    'Febrero',
-    'Marzo',
-    'Abril',
-    'Mayo',
-    'Junio',
-    'Julio',
-    'Agosto',
-    'Septiembre',
-    'Octubre',
-    'Noviembre',
-    'Diciembre',
-  ];
+  // Jan 1 2024 is a Monday — use it to generate locale-aware weekday abbreviations Mon–Sun
+  private static readonly DOW_BASE = new Date(2024, 0, 1);
+
+  protected readonly DOW = computed(() => {
+    const lang = this.tr.lang();
+    const fmt = new Intl.DateTimeFormat(lang, { weekday: 'narrow' });
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(CalendarComponent.DOW_BASE);
+      d.setDate(1 + i);
+      return fmt.format(d);
+    });
+  });
 
   protected readonly monthLabel = computed(() => {
     const d = this.viewDate();
-    return `${CalendarComponent.MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    const lang = this.tr.lang();
+    return new Intl.DateTimeFormat(lang, { month: 'long', year: 'numeric' }).format(d);
   });
 
   private readonly realTrainedIsos = computed(
@@ -147,10 +146,11 @@ export class CalendarComponent {
   });
 
   protected daysAgoLabel(daysAgo: number | null): string {
-    if (daysAgo === null) return 'Sin sesiones';
-    if (daysAgo === 0) return 'Hoy';
-    if (daysAgo === 1) return 'Ayer';
-    return `Hace ${daysAgo} días`;
+    const t = this.T();
+    if (daysAgo === null) return t.cal_no_sessions;
+    if (daysAgo === 0) return t.today_ago;
+    if (daysAgo === 1) return t.yesterday;
+    return this.tr.tp('days_ago_many', { n: daysAgo });
   }
 
   protected onDayClick(cell: CalDay): void {

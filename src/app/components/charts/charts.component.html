@@ -1,7 +1,7 @@
 <div class="main">
   <div class="view-header">
-    <h2 class="view-title">Progresión</h2>
-    <p class="view-sub">Peso máximo y volumen por sesión</p>
+    <h2 class="view-title">{{ T().charts_view_title }}</h2>
+    <p class="view-sub">{{ T().charts_view_sub }}</p>
   </div>
 
   <div class="charts-controls">
@@ -110,7 +110,7 @@
           <div class="chart-head">
             <div>
               <p class="chart-title">{{ item.exercise.name }}</p>
-              <p class="chart-sub">{{ chart.history.length }} sesiones</p>
+              <p class="chart-sub">{{ tr.tp('charts_sessions', { n: chart.history.length }) }}</p>
             </div>
             <div class="chart-stats-right">
               <div class="chart-stat">
@@ -118,7 +118,7 @@
                 <div class="chart-stat-value">{{ chart.pr }} kg</div>
               </div>
               <div class="chart-stat">
-                <div class="chart-stat-label">Vol. última</div>
+                <div class="chart-stat-label">{{ T().charts_vol_last }}</div>
                 <div class="chart-stat-value chart-stat-vol">{{ chart.volLast }} kg</div>
               </div>
             </div>
@@ -173,7 +173,9 @@
           </div>
 
           <div class="chart-vol-bar">
-            <span class="chart-vol-label">Volumen promedio: {{ chart.volAvg }} kg</span>
+            <span class="chart-vol-label">{{
+              tr.tp('charts_vol_avg', { vol: chart.volAvg })
+            }}</span>
             <div class="chart-vol-track">
               <div
                 class="chart-vol-fill"
