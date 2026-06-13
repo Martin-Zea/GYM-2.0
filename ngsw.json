@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1781324637463,
+  "timestamp": 1781329893171,
   "index": "/GYM-2.0/index.html",
   "assetGroups": [
     {
@@ -11,19 +11,19 @@
         "ignoreVary": true
       },
       "urls": [
-        "/GYM-2.0/chunk-2YPH3RDX.js",
-        "/GYM-2.0/chunk-5TXOLNOB.js",
-        "/GYM-2.0/chunk-CWQJRK45.js",
-        "/GYM-2.0/chunk-JS5OC575.js",
-        "/GYM-2.0/chunk-M7FJIN5T.js",
-        "/GYM-2.0/chunk-MDTF7462.js",
-        "/GYM-2.0/chunk-U7ILK7JE.js",
-        "/GYM-2.0/chunk-UW2KNRIB.js",
+        "/GYM-2.0/chunk-BLHCZBQM.js",
+        "/GYM-2.0/chunk-CTOSMOGQ.js",
+        "/GYM-2.0/chunk-FPYDBY7D.js",
+        "/GYM-2.0/chunk-RLRU3JWT.js",
+        "/GYM-2.0/chunk-V3AXDO3G.js",
+        "/GYM-2.0/chunk-VMQ7VYPR.js",
+        "/GYM-2.0/chunk-WICYHKWV.js",
+        "/GYM-2.0/chunk-XQ7YW3OQ.js",
         "/GYM-2.0/favicon.ico",
         "/GYM-2.0/index.html",
-        "/GYM-2.0/main-LFTM3AK4.js",
+        "/GYM-2.0/main-HWABAQS7.js",
         "/GYM-2.0/manifest.webmanifest",
-        "/GYM-2.0/styles-RBN6I627.css"
+        "/GYM-2.0/styles-FHDYA7MC.css"
       ],
       "patterns": []
     },
@@ -80,14 +80,14 @@
     "/GYM-2.0/android-chrome-192x192.png": "52484fb748558c99463d54d60ee27020980c5027",
     "/GYM-2.0/android-chrome-512x512.png": "abcf6cb18e543149ba006efe1281db75f5be4f75",
     "/GYM-2.0/apple-touch-icon.png": "84b753511f91c81e9e10a431d775bedd08bf9f36",
-    "/GYM-2.0/chunk-2YPH3RDX.js": "f9c69f535be8e6b16d45f54daf205881bbe115b2",
-    "/GYM-2.0/chunk-5TXOLNOB.js": "35f447791c40a434a510063bf88508b940efe0aa",
-    "/GYM-2.0/chunk-CWQJRK45.js": "4ff3592fed70c002270f83559c9a6166358246b1",
-    "/GYM-2.0/chunk-JS5OC575.js": "7fe6a6dcce8e4729a30867a799d613c37ff24873",
-    "/GYM-2.0/chunk-M7FJIN5T.js": "705489ac6ffe669cdb3585116e072af74f859318",
-    "/GYM-2.0/chunk-MDTF7462.js": "2ae0a78c192e1631accdedc2d4d6a19a05ba5ac5",
-    "/GYM-2.0/chunk-U7ILK7JE.js": "9784c416442907691a73e03bd813575eab2a8d75",
-    "/GYM-2.0/chunk-UW2KNRIB.js": "edc12eb5a2edeaf550ab0393c316592af87b1a86",
+    "/GYM-2.0/chunk-BLHCZBQM.js": "518830ca86392c9344fd0c44cde16871b3255982",
+    "/GYM-2.0/chunk-CTOSMOGQ.js": "b9ba418062ceafcc9cb200351a4f8178961468ad",
+    "/GYM-2.0/chunk-FPYDBY7D.js": "a590782736ac9e994809666d6ea41359f9a090eb",
+    "/GYM-2.0/chunk-RLRU3JWT.js": "35e71eaf0ee9773c002c2459d5bb62cb051c60e9",
+    "/GYM-2.0/chunk-V3AXDO3G.js": "133af07548a0e37496de9bfaf7fb3860d3e98316",
+    "/GYM-2.0/chunk-VMQ7VYPR.js": "3b1a6c39257d1dbea896a9622e65063c630dea19",
+    "/GYM-2.0/chunk-WICYHKWV.js": "b4bfe5585d5484d305650395884616b65294fef8",
+    "/GYM-2.0/chunk-XQ7YW3OQ.js": "dd6569e48f79c7507f87a3623e1d34a3e1871be5",
     "/GYM-2.0/favicon-16x16.png": "189047f15d6700abbbd5f8e5924b9df0fd9072fc",
     "/GYM-2.0/favicon-32x32.png": "6a6eebf7205fcd453ea5eb10aa6be167342769c1",
     "/GYM-2.0/favicon.ico": "a23a750449bfe350c2b7466cfa715105fd9b2b87",
@@ -109,8 +109,8 @@
     "/GYM-2.0/icons/gainai-maskable-72x72.png": "0b0f41d966bdaa037028ad8dfefc83e76fc32bae",
     "/GYM-2.0/icons/gainai-maskable-96x96.png": "88f28a3c5cc3ed7663f9f3ed08894ea950c53539",
     "/GYM-2.0/icons/gainai-maskable.svg": "4ada5e0f771b75a937c5dd2d679b75b30b6496d9",
-    "/GYM-2.0/index.html": "55b7938ed302968be9e0c3cc2e7e70d29d356016",
-    "/GYM-2.0/main-LFTM3AK4.js": "8dfd4a28a28e1657607fd418cf86cd916de0859e",
+    "/GYM-2.0/index.html": "356b04f19ea8e9ea7e7f9f0de91fce34e40ef1d2",
+    "/GYM-2.0/main-HWABAQS7.js": "a43d25910267b5b5a460dcaa15e3363f9db8a2e7",
     "/GYM-2.0/manifest.webmanifest": "347d778acecce3cebc1eff3066b8cb6c5cd4870c",
     "/GYM-2.0/media/inter-cyrillic-JEOLYBOO.woff2": "9f73b2f43ea3bf37cc8e90a5aa8c7e668ec44504",
     "/GYM-2.0/media/inter-cyrillic-ext-IYF56FF6.woff2": "705d625066dba0c159f137e73f91e232097d208d",
@@ -125,7 +125,7 @@
     "/GYM-2.0/media/jetbrains-mono-latin-2TKUHYWA.woff2": "4f27206c4b1caf8b7805597fcbc6922ff5805daa",
     "/GYM-2.0/media/jetbrains-mono-latin-ext-RYXAAANA.woff2": "06ad36000cd89dec93e4398c5b62565ab1d1b1e2",
     "/GYM-2.0/media/jetbrains-mono-vietnamese-YWF6U72K.woff2": "326a88b4ddbbf1325f6c66614f03b6f8d3dc2b2b",
-    "/GYM-2.0/styles-RBN6I627.css": "155bdd56e60befb12c3e63c3a095e280502e52bd"
+    "/GYM-2.0/styles-FHDYA7MC.css": "bb784fffe51027b370067f3add9a217b943526db"
   },
   "navigationUrls": [
     {
