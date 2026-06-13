@@ -157,7 +157,7 @@
               }
 
               <g class="chart-axis">
-                @for (lbl of chart.yLabels; track lbl.value) {
+                @for (lbl of chart.yLabels; track $index) {
                   <text x="28" [attr.y]="lbl.y" text-anchor="end">{{ lbl.value }}</text>
                 }
               </g>
