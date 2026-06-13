@@ -325,6 +325,7 @@ export class HomeComponent {
       todaySets,
       lastSets,
       history,
+      this.tr.lang(),
     );
     this.aiCache.update((c) => ({ ...c, [exercise.id]: rec }));
   }

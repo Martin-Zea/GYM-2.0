@@ -240,20 +240,6 @@
   background: color-mix(in oklab, var(--accent) 20%, transparent);
 }
 
-/* Punto 3: step del ladrillo en el botón + */
-.step-hint {
-  font-size: 9px;
-  font-weight: 600;
-  line-height: 1;
-  color: var(--text-3);
-  margin-top: 1px;
-  font-variant-numeric: tabular-nums;
-  display: block;
-}
-.inline-ctrl-btn--plus:hover .step-hint {
-  color: inherit;
-}
-
 /* Punto 2: check protagonista — siempre visible en gris, lime al completar */
 .set-check {
   width: 44px;

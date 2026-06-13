@@ -3,7 +3,9 @@
   <div class="sheet-panel" appFocusTrap role="dialog" aria-modal="true">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <h3 class="sheet-title">{{ isNew ? 'Nuevo día' : 'Editar día' }}</h3>
+      <h3 class="sheet-title">
+        {{ isNew ? T().day_editor_new_title : T().day_editor_edit_title }}
+      </h3>
       <button class="icon-btn" (click)="close()" [attr.aria-label]="T().close_btn">
         <app-icon name="x" [size]="16" />
       </button>
@@ -11,11 +13,11 @@
 
     <div class="sheet-body">
       <div class="field">
-        <label class="field-label">Nombre del día</label>
+        <label class="field-label">{{ T().day_editor_day_name }}</label>
         <input
           class="input"
           type="text"
-          placeholder="Ej: Pecho + Tríceps"
+          [placeholder]="T().day_editor_day_name_placeholder"
           [value]="dayName()"
           (input)="setDayName($event)"
         />
@@ -37,7 +39,7 @@
             <input
               class="input"
               type="text"
-              placeholder="Nombre del ejercicio"
+              [placeholder]="T().day_editor_exercise_placeholder"
               style="flex: 1"
               [value]="ex.name"
               (input)="setExName(i, $event)"
@@ -73,7 +75,7 @@
 
           <div class="field-row">
             <div class="field">
-              <label class="field-label">Series</label>
+              <label class="field-label">{{ T().day_editor_sets }}</label>
               <input
                 class="input"
                 type="number"
@@ -84,7 +86,7 @@
               />
             </div>
             <div class="field">
-              <label class="field-label">Reps objetivo</label>
+              <label class="field-label">{{ T().day_editor_rep_target }}</label>
               <input
                 class="input"
                 type="number"
@@ -98,18 +100,17 @@
 
           <div class="field-row">
             <div class="field">
-              <label class="field-label">Incremento (kg)</label>
+              <label class="field-label">{{ T().day_editor_brick }}</label>
               <input
                 class="input"
-                type="number"
-                min="0.5"
-                step="0.5"
+                type="text"
+                inputmode="decimal"
                 [value]="ex.brick"
-                (input)="setExNum(i, 'brick', $event)"
+                (change)="setExBrick(i, $event)"
               />
             </div>
             <div class="field">
-              <label class="field-label">Descanso (seg)</label>
+              <label class="field-label">{{ T().day_editor_rest }}</label>
               <input
                 class="input"
                 type="number"
@@ -122,7 +123,7 @@
           </div>
 
           <div class="field">
-            <label class="field-label">Unidad</label>
+            <label class="field-label">{{ T().day_editor_unit }}</label>
             <select class="select" [value]="ex.unit" (change)="setExUnit(i, $event)">
               @for (unit of units; track unit) {
                 <option [value]="unit">{{ tr.unitLabel(unit) }}</option>
@@ -134,7 +135,7 @@
 
       <button class="btn" style="width: 100%; justify-content: center" (click)="addExercise()">
         <app-icon name="plus" [size]="14" />
-        Agregar ejercicio
+        {{ T().day_editor_add_exercise }}
       </button>
     </div>
 
@@ -142,16 +143,16 @@
       @if (!isNew) {
         <button class="btn btn-danger" (click)="deleteDay()">
           <app-icon name="trash" [size]="13" />
-          Eliminar
+          {{ T().day_editor_delete_day }}
         </button>
       }
-      <button class="btn btn-ghost" (click)="close()">Cancelar</button>
+      <button class="btn btn-ghost" (click)="close()">{{ T().cancel }}</button>
       <button
         class="btn btn-primary"
         (click)="save()"
         [attr.disabled]="!dayName().trim() ? true : null"
       >
-        Guardar
+        {{ T().save }}
       </button>
     </div>
   </div>

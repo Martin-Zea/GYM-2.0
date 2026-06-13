@@ -257,6 +257,20 @@ export interface Translations {
   cal_no_sessions: string;
   yesterday: string;
 
+  // Day editor
+  day_editor_new_title: string;
+  day_editor_edit_title: string;
+  day_editor_day_name: string;
+  day_editor_day_name_placeholder: string;
+  day_editor_exercise_placeholder: string;
+  day_editor_sets: string;
+  day_editor_rep_target: string;
+  day_editor_brick: string;
+  day_editor_rest: string;
+  day_editor_unit: string;
+  day_editor_add_exercise: string;
+  day_editor_delete_day: string;
+
   // Profile page
   profile_data_section: string;
   profile_no_data: string;

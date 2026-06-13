@@ -101,6 +101,16 @@ export class DayEditorComponent implements OnInit {
     this.patch(i, { [key]: Number((event.target as HTMLInputElement).value) });
   }
 
+  protected setExBrick(i: number, event: Event): void {
+    const raw = (event.target as HTMLInputElement).value.replace(',', '.');
+    const num = parseFloat(raw);
+    if (!isNaN(num) && num > 0) {
+      this.patch(i, { brick: num });
+    } else {
+      (event.target as HTMLInputElement).value = String(this.exercises()[i].brick);
+    }
+  }
+
   protected setExUnit(i: number, event: Event): void {
     this.patch(i, { unit: (event.target as HTMLSelectElement).value as ExerciseUnit });
   }

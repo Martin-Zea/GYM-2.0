@@ -11,6 +11,10 @@
         {{ exercise().defaultSets }}×{{ exercise().defaultRepTarget }}
         <span class="dot"></span>
         {{ tr.unitLabel(exercise().unit) }}
+        @if (exercise().unit !== 'peso corporal' && exercise().unit !== 'tiempo') {
+          <span class="dot"></span>
+          <span>+{{ weightStep() }}</span>
+        }
         @if (exercise().notes) {
           <span class="dot"></span>
           <span>{{ exercise().notes }}</span>
@@ -106,7 +110,9 @@
                   class="inline-ctrl-btn"
                   (click)="$event.stopPropagation(); stepWeight(i, -weightStep())"
                   [attr.aria-label]="T().ctrl_weight_down"
-                >−</button>
+                >
+                  −
+                </button>
               }
               @if (exercise().unit !== 'peso corporal') {
                 <input
@@ -127,11 +133,11 @@
               }
               @if (exercise().unit !== 'peso corporal' && !set.done) {
                 <button
-                  class="inline-ctrl-btn inline-ctrl-btn--plus"
+                  class="inline-ctrl-btn"
                   (click)="$event.stopPropagation(); stepWeight(i, weightStep())"
                   [attr.aria-label]="T().ctrl_weight_up"
                 >
-                  +<span class="step-hint">{{ weightStep() }}</span>
+                  +
                 </button>
               }
             </div>
@@ -143,7 +149,9 @@
                   class="inline-ctrl-btn"
                   (click)="$event.stopPropagation(); stepReps(i, -1)"
                   [attr.aria-label]="T().ctrl_rep_down"
-                >−</button>
+                >
+                  −
+                </button>
               }
               <input
                 class="set-input set-input-reps"
@@ -163,7 +171,9 @@
                   class="inline-ctrl-btn"
                   (click)="$event.stopPropagation(); stepReps(i, 1)"
                   [attr.aria-label]="T().ctrl_rep_up"
-                >+</button>
+                >
+                  +
+                </button>
               }
             </div>
 
