@@ -105,6 +105,33 @@ export class HomeComponent {
     return days === 1 ? T.last_session_days_one : this.tr.tp('last_session_days_many', { n: days });
   });
 
+  protected readonly hasCompletedSessions = computed(() =>
+    this.state.sessions().some((s) => !s.skipped),
+  );
+
+  protected readonly lastWeightByExercise = computed((): Partial<Record<string, string>> => {
+    const s = this.state.state();
+    const day = this.state.currentDay();
+    if (!day) return {};
+    const todayISO = this.storage.todayISO();
+    const result: Partial<Record<string, string>> = {};
+    for (const ex of day.exercises) {
+      if (ex.unit === 'tiempo' || ex.unit === 'peso corporal') continue;
+      const lastSets = this.storage.lastSetsForExercise(s, ex.id, todayISO);
+      if (!lastSets?.length) continue;
+      const topSet = lastSets.reduce((best, curr) =>
+        (curr.weight as number) > (best.weight as number) ? curr : best,
+        lastSets[0],
+      );
+      const suffix =
+        ex.unit === 'kg por mano' ? '/m' : ex.unit === 'kg por brazo' ? '/b' : '';
+      result[ex.id] = `${topSet.weight}kg${suffix} × ${topSet.reps}`;
+    }
+    return result;
+  });
+
+  protected readonly routineExpanded = signal(true);
+
   protected readonly routineDays = computed(() => {
     const s = this.state.state();
     const T = this.T();

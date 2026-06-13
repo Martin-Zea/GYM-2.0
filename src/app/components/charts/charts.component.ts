@@ -19,7 +19,8 @@ interface ChartData {
   history: HistoryEntry[];
   pr: number;
   volLast: number;
-  volAvg: number;
+  weightDelta: number;
+  trend: 'up' | 'down' | 'flat';
   pts: Pt[];
   points: string;
   areaPath: string;
@@ -81,10 +82,12 @@ export class ChartsComponent {
         // es independiente de la métrica, así que volLast/volAvg quedan sobre los datos reales.
         const pr = Math.max(...values);
         const volLast = history[history.length - 1].volume;
-        const volAvg = Math.round(history.reduce((sum, h) => sum + h.volume, 0) / history.length);
+        const n = history.length;
+        const weightDelta = Math.round((history[n - 1].topWeight - history[n - 2].topWeight) * 10) / 10;
+        const trend: 'up' | 'down' | 'flat' = weightDelta > 0 ? 'up' : weightDelta < 0 ? 'down' : 'flat';
         result.push({
           exercise: ex,
-          chart: { history, pr, volLast, volAvg, ...this.buildChart(history, values) },
+          chart: { history, pr, volLast, weightDelta, trend, ...this.buildChart(history, values) },
         });
       }
     }
@@ -148,7 +151,7 @@ export class ChartsComponent {
   private buildChart(
     history: HistoryEntry[],
     values: number[],
-  ): Omit<ChartData, 'history' | 'pr' | 'volLast' | 'volAvg'> {
+  ): Omit<ChartData, 'history' | 'pr' | 'volLast' | 'weightDelta' | 'trend'> {
     const x0 = 32,
       x1 = 292,
       y0 = 8,

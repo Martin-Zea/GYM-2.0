@@ -15,20 +15,20 @@
     <div class="dashboard">
       <!-- RIGHT/TOP aside: AI hero + week stats (appears first in mobile flow) -->
       <div class="dash-aside">
-        <div class="ai-hero">
-          <div class="ai-hero-icon">
-            <app-icon name="sparkle" [size]="15" />
+        @if (!hasCompletedSessions()) {
+          <div class="ai-hero">
+            <div class="ai-hero-icon">
+              <app-icon name="sparkle" [size]="15" />
+            </div>
+            <div class="ai-hero-text">
+              <strong>{{ T().ai_hero_title }}</strong>
+              <span>{{ T().ai_hero_subtitle }}</span>
+            </div>
           </div>
-          <div class="ai-hero-text">
-            <strong>{{ T().ai_hero_title }}</strong>
-            <span>{{ T().ai_hero_subtitle }}</span>
-          </div>
-        </div>
+        }
 
-        <div class="week-stats" [class.week-stats--empty]="weekStatsDisplay().isEmpty">
-          @if (weekStatsDisplay().isEmpty) {
-            <span class="week-stats-empty-msg">{{ T().first_week_prompt }}</span>
-          } @else {
+        @if (!weekStatsDisplay().isEmpty) {
+          <div class="week-stats">
             @if (weekStatsDisplay().streak > 0) {
               <div class="week-stat">
                 <span class="week-stat-value">{{ weekStatsDisplay().streak }}</span>
@@ -46,8 +46,8 @@
               <span class="week-stat-value">{{ weekStatsDisplay().vol }}</span>
               <span class="week-stat-label">{{ T().this_week }}</span>
             </div>
-          }
-        </div>
+          </div>
+        }
       </div>
 
       <!-- LEFT/MAIN column: today card + onboarding -->
@@ -151,6 +151,11 @@
                     >{{ ex.defaultSets }}×{{ ex.defaultRepTarget }} ·
                     {{ tr.unitLabel(ex.unit) }}</span
                   >
+                  @if (lastWeightByExercise()[ex.id]) {
+                    <span class="today-ex-last">
+                      <span class="today-ex-last-prefix">{{ T().today_last_prefix }}</span>{{ lastWeightByExercise()[ex.id] }}
+                    </span>
+                  }
                   @if (isRecLoading(ex)) {
                     <span class="today-ex-rec today-ex-rec-loading">
                       <span class="rec-spinner"></span>
@@ -190,7 +195,19 @@
 
       <!-- ROUTINE section: bottom of right col on desktop, bottom of page on mobile -->
       <div class="routine-section">
-        <h3 class="section-title">{{ T().routine_section_title }}</h3>
+        <button
+          class="routine-section-header"
+          (click)="routineExpanded.update((v) => !v)"
+        >
+          <h3 class="section-title">{{ T().routine_section_title }}</h3>
+          <app-icon
+            name="chevron"
+            [size]="14"
+            class="routine-chevron"
+            [class.routine-chevron--open]="routineExpanded()"
+          />
+        </button>
+        @if (routineExpanded()) {
         @for (item of routineDays(); track item.day.id) {
           <button
             class="routine-day-card"
@@ -211,6 +228,7 @@
               }
             </span>
           </button>
+        }
         }
       </div>
     </div>

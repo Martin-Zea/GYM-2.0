@@ -110,7 +110,6 @@
           <div class="chart-head">
             <div>
               <p class="chart-title">{{ item.exercise.name }}</p>
-              <p class="chart-sub">{{ tr.tp('charts_sessions', { n: chart.history.length }) }}</p>
             </div>
             <div class="chart-stats-right">
               <div class="chart-stat">
@@ -172,16 +171,18 @@
             </svg>
           </div>
 
-          <div class="chart-vol-bar">
-            <span class="chart-vol-label">{{
-              tr.tp('charts_vol_avg', { vol: chart.volAvg })
+          <div
+            class="chart-delta"
+            [class.chart-delta--up]="chart.trend === 'up'"
+            [class.chart-delta--down]="chart.trend === 'down'"
+          >
+            <span class="chart-delta-arrow">{{
+              chart.trend === 'up' ? '↑' : chart.trend === 'down' ? '↓' : '→'
             }}</span>
-            <div class="chart-vol-track">
-              <div
-                class="chart-vol-fill"
-                [style.width.%]="chart.volAvg > 0 ? (chart.volLast / chart.volAvg) * 50 : 0"
-              ></div>
-            </div>
+            <span class="chart-delta-value">{{
+              chart.weightDelta > 0 ? '+' : ''
+            }}{{ chart.weightDelta }} kg</span>
+            <span class="chart-delta-sub">{{ T().charts_vs_prev }}</span>
           </div>
         } @else {
           <div class="chart-head">

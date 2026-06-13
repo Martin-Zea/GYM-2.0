@@ -22,6 +22,7 @@ export const en: Translations = {
   continue_training: 'Continue training',
   sets_progress: '{done}/{total} sets completed',
   view_last_session: 'View last session',
+  today_last_prefix: 'Last: ',
   edit_routine: 'Edit routine',
   skip_day: 'Skip this day',
   skip_confirm_q: 'Register as skipped?',
@@ -211,9 +212,8 @@ export const en: Translations = {
 
   charts_view_title: 'Progression',
   charts_view_sub: 'Top weight and volume per session',
-  charts_sessions: '{n} sessions',
   charts_vol_last: 'Last vol.',
-  charts_vol_avg: 'Avg volume: {vol} kg',
+  charts_vs_prev: 'vs prev session',
 
   calendar_view_title: 'Calendar',
   calendar_view_sub: 'Training history',

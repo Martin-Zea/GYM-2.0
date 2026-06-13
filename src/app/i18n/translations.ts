@@ -27,6 +27,7 @@ export interface Translations {
   continue_training: string;
   sets_progress: string; // {done}/{total}
   view_last_session: string;
+  today_last_prefix: string;
   edit_routine: string;
   skip_day: string;
   skip_confirm_q: string;
@@ -228,9 +229,8 @@ export interface Translations {
   // Charts page
   charts_view_title: string;
   charts_view_sub: string;
-  charts_sessions: string; // {n}
   charts_vol_last: string;
-  charts_vol_avg: string; // {vol}
+  charts_vs_prev: string;
 
   // Calendar page
   calendar_view_title: string;
