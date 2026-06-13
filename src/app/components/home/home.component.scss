@@ -70,8 +70,12 @@
 .today-card-top-row {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 12px;
+
+  & > div:first-child {
+    flex: 1;
+    min-width: 0;
+  }
 }
 .today-card-actions {
   display: flex;
@@ -192,6 +196,11 @@
   letter-spacing: -0.03em;
   margin: 0 0 6px;
   color: var(--text-0);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .today-last {
   font-size: 13px;
@@ -480,7 +489,7 @@
 /* ── Day menu dropdown ── */
 .day-menu-wrap {
   position: relative;
-  flex-shrink: 0;
+  flex: none;
 }
 .day-menu-backdrop {
   position: fixed;
@@ -520,10 +529,11 @@
   background: var(--bg-hover);
 }
 .day-menu-item--danger {
-  color: var(--danger);
+  color: var(--text-1);
 }
 .day-menu-item--danger:hover {
-  background: rgba(239, 100, 100, 0.08);
+  background: var(--bg-hover);
+  color: var(--text-0);
 }
 .day-menu-skip-confirm {
   padding: 10px 14px 12px;

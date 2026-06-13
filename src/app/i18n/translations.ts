@@ -45,6 +45,15 @@ export interface Translations {
   finish_all_done: string;
   keep_training: string;
   save_finish: string;
+  tsb_exercises: string;
+  sets_label: string;
+  col_seconds: string;
+  col_weight: string;
+  col_reps: string;
+  ctrl_weight_down: string;
+  ctrl_weight_up: string;
+  ctrl_rep_down: string;
+  ctrl_rep_up: string;
 
   // Week stats
   days_streak_one: string;
@@ -165,6 +174,8 @@ export interface Translations {
   settings_weight_prev: string;
   settings_weight_delta: string;
   bodyweight_chart_title: string;
+  charts_label_metric: string;
+  charts_label_range: string;
   charts_metric_top: string;
   charts_metric_1rm: string;
   charts_range_3m: string;

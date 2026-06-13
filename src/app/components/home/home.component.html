@@ -153,7 +153,8 @@
                   >
                   @if (lastWeightByExercise()[ex.id]) {
                     <span class="today-ex-last">
-                      <span class="today-ex-last-prefix">{{ T().today_last_prefix }}</span>{{ lastWeightByExercise()[ex.id] }}
+                      <span class="today-ex-last-prefix">{{ T().today_last_prefix }}</span
+                      >{{ lastWeightByExercise()[ex.id] }}
                     </span>
                   }
                   @if (isRecLoading(ex)) {
@@ -195,10 +196,7 @@
 
       <!-- ROUTINE section: bottom of right col on desktop, bottom of page on mobile -->
       <div class="routine-section">
-        <button
-          class="routine-section-header"
-          (click)="routineExpanded.update((v) => !v)"
-        >
+        <button class="routine-section-header" (click)="routineExpanded.update((v) => !v)">
           <h3 class="section-title">{{ T().routine_section_title }}</h3>
           <app-icon
             name="chevron"
@@ -208,27 +206,27 @@
           />
         </button>
         @if (routineExpanded()) {
-        @for (item of routineDays(); track item.day.id) {
-          <button
-            class="routine-day-card"
-            [class.current]="item.isCurrent"
-            (click)="openDayDetail(item.day)"
-          >
-            <div class="routine-day-left">
-              <span class="routine-day-num">{{ tr.tp('day_n', { n: item.index + 1 }) }}</span>
-              <span class="routine-day-name">{{ item.day.name }}</span>
-            </div>
-            <span class="routine-day-ago" [class.current-label]="item.isCurrent">
-              @if (item.isCurrent && item.trainedToday) {
-                {{ T().today_label }}
-              } @else if (item.isCurrent) {
-                {{ T().next_label }}
-              } @else {
-                {{ item.lastLabel }}
-              }
-            </span>
-          </button>
-        }
+          @for (item of routineDays(); track item.day.id) {
+            <button
+              class="routine-day-card"
+              [class.current]="item.isCurrent"
+              (click)="openDayDetail(item.day)"
+            >
+              <div class="routine-day-left">
+                <span class="routine-day-num">{{ tr.tp('day_n', { n: item.index + 1 }) }}</span>
+                <span class="routine-day-name">{{ item.day.name }}</span>
+              </div>
+              <span class="routine-day-ago" [class.current-label]="item.isCurrent">
+                @if (item.isCurrent && item.trainedToday) {
+                  {{ T().today_label }}
+                } @else if (item.isCurrent) {
+                  {{ T().next_label }}
+                } @else {
+                  {{ item.lastLabel }}
+                }
+              </span>
+            </button>
+          }
         }
       </div>
     </div>
@@ -292,7 +290,7 @@
     <!-- Desktop sidebar: exercise overview + completion status -->
     <aside class="training-sidebar">
       <div class="tsb-header">
-        <span class="section-title" style="margin: 0">Ejercicios</span>
+        <span class="section-title" style="margin: 0">{{ T().tsb_exercises }}</span>
         <span class="tsb-total">{{ dayProgress().done }}/{{ dayProgress().total }}</span>
       </div>
       @if (state.activeDay(); as day) {
@@ -330,7 +328,7 @@
                 "
               ></div>
             </div>
-            <span>{{ dayProgress().done }}/{{ dayProgress().total }} series</span>
+            <span>{{ dayProgress().done }}/{{ dayProgress().total }} {{ T().sets_label }}</span>
           </div>
         </div>
 

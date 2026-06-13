@@ -6,6 +6,18 @@
   flex-wrap: wrap;
   margin-bottom: 14px;
 }
+.charts-seg-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.charts-seg-label {
+  font-size: 11px;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 500;
+}
 .charts-seg {
   display: flex;
   gap: 6px;

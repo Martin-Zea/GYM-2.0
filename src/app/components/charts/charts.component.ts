@@ -83,8 +83,10 @@ export class ChartsComponent {
         const pr = Math.max(...values);
         const volLast = history[history.length - 1].volume;
         const n = history.length;
-        const weightDelta = Math.round((history[n - 1].topWeight - history[n - 2].topWeight) * 10) / 10;
-        const trend: 'up' | 'down' | 'flat' = weightDelta > 0 ? 'up' : weightDelta < 0 ? 'down' : 'flat';
+        const weightDelta =
+          Math.round((history[n - 1].topWeight - history[n - 2].topWeight) * 10) / 10;
+        const trend: 'up' | 'down' | 'flat' =
+          weightDelta > 0 ? 'up' : weightDelta < 0 ? 'down' : 'flat';
         result.push({
           exercise: ex,
           chart: { history, pr, volLast, weightDelta, trend, ...this.buildChart(history, values) },

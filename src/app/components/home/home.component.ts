@@ -119,12 +119,11 @@ export class HomeComponent {
       if (ex.unit === 'tiempo' || ex.unit === 'peso corporal') continue;
       const lastSets = this.storage.lastSetsForExercise(s, ex.id, todayISO);
       if (!lastSets?.length) continue;
-      const topSet = lastSets.reduce((best, curr) =>
-        (curr.weight as number) > (best.weight as number) ? curr : best,
+      const topSet = lastSets.reduce(
+        (best, curr) => ((curr.weight as number) > (best.weight as number) ? curr : best),
         lastSets[0],
       );
-      const suffix =
-        ex.unit === 'kg por mano' ? '/m' : ex.unit === 'kg por brazo' ? '/b' : '';
+      const suffix = ex.unit === 'kg por mano' ? '/m' : ex.unit === 'kg por brazo' ? '/b' : '';
       result[ex.id] = `${topSet.weight}kg${suffix} × ${topSet.reps}`;
     }
     return result;

@@ -80,13 +80,13 @@
               <span>—</span>
             }
             @case ('tiempo') {
-              <span>Seg</span>
+              <span>{{ T().col_seconds }}</span>
             }
             @default {
-              <span>Peso</span>
+              <span>{{ T().col_weight }}</span>
             }
           }
-          <span>Reps</span>
+          <span>{{ T().col_reps }}</span>
           <span></span>
         </div>
 
@@ -153,40 +153,48 @@
             </button>
           </div>
 
-          <!-- Dedicated +/- controls for active set only -->
-          @if (i === activeSetIndex() && isActive() && !set.done) {
+          <!-- +/- controls for every pending set -->
+          @if (!set.done) {
             <div class="active-set-controls" (click)="$event.stopPropagation()">
               @if (exercise().unit !== 'peso corporal') {
                 <div class="active-ctrl-group">
                   <span class="active-ctrl-label">
                     @if (exercise().unit === 'tiempo') {
-                      Seg
+                      {{ T().col_seconds }}
                     } @else {
-                      Peso
+                      {{ T().col_weight }}
                     }
                   </span>
                   <button
                     class="active-ctrl-btn"
                     (click)="stepWeight(i, -weightStep())"
-                    aria-label="Bajar peso"
+                    [attr.aria-label]="T().ctrl_weight_down"
                   >
                     −
                   </button>
                   <button
                     class="active-ctrl-btn"
                     (click)="stepWeight(i, weightStep())"
-                    aria-label="Subir peso"
+                    [attr.aria-label]="T().ctrl_weight_up"
                   >
                     +
                   </button>
                 </div>
               }
               <div class="active-ctrl-group">
-                <span class="active-ctrl-label">Reps</span>
-                <button class="active-ctrl-btn" (click)="stepReps(i, -1)" aria-label="Restar rep">
+                <span class="active-ctrl-label">{{ T().col_reps }}</span>
+                <button
+                  class="active-ctrl-btn"
+                  (click)="stepReps(i, -1)"
+                  [attr.aria-label]="T().ctrl_rep_down"
+                >
                   −
                 </button>
-                <button class="active-ctrl-btn" (click)="stepReps(i, 1)" aria-label="Agregar rep">
+                <button
+                  class="active-ctrl-btn"
+                  (click)="stepReps(i, 1)"
+                  [attr.aria-label]="T().ctrl_rep_up"
+                >
                   +
                 </button>
               </div>

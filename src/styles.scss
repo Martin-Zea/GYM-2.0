@@ -132,8 +132,8 @@
   --border-strong: #2e2f33;
   --text-0: #f7f8f8;
   --text-1: #b4b8bf;
-  --text-2: #82868d;
-  --text-3: #5a5d63;
+  --text-2: #9aa0a8;
+  --text-3: #71757c;
   --accent: #c4f542;
   --accent-dim: #9bc41f;
   --accent-fg: #0a0b0c;
@@ -159,8 +159,8 @@
   --border-strong: #d4d4d8;
   --text-0: #0a0a0a;
   --text-1: #3f3f46;
-  --text-2: #71717a;
-  --text-3: #a1a1aa;
+  --text-2: #52525b;
+  --text-3: #71717a;
   --accent: #65a30d;
   --accent-dim: #4d7c0f;
   --accent-fg: #ffffff;
@@ -261,10 +261,11 @@ input[type='number'] {
   width: 22px;
   height: 22px;
   border-radius: 6px;
-  background: var(--accent);
+  background: var(--bg-3);
+  border: 1px solid var(--border-strong);
   display: grid;
   place-items: center;
-  color: var(--accent-fg);
+  color: var(--text-0);
   font-weight: 800;
   font-size: 12px;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
