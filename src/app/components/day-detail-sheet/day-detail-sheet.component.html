@@ -46,6 +46,10 @@
         <app-icon name="history" [size]="13" />
         Ver todo el historial
       </button>
+      <button class="btn btn-ghost btn-sm" (click)="editDay()">
+        <app-icon name="edit" [size]="13" />
+        {{ T().edit_routine }}
+      </button>
       <button class="btn btn-primary btn-sm" (click)="trainDay()">
         <app-icon name="dumbbell" [size]="13" />
         Entrenar este día

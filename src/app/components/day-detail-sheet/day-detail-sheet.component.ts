@@ -65,6 +65,13 @@ export class DayDetailSheetComponent {
     this.uiState.closeDayDetail();
   }
 
+  protected editDay(): void {
+    const d = this.day();
+    if (!d) return;
+    this.uiState.openEditingDay(d);
+    this.uiState.closeDayDetail();
+  }
+
   protected trainDay(): void {
     const d = this.day();
     if (!d) return;
