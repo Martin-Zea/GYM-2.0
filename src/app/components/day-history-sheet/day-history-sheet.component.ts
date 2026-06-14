@@ -82,7 +82,15 @@ export class DayHistorySheetComponent {
 
       const isIncomplete = !session.skipped && exercises.length < d.exercises.length;
 
-      return { session, dateLabel, daysAgo, exercises, totalVolume, isIncomplete, volumeDelta: null as number | null };
+      return {
+        session,
+        dateLabel,
+        daysAgo,
+        exercises,
+        totalVolume,
+        isIncomplete,
+        volumeDelta: null as number | null,
+      };
     });
 
     // Compute volume delta vs. previous session (array is sorted desc, so next index = older)
@@ -96,8 +104,34 @@ export class DayHistorySheetComponent {
     return views;
   });
 
-  private readonly MONTHS_ES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-  private readonly MONTHS_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  private readonly MONTHS_ES = [
+    'ene',
+    'feb',
+    'mar',
+    'abr',
+    'may',
+    'jun',
+    'jul',
+    'ago',
+    'sep',
+    'oct',
+    'nov',
+    'dic',
+  ];
+  private readonly MONTHS_EN = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
 
   private formatDateLabel(dateISO: string, daysAgo: number, lang: string): string {
     const T = this.tr.T();
@@ -111,7 +145,9 @@ export class DayHistorySheetComponent {
   }
 
   protected formatVolume(vol: number): string {
-    return vol.toLocaleString(this.tr.lang() === 'es' ? 'es-AR' : 'en-US', { maximumFractionDigits: 0 });
+    return vol.toLocaleString(this.tr.lang() === 'es' ? 'es-AR' : 'en-US', {
+      maximumFractionDigits: 0,
+    });
   }
 
   protected close(): void {
