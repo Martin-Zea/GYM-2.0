@@ -83,7 +83,12 @@ export class StorageService {
 
   /** Extrae el catálogo de ejercicios desde días con ejercicios embebidos (pre-v5). */
   private migrateToCatalog(m: Partial<AppState>): Partial<AppState> {
-    type LegacyDay = { id: string; name: string; exercises?: Exercise[]; exerciseIds?: string[] };
+    interface LegacyDay {
+      id: string;
+      name: string;
+      exercises?: Exercise[];
+      exerciseIds?: string[];
+    }
     const legacyDays = (m.days ?? []) as unknown as LegacyDay[];
 
     const catalog: Exercise[] = [];
