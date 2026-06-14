@@ -267,6 +267,7 @@ export const en: Translations = {
   day_editor_existing_title: 'Already tracked — reuses your history',
   exercise_sessions_one: '1 session',
   exercise_sessions_many: '{n} sessions',
+  exercise_archived: 'archived',
 
   profile_data_section: 'Your data',
   profile_no_data: 'Not specified',

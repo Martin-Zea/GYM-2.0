@@ -286,6 +286,7 @@ export interface Translations {
   day_editor_existing_title: string; // encabezado del dropdown de sugerencias
   exercise_sessions_one: string;
   exercise_sessions_many: string; // {n}
+  exercise_archived: string; // tag para ejercicios fuera de toda rutina
 
   // Profile page
   profile_data_section: string;

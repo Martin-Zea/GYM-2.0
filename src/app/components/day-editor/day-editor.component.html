@@ -85,7 +85,12 @@
                   type="button"
                   (pointerdown)="$event.preventDefault(); selectSuggestion(i, s.ex)"
                 >
-                  <span class="ex-suggest-name">{{ s.ex.name }}</span>
+                  <span class="ex-suggest-main">
+                    <span class="ex-suggest-name">{{ s.ex.name }}</span>
+                    @if (s.archived) {
+                      <span class="ex-suggest-tag">{{ T().exercise_archived }}</span>
+                    }
+                  </span>
                   @if (s.sessions > 0) {
                     <span class="ex-suggest-hint">{{ sessionsLabel(s.sessions) }}</span>
                   }

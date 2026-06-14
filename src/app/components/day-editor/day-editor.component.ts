@@ -10,6 +10,7 @@ import { Exercise, ExerciseUnit, WorkoutDay } from '../../models/workout.model';
 interface ExerciseSuggestion {
   ex: Exercise;
   sessions: number;
+  archived: boolean; // está en el catálogo pero ya no en ninguna rutina
 }
 
 @Component({
@@ -49,9 +50,28 @@ interface ExerciseSuggestion {
       .ex-suggest-item:active {
         background: var(--bg-hover);
       }
+      .ex-suggest-main {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
       .ex-suggest-name {
         font-weight: 600;
         font-size: 14px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .ex-suggest-tag {
+        flex: none;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-2);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 1px 7px;
       }
       .ex-suggest-hint {
         font-size: 12px;
@@ -88,11 +108,17 @@ export class DayEditorComponent implements OnInit {
     if (!query) return [];
     const usedIds = new Set(this.exercises().map((e) => e.id));
     const appState = this.state.state();
+    // Ids referenciados por alguna rutina: los que no estén acá están "archivados".
+    const activeIds = new Set(appState.days.flatMap((d) => d.exerciseIds));
     const out: ExerciseSuggestion[] = [];
     for (const ex of this.state.exercises()) {
       if (usedIds.has(ex.id)) continue;
       if (!normalizeExerciseName(ex.name).includes(query)) continue;
-      out.push({ ex, sessions: this.storage.historyForExercise(appState, ex.id).length });
+      out.push({
+        ex,
+        sessions: this.storage.historyForExercise(appState, ex.id).length,
+        archived: !activeIds.has(ex.id),
+      });
     }
     out.sort((a, b) => b.sessions - a.sessions || a.ex.name.localeCompare(b.ex.name));
     return out.slice(0, 5);
