@@ -22,7 +22,7 @@ export class DayPickerSheetComponent {
   protected readonly dayItems = computed(() => {
     const s = this.state.state();
     const todayISO = this.storage.todayISO();
-    return s.days.map((day, i) => {
+    return this.state.days().map((day, i) => {
       const last = this.storage.lastSessionForDay(s, day.id);
       let label = 'Primera vez';
       if (last) {

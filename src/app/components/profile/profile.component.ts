@@ -51,23 +51,22 @@ export class ProfileComponent {
     const s = this.stateService.state();
     const results: PrRecord[] = [];
 
-    for (const day of s.days) {
-      for (const ex of day.exercises) {
-        if (EXCLUDED_UNITS.has(ex.unit)) continue;
-        const history = this.storage.historyForExercise(s, ex.id);
-        if (!history.length) continue;
-        let best = history[0];
-        for (const entry of history) {
-          if (entry.topWeight > best.topWeight) best = entry;
-        }
-        if (best.topWeight <= 0) continue;
-        results.push({
-          exerciseName: ex.name,
-          weight: best.topWeight,
-          unit: ex.unit,
-          dateISO: best.dateISO,
-        });
+    // Recorre el catálogo: incluye PRs de ejercicios archivados (ya no en ninguna rutina).
+    for (const ex of s.exercises) {
+      if (EXCLUDED_UNITS.has(ex.unit)) continue;
+      const history = this.storage.historyForExercise(s, ex.id);
+      if (!history.length) continue;
+      let best = history[0];
+      for (const entry of history) {
+        if (entry.topWeight > best.topWeight) best = entry;
       }
+      if (best.topWeight <= 0) continue;
+      results.push({
+        exerciseName: ex.name,
+        weight: best.topWeight,
+        unit: ex.unit,
+        dateISO: best.dateISO,
+      });
     }
 
     return results.sort((a, b) => b.dateISO.localeCompare(a.dateISO));

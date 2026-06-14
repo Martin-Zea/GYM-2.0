@@ -265,6 +265,9 @@ export const es: Translations = {
   day_editor_unit: 'Unidad',
   day_editor_add_exercise: 'Agregar ejercicio',
   day_editor_delete_day: 'Eliminar',
+  day_editor_existing_title: 'Ya lo hacés — reutiliza tu historial',
+  exercise_sessions_one: '1 sesión',
+  exercise_sessions_many: '{n} sesiones',
 
   profile_data_section: 'Tus datos',
   profile_no_data: 'No especificado',

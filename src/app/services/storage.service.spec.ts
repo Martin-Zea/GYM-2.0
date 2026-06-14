@@ -7,7 +7,8 @@ const STORAGE_KEY = 'gym_app_state_v2';
 
 function baseState(overrides: Partial<AppState> = {}): AppState {
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
+    exercises: [],
     days: [],
     sessions: [],
     activeDayIndex: 0,
@@ -81,7 +82,8 @@ describe('StorageService', () => {
 
     it('acepta un estado válido mínimo y rellena defaults', () => {
       const result = service.validateImport({ days: [] });
-      expect(result.schemaVersion).toBe(4);
+      expect(result.schemaVersion).toBe(5);
+      expect(result.exercises).toEqual([]);
       expect(result.days).toEqual([]);
       expect(result.sessions).toEqual([]);
       expect(result.todayProgress).toEqual({});
@@ -109,34 +111,63 @@ describe('StorageService', () => {
   });
 
   describe('migración de schema (via validateImport)', () => {
-    const days = [{ id: 'd1', name: 'Día 1', exercises: [] }];
+    // Día legacy (pre-v5) con ejercicios embebidos
+    const days = [
+      { id: 'd1', name: 'Día 1', exercises: [{ id: 'e1', name: 'Press Banca', unit: 'kg' }] },
+    ];
+    // Tras migrar a v5: el día referencia por id y aparece el catálogo
+    const migratedDays = [{ id: 'd1', name: 'Día 1', exerciseIds: ['e1'] }];
     const sessions = [makeSession('s1', 'd1', '2026-06-01', [makeSet('e1', 0, 20, 10)])];
 
-    it('migra schemaVersion 1 a 4 sin perder days ni sessions', () => {
+    it('migra schemaVersion 1 a 5 sin perder days ni sessions', () => {
       const result = service.validateImport({
         schemaVersion: 1,
         days,
         sessions,
         activeDayIndex: 2,
       });
-      expect(result.schemaVersion).toBe(4);
-      expect(result.days).toEqual(days);
+      expect(result.schemaVersion).toBe(5);
+      expect(result.days).toEqual(migratedDays);
       expect(result.sessions).toEqual(sessions);
       // v1 no tenía routinePointer: se deriva de activeDayIndex
       expect(result.routinePointer).toBe(2);
     });
 
-    it('migra schemaVersion 2 a 4 sin perder days ni sessions', () => {
+    it('migra schemaVersion 2 a 5 sin perder days ni sessions', () => {
       const result = service.validateImport({
         schemaVersion: 2,
         days,
         sessions,
         activeDayIndex: 1,
       });
-      expect(result.schemaVersion).toBe(4);
-      expect(result.days).toEqual(days);
+      expect(result.schemaVersion).toBe(5);
+      expect(result.days).toEqual(migratedDays);
       expect(result.sessions).toEqual(sessions);
       expect(result.routinePointer).toBe(1);
+    });
+
+    it('v4 → v5: extrae el catálogo y unifica ejercicios duplicados por nombre, remapeando sesiones', () => {
+      const result = service.validateImport({
+        schemaVersion: 4,
+        days: [
+          { id: 'd1', name: 'Push', exercises: [{ id: 'eA', name: 'Press Banca', unit: 'kg' }] },
+          // Mismo ejercicio re-tipeado con otro id (el bug): debe unificarse con eA
+          { id: 'd2', name: 'Torso', exercises: [{ id: 'eB', name: 'press  bancá', unit: 'kg' }] },
+        ],
+        sessions: [
+          makeSession('s1', 'd1', '2026-06-01', [makeSet('eA', 0, 50, 8)]),
+          makeSession('s2', 'd2', '2026-06-03', [makeSet('eB', 0, 55, 8)]),
+        ],
+      });
+      // Catálogo unificado: un solo "Press Banca"
+      expect(result.exercises).toHaveLength(1);
+      expect(result.exercises[0].id).toBe('eA');
+      // Ambos días apuntan al id canónico
+      expect(result.days[0].exerciseIds).toEqual(['eA']);
+      expect(result.days[1].exerciseIds).toEqual(['eA']);
+      // La sesión del id duplicado quedó remapeada al canónico (historial sanado)
+      const remapped = result.sessions.flatMap((s) => s.sets.map((set) => set.exerciseId));
+      expect(remapped).toEqual(['eA', 'eA']);
     });
 
     it('v3 → v4: siembra weightLog con el peso actual y la fecha de hoy', () => {
@@ -153,7 +184,7 @@ describe('StorageService', () => {
           userProfile: { weightKg: 78.5, heightCm: 175, age: 34, sex: 'male' },
         },
       });
-      expect(result.schemaVersion).toBe(4);
+      expect(result.schemaVersion).toBe(5);
       expect(result.settings.userProfile.weightKg).toBe(78.5);
       expect(result.settings.userProfile.weightLog).toEqual([
         { dateISO: '2026-06-10', weightKg: 78.5 },
@@ -173,7 +204,7 @@ describe('StorageService', () => {
           userProfile: { weightKg: null, heightCm: null, age: null, sex: null },
         },
       });
-      expect(result.schemaVersion).toBe(4);
+      expect(result.schemaVersion).toBe(5);
       expect(result.settings.userProfile.weightLog).toEqual([]);
     });
 
@@ -185,7 +216,7 @@ describe('StorageService', () => {
         activeDayIndex: 3,
         settings: { userProfile: { weightKg: 80 } },
       });
-      expect(result.schemaVersion).toBe(4);
+      expect(result.schemaVersion).toBe(5);
       expect(result.routinePointer).toBe(3);
       expect(result.settings.userProfile.weightLog).toEqual([
         { dateISO: '2026-06-10', weightKg: 80 },
@@ -250,7 +281,7 @@ describe('StorageService', () => {
       expect(() => {
         state = service.load();
       }).not.toThrow();
-      expect(state.schemaVersion).toBe(4);
+      expect(state.schemaVersion).toBe(5);
       expect(state.days.length).toBe(5);
     });
 
@@ -260,12 +291,12 @@ describe('StorageService', () => {
       expect(() => {
         state = service.load();
       }).not.toThrow();
-      expect(state.schemaVersion).toBe(4);
+      expect(state.schemaVersion).toBe(5);
       expect(state.days.length).toBe(5);
     });
 
     it('carga correctamente un backup válido', () => {
-      const saved = baseState({ days: [{ id: 'd1', name: 'Pecho', exercises: [] }] });
+      const saved = baseState({ days: [{ id: 'd1', name: 'Pecho', exerciseIds: [] }] });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
       const state = service.load();
       expect(state.days.length).toBe(1);

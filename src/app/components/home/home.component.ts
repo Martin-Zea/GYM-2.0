@@ -135,7 +135,7 @@ export class HomeComponent {
     const s = this.state.state();
     const T = this.T();
     const todayISO = this.storage.todayISO();
-    return s.days.map((day, i) => {
+    return this.state.days().map((day, i) => {
       const last = this.storage.lastSessionForDay(s, day.id);
       let lastLabel = T.first_time_label;
       if (last) {

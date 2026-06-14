@@ -264,6 +264,9 @@ export const en: Translations = {
   day_editor_unit: 'Unit',
   day_editor_add_exercise: 'Add exercise',
   day_editor_delete_day: 'Delete',
+  day_editor_existing_title: 'Already tracked — reuses your history',
+  exercise_sessions_one: '1 session',
+  exercise_sessions_many: '{n} sessions',
 
   profile_data_section: 'Your data',
   profile_no_data: 'Not specified',

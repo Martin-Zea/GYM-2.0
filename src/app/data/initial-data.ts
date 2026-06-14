@@ -4,7 +4,7 @@ import {
   ExerciseUnit,
   Session,
   SetRecord,
-  WorkoutDay,
+  StoredWorkoutDay,
 } from '../models/workout.model';
 
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -99,12 +99,15 @@ export function createInitialState(): AppState {
     ex('Elevación Gemelos', 5, 4, 15, 60),
   ];
 
-  const days: WorkoutDay[] = [
-    { id: uid(), name: 'Pecho y Tríceps', exercises: d1 },
-    { id: uid(), name: 'Espalda y Bíceps', exercises: d2 },
-    { id: uid(), name: 'Hombros y Core', exercises: d3 },
-    { id: uid(), name: 'Espalda (Auxiliar) y Tríceps', exercises: d4 },
-    { id: uid(), name: 'Pierna', exercises: d5 },
+  // Catálogo maestro: todos los ejercicios viven acá; los días solo referencian por id.
+  const exercises: Exercise[] = [...d1, ...d2, ...d3, ...d4, ...d5];
+
+  const days: StoredWorkoutDay[] = [
+    { id: uid(), name: 'Pecho y Tríceps', exerciseIds: d1.map((e) => e.id) },
+    { id: uid(), name: 'Espalda y Bíceps', exerciseIds: d2.map((e) => e.id) },
+    { id: uid(), name: 'Hombros y Core', exerciseIds: d3.map((e) => e.id) },
+    { id: uid(), name: 'Espalda (Auxiliar) y Tríceps', exerciseIds: d4.map((e) => e.id) },
+    { id: uid(), name: 'Pierna', exerciseIds: d5.map((e) => e.id) },
   ];
 
   const sessions: Session[] = [
@@ -191,7 +194,8 @@ export function createInitialState(): AppState {
   ];
 
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
+    exercises,
     days,
     sessions,
     activeDayIndex: 0,

@@ -1,17 +1,66 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
 import { FocusTrapDirective } from '../../directives/focus-trap.directive';
 import { StateService } from '../../services/state.service';
 import { UIStateService } from '../../services/ui-state.service';
-import { StorageService } from '../../services/storage.service';
+import { StorageService, normalizeExerciseName } from '../../services/storage.service';
 import { TranslationService } from '../../services/translation.service';
 import { Exercise, ExerciseUnit, WorkoutDay } from '../../models/workout.model';
+
+interface ExerciseSuggestion {
+  ex: Exercise;
+  sessions: number;
+}
 
 @Component({
   selector: 'app-day-editor',
   standalone: true,
   imports: [IconComponent, FocusTrapDirective],
   templateUrl: './day-editor.component.html',
+  styles: [
+    `
+      .ex-suggest {
+        margin: -2px 0 10px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        background: var(--bg-1);
+        overflow: hidden;
+      }
+      .ex-suggest-label {
+        font-size: 11px;
+        color: var(--text-3);
+        padding: 8px 12px 4px;
+      }
+      .ex-suggest-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        width: 100%;
+        padding: 11px 12px;
+        background: none;
+        border: none;
+        border-top: 1px solid var(--border);
+        color: var(--text-0);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+      .ex-suggest-item:active {
+        background: var(--bg-hover);
+      }
+      .ex-suggest-name {
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .ex-suggest-hint {
+        font-size: 12px;
+        color: var(--color-accent);
+        font-family: 'JetBrains Mono', monospace;
+        white-space: nowrap;
+      }
+    `,
+  ],
 })
 export class DayEditorComponent implements OnInit {
   private readonly state = inject(StateService);
@@ -22,6 +71,32 @@ export class DayEditorComponent implements OnInit {
 
   protected readonly dayName = signal('');
   protected readonly exercises = signal<Exercise[]>([]);
+  /** Índice de la fila cuyo input de nombre está enfocado (o null). */
+  protected readonly activeNameField = signal<number | null>(null);
+
+  /**
+   * Sugerencias del catálogo para la fila activa: ejercicios cuyo nombre normalizado
+   * contiene lo tipeado y que no están ya en este día. Ordenadas por más historial
+   * primero. Elegir una reusa su id → reconecta el historial en vez de duplicar.
+   */
+  protected readonly activeSuggestions = computed<ExerciseSuggestion[]>(() => {
+    const i = this.activeNameField();
+    if (i === null) return [];
+    const row = this.exercises()[i];
+    if (!row) return [];
+    const query = normalizeExerciseName(row.name);
+    if (!query) return [];
+    const usedIds = new Set(this.exercises().map((e) => e.id));
+    const appState = this.state.state();
+    const out: ExerciseSuggestion[] = [];
+    for (const ex of this.state.exercises()) {
+      if (usedIds.has(ex.id)) continue;
+      if (!normalizeExerciseName(ex.name).includes(query)) continue;
+      out.push({ ex, sessions: this.storage.historyForExercise(appState, ex.id).length });
+    }
+    out.sort((a, b) => b.sessions - a.sessions || a.ex.name.localeCompare(b.ex.name));
+    return out.slice(0, 5);
+  });
   protected readonly units: ExerciseUnit[] = [
     'kg',
     'kg por mano',
@@ -91,6 +166,26 @@ export class DayEditorComponent implements OnInit {
 
   protected setExName(i: number, event: Event): void {
     this.patch(i, { name: (event.target as HTMLInputElement).value });
+    this.activeNameField.set(i);
+  }
+
+  protected focusName(i: number): void {
+    this.activeNameField.set(i);
+  }
+
+  /** Oculta el dropdown tras un respiro para que un tap en una sugerencia alcance a registrarse. */
+  protected blurName(): void {
+    setTimeout(() => this.activeNameField.set(null), 120);
+  }
+
+  /** Adopta la definición completa del catálogo (incluido su id → reconecta historial). */
+  protected selectSuggestion(i: number, ex: Exercise): void {
+    this.exercises.update((arr) => arr.map((row, idx) => (idx === i ? { ...ex } : row)));
+    this.activeNameField.set(null);
+  }
+
+  protected sessionsLabel(n: number): string {
+    return n === 1 ? this.T().exercise_sessions_one : this.tr.tp('exercise_sessions_many', { n });
   }
 
   protected setExNum(

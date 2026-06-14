@@ -283,6 +283,9 @@ export interface Translations {
   day_editor_unit: string;
   day_editor_add_exercise: string;
   day_editor_delete_day: string;
+  day_editor_existing_title: string; // encabezado del dropdown de sugerencias
+  exercise_sessions_one: string;
+  exercise_sessions_many: string; // {n}
 
   // Profile page
   profile_data_section: string;

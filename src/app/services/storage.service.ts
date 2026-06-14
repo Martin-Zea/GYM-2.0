@@ -1,10 +1,27 @@
 import { Injectable, inject } from '@angular/core';
-import { AppState, SetRecord, Session, UserProfile, WeightLogEntry } from '../models/workout.model';
+import {
+  AppState,
+  Exercise,
+  SetRecord,
+  Session,
+  StoredWorkoutDay,
+  TodayDayProgress,
+  UserProfile,
+  WeightLogEntry,
+} from '../models/workout.model';
 import { createInitialState } from '../data/initial-data';
 import { UIStateService } from './ui-state.service';
 
 const STORAGE_KEY = 'gym_app_state_v2';
-const CURRENT_SCHEMA = 4;
+const CURRENT_SCHEMA = 5;
+
+/**
+ * Normaliza el nombre de un ejercicio para comparar identidad: sin espacios al
+ * borde, minúsculas, sin acentos, espacios colapsados. "Press Banca" === "press  bancá".
+ */
+export function normalizeExerciseName(name: string): string {
+  return name.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ');
+}
 
 export function isValidAppState(x: unknown): boolean {
   if (typeof x !== 'object' || x === null) return false;
@@ -36,7 +53,7 @@ function defaultUserProfile(): UserProfile {
 export class StorageService {
   private readonly uiState = inject(UIStateService);
 
-  /** Migra estado de schemas anteriores al schema actual (v4), encadenando versiones */
+  /** Migra estado de schemas anteriores al schema actual (v5), encadenando versiones */
   private migrate(p: Partial<AppState>): Partial<AppState> {
     const version = typeof p.schemaVersion === 'number' ? p.schemaVersion : 1;
     let m: Partial<AppState> = p;
@@ -54,7 +71,73 @@ export class StorageService {
           : []);
       m = { ...m, settings: { ...m.settings, userProfile: { ...profile, weightLog } } };
     }
+    // v4 → v5: catálogo de ejercicios. Los ejercicios dejan de vivir embebidos en
+    // cada día y pasan a un catálogo maestro; los días referencian por id. Además
+    // sana duplicados históricos: si el mismo ejercicio (nombre normalizado) existía
+    // en varios días con ids distintos, se unifica y se remapean sesiones/progreso.
+    if (version < 5) {
+      m = this.migrateToCatalog(m);
+    }
     return { ...m, schemaVersion: CURRENT_SCHEMA };
+  }
+
+  /** Extrae el catálogo de ejercicios desde días con ejercicios embebidos (pre-v5). */
+  private migrateToCatalog(m: Partial<AppState>): Partial<AppState> {
+    type LegacyDay = { id: string; name: string; exercises?: Exercise[]; exerciseIds?: string[] };
+    const legacyDays = (m.days ?? []) as unknown as LegacyDay[];
+
+    const catalog: Exercise[] = [];
+    const byNorm = new Map<string, string>(); // nombre normalizado → id canónico
+    const remap = new Map<string, string>(); // id viejo → id canónico
+    const days: StoredWorkoutDay[] = [];
+
+    for (const d of legacyDays) {
+      // Ya migrado (tiene exerciseIds): preservar tal cual.
+      if (d.exerciseIds && !d.exercises) {
+        days.push({ id: d.id, name: d.name, exerciseIds: [...d.exerciseIds] });
+        continue;
+      }
+      const exerciseIds: string[] = [];
+      for (const ex of d.exercises ?? []) {
+        const key = normalizeExerciseName(ex.name);
+        let canonical = byNorm.get(key);
+        if (!canonical) {
+          canonical = ex.id;
+          byNorm.set(key, canonical);
+          catalog.push({ ...ex, id: canonical });
+        }
+        remap.set(ex.id, canonical);
+        if (!exerciseIds.includes(canonical)) exerciseIds.push(canonical);
+      }
+      days.push({ id: d.id, name: d.name, exerciseIds });
+    }
+
+    // Remapear exerciseId en sesiones (sana historiales que el bug pudo haber partido)
+    const sessions: Session[] = (m.sessions ?? []).map((s) => ({
+      ...s,
+      sets: s.sets.map((set) => ({
+        ...set,
+        exerciseId: remap.get(set.exerciseId) ?? set.exerciseId,
+      })),
+    }));
+
+    // Remapear las claves de todayProgress
+    const todayProgress: Record<string, TodayDayProgress> = {};
+    for (const [dayId, prog] of Object.entries(m.todayProgress ?? {})) {
+      const sets: TodayDayProgress['sets'] = {};
+      for (const [exId, arr] of Object.entries(prog.sets)) {
+        sets[remap.get(exId) ?? exId] = arr;
+      }
+      todayProgress[dayId] = { ...prog, sets };
+    }
+
+    return {
+      ...m,
+      exercises: [...(m.exercises ?? []), ...catalog],
+      days: days as unknown as AppState['days'],
+      sessions,
+      todayProgress,
+    };
   }
 
   /** Construye un AppState completo a partir de datos parciales/importados */
@@ -63,6 +146,7 @@ export class StorageService {
     const profile = migrated.settings?.userProfile;
     return {
       schemaVersion: CURRENT_SCHEMA,
+      exercises: migrated.exercises ?? [],
       days: migrated.days ?? [],
       sessions: migrated.sessions ?? [],
       activeDayIndex: migrated.activeDayIndex ?? 0,

@@ -4,11 +4,12 @@ import {
   AppState,
   Exercise,
   SetRecord,
+  StoredWorkoutDay,
   TodayDayProgress,
   TodaySetProgress,
   WorkoutDay,
 } from '../models/workout.model';
-import { StorageService, isValidAppState } from './storage.service';
+import { StorageService, isValidAppState, normalizeExerciseName } from './storage.service';
 import { TranslationService } from './translation.service';
 import { createInitialState } from '../data/initial-data';
 
@@ -19,11 +20,26 @@ export class StateService {
 
   readonly state = signal<AppState>(this.storage.load());
 
-  readonly days = computed(() => this.state().days);
+  /** Catálogo maestro de ejercicios (fuente de verdad de identidad e historial). */
+  readonly exercises = computed(() => this.state().exercises);
+
+  /** Días resueltos: los `exerciseIds` guardados se expanden a objetos `Exercise` del catálogo. */
+  readonly days = computed<WorkoutDay[]>(() => {
+    const s = this.state();
+    const byId = new Map(s.exercises.map((e) => [e.id, e]));
+    return s.days.map((d) => ({
+      id: d.id,
+      name: d.name,
+      exercises: d.exerciseIds
+        .map((id) => byId.get(id))
+        .filter((e): e is Exercise => e !== undefined),
+    }));
+  });
+
   readonly sessions = computed(() => this.state().sessions);
   readonly settings = computed(() => this.state().settings);
   readonly activeDayIndex = computed(() => this.state().activeDayIndex);
-  readonly activeDay = computed(() => this.state().days[this.state().activeDayIndex] ?? null);
+  readonly activeDay = computed(() => this.days()[this.state().activeDayIndex] ?? null);
   readonly routinePointer = computed(() => this.state().routinePointer);
   readonly currentDayIndex = computed(() => {
     const days = this.state().days;
@@ -31,7 +47,7 @@ export class StateService {
     return this.state().routinePointer % days.length;
   });
   readonly currentDay = computed(() => {
-    const days = this.state().days;
+    const days = this.days();
     if (!days.length) return null;
     return days[this.state().routinePointer % days.length] ?? null;
   });
@@ -54,16 +70,65 @@ export class StateService {
     this.state.update((s) => ({ ...s, activeDayIndex: index }));
   }
 
+  /**
+   * Persiste un día (forma resuelta del editor) descomponiéndolo en:
+   * 1. upserts al catálogo de ejercicios, y
+   * 2. un `StoredWorkoutDay` que referencia por id.
+   *
+   * Identidad: un ejercicio que ya existe (mismo id) actualiza su definición en el
+   * catálogo. Un ejercicio "nuevo" cuyo nombre normalizado coincide con uno ya
+   * existente reutiliza ese id canónico — así re-tipear un ejercicio que ya hacías
+   * reconecta su historial en vez de empezar de cero.
+   */
   saveDay(day: WorkoutDay): void {
     this.state.update((s) => {
-      const exists = s.days.find((d) => d.id === day.id);
-      let days: WorkoutDay[];
-      if (exists) {
-        days = s.days.map((d) => (d.id === day.id ? day : d));
-      } else {
-        days = [...s.days, { ...day, id: day.id || this.storage.uid() }];
+      const catalog = s.exercises.map((e) => ({ ...e }));
+      const byId = new Map(catalog.map((e) => [e.id, e]));
+      const byNorm = new Map<string, string>();
+      for (const e of catalog) {
+        const key = normalizeExerciseName(e.name);
+        if (!byNorm.has(key)) byNorm.set(key, e.id);
       }
-      return { ...s, days, activeDayIndex: exists ? s.activeDayIndex : days.length - 1 };
+
+      const exerciseIds: string[] = [];
+      for (const ex of day.exercises) {
+        let canonicalId: string;
+        const existing = byId.get(ex.id);
+        if (existing) {
+          Object.assign(existing, ex); // actualiza definición, conserva id
+          canonicalId = ex.id;
+        } else {
+          const matchId = byNorm.get(normalizeExerciseName(ex.name));
+          if (matchId) {
+            Object.assign(byId.get(matchId)!, ex, { id: matchId }); // reconecta historial
+            canonicalId = matchId;
+          } else {
+            const fresh = { ...ex };
+            catalog.push(fresh);
+            byId.set(fresh.id, fresh);
+            byNorm.set(normalizeExerciseName(fresh.name), fresh.id);
+            canonicalId = fresh.id;
+          }
+        }
+        if (!exerciseIds.includes(canonicalId)) exerciseIds.push(canonicalId);
+      }
+
+      const stored: StoredWorkoutDay = {
+        id: day.id || this.storage.uid(),
+        name: day.name,
+        exerciseIds,
+      };
+      const exists = s.days.some((d) => d.id === stored.id);
+      const days = exists
+        ? s.days.map((d) => (d.id === stored.id ? stored : d))
+        : [...s.days, stored];
+
+      return {
+        ...s,
+        exercises: catalog,
+        days,
+        activeDayIndex: exists ? s.activeDayIndex : days.length - 1,
+      };
     });
   }
 
@@ -218,11 +283,12 @@ export class StateService {
     const hasAnyDone = Object.values(tp.sets).some((arr) => arr.some((s) => s?.done));
     if (!hasAnyDone) return;
 
+    const catalog = this.state().exercises;
     const setsList: SetRecord[] = [];
     Object.entries(tp.sets).forEach(([exId, arr]) => {
       arr.forEach((s, i) => {
         if (s?.done) {
-          const ex = day.exercises.find((e) => e.id === exId);
+          const ex = catalog.find((e) => e.id === exId);
           setsList.push({
             exerciseId: exId,
             setIndex: i,

@@ -11,10 +11,25 @@ export interface Exercise {
   notes: string;
 }
 
+/**
+ * Día tal como se consume en runtime: con sus ejercicios ya resueltos desde el
+ * catálogo. Es la forma que ven los componentes (StateService.days() los resuelve).
+ */
 export interface WorkoutDay {
   id: string;
   name: string;
   exercises: Exercise[];
+}
+
+/**
+ * Día tal como se persiste: referencia ejercicios del catálogo por id en vez de
+ * embeberlos. Así borrar/reorganizar rutinas nunca destruye la identidad ni el
+ * historial de un ejercicio. Ver `AppState.exercises`.
+ */
+export interface StoredWorkoutDay {
+  id: string;
+  name: string;
+  exerciseIds: string[];
 }
 
 export interface SetRecord {
@@ -69,7 +84,9 @@ export interface AppSettings {
 
 export interface AppState {
   schemaVersion: number;
-  days: WorkoutDay[];
+  /** Catálogo maestro de ejercicios: fuente de verdad de identidad e historial. */
+  exercises: Exercise[];
+  days: StoredWorkoutDay[];
   sessions: Session[];
   activeDayIndex: number;
   routinePointer: number;

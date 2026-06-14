@@ -66,32 +66,32 @@ export class ChartsComponent {
     const cutoff = this.rangeCutoff(this.range());
     const result: ChartItem[] = [];
 
-    for (const day of s.days) {
-      for (const ex of day.exercises) {
-        const history = this.storage
-          .historyForExercise(s, ex.id)
-          .filter((h) => h.topWeight > 0 && (!cutoff || h.dateISO >= cutoff));
-        if (history.length < 2) {
-          result.push({ exercise: ex, chart: null });
-          continue;
-        }
-        // 1RM (Epley) no aplica a ejercicios por tiempo ni de peso corporal: siempre peso máximo
-        const exMetric = ex.unit === 'tiempo' || ex.unit === 'peso corporal' ? 'top' : metric;
-        const values = history.map((h) => this.metricValue(h, exMetric));
-        // PR sigue la métrica activa (máximo del valor graficado); el volumen (peso × reps)
-        // es independiente de la métrica, así que volLast/volAvg quedan sobre los datos reales.
-        const pr = Math.max(...values);
-        const volLast = history[history.length - 1].volume;
-        const n = history.length;
-        const weightDelta =
-          Math.round((history[n - 1].topWeight - history[n - 2].topWeight) * 10) / 10;
-        const trend: 'up' | 'down' | 'flat' =
-          weightDelta > 0 ? 'up' : weightDelta < 0 ? 'down' : 'flat';
-        result.push({
-          exercise: ex,
-          chart: { history, pr, volLast, weightDelta, trend, ...this.buildChart(history, values) },
-        });
+    // Recorre el catálogo (no los días): así el historial de un ejercicio sigue
+    // visible aunque ya no esté en ninguna rutina activa — nunca queda huérfano.
+    for (const ex of s.exercises) {
+      const history = this.storage
+        .historyForExercise(s, ex.id)
+        .filter((h) => h.topWeight > 0 && (!cutoff || h.dateISO >= cutoff));
+      if (history.length < 2) {
+        result.push({ exercise: ex, chart: null });
+        continue;
       }
+      // 1RM (Epley) no aplica a ejercicios por tiempo ni de peso corporal: siempre peso máximo
+      const exMetric = ex.unit === 'tiempo' || ex.unit === 'peso corporal' ? 'top' : metric;
+      const values = history.map((h) => this.metricValue(h, exMetric));
+      // PR sigue la métrica activa (máximo del valor graficado); el volumen (peso × reps)
+      // es independiente de la métrica, así que volLast/volAvg quedan sobre los datos reales.
+      const pr = Math.max(...values);
+      const volLast = history[history.length - 1].volume;
+      const n = history.length;
+      const weightDelta =
+        Math.round((history[n - 1].topWeight - history[n - 2].topWeight) * 10) / 10;
+      const trend: 'up' | 'down' | 'flat' =
+        weightDelta > 0 ? 'up' : weightDelta < 0 ? 'down' : 'flat';
+      result.push({
+        exercise: ex,
+        chart: { history, pr, volLast, weightDelta, trend, ...this.buildChart(history, values) },
+      });
     }
 
     return result;

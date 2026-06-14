@@ -39,10 +39,13 @@
             <input
               class="input"
               type="text"
+              autocomplete="off"
               [placeholder]="T().day_editor_exercise_placeholder"
               style="flex: 1"
               [value]="ex.name"
               (input)="setExName(i, $event)"
+              (focus)="focusName(i)"
+              (blur)="blurName()"
             />
             <button
               class="icon-btn"
@@ -72,6 +75,24 @@
               <app-icon name="trash" [size]="14" />
             </button>
           </div>
+
+          @if (activeNameField() === i && activeSuggestions().length) {
+            <div class="ex-suggest">
+              <div class="ex-suggest-label">{{ T().day_editor_existing_title }}</div>
+              @for (s of activeSuggestions(); track s.ex.id) {
+                <button
+                  class="ex-suggest-item"
+                  type="button"
+                  (pointerdown)="$event.preventDefault(); selectSuggestion(i, s.ex)"
+                >
+                  <span class="ex-suggest-name">{{ s.ex.name }}</span>
+                  @if (s.sessions > 0) {
+                    <span class="ex-suggest-hint">{{ sessionsLabel(s.sessions) }}</span>
+                  }
+                </button>
+              }
+            </div>
+          }
 
           <div class="field-row">
             <div class="field">
