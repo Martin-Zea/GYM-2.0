@@ -106,7 +106,11 @@ export interface Translations {
   history_edit: string;
   history_delete: string;
   history_delete_confirm: string;
+  history_delete_confirm_detail: string; // {date} {vol}
   history_skipped: string;
+  history_incomplete: string;
+  history_vol_up: string; // {pct}
+  history_vol_down: string; // {pct}
   save: string;
   confirm: string;
 

@@ -1,5 +1,4 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 import { FocusTrapDirective } from '../../directives/focus-trap.directive';
 import { StateService } from '../../services/state.service';
@@ -20,12 +19,14 @@ interface SessionView {
   daysAgo: number;
   exercises: { id: string; name: string; unit: string; sets: SetView[] }[];
   totalVolume: number;
+  isIncomplete: boolean;
+  volumeDelta: number | null; // % change vs previous session; null if no prior
 }
 
 @Component({
   selector: 'app-day-history-sheet',
   standalone: true,
-  imports: [IconComponent, DecimalPipe, FocusTrapDirective],
+  imports: [IconComponent, FocusTrapDirective],
   templateUrl: './day-history-sheet.component.html',
   styleUrl: './day-history-sheet.component.scss',
 })
@@ -48,6 +49,7 @@ export class DayHistorySheetComponent {
     const d = this.day();
     if (!d) return [];
     const todayISO = this.storage.todayISO();
+    const lang = this.tr.lang();
     const filterISO = this.uiState.dayHistoryFilterISO();
     // Incluye sesiones skipped (solo eliminables desde acá)
     const allSessions = this.state
@@ -55,12 +57,11 @@ export class DayHistorySheetComponent {
       .filter((s) => s.dayId === d.id && (!filterISO || s.dateISO === filterISO))
       .sort((a, b) => b.dateISO.localeCompare(a.dateISO));
 
-    return allSessions.map((session) => {
+    const views = allSessions.map((session) => {
       const daysAgo = Math.floor(
         (new Date(todayISO).getTime() - new Date(session.dateISO).getTime()) / 86_400_000,
       );
-      const dateLabel =
-        daysAgo === 0 ? 'Hoy' : daysAgo === 1 ? 'Ayer' : session.dateISO.slice(5).replace('-', '/');
+      const dateLabel = this.formatDateLabel(session.dateISO, daysAgo, lang);
 
       const exercises = d.exercises
         .map((ex) => ({
@@ -79,9 +80,39 @@ export class DayHistorySheetComponent {
         0,
       );
 
-      return { session, dateLabel, daysAgo, exercises, totalVolume };
+      const isIncomplete = !session.skipped && exercises.length < d.exercises.length;
+
+      return { session, dateLabel, daysAgo, exercises, totalVolume, isIncomplete, volumeDelta: null as number | null };
     });
+
+    // Compute volume delta vs. previous session (array is sorted desc, so next index = older)
+    for (let i = 0; i < views.length - 1; i++) {
+      const prev = views[i + 1].totalVolume;
+      if (prev > 0 && !views[i].session.skipped && !views[i + 1].session.skipped) {
+        views[i].volumeDelta = Math.round(((views[i].totalVolume - prev) / prev) * 100);
+      }
+    }
+
+    return views;
   });
+
+  private readonly MONTHS_ES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  private readonly MONTHS_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  private formatDateLabel(dateISO: string, daysAgo: number, lang: string): string {
+    const T = this.tr.T();
+    if (daysAgo === 0) return T.today_ago;
+    if (daysAgo === 1) return T.yesterday;
+    if (daysAgo <= 6) return this.tr.tp('days_ago_many', { n: daysAgo });
+    const [year, month, day] = dateISO.split('-').map(Number);
+    const monthLabel = lang === 'es' ? this.MONTHS_ES[month - 1] : this.MONTHS_EN[month - 1];
+    const currentYear = new Date().getFullYear();
+    return year === currentYear ? `${day} ${monthLabel}` : `${day} ${monthLabel} ${year}`;
+  }
+
+  protected formatVolume(vol: number): string {
+    return vol.toLocaleString(this.tr.lang() === 'es' ? 'es-AR' : 'en-US', { maximumFractionDigits: 0 });
+  }
 
   protected close(): void {
     this.uiState.closeDayHistory();

@@ -96,7 +96,11 @@ export const es: Translations = {
   history_edit: 'Editar sesión',
   history_delete: 'Eliminar sesión',
   history_delete_confirm: '¿Eliminar esta sesión?',
+  history_delete_confirm_detail: '¿Eliminar sesión del {date} ({vol} kg vol.)?',
   history_skipped: 'Saltado',
+  history_incomplete: 'incompleta',
+  history_vol_up: '+{pct}%',
+  history_vol_down: '-{pct}%',
   save: 'Guardar',
   confirm: 'Confirmar',
 

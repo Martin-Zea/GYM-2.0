@@ -96,7 +96,11 @@ export const en: Translations = {
   history_edit: 'Edit session',
   history_delete: 'Delete session',
   history_delete_confirm: 'Delete this session?',
+  history_delete_confirm_detail: 'Delete session from {date} ({vol} kg vol.)?',
   history_skipped: 'Skipped',
+  history_incomplete: 'incomplete',
+  history_vol_up: '+{pct}%',
+  history_vol_down: '-{pct}%',
   save: 'Save',
   confirm: 'Confirm',
 

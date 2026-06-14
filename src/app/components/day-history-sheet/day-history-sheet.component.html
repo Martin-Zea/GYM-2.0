@@ -21,10 +21,26 @@
         @for (sv of sessions(); track sv.session.id) {
           <div class="history-session">
             <div class="history-session-header">
-              <span class="history-date">{{ sv.dateLabel }}</span>
+              <div class="history-date-row">
+                <span class="history-date">{{ sv.dateLabel }}</span>
+                @if (sv.isIncomplete) {
+                  <span class="history-incomplete-badge">{{ T().history_incomplete }}</span>
+                }
+              </div>
               <div class="history-header-right">
                 @if (sv.totalVolume > 0) {
-                  <span class="history-vol">{{ sv.totalVolume | number: '1.0-0' }} kg vol.</span>
+                  <span class="history-vol">{{ formatVolume(sv.totalVolume) }} kg vol.</span>
+                }
+                @if (sv.volumeDelta !== null) {
+                  <span class="history-vol-delta" [class.delta-up]="sv.volumeDelta > 0" [class.delta-down]="sv.volumeDelta < 0">
+                    @if (sv.volumeDelta > 0) {
+                      {{ tr.tp('history_vol_up', { pct: sv.volumeDelta }) }}
+                    } @else if (sv.volumeDelta < 0) {
+                      {{ tr.tp('history_vol_down', { pct: -sv.volumeDelta }) }}
+                    } @else {
+                      =
+                    }
+                  </span>
                 }
                 @if (!sv.session.skipped && editingId() !== sv.session.id) {
                   <button
@@ -51,7 +67,7 @@
 
             @if (confirmDeleteId() === sv.session.id) {
               <div class="history-confirm">
-                <span class="history-confirm-q">{{ T().history_delete_confirm }}</span>
+                <span class="history-confirm-q">{{ tr.tp('history_delete_confirm_detail', { date: sv.dateLabel, vol: formatVolume(sv.totalVolume) }) }}</span>
                 <div class="history-confirm-actions">
                   <button class="btn btn-sm btn-danger" (click)="confirmDelete()">
                     {{ T().confirm }}
