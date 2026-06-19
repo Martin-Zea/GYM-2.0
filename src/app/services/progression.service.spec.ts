@@ -1,11 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ProgressionService } from './progression.service';
-import {
-  AppSettings,
-  Exercise,
-  SetRecord,
-  TodaySetProgress,
-} from '../models/workout.model';
+import { AppSettings, Exercise, SetRecord, TodaySetProgress } from '../models/workout.model';
 import { StorageService } from './storage.service';
 
 function makeExercise(overrides: Partial<Exercise> = {}): Exercise {
