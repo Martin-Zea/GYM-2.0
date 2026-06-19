@@ -257,7 +257,7 @@ export class StorageService {
   lastSetsForExercise(state: AppState, exerciseId: string, beforeISO?: string): SetRecord[] | null {
     const session = this.lastSessionForExercise(state, exerciseId, beforeISO);
     if (!session) return null;
-    return session.sets.filter((s) => s.exerciseId === exerciseId);
+    return session.sets.filter((s) => s.exerciseId === exerciseId && !s.isWarmup);
   }
 
   lastSessionForDay(state: AppState, dayId: string): Session | null {
@@ -311,11 +311,11 @@ export class StorageService {
   historyForExercise(state: AppState, exerciseId: string): HistoryEntry[] {
     const sessions = state.sessions
       .filter((s) => !s.skipped)
-      .filter((s) => s.sets.some((set) => set.exerciseId === exerciseId))
+      .filter((s) => s.sets.some((set) => set.exerciseId === exerciseId && !set.isWarmup))
       .sort((a, b) => a.dateISO.localeCompare(b.dateISO));
 
     return sessions.map((session) => {
-      const sets = session.sets.filter((s) => s.exerciseId === exerciseId);
+      const sets = session.sets.filter((s) => s.exerciseId === exerciseId && !s.isWarmup);
       const topWeight = Math.max(...sets.map((s) => s.weight || 0));
       const topReps = Math.max(...sets.map((s) => s.reps || 0));
       const totalReps = sets.reduce((sum, s) => sum + (s.reps || 0), 0);

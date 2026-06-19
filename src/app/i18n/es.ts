@@ -87,6 +87,7 @@ export const es: Translations = {
   exercise_yt_title: 'Buscar técnica en YouTube',
   set_mark: 'Marcar serie como completada',
   set_unmark: 'Desmarcar serie',
+  set_warmup_toggle: 'Serie de calentamiento',
 
   rest_timer_next_set: 'Serie {n}',
   rest_timer_next_exercise: 'Siguiente ejercicio',

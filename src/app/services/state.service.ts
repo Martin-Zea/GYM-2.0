@@ -295,6 +295,8 @@ export class StateService {
             weight: typeof s.weight === 'number' ? s.weight : 0,
             reps: typeof s.reps === 'number' ? s.reps : 0,
             target: ex ? `${ex.defaultSets}x${ex.defaultRepTarget}` : '',
+            repTarget: ex?.defaultRepTarget,
+            isWarmup: s.isWarmup ?? false,
           });
         }
       });

@@ -1,6 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { ProgressionService } from './progression.service';
-import { AppSettings, Exercise, SetRecord, TodaySetProgress } from '../models/workout.model';
+import {
+  AppSettings,
+  Exercise,
+  SetRecord,
+  TodaySetProgress,
+  UserProfile,
+} from '../models/workout.model';
 import { StorageService } from './storage.service';
 
 function makeExercise(overrides: Partial<Exercise> = {}): Exercise {
@@ -65,17 +71,15 @@ describe('ProgressionService', () => {
   });
 
   describe('localRecommendation()', () => {
-    it('sin historial usa los defaults del ejercicio (peso 0, repTarget)', () => {
+    it('sin historial sugiere un peso estimado (no cero con perfil) o cero sin perfil', () => {
       const rec = service.localRecommendation(makeExercise(), [], null);
       expect(rec.source).toBe('local');
-      expect(rec.sets).toEqual([
-        { weight: 0, reps: 10 },
-        { weight: 0, reps: 10 },
-        { weight: 0, reps: 10 },
-      ]);
+      // Sin userProfile.weightKg devuelve brick*4 = 10
+      expect(rec.sets.length).toBe(3);
+      expect(rec.sets.every((s) => s.reps === 10)).toBe(true);
     });
 
-    it('objetivo cumplido: sube 1 brick en las últimas 2 series', () => {
+    it('objetivo cumplido (primera vez): sube 1 brick solo en las últimas 2 series', () => {
       const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(20, 10));
       expect(rec.sets).toEqual([
         { weight: 20, reps: 10 },
@@ -104,6 +108,85 @@ describe('ProgressionService', () => {
       // 24 reps de 30 posibles → ratio 0.8
       const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(20, 8));
       expect(rec.sets.every((s) => s.weight === 20 && s.reps === 10)).toBe(true);
+    });
+
+    it('doble progresión: si confirmó 100% dos sesiones seguidas sube todas las series', () => {
+      const history = [
+        {
+          dateISO: '2026-06-05',
+          sets: lastSetsAt(20, 10),
+          topWeight: 20,
+          topReps: 10,
+          totalReps: 30,
+          volume: 600,
+        },
+        {
+          dateISO: '2026-06-12',
+          sets: lastSetsAt(20, 10),
+          topWeight: 20,
+          topReps: 10,
+          totalReps: 30,
+          volume: 600,
+        },
+      ];
+      const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(20, 10), history);
+      expect(rec.sets.every((s) => s.weight === 22.5)).toBe(true);
+    });
+
+    it('deload: 4+ sesiones consecutivas subiendo peso', () => {
+      const history = [
+        {
+          dateISO: '2026-05-01',
+          sets: lastSetsAt(15, 10),
+          topWeight: 15,
+          topReps: 10,
+          totalReps: 30,
+          volume: 450,
+        },
+        {
+          dateISO: '2026-05-08',
+          sets: lastSetsAt(17.5, 10),
+          topWeight: 17.5,
+          topReps: 10,
+          totalReps: 30,
+          volume: 525,
+        },
+        {
+          dateISO: '2026-05-15',
+          sets: lastSetsAt(20, 10),
+          topWeight: 20,
+          topReps: 10,
+          totalReps: 30,
+          volume: 600,
+        },
+        {
+          dateISO: '2026-05-22',
+          sets: lastSetsAt(22.5, 10),
+          topWeight: 22.5,
+          topReps: 10,
+          totalReps: 30,
+          volume: 675,
+        },
+      ];
+      const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(22.5, 10), history);
+      expect(rec.reason).toContain('descarga');
+      expect(rec.sets[0].weight).toBeLessThan(22.5);
+    });
+
+    it('sesión espaciada >14 días: reduce un brick', () => {
+      const lastDate = new Date();
+      lastDate.setDate(lastDate.getDate() - 20);
+      const lastSessionDate = lastDate.toISOString().slice(0, 10);
+      const rec = service.localRecommendation(
+        makeExercise(),
+        [],
+        lastSetsAt(20, 10),
+        [],
+        undefined,
+        lastSessionDate,
+      );
+      expect(rec.sets[0].weight).toBe(17.5);
+      expect(rec.reason).toContain('días');
     });
   });
 
@@ -236,13 +319,13 @@ describe('ProgressionService', () => {
       const todaySets = [makeDoneSet(30, 10), makeDoneSet(30, 10), makeDoneSet(30, 10)];
       // lastSets: sesión previa a 20kg (no debe usarse como base)
       const rec = service.localRecommendation(makeExercise(), todaySets, lastSetsAt(20, 10));
-      // La base es 30kg → sube brick a 32.5
+      // La base es 30kg → sube brick (sin doble progresión confirmada, últimas 2 series)
       expect(rec.sets[rec.sets.length - 1].weight).toBe(32.5);
     });
 
     it('si todaySets está vacío, cae en lastSets normalmente', () => {
       const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(20, 10));
-      // Completó al 100% → sube a 22.5
+      // Completó al 100% → sube las últimas 2 series a 22.5
       expect(rec.sets[rec.sets.length - 1].weight).toBe(22.5);
     });
   });

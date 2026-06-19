@@ -95,6 +95,7 @@ export interface Translations {
   exercise_yt_title: string;
   set_mark: string;
   set_unmark: string;
+  set_warmup_toggle: string;
 
   // Rest timer next-set labels
   rest_timer_next_set: string; // {n}

@@ -87,6 +87,7 @@ export const en: Translations = {
   exercise_yt_title: 'Search technique on YouTube',
   set_mark: 'Mark set as done',
   set_unmark: 'Unmark set',
+  set_warmup_toggle: 'Warmup set',
 
   rest_timer_next_set: 'Set {n}',
   rest_timer_next_exercise: 'Next exercise',

@@ -319,6 +319,7 @@ export class HomeComponent {
     const todaySets = tp.sets[exercise.id] ?? [];
     const lastSets = this.storage.lastSetsForExercise(s, exercise.id);
     const history = this.storage.historyForExercise(s, exercise.id);
+    const lastSession = this.storage.lastSessionForExercise(s, exercise.id);
 
     const rec = await this.progression.recommend(
       this.state.settings(),
@@ -327,6 +328,7 @@ export class HomeComponent {
       lastSets,
       history,
       this.tr.lang(),
+      lastSession?.dateISO ?? null,
     );
     this.aiCache.update((c) => ({ ...c, [exercise.id]: rec }));
   }

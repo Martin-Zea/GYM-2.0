@@ -1,10 +1,11 @@
 import { AiRecommendation } from '../../models/workout.model';
 import { AiProvider, AiProviderContext } from './ai-provider';
 import {
+  buildHistoryDetail,
   buildPerfilParts,
+  buildPrinciplesPrompt,
   buildProfileNote,
   fetchWithTimeout,
-  HISTORY_SESSIONS,
   parseAndNormalizeSets,
 } from './prompt-helpers';
 
@@ -20,13 +21,14 @@ export class GroqProvider implements AiProvider {
     lastSets,
     history,
     userProfile,
+    lastSessionDate,
     lang,
   }: AiProviderContext): Promise<AiRecommendation> {
     const brick = exercise.brick || 2.5;
     const repTarget = exercise.defaultRepTarget || 10;
     const setsTarget = exercise.defaultSets || 3;
 
-    const doneSets = todaySets.filter((s) => s?.done);
+    const doneSets = todaySets.filter((s) => s?.done && !s.isWarmup);
     const perfilParts = buildPerfilParts(userProfile);
     const profileNote = buildProfileNote(perfilParts, userProfile);
 
@@ -35,6 +37,11 @@ export class GroqProvider implements AiProvider {
       unidad: exercise.unit,
       objetivo: `${setsTarget} series x ${repTarget} reps`,
       ladrillo_kg: brick,
+      dias_desde_ultima_sesion: lastSessionDate
+        ? Math.round(
+            (new Date().getTime() - new Date(lastSessionDate).getTime()) / (1000 * 60 * 60 * 24),
+          )
+        : null,
       ...(perfilParts.length && { perfil_usuario: perfilParts.join(', ') }),
       sesion_hoy: doneSets.map((s, i) => ({
         serie: i + 1,
@@ -46,12 +53,7 @@ export class GroqProvider implements AiProvider {
         peso_kg: s.weight,
         reps: s.reps,
       })),
-      historial_ultimas_sesiones: history.slice(-HISTORY_SESSIONS).map((h) => ({
-        fecha: h.dateISO,
-        peso_top_kg: h.topWeight,
-        reps_top: h.topReps,
-        volumen_total: h.volume,
-      })),
+      historial_sesiones: buildHistoryDetail(history),
     };
 
     const langInstruction =
@@ -59,20 +61,15 @@ export class GroqProvider implements AiProvider {
         ? 'The "reason" field must be in English. Maximum 1 sentence, technical and motivating.'
         : 'La razón: máximo 1 oración, español, técnica y motivadora.';
 
-    const prompt = `Sos un entrenador profesional de hipertrofia muscular. Analizá los datos y devolvé la recomendación serie por serie para la próxima sesión.
+    const prompt = `Sos un entrenador profesional de hipertrofia muscular. Analizá los datos reales del atleta y decidí la mejor recomendación para la próxima sesión.
 
 Datos:
 ${JSON.stringify(summary, null, 2)}
 
-Reglas (aplicar en orden):
-1. Si completó 100% del objetivo (${setsTarget}×${repTarget}): las primeras ${setsTarget - 2} series mantienen el peso base, las últimas 2 series suben 1 ladrillo (${brick}kg).
-2. Si completó 80-99%: mismo peso y reps en todas las series (está cerca).
-3. Si completó 50-79%: mismo peso, mismo rep target (consolidar técnica).
-4. Si completó menos del 50%: bajá 1 ladrillo en todas las series, aumentá reps (~30% más).
-5. Patrón de fallo 2-3 sesiones seguidas: sugerí deload u otro enfoque.
-
-El peso debe ser múltiplo de ${brick}kg. ${langInstruction}
-${profileNote}Respondé EXCLUSIVAMENTE con JSON válido (sin markdown):
+${buildPrinciplesPrompt(brick)}
+${profileNote}
+${langInstruction}
+Respondé EXCLUSIVAMENTE con JSON válido (sin markdown):
 {"sets": [{"weight": <number>, "reps": <number>}, ...], "reason": "<string>"}
 El array "sets" debe tener EXACTAMENTE ${setsTarget} elementos.`;
 

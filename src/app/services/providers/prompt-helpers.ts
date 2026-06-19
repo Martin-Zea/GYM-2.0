@@ -1,4 +1,5 @@
 import { UserProfile } from '../../models/workout.model';
+import { HistoryEntry } from '../storage.service';
 
 export const AI_TIMEOUT_MS = 12000;
 export const HISTORY_SESSIONS = 5;
@@ -54,6 +55,42 @@ export function buildProfileNote(perfilParts: string[], userProfile: UserProfile
 
   const tips = [ageTip, sexTip, bwNote].filter(Boolean).join(' ');
   return `- Perfil: ${perfilParts.join(', ')}. ${tips}\n`;
+}
+
+/**
+ * Principios de progresión compartidos por todos los providers de IA.
+ * compact=false → Groq (modelo grande, prompt detallado)
+ * compact=true  → Cohere (modelo pequeño, prompt compacto)
+ */
+export function buildPrinciplesPrompt(brick: number, compact = false): string {
+  const principles = [
+    `Doble progresión: subí peso solo cuando el atleta confirmó el objetivo de reps en al menos 2 sesiones consecutivas con el mismo peso, no al primer éxito.`,
+    `Degradación entre series: si las reps cayeron más del 40% entre la primera y la última serie, priorizá consolidar la técnica antes de subir.`,
+    `Descanso largo: si dias_desde_ultima_sesion > 14, reducí el peso propuesto como precaución.`,
+    `Pirámide: si los pesos de las series son distintos, respetá la estructura y ajustá proporcionalmente.`,
+    `Meseta: si el peso top se repitió 5+ sesiones sin llegar al objetivo, sugerí cambiar el rango de reps o el tempo en el reason.`,
+    `Deload: si el historial muestra 4+ sesiones consecutivas de aumento de peso, sugerí una sesión más suave (~70% del máximo).`,
+    `Unidad tiempo: el progreso es en segundos, no en carga. Devolvé weight: 0 y reps como segundos.`,
+    `Unidad peso corporal: el progreso es en reps. Devolvé weight: 0 y aumentá reps cuando se completa el objetivo.`,
+    `El peso debe ser múltiplo exacto de ${brick}kg.`,
+  ];
+
+  if (compact) {
+    return `Principios: ${principles.join(' | ')}\n`;
+  }
+
+  return `Principios para tu análisis (no son reglas rígidas, usá tu criterio):\n${principles.map((p) => `- ${p}`).join('\n')}\n`;
+}
+
+export function buildHistoryDetail(
+  history: HistoryEntry[],
+  maxSessions = HISTORY_SESSIONS,
+): object[] {
+  return history.slice(-maxSessions).map((h) => ({
+    fecha: h.dateISO,
+    series: h.sets.map((s, i) => ({ s: i + 1, kg: s.weight, r: s.reps })),
+    vol: h.volume,
+  }));
 }
 
 export function parseAndNormalizeSets(

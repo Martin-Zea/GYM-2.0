@@ -171,6 +171,12 @@ export class ExerciseCardComponent {
     }
   }
 
+  protected toggleWarmup(i: number): void {
+    const cur = this.setsArray()[i];
+    if (!cur || cur.done) return;
+    this.state.updateSet(this.day().id, this.exercise().id, i, { isWarmup: !cur.isWarmup });
+  }
+
   protected updateWeight(i: number, event: Event): void {
     const val = (event.target as HTMLInputElement).value;
     let weight: number | string;

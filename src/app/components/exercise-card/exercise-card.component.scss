@@ -117,7 +117,7 @@
 }
 .set-row {
   display: grid;
-  grid-template-columns: 28px 1fr 1fr 44px;
+  grid-template-columns: 22px 28px 1fr 1fr 44px;
   gap: 6px;
   align-items: center;
   padding: 4px;
@@ -157,6 +157,38 @@
 .set-row.active-set .set-num {
   color: var(--accent);
   font-weight: 700;
+}
+.set-row.warmup {
+  opacity: 0.65;
+}
+.set-warmup-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-3);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.12s;
+  &:hover {
+    border-color: var(--text-2);
+    color: var(--text-2);
+  }
+  &.active {
+    background: var(--text-3);
+    border-color: var(--text-3);
+    color: var(--bg-0);
+  }
+  &:disabled {
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 
 /* Punto 1: − input + en una sola fila */

@@ -14,6 +14,7 @@ export interface AiProviderContext {
   history: HistoryEntry[];
   userProfile: UserProfile;
   lang: 'es' | 'en';
+  lastSessionDate: string | null;
 }
 
 export interface AiProvider {

@@ -5,6 +5,7 @@ import {
   Exercise,
   SetRecord,
   TodaySetProgress,
+  UserProfile,
 } from '../models/workout.model';
 import { HistoryEntry, StorageService } from './storage.service';
 import { AiProvider, AiProviderContext } from './providers/ai-provider';
@@ -81,9 +82,26 @@ export class ProgressionService {
     exercise: Exercise,
     todaySets: TodaySetProgress[],
     lastSets: SetRecord[] | null,
+    history: HistoryEntry[] = [],
+    userProfile: UserProfile = {
+      weightKg: null,
+      heightCm: null,
+      age: null,
+      sex: null,
+      weightLog: [],
+    },
+    lastSessionDate: string | null = null,
     lang: 'es' | 'en' = 'es',
   ): AiRecommendation {
-    return this.local.compute(exercise, todaySets, lastSets, lang);
+    return this.local.compute(
+      exercise,
+      todaySets,
+      lastSets,
+      history,
+      userProfile,
+      lastSessionDate,
+      lang,
+    );
   }
 
   async recommend(
@@ -93,12 +111,21 @@ export class ProgressionService {
     lastSets: SetRecord[] | null,
     history: HistoryEntry[],
     lang: 'es' | 'en' = 'es',
+    lastSessionDate: string | null = null,
   ): Promise<AiRecommendation> {
     const hasDoneOrHistory = lastSets?.length || todaySets.some((s) => s?.done);
     const providers = this.buildProviders(settings);
 
     if (!providers.length || !hasDoneOrHistory) {
-      return this.localRecommendation(exercise, todaySets, lastSets, lang);
+      return this.localRecommendation(
+        exercise,
+        todaySets,
+        lastSets,
+        history,
+        settings.userProfile,
+        lastSessionDate,
+        lang,
+      );
     }
 
     const lastSessionISO = history.at(-1)?.dateISO ?? null;
@@ -106,7 +133,15 @@ export class ProgressionService {
     if (cached) return cached;
 
     if (!navigator.onLine) {
-      const local = this.localRecommendation(exercise, todaySets, lastSets, lang);
+      const local = this.localRecommendation(
+        exercise,
+        todaySets,
+        lastSets,
+        history,
+        settings.userProfile,
+        lastSessionDate,
+        lang,
+      );
       local.reason += lang === 'en' ? ' (offline mode)' : ' (modo offline)';
       return local;
     }
@@ -118,6 +153,7 @@ export class ProgressionService {
       history,
       userProfile: settings.userProfile,
       lang,
+      lastSessionDate,
     };
 
     for (const provider of providers) {
@@ -130,7 +166,15 @@ export class ProgressionService {
       }
     }
 
-    const local = this.localRecommendation(exercise, todaySets, lastSets, lang);
+    const local = this.localRecommendation(
+      exercise,
+      todaySets,
+      lastSets,
+      history,
+      settings.userProfile,
+      lastSessionDate,
+      lang,
+    );
     local.reason +=
       lang === 'en' ? ' (API unavailable, offline mode)' : ' (API no disponible, modo offline)';
     return local;

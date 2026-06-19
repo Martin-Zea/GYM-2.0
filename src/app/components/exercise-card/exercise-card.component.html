@@ -78,6 +78,7 @@
 
       <div class="sets">
         <div class="sets-header">
+          <span></span>
           <span>#</span>
           @switch (exercise().unit) {
             @case ('peso corporal') {
@@ -98,9 +99,21 @@
           <div
             class="set-row"
             [class.done]="set.done"
+            [class.warmup]="set.isWarmup && !set.done"
             [class.active-set]="i === activeSetIndex() && isActive() && !set.done"
             [class.future-set]="i > activeSetIndex() && isActive() && !set.done"
           >
+            <button
+              class="set-warmup-btn"
+              [class.active]="set.isWarmup"
+              [attr.aria-label]="T().set_warmup_toggle"
+              [attr.aria-pressed]="!!set.isWarmup"
+              [attr.title]="T().set_warmup_toggle"
+              (click)="$event.stopPropagation(); toggleWarmup(i)"
+              [attr.disabled]="set.done ? true : null"
+            >
+              W
+            </button>
             <span class="set-num">{{ i + 1 }}</span>
 
             <!-- Weight column: [ − ] input [ + ] -->

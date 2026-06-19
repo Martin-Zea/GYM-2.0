@@ -38,6 +38,8 @@ export interface SetRecord {
   weight: number;
   reps: number;
   target?: string;
+  repTarget?: number;
+  isWarmup?: boolean;
 }
 
 export interface Session {
@@ -52,6 +54,7 @@ export interface TodaySetProgress {
   weight: number | string;
   reps: number | string;
   done: boolean;
+  isWarmup?: boolean;
 }
 
 export interface TodayDayProgress {

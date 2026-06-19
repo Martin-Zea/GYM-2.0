@@ -1,10 +1,11 @@
 import { AiRecommendation } from '../../models/workout.model';
 import { AiProvider, AiProviderContext } from './ai-provider';
 import {
+  buildHistoryDetail,
   buildPerfilParts,
+  buildPrinciplesPrompt,
   buildProfileNote,
   fetchWithTimeout,
-  HISTORY_SESSIONS,
   parseAndNormalizeSets,
 } from './prompt-helpers';
 
@@ -19,13 +20,14 @@ export class CohereProvider implements AiProvider {
     lastSets,
     history,
     userProfile,
+    lastSessionDate,
     lang,
   }: AiProviderContext): Promise<AiRecommendation> {
     const brick = exercise.brick || 2.5;
     const repTarget = exercise.defaultRepTarget || 10;
     const setsTarget = exercise.defaultSets || 3;
 
-    const doneSets = todaySets.filter((s) => s?.done);
+    const doneSets = todaySets.filter((s) => s?.done && !s.isWarmup);
     const perfilParts = buildPerfilParts(userProfile);
     const profileNote = buildProfileNote(perfilParts, userProfile);
 
@@ -34,6 +36,11 @@ export class CohereProvider implements AiProvider {
       unidad: exercise.unit,
       objetivo: `${setsTarget}x${repTarget}`,
       ladrillo_kg: brick,
+      dias_desde_ultima: lastSessionDate
+        ? Math.round(
+            (new Date().getTime() - new Date(lastSessionDate).getTime()) / (1000 * 60 * 60 * 24),
+          )
+        : null,
       ...(perfilParts.length && { perfil: perfilParts.join(', ') }),
       hoy: doneSets.map((s, i) => ({
         s: i + 1,
@@ -41,19 +48,17 @@ export class CohereProvider implements AiProvider {
         r: typeof s.reps === 'number' ? s.reps : 0,
       })),
       anterior: (lastSets ?? []).map((s, i) => ({ s: i + 1, kg: s.weight, r: s.reps })),
-      historial: history
-        .slice(-HISTORY_SESSIONS)
-        .map((h) => ({ f: h.dateISO, kg: h.topWeight, r: h.topReps, v: h.volume })),
+      historial: buildHistoryDetail(history),
     };
 
     const langInstruction =
       lang === 'en' ? 'Reason: 1 sentence in English.' : 'Razón: 1 oración español.';
 
-    const prompt = `Entrenador de hipertrofia. Datos: ${JSON.stringify(summary)}
-Reglas: 100%→últimas 2 series +${brick}kg; 80-99%→mismo peso; 50-79%→consolidar; <50%→-${brick}kg +30%reps; fallo 2-3 sesiones→deload.
-Peso múltiplo de ${brick}kg. ${langInstruction}
-${profileNote}JSON EXCLUSIVO (sin markdown): {"sets":[{"weight":<n>,"reps":<n>}...],"reason":"<s>"}
-Array sets: EXACTAMENTE ${setsTarget} elementos.`;
+    const prompt = `Entrenador de hipertrofia. Analizá los datos y decidí la recomendación para la próxima sesión.
+Datos: ${JSON.stringify(summary)}
+${buildPrinciplesPrompt(brick, true)}${profileNote}${langInstruction}
+JSON EXCLUSIVO (sin markdown): {"sets":[{"weight":<n>,"reps":<n>}...],"reason":"<s>"}
+Sets: EXACTAMENTE ${setsTarget} elementos.`;
 
     const resp = await fetchWithTimeout(COHERE_URL, {
       method: 'POST',
