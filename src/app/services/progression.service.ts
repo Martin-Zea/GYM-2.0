@@ -12,6 +12,7 @@ import { AiProvider, AiProviderContext } from './providers/ai-provider';
 import { CohereProvider } from './providers/cohere.provider';
 import { GroqProvider } from './providers/groq.provider';
 import { LocalProvider } from './providers/local.provider';
+import { roundToBrick } from './providers/prompt-helpers';
 
 const AI_CACHE_KEY = 'gym_ai_cache_v1';
 
@@ -69,6 +70,47 @@ export class ProgressionService {
       doneSig: this.doneSig(todaySets),
     };
     localStorage.setItem(AI_CACHE_KEY, JSON.stringify(cache));
+  }
+
+  private applyLongRestAdjustment(
+    rec: AiRecommendation,
+    exercise: Exercise,
+    lastSets: SetRecord[] | null,
+    lastSessionDate: string | null,
+    lang: 'es' | 'en',
+  ): AiRecommendation {
+    if (
+      !lastSessionDate ||
+      !lastSets?.length ||
+      exercise.unit === 'tiempo' ||
+      exercise.unit === 'peso corporal'
+    ) {
+      return rec;
+    }
+    const days = Math.round(
+      (Date.now() - new Date(lastSessionDate).getTime()) / (1000 * 60 * 60 * 24),
+    );
+    let factor = 1;
+    if (days > 28) factor = 0.85;
+    else if (days > 14) factor = 0.9;
+    if (factor === 1) return rec;
+
+    const brick = exercise.brick || 2.5;
+    const topWeight = Math.max(...lastSets.map((s) => s.weight));
+    const maxWeight = roundToBrick(topWeight * factor, brick);
+
+    if (rec.sets.every((s) => s.weight <= maxWeight)) return rec;
+
+    const note =
+      lang === 'en'
+        ? ` (weight capped for ${days}-day break)`
+        : ` (peso limitado por ${days} días sin entrenar)`;
+
+    return {
+      ...rec,
+      sets: rec.sets.map((s) => ({ ...s, weight: Math.min(s.weight, maxWeight) })),
+      reason: rec.reason + note,
+    };
   }
 
   private buildProviders(settings: AppSettings): AiProvider[] {
@@ -159,8 +201,15 @@ export class ProgressionService {
     for (const provider of providers) {
       try {
         const rec = await provider.recommend(ctx);
-        this.setCached(exercise.id, lastSessionISO, todaySets, rec);
-        return rec;
+        const adjusted = this.applyLongRestAdjustment(
+          rec,
+          exercise,
+          lastSets,
+          lastSessionDate,
+          lang,
+        );
+        this.setCached(exercise.id, lastSessionISO, todaySets, adjusted);
+        return adjusted;
       } catch (e) {
         console.info(`${provider.constructor.name} falló:`, (e as Error).message);
       }

@@ -92,6 +92,11 @@ function buildReasons(lang: 'es' | 'en') {
         ? `Caída brusca entre series con ${topWeight}kg. Consolidá la técnica antes de subir.`
         : `Sharp drop between sets at ${topWeight}kg. Consolidate technique before going up.`,
 
+    superCompletion: (topWeight: number, newWeight: number) =>
+      es
+        ? `Superaste ampliamente el objetivo con ${topWeight}kg. El peso fue muy liviano — saltamos 2 ladrillos a ${newWeight}kg.`
+        : `Far exceeded the target at ${topWeight}kg. Weight was too light — jumping 2 increments to ${newWeight}kg.`,
+
     tooHeavy: (prevWeight: number) =>
       es
         ? `El peso fue excesivo. Bajamos a ${prevWeight}kg con más reps para mantener el estímulo.`
@@ -197,6 +202,10 @@ function detectPrematureIncrease(currentSets: SetRecord[], lastSets: SetRecord[]
   const currentTotal = currentSets.reduce((sum, s) => sum + (s.reps || 0), 0);
   const lastTotal = lastSets.reduce((sum, s) => sum + (s.reps || 0), 0);
   return currentTotal < lastTotal;
+}
+
+function detectSuperCompletion(sets: SetRecord[], repTarget: number): boolean {
+  return sets.some((s) => (s.reps || 0) >= repTarget * 1.5);
 }
 
 function consecutiveConfirmed(
@@ -344,6 +353,16 @@ export class LocalProvider implements AiProvider {
       return {
         sets: Array.from({ length: setsTarget }, () => ({ weight: topWeight, reps: repTarget })),
         reason: r.degradation(topWeight),
+        source: 'local',
+      };
+    }
+
+    // --- Super-completado: reps >> objetivo en al menos 1 serie ---
+    if (ratio >= 1 && detectSuperCompletion(baseSets, repTarget)) {
+      const newWeight = roundToBrick(topWeight + brick * 2, brick);
+      return {
+        sets: Array.from({ length: setsTarget }, () => ({ weight: newWeight, reps: repTarget })),
+        reason: r.superCompletion(topWeight, newWeight),
         source: 'local',
       };
     }
@@ -499,14 +518,15 @@ export class LocalProvider implements AiProvider {
     // Reproduce the same weight structure; optionally increase top weight if top sets hit 100%
     const weightMap = baseSets.map((s) => s.weight || 0);
     if (topRatio >= 1) {
-      const newTop = roundToBrick(topWeight + brick, brick);
+      const brickJump = detectSuperCompletion(topSets, repTarget) ? 2 : 1;
+      const newTop = roundToBrick(topWeight + brick * brickJump, brick);
       const delta = newTop - topWeight;
       return {
         sets: Array.from({ length: setsTarget }, (_, i) => ({
           weight: roundToBrick((weightMap[i] ?? topWeight) + delta, brick),
           reps: baseSets[i]?.reps ?? repTarget,
         })),
-        reason: r.pyramid(newTop),
+        reason: brickJump > 1 ? r.superCompletion(topWeight, newTop) : r.pyramid(newTop),
         source: 'local',
       };
     }

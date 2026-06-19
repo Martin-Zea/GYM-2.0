@@ -167,6 +167,18 @@ describe('ProgressionService', () => {
       expect(rec.sets[0].weight).toBeLessThan(22.5);
     });
 
+    it('super-completado: salta 2 ladrillos cuando reps >= 150% del objetivo', () => {
+      const lastSets: SetRecord[] = [
+        { exerciseId: 'ex1', setIndex: 0, weight: 25, reps: 10 },
+        { exerciseId: 'ex1', setIndex: 1, weight: 25, reps: 10 },
+        { exerciseId: 'ex1', setIndex: 2, weight: 25, reps: 18 }, // 180% del target (10)
+      ];
+      const rec = service.localRecommendation(makeExercise(), [], lastSets);
+      expect(rec.sets[0].weight).toBe(30); // +2 ladrillos (25 + 2×2.5)
+      expect(rec.sets.every((s) => s.weight === 30)).toBe(true);
+      expect(rec.reason).toMatch(/liviano|light/i);
+    });
+
     it('sesión espaciada >14 días: reduce un brick', () => {
       const lastDate = new Date();
       lastDate.setDate(lastDate.getDate() - 20);

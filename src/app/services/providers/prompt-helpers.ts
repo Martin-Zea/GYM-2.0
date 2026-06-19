@@ -65,8 +65,9 @@ export function buildProfileNote(perfilParts: string[], userProfile: UserProfile
 export function buildPrinciplesPrompt(brick: number, compact = false): string {
   const principles = [
     `Doble progresión: subí peso solo cuando el atleta confirmó el objetivo de reps en al menos 2 sesiones consecutivas con el mismo peso, no al primer éxito.`,
+    `Super-completado: si alguna serie tuvo reps ≥ 150% del objetivo (ej: 9+ reps con target 6), el peso fue demasiado liviano — aumentá 2 ladrillos en vez de 1.`,
     `Degradación entre series: si las reps cayeron más del 40% entre la primera y la última serie, priorizá consolidar la técnica antes de subir.`,
-    `Descanso largo: si dias_desde_ultima_sesion > 14, reducí el peso propuesto como precaución.`,
+    `Descanso largo (el sistema lo enforcea en código): si dias > 28 el peso se limitará al 85% del anterior; si dias > 14 al 90%. Mencionalo en el reason cuando aplique.`,
     `Pirámide: si los pesos de las series son distintos, respetá la estructura y ajustá proporcionalmente.`,
     `Meseta: si el peso top se repitió 5+ sesiones sin llegar al objetivo, sugerí cambiar el rango de reps o el tempo en el reason.`,
     `Deload: si el historial muestra 4+ sesiones consecutivas de aumento de peso, sugerí una sesión más suave (~70% del máximo).`,
