@@ -5,7 +5,6 @@ import {
   Exercise,
   SetRecord,
   TodaySetProgress,
-  UserProfile,
 } from '../models/workout.model';
 import { StorageService } from './storage.service';
 

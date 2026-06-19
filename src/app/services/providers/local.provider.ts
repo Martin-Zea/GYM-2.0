@@ -168,7 +168,7 @@ function completionRatio(sets: SetRecord[], repTarget: number, setsTarget: numbe
   return totalReps / maxPossible;
 }
 
-function detectDeload(history: HistoryEntry[], currentWeight: number): boolean {
+function detectDeload(history: HistoryEntry[]): boolean {
   if (history.length < DELOAD_SESSIONS) return false;
   const last = history.slice(-DELOAD_SESSIONS);
   return last.every((h, i) => i === 0 || h.topWeight > last[i - 1].topWeight);
@@ -309,7 +309,7 @@ export class LocalProvider implements AiProvider {
     }
 
     // --- Deload por acumulación ---
-    if (detectDeload(history, topWeight)) {
+    if (detectDeload(history)) {
       const deloadWeight = roundToBrick(topWeight * 0.7, brick);
       return {
         sets: Array.from({ length: setsTarget }, () => ({ weight: deloadWeight, reps: repTarget })),
