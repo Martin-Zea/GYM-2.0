@@ -252,6 +252,7 @@ export class HomeComponent {
       }
     }
     this.activeExerciseId.set(null);
+    this.uiState.restTimer.set(null);
   }
 
   private initActiveExercise(dayId: string): void {
