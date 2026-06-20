@@ -1,0 +1,76 @@
+.ex-suggest {
+  margin: -2px 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-1);
+  overflow: hidden;
+}
+
+.ex-suggest-label {
+  font-size: 11px;
+  color: var(--text-3);
+  padding: 8px 12px 4px;
+}
+
+.ex-suggest-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 12px;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  color: var(--text-0);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:active {
+    background: var(--bg-hover);
+  }
+}
+
+.ex-suggest-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ex-suggest-name {
+  font-weight: 600;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ex-suggest-tag {
+  flex: none;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.ex-suggest-hint {
+  font-size: 12px;
+  color: var(--color-accent);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+.ex-expand-btn {
+  app-icon {
+    transition: transform 0.18s ease;
+  }
+
+  &--open app-icon {
+    transform: rotate(180deg);
+  }
+}

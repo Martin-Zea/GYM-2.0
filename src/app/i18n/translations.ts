@@ -145,6 +145,8 @@ export interface Translations {
   exercise_move_up: string;
   exercise_move_down: string;
   exercise_remove: string;
+  exercise_expand: string;
+  exercise_collapse: string;
   rest_adjust_minus: string;
   rest_adjust_plus: string;
   rest_label: string;

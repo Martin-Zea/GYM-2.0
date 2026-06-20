@@ -128,6 +128,8 @@ export const es: Translations = {
   exercise_move_up: 'Subir ejercicio',
   exercise_move_down: 'Bajar ejercicio',
   exercise_remove: 'Eliminar ejercicio',
+  exercise_expand: 'Expandir ejercicio',
+  exercise_collapse: 'Contraer ejercicio',
   rest_adjust_minus: 'Restar 15 segundos',
   rest_adjust_plus: 'Agregar 15 segundos',
   rest_label: 'Descanso',

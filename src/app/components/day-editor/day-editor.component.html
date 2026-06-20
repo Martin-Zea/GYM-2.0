@@ -35,7 +35,8 @@
             margin-bottom: 10px;
           "
         >
-          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px">
+          <!-- Cabecera: siempre visible -->
+          <div style="display: flex; align-items: center; gap: 6px">
             <input
               class="input"
               type="text"
@@ -74,88 +75,102 @@
             >
               <app-icon name="trash" [size]="14" />
             </button>
+            <button
+              class="icon-btn ex-expand-btn"
+              [class.ex-expand-btn--open]="isExpanded(i)"
+              (click)="toggleExpand(i)"
+              [attr.aria-label]="isExpanded(i) ? T().exercise_collapse : T().exercise_expand"
+              [attr.aria-expanded]="isExpanded(i)"
+            >
+              <app-icon name="chevron" [size]="14" />
+            </button>
           </div>
 
-          @if (activeNameField() === i && activeSuggestions().length) {
-            <div class="ex-suggest">
-              <div class="ex-suggest-label">{{ T().day_editor_existing_title }}</div>
-              @for (s of activeSuggestions(); track s.ex.id) {
-                <button
-                  class="ex-suggest-item"
-                  type="button"
-                  (pointerdown)="$event.preventDefault(); selectSuggestion(i, s.ex)"
-                >
-                  <span class="ex-suggest-main">
-                    <span class="ex-suggest-name">{{ s.ex.name }}</span>
-                    @if (s.archived) {
-                      <span class="ex-suggest-tag">{{ T().exercise_archived }}</span>
-                    }
-                  </span>
-                  @if (s.sessions > 0) {
-                    <span class="ex-suggest-hint">{{ sessionsLabel(s.sessions) }}</span>
+          <!-- Cuerpo: visible solo cuando está expandido -->
+          @if (isExpanded(i)) {
+            <div style="margin-top: 10px">
+              @if (activeNameField() === i && activeSuggestions().length) {
+                <div class="ex-suggest">
+                  <div class="ex-suggest-label">{{ T().day_editor_existing_title }}</div>
+                  @for (s of activeSuggestions(); track s.ex.id) {
+                    <button
+                      class="ex-suggest-item"
+                      type="button"
+                      (pointerdown)="$event.preventDefault(); selectSuggestion(i, s.ex)"
+                    >
+                      <span class="ex-suggest-main">
+                        <span class="ex-suggest-name">{{ s.ex.name }}</span>
+                        @if (s.archived) {
+                          <span class="ex-suggest-tag">{{ T().exercise_archived }}</span>
+                        }
+                      </span>
+                      @if (s.sessions > 0) {
+                        <span class="ex-suggest-hint">{{ sessionsLabel(s.sessions) }}</span>
+                      }
+                    </button>
                   }
-                </button>
+                </div>
               }
+
+              <div class="field-row">
+                <div class="field">
+                  <label class="field-label">{{ T().day_editor_sets }}</label>
+                  <input
+                    class="input"
+                    type="number"
+                    min="1"
+                    max="10"
+                    [value]="ex.defaultSets"
+                    (input)="setExNum(i, 'defaultSets', $event)"
+                  />
+                </div>
+                <div class="field">
+                  <label class="field-label">{{ T().day_editor_rep_target }}</label>
+                  <input
+                    class="input"
+                    type="number"
+                    min="1"
+                    max="50"
+                    [value]="ex.defaultRepTarget"
+                    (input)="setExNum(i, 'defaultRepTarget', $event)"
+                  />
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label class="field-label">{{ T().day_editor_brick }}</label>
+                  <input
+                    class="input"
+                    type="text"
+                    inputmode="decimal"
+                    [value]="ex.brick"
+                    (change)="setExBrick(i, $event)"
+                  />
+                </div>
+                <div class="field">
+                  <label class="field-label">{{ T().day_editor_rest }}</label>
+                  <input
+                    class="input"
+                    type="number"
+                    min="15"
+                    step="15"
+                    [value]="ex.restSeconds"
+                    (input)="setExNum(i, 'restSeconds', $event)"
+                  />
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="field-label">{{ T().day_editor_unit }}</label>
+                <select class="select" [value]="ex.unit" (change)="setExUnit(i, $event)">
+                  @for (unit of units; track unit) {
+                    <option [value]="unit">{{ tr.unitLabel(unit) }}</option>
+                  }
+                </select>
+              </div>
             </div>
           }
-
-          <div class="field-row">
-            <div class="field">
-              <label class="field-label">{{ T().day_editor_sets }}</label>
-              <input
-                class="input"
-                type="number"
-                min="1"
-                max="10"
-                [value]="ex.defaultSets"
-                (input)="setExNum(i, 'defaultSets', $event)"
-              />
-            </div>
-            <div class="field">
-              <label class="field-label">{{ T().day_editor_rep_target }}</label>
-              <input
-                class="input"
-                type="number"
-                min="1"
-                max="50"
-                [value]="ex.defaultRepTarget"
-                (input)="setExNum(i, 'defaultRepTarget', $event)"
-              />
-            </div>
-          </div>
-
-          <div class="field-row">
-            <div class="field">
-              <label class="field-label">{{ T().day_editor_brick }}</label>
-              <input
-                class="input"
-                type="text"
-                inputmode="decimal"
-                [value]="ex.brick"
-                (change)="setExBrick(i, $event)"
-              />
-            </div>
-            <div class="field">
-              <label class="field-label">{{ T().day_editor_rest }}</label>
-              <input
-                class="input"
-                type="number"
-                min="15"
-                step="15"
-                [value]="ex.restSeconds"
-                (input)="setExNum(i, 'restSeconds', $event)"
-              />
-            </div>
-          </div>
-
-          <div class="field">
-            <label class="field-label">{{ T().day_editor_unit }}</label>
-            <select class="select" [value]="ex.unit" (change)="setExUnit(i, $event)">
-              @for (unit of units; track unit) {
-                <option [value]="unit">{{ tr.unitLabel(unit) }}</option>
-              }
-            </select>
-          </div>
         </div>
       }
 

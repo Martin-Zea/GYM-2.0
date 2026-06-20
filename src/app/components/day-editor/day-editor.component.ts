@@ -18,69 +18,7 @@ interface ExerciseSuggestion {
   standalone: true,
   imports: [IconComponent, FocusTrapDirective],
   templateUrl: './day-editor.component.html',
-  styles: [
-    `
-      .ex-suggest {
-        margin: -2px 0 10px;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
-        background: var(--bg-1);
-        overflow: hidden;
-      }
-      .ex-suggest-label {
-        font-size: 11px;
-        color: var(--text-3);
-        padding: 8px 12px 4px;
-      }
-      .ex-suggest-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        width: 100%;
-        padding: 11px 12px;
-        background: none;
-        border: none;
-        border-top: 1px solid var(--border);
-        color: var(--text-0);
-        font: inherit;
-        text-align: left;
-        cursor: pointer;
-      }
-      .ex-suggest-item:active {
-        background: var(--bg-hover);
-      }
-      .ex-suggest-main {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-width: 0;
-      }
-      .ex-suggest-name {
-        font-weight: 600;
-        font-size: 14px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      .ex-suggest-tag {
-        flex: none;
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--text-2);
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        padding: 1px 7px;
-      }
-      .ex-suggest-hint {
-        font-size: 12px;
-        color: var(--color-accent);
-        font-family: 'JetBrains Mono', monospace;
-        white-space: nowrap;
-      }
-    `,
-  ],
+  styleUrl: './day-editor.component.scss',
 })
 export class DayEditorComponent implements OnInit {
   private readonly state = inject(StateService);
@@ -93,6 +31,8 @@ export class DayEditorComponent implements OnInit {
   protected readonly exercises = signal<Exercise[]>([]);
   /** Índice de la fila cuyo input de nombre está enfocado (o null). */
   protected readonly activeNameField = signal<number | null>(null);
+  /** Set de índices de ejercicios expandidos en el acordeón. */
+  protected readonly expandedIndices = signal<Set<number>>(new Set<number>());
 
   /**
    * Sugerencias del catálogo para la fila activa: ejercicios cuyo nombre normalizado
@@ -140,10 +80,12 @@ export class DayEditorComponent implements OnInit {
     if (editing === 'new') {
       this.dayName.set('');
       this.exercises.set([this.makeExercise()]);
+      this.expandedIndices.set(new Set([0]));
     } else if (editing) {
       const day = editing as WorkoutDay;
       this.dayName.set(day.name);
       this.exercises.set(JSON.parse(JSON.stringify(day.exercises)));
+      this.expandedIndices.set(new Set());
     }
   }
 
@@ -162,10 +104,23 @@ export class DayEditorComponent implements OnInit {
 
   protected addExercise(): void {
     this.exercises.update((arr) => [...arr, this.makeExercise()]);
+    this.expandedIndices.update((s) => {
+      const next = new Set(s);
+      next.add(this.exercises().length - 1);
+      return next;
+    });
   }
 
   protected removeExercise(i: number): void {
     this.exercises.update((arr) => arr.filter((_, idx) => idx !== i));
+    this.expandedIndices.update((s) => {
+      const next = new Set<number>();
+      for (const idx of s) {
+        if (idx < i) next.add(idx);
+        else if (idx > i) next.add(idx - 1);
+      }
+      return next;
+    });
   }
 
   protected moveUp(i: number): void {
@@ -175,14 +130,42 @@ export class DayEditorComponent implements OnInit {
       [copy[i - 1], copy[i]] = [copy[i], copy[i - 1]];
       return copy;
     });
+    this.swapExpanded(i, i - 1);
   }
 
   protected moveDown(i: number): void {
+    if (i >= this.exercises().length - 1) return;
     this.exercises.update((arr) => {
-      if (i >= arr.length - 1) return arr;
       const copy = [...arr];
       [copy[i], copy[i + 1]] = [copy[i + 1], copy[i]];
       return copy;
+    });
+    this.swapExpanded(i, i + 1);
+  }
+
+  protected toggleExpand(i: number): void {
+    this.expandedIndices.update((s) => {
+      const next = new Set(s);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  }
+
+  protected isExpanded(i: number): boolean {
+    return this.expandedIndices().has(i);
+  }
+
+  private swapExpanded(a: number, b: number): void {
+    this.expandedIndices.update((s) => {
+      const next = new Set(s);
+      const aExp = s.has(a);
+      const bExp = s.has(b);
+      if (aExp) next.add(b);
+      else next.delete(b);
+      if (bExp) next.add(a);
+      else next.delete(a);
+      return next;
     });
   }
 
