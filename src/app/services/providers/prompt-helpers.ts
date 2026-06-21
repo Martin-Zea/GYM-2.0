@@ -132,12 +132,12 @@ export function buildHistoryDetail(
 
 export interface ParseNormalizeSetsOptions {
   unit?: ExerciseUnit;
-  lastSets?: Array<{ reps: number | string }> | null;
+  lastSets?: { reps: number | string }[] | null;
 }
 
 export function bodyweightRepFloor(
   unit: ExerciseUnit | undefined,
-  lastSets: Array<{ reps: number | string }> | null | undefined,
+  lastSets: { reps: number | string }[] | null | undefined,
 ): number {
   if (unit !== 'peso corporal' && unit !== 'tiempo') return 1;
   if (!lastSets?.length) return 1;
