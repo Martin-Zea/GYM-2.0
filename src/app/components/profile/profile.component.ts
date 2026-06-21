@@ -9,6 +9,7 @@ import { ShareService } from '../../services/share.service';
 interface PrRecord {
   exerciseName: string;
   weight: number;
+  reps: number;
   unit: string;
   dateISO: string;
 }
@@ -64,12 +65,13 @@ export class ProfileComponent {
       results.push({
         exerciseName: ex.name,
         weight: best.topWeight,
+        reps: best.topReps,
         unit: ex.unit,
         dateISO: best.dateISO,
       });
     }
 
-    return results.sort((a, b) => b.dateISO.localeCompare(a.dateISO));
+    return results.sort((a, b) => b.weight - a.weight);
   });
 
   protected formatDate(iso: string): string {

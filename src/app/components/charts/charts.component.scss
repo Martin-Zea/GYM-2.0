@@ -21,6 +21,16 @@
 .charts-seg {
   display: flex;
   gap: 6px;
+
+  .btn {
+    min-height: 44px;
+    padding: 0 14px;
+  }
+}
+
+.ex-jump-select {
+  width: 100%;
+  margin-bottom: 6px;
 }
 .chart-empty-msg {
   font-size: 12px;

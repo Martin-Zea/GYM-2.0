@@ -44,6 +44,15 @@
     </div>
   </div>
 
+  @if (chartItemsWithData().length > 1) {
+    <select class="select ex-jump-select" (change)="onJumpSelect($event)">
+      <option value="">{{ T().charts_jump_label }}</option>
+      @for (item of chartItemsWithData(); track item.exercise.id) {
+        <option [value]="item.exercise.id">{{ item.exercise.name }}</option>
+      }
+    </select>
+  }
+
   @if (bodyweightChart(); as bw) {
     <div class="chart-card" id="chart-bodyweight">
       <div class="chart-head">

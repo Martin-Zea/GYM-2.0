@@ -265,6 +265,7 @@ export interface Translations {
   // Charts page
   charts_view_title: string;
   charts_view_sub: string;
+  charts_jump_label: string;
   charts_vol_last: string;
   charts_vs_prev: string;
 

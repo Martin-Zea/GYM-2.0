@@ -245,7 +245,8 @@ export const en: Translations = {
   onboarding_start: 'Get started',
 
   charts_view_title: 'Progression',
-  charts_view_sub: 'Top weight and volume per session',
+  charts_view_sub: 'Top weight per session',
+  charts_jump_label: 'Jump to exercise…',
   charts_vol_last: 'Last vol.',
   charts_vs_prev: 'vs prev session',
 

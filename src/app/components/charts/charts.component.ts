@@ -97,6 +97,19 @@ export class ChartsComponent {
     return result;
   });
 
+  protected readonly chartItemsWithData = computed(() =>
+    this.chartItems().filter((item) => item.chart !== null),
+  );
+
+  protected onJumpSelect(event: Event): void {
+    const sel = event.target as HTMLSelectElement;
+    const id = sel.value;
+    if (!id) return;
+    const el = document.getElementById('chart-' + id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    sel.value = '';
+  }
+
   protected readonly bodyweightChart = computed<BodyweightChart | null>(() => {
     const cutoff = this.rangeCutoff(this.range());
     const log = [...this.state.settings().userProfile.weightLog]

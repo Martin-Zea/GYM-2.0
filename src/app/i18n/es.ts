@@ -246,7 +246,8 @@ export const es: Translations = {
   onboarding_start: 'Empezar',
 
   charts_view_title: 'Progresión',
-  charts_view_sub: 'Peso máximo y volumen por sesión',
+  charts_view_sub: 'Peso máximo por sesión',
+  charts_jump_label: 'Ir a ejercicio…',
   charts_vol_last: 'Vol. última',
   charts_vs_prev: 'vs sesión anterior',
 
