@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import {
   AppState,
   Exercise,
@@ -10,10 +10,13 @@ import {
   WeightLogEntry,
 } from '../models/workout.model';
 import { createInitialState } from '../data/initial-data';
-import { UIStateService } from './ui-state.service';
+import { STORAGE_KEYS } from './storage-keys';
 
-const STORAGE_KEY = 'gym_app_state_v2';
+const STORAGE_KEY = STORAGE_KEYS.appState;
 const CURRENT_SCHEMA = 6;
+
+/** Resultado de `save()`: la capa de persistencia reporta el fallo, la UI decide qué mostrar. */
+export type SaveResult = { ok: true } | { ok: false; reason: 'quota' | 'unknown' };
 
 /**
  * Normaliza el nombre de un ejercicio para comparar identidad: sin espacios al
@@ -59,8 +62,6 @@ function defaultUserProfile(): UserProfile {
 
 @Injectable({ providedIn: 'root' })
 export class StorageService {
-  private readonly uiState = inject(UIStateService);
-
   /** Migra estado de schemas anteriores al schema actual (v6), encadenando versiones */
   private migrate(p: Partial<AppState>): Partial<AppState> {
     const version = typeof p.schemaVersion === 'number' ? p.schemaVersion : 1;
@@ -79,6 +80,13 @@ export class StorageService {
           : []);
       m = { ...m, settings: { ...m.settings, userProfile: { ...profile, weightLog } } };
     }
+    // v4 → v5: catálogo de ejercicios. Los ejercicios dejan de vivir embebidos en
+    // cada día y pasan a un catálogo maestro; los días referencian por id. Además
+    // sana duplicados históricos: si el mismo ejercicio (nombre normalizado) existía
+    // en varios días con ids distintos, se unifica y se remapean sesiones/progreso.
+    if (version < 5) {
+      m = this.migrateToCatalog(m);
+    }
     // v5 → v6: objetivo de entrenamiento y notas para la IA en el perfil de usuario
     if (version < 6 && m.settings?.userProfile) {
       const profile = m.settings.userProfile;
@@ -93,13 +101,6 @@ export class StorageService {
           },
         },
       };
-    }
-    // v4 → v5: catálogo de ejercicios. Los ejercicios dejan de vivir embebidos en
-    // cada día y pasan a un catálogo maestro; los días referencian por id. Además
-    // sana duplicados históricos: si el mismo ejercicio (nombre normalizado) existía
-    // en varios días con ids distintos, se unifica y se remapean sesiones/progreso.
-    if (version < 5) {
-      m = this.migrateToCatalog(m);
     }
     return { ...m, schemaVersion: CURRENT_SCHEMA };
   }
@@ -218,18 +219,15 @@ export class StorageService {
     }
   }
 
-  save(state: AppState): void {
+  save(state: AppState): SaveResult {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      // Limpiar error previo si el guardado volvió a funcionar
-      if (this.uiState.saveError()) this.uiState.saveError.set(null);
+      return { ok: true };
     } catch (e) {
-      const msg =
-        e instanceof DOMException && e.name === 'QuotaExceededError'
-          ? 'No se pudo guardar: almacenamiento lleno. Exportá tus datos y limpiá el historial.'
-          : 'No se pudo guardar el estado de la app.';
       console.warn('StorageService.save falló:', e);
-      this.uiState.saveError.set(msg);
+      const reason =
+        e instanceof DOMException && e.name === 'QuotaExceededError' ? 'quota' : 'unknown';
+      return { ok: false, reason };
     }
   }
 
@@ -341,8 +339,8 @@ export class StorageService {
 
     return sessions.map((session) => {
       const sets = session.sets.filter((s) => s.exerciseId === exerciseId && !s.isWarmup);
-      const topWeight = Math.max(...sets.map((s) => s.weight || 0));
-      const topReps = Math.max(...sets.map((s) => s.reps || 0));
+      const topWeight = sets.length ? Math.max(...sets.map((s) => s.weight || 0)) : 0;
+      const topReps = sets.length ? Math.max(...sets.map((s) => s.reps || 0)) : 0;
       const totalReps = sets.reduce((sum, s) => sum + (s.reps || 0), 0);
       const volume = sets.reduce((sum, s) => sum + (s.weight || 0) * (s.reps || 0), 0);
       return { dateISO: session.dateISO, sets, topWeight, topReps, totalReps, volume };

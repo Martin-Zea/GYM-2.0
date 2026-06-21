@@ -1,4 +1,11 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { IconComponent } from '../icon/icon.component';
@@ -49,6 +56,7 @@ interface BodyweightChart {
   imports: [IconComponent],
   templateUrl: './charts.component.html',
   styleUrl: './charts.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChartsComponent {
   protected readonly state = inject(StateService);

@@ -1,6 +1,12 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { TRANSLATIONS, Translations } from '../i18n/translations';
 import { ExerciseUnit } from '../models/workout.model';
+import { STORAGE_KEYS } from './storage-keys';
+
+function readStoredLang(): 'es' | 'en' {
+  const stored = localStorage.getItem(STORAGE_KEYS.lang);
+  return stored === 'en' || stored === 'es' ? stored : 'es';
+}
 
 /** Presentation-only map: stored ExerciseUnit values stay in Spanish (schema compat) */
 const UNIT_KEYS: Record<ExerciseUnit, keyof Translations> = {
@@ -13,16 +19,14 @@ const UNIT_KEYS: Record<ExerciseUnit, keyof Translations> = {
 
 @Injectable({ providedIn: 'root' })
 export class TranslationService {
-  readonly lang = signal<'es' | 'en'>(
-    (localStorage.getItem('gym_lang') as 'es' | 'en' | null) ?? 'es',
-  );
+  readonly lang = signal<'es' | 'en'>(readStoredLang());
 
   /** Reactive translation map — use T() in templates and computed signals */
   readonly T = computed((): Translations => TRANSLATIONS[this.lang()]);
 
   setLang(lang: 'es' | 'en'): void {
     this.lang.set(lang);
-    localStorage.setItem('gym_lang', lang);
+    localStorage.setItem(STORAGE_KEYS.lang, lang);
   }
 
   /** Localized display label for an ExerciseUnit — never persist the result */
@@ -34,7 +38,7 @@ export class TranslationService {
   tp(key: keyof Translations, params: Record<string, string | number>): string {
     let str = this.T()[key] as string;
     for (const [k, v] of Object.entries(params)) {
-      str = str.replace(`{${k}}`, String(v));
+      str = str.split(`{${k}}`).join(String(v));
     }
     return str;
   }

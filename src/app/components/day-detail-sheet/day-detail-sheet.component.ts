@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
 import { FocusTrapDirective } from '../../directives/focus-trap.directive';
 import { StateService } from '../../services/state.service';
@@ -6,6 +6,8 @@ import { StorageService } from '../../services/storage.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
 import { Session } from '../../models/workout.model';
+import { daysBetweenISO } from '../../utils/date';
+import { formatSetLine } from '../../utils/rec-label';
 
 @Component({
   selector: 'app-day-detail-sheet',
@@ -13,6 +15,7 @@ import { Session } from '../../models/workout.model';
   imports: [IconComponent, FocusTrapDirective],
   templateUrl: './day-detail-sheet.component.html',
   styleUrl: './day-detail-sheet.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DayDetailSheetComponent {
   protected readonly state = inject(StateService);
@@ -44,10 +47,7 @@ export class DayDetailSheetComponent {
   protected readonly sessionDateLabel = computed(() => {
     const session = this.lastSession();
     if (!session) return null;
-    const todayISO = this.storage.todayISO();
-    const days = Math.floor(
-      (new Date(todayISO).getTime() - new Date(session.dateISO).getTime()) / 86_400_000,
-    );
+    const days = daysBetweenISO(session.dateISO, this.storage.todayISO());
     if (days === 0) return this.T().today_ago;
     if (days === 1) return this.T().days_ago_one;
     return this.tr.tp('days_ago_many', { n: days });
@@ -83,9 +83,6 @@ export class DayDetailSheetComponent {
   }
 
   protected setLabel(weight: number, reps: number, unit: string): string {
-    if (unit === 'peso corporal') return `${reps} reps`;
-    if (unit === 'tiempo') return `${reps} seg`;
-    if (unit === 'kg por mano') return `${weight}kg/m × ${reps}`;
-    return `${weight}kg × ${reps}`;
+    return formatSetLine(weight, reps, unit);
   }
 }

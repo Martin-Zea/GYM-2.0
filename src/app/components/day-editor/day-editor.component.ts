@@ -1,4 +1,11 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import {
   CdkDragDrop,
   CdkDrag,
@@ -34,6 +41,7 @@ interface ExerciseSuggestion {
   ],
   templateUrl: './day-editor.component.html',
   styleUrl: './day-editor.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DayEditorComponent implements OnInit {
   private readonly state = inject(StateService);

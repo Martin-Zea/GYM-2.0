@@ -1,4 +1,12 @@
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { UIStateService } from '../../services/ui-state.service';
 import { StateService } from '../../services/state.service';
 import { TranslationService } from '../../services/translation.service';
@@ -10,6 +18,7 @@ import { SoundService } from '../../services/sound.service';
   imports: [],
   templateUrl: './rest-timer.component.html',
   styleUrl: './rest-timer.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RestTimerComponent implements OnInit, OnDestroy {
   protected readonly uiState = inject(UIStateService);

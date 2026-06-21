@@ -1,4 +1,4 @@
-import { Component, inject, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
 import { TranslationService } from '../../services/translation.service';
 import { IconComponent } from '../icon/icon.component';
 
@@ -10,6 +10,7 @@ const SLIDE_COUNT = 3;
   imports: [IconComponent],
   templateUrl: './onboarding.component.html',
   styleUrl: './onboarding.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OnboardingComponent {
   protected readonly T = inject(TranslationService).T;

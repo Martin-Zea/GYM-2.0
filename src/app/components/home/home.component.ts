@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { IconComponent } from '../icon/icon.component';
 import { ExerciseCardComponent } from '../exercise-card/exercise-card.component';
@@ -9,6 +17,8 @@ import { StorageService } from '../../services/storage.service';
 import { ProgressionService } from '../../services/progression.service';
 import { TranslationService } from '../../services/translation.service';
 import { AiRecommendation, Exercise, WorkoutDay } from '../../models/workout.model';
+import { daysBetweenISO } from '../../utils/date';
+import { formatRecLabel } from '../../utils/rec-label';
 
 @Component({
   selector: 'app-home',
@@ -16,6 +26,7 @@ import { AiRecommendation, Exercise, WorkoutDay } from '../../models/workout.mod
   imports: [IconComponent, ExerciseCardComponent, HowItWorksComponent, RouterLink],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent {
   protected readonly state = inject(StateService);
@@ -99,9 +110,7 @@ export class HomeComponent {
     if (!last) return null;
     const todayISO = this.storage.todayISO();
     if (last.dateISO === todayISO) return T.last_session_today;
-    const days = Math.floor(
-      (new Date(todayISO).getTime() - new Date(last.dateISO).getTime()) / 86_400_000,
-    );
+    const days = daysBetweenISO(last.dateISO, todayISO);
     return days === 1 ? T.last_session_days_one : this.tr.tp('last_session_days_many', { n: days });
   });
 
@@ -139,9 +148,7 @@ export class HomeComponent {
       const last = this.storage.lastSessionForDay(s, day.id);
       let lastLabel = T.first_time_label;
       if (last) {
-        const daysAgo = Math.floor(
-          (new Date(todayISO).getTime() - new Date(last.dateISO).getTime()) / 86_400_000,
-        );
+        const daysAgo = daysBetweenISO(last.dateISO, todayISO);
         lastLabel =
           daysAgo === 0
             ? T.today_ago
@@ -203,17 +210,7 @@ export class HomeComponent {
   protected recLabel(exercise: Exercise): string {
     const rec = this.aiCache()[exercise.id];
     if (!rec || rec.loading) return '';
-    if (!rec.sets?.length) return '';
-    const first = rec.sets[0];
-    const last = rec.sets[rec.sets.length - 1];
-    if (exercise.unit === 'peso corporal') return `${first.reps} reps`;
-    if (exercise.unit === 'tiempo') return `${first.reps} seg`;
-    const suffix =
-      exercise.unit === 'kg por mano' ? 'kg/m' : exercise.unit === 'kg por brazo' ? 'kg/b' : 'kg';
-    if (last.weight > first.weight) {
-      return `${first.weight}${suffix} → ${last.weight}${suffix}`;
-    }
-    return `${first.weight}${suffix} × ${first.reps} reps`;
+    return formatRecLabel(exercise.unit, rec.sets);
   }
 
   protected startTraining(): void {
@@ -318,8 +315,6 @@ export class HomeComponent {
     const day = this.state.activeDay();
     if (!day) return;
 
-    console.log(`[requestAi] iniciando para "${exercise.name}" (${exercise.id})`);
-
     this.aiCache.update((c) => ({
       ...c,
       [exercise.id]: { sets: [], reason: '', source: 'local', loading: true },
@@ -332,13 +327,6 @@ export class HomeComponent {
     const history = this.storage.historyForExercise(s, exercise.id);
     const lastSession = this.storage.lastSessionForExercise(s, exercise.id);
 
-    console.log(`[requestAi] contexto enviado a IA`, {
-      todaySets,
-      lastSets,
-      lastSessionDate: lastSession?.dateISO ?? null,
-      historyLength: history.length,
-    });
-
     const rec = await this.progression.recommend(
       this.state.settings(),
       exercise,
@@ -349,7 +337,6 @@ export class HomeComponent {
       lastSession?.dateISO ?? null,
     );
 
-    console.log(`[requestAi] rec recibida`, rec);
     this.aiCache.update((c) => ({ ...c, [exercise.id]: rec }));
   }
 }

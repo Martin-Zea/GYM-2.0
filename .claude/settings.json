@@ -17,7 +17,8 @@
       "Bash(ls \"$\\(npm root -g\\)/playwright-core\")",
       "Bash(# playwright-core viene del paquete npx cacheado - busco donde vive *)",
       "Read(//c/Users/marti/**)",
-      "Bash(npx vitest *)"
+      "Bash(npx vitest *)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('@angular/build', \\(p.devDependencies||{}\\)['@angular/build']\\); console.log\\('@angular/cli', \\(p.devDependencies||{}\\)['@angular/cli']\\); console.log\\('vitest', \\(p.devDependencies||{}\\).vitest\\); console.log\\('core', \\(p.dependencies||{}\\)['@angular/core']\\); console.log\\('jsdom', \\(p.devDependencies||{}\\).jsdom, \\(p.dependencies||{}\\).jsdom\\);\")"
     ]
   }
 }

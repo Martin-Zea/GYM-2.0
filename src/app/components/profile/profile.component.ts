@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
 import { StateService } from '../../services/state.service';
 import { StorageService } from '../../services/storage.service';
@@ -22,6 +22,7 @@ const EXCLUDED_UNITS = new Set(['tiempo', 'peso corporal']);
   imports: [IconComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfileComponent {
   protected readonly stateService = inject(StateService);

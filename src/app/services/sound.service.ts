@@ -3,6 +3,20 @@ import { Injectable } from '@angular/core';
 /** Short synthesized beeps via Web Audio — no assets, fails silently if unavailable */
 @Injectable({ providedIn: 'root' })
 export class SoundService {
+  /** Una sola instancia reutilizada: los navegadores limitan los AudioContext simultáneos. */
+  private ctx: AudioContext | null = null;
+
+  private getContext(): AudioContext | null {
+    try {
+      this.ctx ??= new AudioContext();
+      // En mobile (iOS) el contexto arranca suspendido hasta una interacción del usuario.
+      if (this.ctx.state === 'suspended') void this.ctx.resume();
+      return this.ctx;
+    } catch {
+      return null;
+    }
+  }
+
   /** Rest timer done: triple square-wave pulse — audible through headphones on locked screen */
   playRestBeep(): void {
     const notes: { freq: number; at: number }[] = [];
@@ -30,8 +44,9 @@ export class SoundService {
     type: OscillatorType = 'sine',
     maxGain = 0.3,
   ): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
     try {
-      const ctx = new AudioContext();
       for (const { freq, at } of notes) {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();

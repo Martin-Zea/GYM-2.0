@@ -1,4 +1,4 @@
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import {
   AppSettings,
   AppState,
@@ -9,14 +9,17 @@ import {
   TodaySetProgress,
   WorkoutDay,
 } from '../models/workout.model';
-import { StorageService, isValidAppState, normalizeExerciseName } from './storage.service';
+import { StorageService, normalizeExerciseName } from './storage.service';
 import { TranslationService } from './translation.service';
+import { UIStateService } from './ui-state.service';
+import { STORAGE_KEYS } from './storage-keys';
 import { createInitialState } from '../data/initial-data';
 
 @Injectable({ providedIn: 'root' })
 export class StateService {
   private readonly storage = inject(StorageService);
   private readonly tr = inject(TranslationService);
+  private readonly uiState = inject(UIStateService);
 
   readonly state = signal<AppState>(this.storage.load());
 
@@ -57,12 +60,20 @@ export class StateService {
   }
 
   constructor() {
+    // Persistencia: la capa de storage reporta el fallo; aquí lo traducimos y exponemos a la UI.
     effect(() => {
-      this.storage.save(this.state());
-    });
-
-    effect(() => {
-      document.documentElement.setAttribute('data-theme', this.state().settings.theme);
+      const result = this.storage.save(this.state());
+      untracked(() => {
+        if (result.ok) {
+          if (this.uiState.saveError()) this.uiState.saveError.set(null);
+        } else {
+          this.uiState.saveError.set(
+            result.reason === 'quota'
+              ? this.tr.T().save_error_quota
+              : this.tr.T().save_error_generic,
+          );
+        }
+      });
     });
   }
 
@@ -219,7 +230,7 @@ export class StateService {
 
   /** El historial cambió: las recomendaciones cacheadas ya no valen */
   private invalidateAiCache(): void {
-    localStorage.removeItem('gym_ai_cache_v2');
+    localStorage.removeItem(STORAGE_KEYS.aiCache);
   }
 
   getTodayProgress(dayId: string): TodayDayProgress {
@@ -239,7 +250,7 @@ export class StateService {
     this.state.update((s) => {
       const today: TodayDayProgress =
         s.todayProgress[dayId]?.dateISO === this.todayKey
-          ? JSON.parse(JSON.stringify(s.todayProgress[dayId]))
+          ? structuredClone(s.todayProgress[dayId])
           : { dateISO: this.todayKey, sets: {} };
 
       if (!today.sets[exerciseId]) today.sets[exerciseId] = [];
@@ -336,70 +347,6 @@ export class StateService {
       if (progress.dateISO === today) pruned[dayId] = progress;
     }
     return pruned;
-  }
-
-  async exportData(): Promise<void> {
-    const exportState = {
-      ...this.state(),
-      exportedAt: new Date().toISOString(),
-      appVersion: '2.0',
-    };
-    const fileName = `gym-backup-${this.todayKey}.json`;
-    const file = new File([JSON.stringify(exportState, null, 2)], fileName, {
-      type: 'application/json',
-    });
-
-    if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: 'GainAI backup' });
-        localStorage.setItem('gym_last_export', this.todayKey);
-        return;
-      } catch (e) {
-        // El usuario canceló el share: no es un error ni cuenta como export
-        if (e instanceof DOMException && e.name === 'AbortError') return;
-        // Otro fallo del share: cae al download clásico
-      }
-    }
-
-    const url = URL.createObjectURL(file);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    a.click();
-    URL.revokeObjectURL(url);
-    localStorage.setItem('gym_last_export', this.todayKey);
-  }
-
-  importData(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'application/json';
-      input.onchange = async () => {
-        const file = input.files?.[0];
-        if (!file) {
-          resolve();
-          return;
-        }
-        const invalidMsg = this.tr.T().import_invalid_backup;
-        try {
-          const text = await file.text();
-          let data: unknown;
-          try {
-            data = JSON.parse(text);
-          } catch {
-            throw new Error(invalidMsg);
-          }
-          if (!isValidAppState(data)) throw new Error(invalidMsg);
-          const validated = this.storage.validateImport(data);
-          this.state.set(validated);
-          resolve();
-        } catch (e) {
-          reject(e);
-        }
-      };
-      input.click();
-    });
   }
 
   resetAll(): void {

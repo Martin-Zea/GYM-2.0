@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   computed,
@@ -22,6 +23,7 @@ import {
   TodaySetProgress,
   WorkoutDay,
 } from '../../models/workout.model';
+import { formatRecLabel } from '../../utils/rec-label';
 
 @Component({
   selector: 'app-exercise-card',
@@ -29,6 +31,7 @@ import {
   imports: [IconComponent, RouterLink],
   templateUrl: './exercise-card.component.html',
   styleUrl: './exercise-card.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExerciseCardComponent {
   private readonly state = inject(StateService);
@@ -69,7 +72,7 @@ export class ExerciseCardComponent {
     const tp = this.state.getTodayProgress(this.day().id);
     const saved = tp.sets[ex.id] ?? [];
     const last = this.storage.lastSetsForExercise(this.state.state(), ex.id);
-    const result = Array.from({ length: ex.defaultSets }, (_, i) => {
+    return Array.from({ length: ex.defaultSets }, (_, i) => {
       if (saved[i]) return saved[i];
       const prev = last?.[i];
       return {
@@ -81,18 +84,6 @@ export class ExerciseCardComponent {
         done: false,
       };
     });
-    console.log(
-      `[setsArray] ${ex.name}`,
-      result.map((s, i) => ({
-        i,
-        weight: s.weight,
-        reps: s.reps,
-        done: s.done,
-        aiPrefilled: (s as TodaySetProgress & { aiPrefilled?: boolean }).aiPrefilled,
-        fromSaved: !!saved[i],
-      })),
-    );
-    return result;
   });
 
   protected readonly doneSetsCount = computed(() => this.setsArray().filter((s) => s.done).length);
@@ -119,20 +110,9 @@ export class ExerciseCardComponent {
     return arr.length > 0 && arr.every((s) => s.done);
   });
 
-  protected readonly aiRecLabel = computed(() => {
-    const rec = this.aiRec();
-    if (!rec || !rec.sets?.length) return '';
-    const ex = this.exercise();
-    const first = rec.sets[0];
-    const last = rec.sets[rec.sets.length - 1];
-    if (ex.unit === 'peso corporal') return `${first.reps} reps`;
-    if (ex.unit === 'tiempo') return `${first.reps} seg`;
-    const suffix = ex.unit === 'kg por mano' ? 'kg/m' : ex.unit === 'kg por brazo' ? 'kg/b' : 'kg';
-    if (last.weight > first.weight) {
-      return `${first.weight}${suffix} × ${first.reps} → ${last.weight}${suffix}`;
-    }
-    return `${first.weight}${suffix} × ${first.reps} reps`;
-  });
+  protected readonly aiRecLabel = computed(() =>
+    formatRecLabel(this.exercise().unit, this.aiRec()?.sets, { withRepsInRange: true }),
+  );
 
   constructor() {
     // Auto-expand + scroll into view when this exercise becomes active
@@ -155,26 +135,17 @@ export class ExerciseCardComponent {
     // changes → if tracked here, the effect would re-fire infinitely (NG0103).
     effect(() => {
       const rec = this.aiRec();
-      console.log(`[prefill effect] aiRec cambió`, { loading: rec?.loading, sets: rec?.sets });
       if (!rec || rec.loading || !rec.sets?.length) return;
       untracked(() => {
         const ex = this.exercise();
         const day = this.day();
         const tp = this.state.getTodayProgress(day.id);
-        console.log(`[prefill effect] ejecutando prefill para "${ex.name}"`, {
-          recSets: rec.sets,
-          todayProgressSets: tp.sets[ex.id],
-        });
         for (let i = 0; i < ex.defaultSets; i++) {
           const existing = tp.sets[ex.id]?.[i];
-          if (existing?.done) {
-            console.log(`[prefill effect] set ${i} ya done, skip`);
-            continue;
-          }
+          if (existing?.done) continue;
           const setRec = rec.sets[i] ?? rec.sets[rec.sets.length - 1];
           const patch: Partial<TodaySetProgress> = { reps: setRec.reps, aiPrefilled: true };
           if (ex.unit !== 'peso corporal' && setRec.weight > 0) patch.weight = setRec.weight;
-          console.log(`[prefill effect] set ${i}: existing=`, existing, '→ patch=', patch);
           this.state.updateSet(day.id, ex.id, i, patch);
         }
       });

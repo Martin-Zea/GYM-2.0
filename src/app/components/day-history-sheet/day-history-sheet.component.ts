@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
 import { FocusTrapDirective } from '../../directives/focus-trap.directive';
 import { StateService } from '../../services/state.service';
@@ -6,6 +6,8 @@ import { StorageService } from '../../services/storage.service';
 import { TranslationService } from '../../services/translation.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { Session } from '../../models/workout.model';
+import { daysBetweenISO } from '../../utils/date';
+import { formatSetLine } from '../../utils/rec-label';
 
 interface SetView {
   setIndex: number;
@@ -29,6 +31,7 @@ interface SessionView {
   imports: [IconComponent, FocusTrapDirective],
   templateUrl: './day-history-sheet.component.html',
   styleUrl: './day-history-sheet.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DayHistorySheetComponent {
   protected readonly state = inject(StateService);
@@ -58,9 +61,7 @@ export class DayHistorySheetComponent {
       .sort((a, b) => b.dateISO.localeCompare(a.dateISO));
 
     const views = allSessions.map((session) => {
-      const daysAgo = Math.floor(
-        (new Date(todayISO).getTime() - new Date(session.dateISO).getTime()) / 86_400_000,
-      );
+      const daysAgo = daysBetweenISO(session.dateISO, todayISO);
       const dateLabel = this.formatDateLabel(session.dateISO, daysAgo, lang);
 
       const exercises = d.exercises
@@ -155,10 +156,7 @@ export class DayHistorySheetComponent {
   }
 
   protected setLabel(weight: number, reps: number, unit: string): string {
-    if (unit === 'peso corporal') return `${reps} reps`;
-    if (unit === 'tiempo') return `${reps} seg`;
-    if (unit === 'kg por mano') return `${weight}kg/m × ${reps}`;
-    return `${weight}kg × ${reps}`;
+    return formatSetLine(weight, reps, unit);
   }
 
   protected startEdit(sv: SessionView): void {

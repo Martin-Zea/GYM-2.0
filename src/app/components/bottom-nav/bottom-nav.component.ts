@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslationService } from '../../services/translation.service';
 import { IconComponent } from '../icon/icon.component';
@@ -9,6 +9,7 @@ import { IconComponent } from '../icon/icon.component';
   imports: [RouterLink, RouterLinkActive, IconComponent],
   templateUrl: './bottom-nav.component.html',
   styleUrl: './bottom-nav.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BottomNavComponent {
   protected readonly tr = inject(TranslationService);

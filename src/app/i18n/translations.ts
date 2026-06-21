@@ -127,6 +127,8 @@ export interface Translations {
   // Save error toast
   save_error_title: string;
   save_error_dismiss: string;
+  save_error_quota: string;
+  save_error_generic: string;
 
   // Global error toast (GlobalErrorHandler)
   app_error_generic: string;

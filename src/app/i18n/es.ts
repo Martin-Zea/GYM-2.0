@@ -114,6 +114,9 @@ export const es: Translations = {
 
   save_error_title: 'No se pudo guardar',
   save_error_dismiss: 'Entendido',
+  save_error_quota:
+    'No se pudo guardar: almacenamiento lleno. Exportá tus datos y limpiá el historial.',
+  save_error_generic: 'No se pudo guardar el estado de la app.',
 
   app_error_generic: 'Algo salió mal. Tus datos están a salvo.',
 

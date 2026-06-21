@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { StateService } from './services/state.service';
 import { StorageService } from './services/storage.service';
@@ -7,6 +7,9 @@ import { TranslationService } from './services/translation.service';
 import { AppUpdateService } from './services/app-update.service';
 import { ErrorService } from './services/error.service';
 import { ShareService } from './services/share.service';
+import { BackupService } from './services/backup.service';
+import { ThemeService } from './services/theme.service';
+import { STORAGE_KEYS } from './services/storage-keys';
 import { IconComponent } from './components/icon/icon.component';
 import { RestTimerComponent } from './components/rest-timer/rest-timer.component';
 import { DayEditorComponent } from './components/day-editor/day-editor.component';
@@ -36,6 +39,7 @@ import { LegalGateComponent } from './components/legal-gate/legal-gate.component
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
   protected readonly state = inject(StateService);
@@ -45,15 +49,20 @@ export class App {
   protected readonly errorService = inject(ErrorService);
   private readonly storage = inject(StorageService);
   private readonly shareService = inject(ShareService);
+  private readonly backup = inject(BackupService);
+  // Inyectado para activar el efecto que aplica el tema al <html>
+  private readonly themeService = inject(ThemeService);
 
   protected readonly theme = computed(() => this.state.settings().theme);
   protected readonly T = this.tr.T;
 
   protected readonly showOnboarding = signal(
-    localStorage.getItem('gym_onboarding_done_v1') !== '1',
+    localStorage.getItem(STORAGE_KEYS.onboardingDone) !== '1',
   );
 
-  protected readonly showLegalGate = signal(localStorage.getItem('gym_legal_accepted_v1') !== '1');
+  protected readonly showLegalGate = signal(
+    localStorage.getItem(STORAGE_KEYS.legalAccepted) !== '1',
+  );
 
   constructor() {
     this.checkBackupReminder();
@@ -73,8 +82,8 @@ export class App {
   };
 
   private checkBackupReminder(): void {
-    if (localStorage.getItem('gym_backup_dismissed') === this.storage.todayISO()) return;
-    const lastExport = localStorage.getItem('gym_last_export');
+    if (localStorage.getItem(STORAGE_KEYS.backupDismissed) === this.storage.todayISO()) return;
+    const lastExport = localStorage.getItem(STORAGE_KEYS.lastExport);
     const sessions = this.state.sessions().filter((s) => !s.skipped);
     const count = lastExport
       ? sessions.filter((s) => s.dateISO > lastExport).length
@@ -86,11 +95,11 @@ export class App {
 
   exportBackup(): void {
     this.uiState.backupReminder.set(false);
-    void this.state.exportData();
+    void this.backup.exportData();
   }
 
   dismissBackupReminder(): void {
-    localStorage.setItem('gym_backup_dismissed', this.storage.todayISO());
+    localStorage.setItem(STORAGE_KEYS.backupDismissed, this.storage.todayISO());
     this.uiState.backupReminder.set(false);
   }
 
@@ -112,12 +121,12 @@ export class App {
   }
 
   completeOnboarding(): void {
-    localStorage.setItem('gym_onboarding_done_v1', '1');
+    localStorage.setItem(STORAGE_KEYS.onboardingDone, '1');
     this.showOnboarding.set(false);
   }
 
   acceptLegal(): void {
-    localStorage.setItem('gym_legal_accepted_v1', '1');
+    localStorage.setItem(STORAGE_KEYS.legalAccepted, '1');
     this.showLegalGate.set(false);
   }
 }

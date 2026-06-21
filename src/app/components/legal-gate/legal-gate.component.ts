@@ -1,4 +1,4 @@
-import { Component, inject, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
 import { TranslationService } from '../../services/translation.service';
 import { IconComponent } from '../icon/icon.component';
 
@@ -8,6 +8,7 @@ import { IconComponent } from '../icon/icon.component';
   imports: [IconComponent],
   templateUrl: './legal-gate.component.html',
   styleUrl: './legal-gate.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LegalGateComponent {
   protected readonly T = inject(TranslationService).T;

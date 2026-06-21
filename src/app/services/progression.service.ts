@@ -8,14 +8,15 @@ import {
   UserProfile,
 } from '../models/workout.model';
 
-import { HistoryEntry, StorageService } from './storage.service';
+import { HistoryEntry, StorageService, defaultUserProfile } from './storage.service';
 import { AiProvider, AiProviderContext } from './providers/ai-provider';
 import { CohereProvider } from './providers/cohere.provider';
 import { GroqProvider } from './providers/groq.provider';
 import { LocalProvider } from './providers/local.provider';
 import { roundToBrick } from './providers/prompt-helpers';
+import { STORAGE_KEYS } from './storage-keys';
 
-const AI_CACHE_KEY = 'gym_ai_cache_v2';
+const AI_CACHE_KEY = STORAGE_KEYS.aiCache;
 
 interface AiCacheEntry {
   rec: AiRecommendation;
@@ -32,7 +33,10 @@ export class ProgressionService {
 
   private readCache(): Partial<Record<string, AiCacheEntry>> {
     try {
-      return JSON.parse(localStorage.getItem(AI_CACHE_KEY) ?? '{}');
+      const parsed: unknown = JSON.parse(localStorage.getItem(AI_CACHE_KEY) ?? '{}');
+      return typeof parsed === 'object' && parsed !== null
+        ? (parsed as Partial<Record<string, AiCacheEntry>>)
+        : {};
     } catch {
       return {};
     }
@@ -59,7 +63,8 @@ export class ProgressionService {
     profile: UserProfile,
   ): AiRecommendation | null {
     const entry = this.readCache()[exerciseId];
-    if (!entry) return null;
+    // Descarta entradas corruptas (caché de una versión vieja o JSON manipulado)
+    if (!entry || !entry.rec || !Array.isArray(entry.rec.sets)) return null;
     if (entry.cachedForDate !== this.storage.todayISO()) return null;
     if (entry.lastSessionISO !== lastSessionISO) return null;
     if (entry.profileSig !== this.profileSig(profile)) return null;
@@ -138,15 +143,7 @@ export class ProgressionService {
     todaySets: TodaySetProgress[],
     lastSets: SetRecord[] | null,
     history: HistoryEntry[] = [],
-    userProfile: UserProfile = {
-      weightKg: null,
-      heightCm: null,
-      age: null,
-      sex: null,
-      weightLog: [],
-      goal: null,
-      aiNotes: '',
-    },
+    userProfile: UserProfile = defaultUserProfile(),
     lastSessionDate: string | null = null,
     lang: 'es' | 'en' = 'es',
   ): AiRecommendation {
@@ -173,16 +170,9 @@ export class ProgressionService {
     const hasDoneOrHistory = lastSets?.length || todaySets.some((s) => s?.done);
     const providers = this.buildProviders(settings);
 
-    console.log(`[progression.recommend] "${exercise.name}"`, {
-      hasDoneOrHistory,
-      providers: providers.map((p) => p.constructor.name),
-      hasApiKey: !!settings.apiKey,
-      hasCohereKey: !!settings.cohereApiKey,
-    });
-
-    if (!providers.length || !hasDoneOrHistory) {
-      console.log(`[progression.recommend] → LOCAL (sin providers o sin historial)`);
-      return this.localRecommendation(
+    // Fallback local con nota opcional — evita repetir la llamada de 7 argumentos.
+    const local = (note = ''): AiRecommendation => {
+      const rec = this.localRecommendation(
         exercise,
         todaySets,
         lastSets,
@@ -191,29 +181,18 @@ export class ProgressionService {
         lastSessionDate,
         lang,
       );
-    }
+      if (note) rec.reason += note;
+      return rec;
+    };
+
+    if (!providers.length || !hasDoneOrHistory) return local();
 
     const lastSessionISO = history.at(-1)?.dateISO ?? null;
     const cached = this.getCached(exercise.id, lastSessionISO, todaySets, settings.userProfile);
-    if (cached) {
-      console.log(`[progression.recommend] → CACHE HIT`, cached);
-      return cached;
-    }
-    console.log(`[progression.recommend] cache miss, lastSessionISO=${lastSessionISO}`);
+    if (cached) return cached;
 
     if (!navigator.onLine) {
-      console.log(`[progression.recommend] → LOCAL (offline)`);
-      const local = this.localRecommendation(
-        exercise,
-        todaySets,
-        lastSets,
-        history,
-        settings.userProfile,
-        lastSessionDate,
-        lang,
-      );
-      local.reason += lang === 'en' ? ' (offline mode)' : ' (modo offline)';
-      return local;
+      return local(lang === 'en' ? ' (offline mode)' : ' (modo offline)');
     }
 
     const ctx: AiProviderContext = {
@@ -228,9 +207,7 @@ export class ProgressionService {
 
     for (const provider of providers) {
       try {
-        console.log(`[progression.recommend] → llamando ${provider.constructor.name}`);
         const rec = await provider.recommend(ctx);
-        console.log(`[progression.recommend] ← ${provider.constructor.name} respondió`, rec);
         const adjusted = this.applyLongRestAdjustment(
           rec,
           exercise,
@@ -238,7 +215,6 @@ export class ProgressionService {
           lastSessionDate,
           lang,
         );
-        console.log(`[progression.recommend] ajuste por descanso largo`, adjusted);
         this.setCached(exercise.id, lastSessionISO, todaySets, adjusted, settings.userProfile);
         return adjusted;
       } catch (e) {
@@ -246,18 +222,8 @@ export class ProgressionService {
       }
     }
 
-    console.log(`[progression.recommend] → LOCAL (todos los providers fallaron)`);
-    const local = this.localRecommendation(
-      exercise,
-      todaySets,
-      lastSets,
-      history,
-      settings.userProfile,
-      lastSessionDate,
-      lang,
+    return local(
+      lang === 'en' ? ' (API unavailable, offline mode)' : ' (API no disponible, modo offline)',
     );
-    local.reason +=
-      lang === 'en' ? ' (API unavailable, offline mode)' : ' (API no disponible, modo offline)';
-    return local;
   }
 }

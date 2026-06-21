@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 const ICONS: Record<string, string> = {
@@ -49,6 +49,7 @@ const ICONS: Record<string, string> = {
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IconComponent {
   private readonly sanitizer = inject(DomSanitizer);

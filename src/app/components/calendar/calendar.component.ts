@@ -1,9 +1,10 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
 import { StateService } from '../../services/state.service';
 import { StorageService } from '../../services/storage.service';
 import { TranslationService } from '../../services/translation.service';
 import { UIStateService } from '../../services/ui-state.service';
+import { daysBetweenISO } from '../../utils/date';
 
 interface CalDay {
   day: number | null;
@@ -25,6 +26,7 @@ interface RoutineDaySummary {
   imports: [IconComponent],
   templateUrl: './calendar.component.html',
   styleUrl: './calendar.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CalendarComponent {
   protected readonly state = inject(StateService);
@@ -138,10 +140,7 @@ export class CalendarComponent {
       if (!last) return { id: day.id, name: day.name, daysAgo: null };
       if (last.dateISO === today) return { id: day.id, name: day.name, daysAgo: 0 };
 
-      const diff = Math.floor(
-        (new Date(today).getTime() - new Date(last.dateISO).getTime()) / 86_400_000,
-      );
-      return { id: day.id, name: day.name, daysAgo: diff };
+      return { id: day.id, name: day.name, daysAgo: daysBetweenISO(last.dateISO, today) };
     });
   });
 

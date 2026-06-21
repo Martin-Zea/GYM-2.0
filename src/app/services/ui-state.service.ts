@@ -156,6 +156,9 @@ export class UIStateService {
   private _exitResolve: ((v: boolean) => void) | null = null;
 
   requestTrainingExit(): Promise<boolean> {
+    // Si ya había una confirmación pendiente, resuélvela como cancelada para no dejar
+    // su promesa colgada para siempre (await que nunca retorna).
+    this._exitResolve?.(false);
     this.showExitConfirm.set(true);
     return new Promise((resolve) => {
       this._exitResolve = resolve;

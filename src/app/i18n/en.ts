@@ -114,6 +114,8 @@ export const en: Translations = {
 
   save_error_title: 'Could not save',
   save_error_dismiss: 'Dismiss',
+  save_error_quota: 'Could not save: storage full. Export your data and clear history.',
+  save_error_generic: 'Could not save the app state.',
 
   app_error_generic: 'Something went wrong. Your data is safe.',
 

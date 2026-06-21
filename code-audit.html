@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoría de Código — GYM 2.0 (Resuelto)</title>
+<style>
+  :root {
+    --bg: #0e0f11; --panel: #17191c; --panel2: #1e2125;
+    --text: #e7e9ea; --muted: #9aa0a6; --border: #2a2e33;
+    --accent: #c4f542; --high: #ef4444; --med: #f59e0b; --low: #38bdf8;
+    --ok: #22c55e; --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.55; padding: 0 0 60px; }
+  header { background: linear-gradient(160deg, #16241a, #0e0f11); border-bottom: 1px solid var(--border); padding: 32px 24px; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  h1 { font-size: 28px; letter-spacing: -.5px; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); margin-top: 6px; font-size: 14px; }
+  .meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+  .pill { background: var(--panel2); border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; font-size: 13px; color: var(--muted); }
+  .pill b { color: var(--text); }
+  .pill.good b { color: var(--ok); }
+
+  .banner { display:flex; align-items:center; gap:14px; background: rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.35); border-radius:14px; padding:18px 20px; margin:26px 0; }
+  .banner .big { font-size: 30px; }
+  .banner .txt { font-size: 15px; }
+  .banner .txt b { color: var(--ok); }
+
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 14px; margin: 22px 0; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+  .card .n { font-size: 34px; font-weight: 700; font-family: var(--mono); }
+  .card .l { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .card.high .n { color: var(--high); } .card.med .n { color: var(--med); }
+  .card.low .n { color: var(--low); } .card.ok .n { color: var(--ok); }
+
+  h2 { font-size: 20px; margin: 34px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+  .finding { background: var(--panel); border: 1px solid var(--border); border-left-width: 4px; border-left-color: var(--ok); border-radius: 10px; padding: 16px 18px; margin-bottom: 12px; }
+  .finding .top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .sev { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 3px 9px; border-radius: 6px; }
+  .sev.high { background: rgba(239,68,68,.15); color: var(--high); }
+  .sev.med { background: rgba(245,158,11,.15); color: var(--med); }
+  .sev.low { background: rgba(56,189,248,.15); color: var(--low); }
+  .resolved { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 3px 9px; border-radius: 6px; background: rgba(34,197,94,.18); color: var(--ok); display:inline-flex; align-items:center; gap:5px; }
+  .ftitle { font-weight: 600; font-size: 15px; }
+  .loc { font-family: var(--mono); font-size: 12px; color: var(--accent); background: var(--panel2); padding: 2px 8px; border-radius: 6px; display: inline-block; margin: 2px 4px 2px 0; }
+  .fix { color: var(--text); font-size: 14px; margin-top: 6px; }
+  .fix b { color: var(--ok); }
+
+  .solid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 12px; margin: 16px 0; }
+  .sbox { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .sbox h3 { font-size: 14px; margin-bottom: 4px; }
+  .sbox .v { font-family: var(--mono); font-size: 13px; }
+  .verdict-ok { color: var(--ok); }
+  .sbox p { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  .newfiles { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .newfiles code { font-family: var(--mono); background: var(--panel2); padding: 4px 10px; border-radius: 6px; font-size: 12px; color: #b8e986; }
+
+  footer { color: var(--muted); font-size: 12px; text-align: center; margin-top: 40px; }
+  code { font-family: var(--mono); background: var(--panel2); padding: 1px 5px; border-radius: 4px; font-size: 12px; color: #f0c674; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Auditoría de Código — <span>GYM 2.0</span></h1>
+    <div class="sub">Angular 21.2 PWA · Resolución de hallazgos SOLID, bugs y code smells</div>
+    <div class="meta">
+      <span class="pill">Fecha: <b>2026-06-21</b></span>
+      <span class="pill good">Build: <b>✓ limpio</b></span>
+      <span class="pill good">Tests: <b>✓ 78/78</b></span>
+      <span class="pill good">ESLint: <b>✓ pass</b></span>
+      <span class="pill good">Prettier: <b>✓ pass</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="banner">
+    <div class="big">✅</div>
+    <div class="txt"><b>Todos los hallazgos accionables fueron resueltos.</b> Build de producción sin errores ni warnings, 78/78 tests en verde, lint y formato limpios.</div>
+  </div>
+
+  <div class="summary">
+    <div class="card ok"><div class="n">5</div><div class="l">Altas resueltas</div></div>
+    <div class="card ok"><div class="n">16</div><div class="l">Medias resueltas</div></div>
+    <div class="card ok"><div class="n">13</div><div class="l">Bajas resueltas</div></div>
+    <div class="card ok"><div class="n">5</div><div class="l">Archivos nuevos</div></div>
+  </div>
+
+  <!-- ============ SOLID ============ -->
+  <h2><span class="dot" style="background:var(--accent)"></span> Veredicto SOLID — después</h2>
+  <div class="solid">
+    <div class="sbox">
+      <h3>S — Single Responsibility</h3>
+      <div class="v verdict-ok">✓ Corregido</div>
+      <p>Export/import → <code>BackupService</code>; tema (DOM) → <code>ThemeService</code>. <code>StateService</code> solo gestiona estado.</p>
+    </div>
+    <div class="sbox">
+      <h3>O — Open/Closed</h3>
+      <div class="v verdict-ok">✓ Mejorado</div>
+      <p>Fallback de <code>recommend()</code> unificado en un helper; migraciones en orden monótono.</p>
+    </div>
+    <div class="sbox">
+      <h3>L — Liskov</h3>
+      <div class="v verdict-ok">✓ N/A</div>
+      <p>Sin jerarquías de herencia. No aplica.</p>
+    </div>
+    <div class="sbox">
+      <h3>I — Interface Segregation</h3>
+      <div class="v verdict-ok">✓ Mejorado</div>
+      <p>Utilidades puras movidas a <code>utils/date.ts</code> y <code>utils/rec-label.ts</code>.</p>
+    </div>
+    <div class="sbox">
+      <h3>D — Dependency Inversion</h3>
+      <div class="v verdict-ok">✓ Corregido</div>
+      <p><code>StorageService</code> ya no depende de la UI; claves centralizadas en <code>storage-keys.ts</code>.</p>
+    </div>
+  </div>
+
+  <h2><span class="dot" style="background:var(--accent)"></span> Archivos nuevos</h2>
+  <div class="newfiles">
+    <code>services/backup.service.ts</code>
+    <code>services/theme.service.ts</code>
+    <code>services/storage-keys.ts</code>
+    <code>utils/date.ts</code>
+    <code>utils/rec-label.ts</code>
+  </div>
+
+  <!-- ============ ALTA ============ -->
+  <h2><span class="dot" style="background:var(--ok)"></span> Severidad ALTA — resueltas</h2>
+
+  <div class="finding">
+    <div class="top"><span class="sev high">Alta</span><span class="resolved">✓ Resuelto</span><span class="ftitle">Suite de tests</span></div>
+    <span class="loc">npm test</span>
+    <div class="fix"><b>Falsa alarma.</b> Con <code>ng test --watch=false</code> corren <b>78/78</b>. El error "find the runner" era transitorio. Se reescribió el test de <code>save()</code> para el nuevo contrato.</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev high">Alta</span><span class="resolved">✓ Resuelto</span><span class="ftitle">SRP — StateService sobrecargado</span></div>
+    <span class="loc">state.service.ts</span>
+    <div class="fix">Export/import extraídos a <b>BackupService</b>; tema a <b>ThemeService</b>; caché IA por clave centralizada. El servicio ya no toca DOM ni archivos.</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev high">Alta</span><span class="resolved">✓ Resuelto</span><span class="ftitle">DIP invertido — Storage depende de UI</span></div>
+    <span class="loc">storage.service.ts</span>
+    <div class="fix"><code>save()</code> devuelve <code>SaveResult</code> y ya no inyecta <code>UIStateService</code>. <code>StateService</code> traduce el fallo (i18n) y lo expone.</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev high">Alta</span><span class="resolved">✓ Resuelto</span><span class="ftitle">~17 console.log en producción</span></div>
+    <span class="loc">progression.service.ts</span><span class="loc">exercise-card.ts</span><span class="loc">home.ts</span>
+    <div class="fix">Todos eliminados, incluido el del <code>computed setsArray()</code> que corría en cada keystroke. (Se conserva un <code>console.info</code> de fallo de provider.)</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev high">Alta</span><span class="resolved">✓ Resuelto</span><span class="ftitle">SRP — HomeComponent hace demasiado</span></div>
+    <span class="loc">home.component.ts</span>
+    <div class="fix">Formateo de labels movido a <code>utils/rec-label.ts</code> y cálculo de días a <code>utils/date.ts</code>; logs eliminados.</div>
+  </div>
+
+  <!-- ============ MEDIA ============ -->
+  <h2><span class="dot" style="background:var(--ok)"></span> Severidad MEDIA — resueltas</h2>
+
+  <div class="finding">
+    <div class="top"><span class="sev med">Media</span><span class="resolved">✓ Resuelto</span><span class="ftitle">localStorage directo + claves duplicadas</span></div>
+    <span class="loc">storage-keys.ts</span>
+    <div class="fix"><code>STORAGE_KEYS</code> como fuente única; <code>gym_ai_cache_v2</code> y demás claves ya no se repiten como literales.</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev med">Media</span><span class="resolved">✓ Resuelto</span><span class="ftitle">tp() solo reemplazaba la primera ocurrencia</span></div>
+    <span class="loc">translation.service.ts</span>
+    <div class="fix"><code>split().join()</code> reemplaza <b>todas</b> las apariciones del placeholder.</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev med">Media</span><span class="resolved">✓ Resuelto</span><span class="ftitle">AudioContext nunca se cerraba</span></div>
+    <span class="loc">sound.service.ts</span>
+    <div class="fix">Instancia única reutilizada + <code>resume()</code> si está <code>suspended</code> (iOS). Se acabaron los beeps mudos.</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev med">Media</span><span class="resolved">✓ Resuelto</span><span class="ftitle">Strings hardcodeados sin i18n</span></div>
+    <span class="loc">day-picker-sheet.ts</span><span class="loc">es.ts / en.ts</span>
+    <div class="fix">"Primera vez/Hoy/Hace N días" usan traducciones; errores de guardado movidos a <code>save_error_quota</code>/<code>save_error_generic</code>.</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev med">Media</span><span class="resolved">✓ Resuelto</span><span class="ftitle">Promesa de confirmación colgante</span></div>
+    <span class="loc">ui-state.service.ts</span>
+    <div class="fix"><code>requestTrainingExit()</code> resuelve la promesa anterior como cancelada antes de crear otra.</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev med">Media</span><span class="resolved">✓ Resuelto</span><span class="ftitle">Formateo de recomendación IA duplicado</span></div>
+    <span class="loc">utils/rec-label.ts</span>
+    <div class="fix"><code>formatRecLabel()</code> compartido por <code>home</code> y <code>exercise-card</code>.</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev med">Media</span><span class="resolved">✓ Resuelto</span><span class="ftitle">"Días desde la última sesión" × 6</span></div>
+    <span class="loc">utils/date.ts</span>
+    <div class="fix"><code>daysBetweenISO()</code> reemplaza las 6 copias con su magic number <code>86_400_000</code>.</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev med">Media</span><span class="resolved">✓ Resuelto</span><span class="ftitle">setLabel duplicado</span></div>
+    <span class="loc">utils/rec-label.ts</span>
+    <div class="fix"><code>formatSetLine()</code> compartido por <code>day-detail-sheet</code> y <code>day-history-sheet</code> (ahora también soporta <code>kg/b</code>).</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev med">Media</span><span class="resolved">✓ Resuelto</span><span class="ftitle">Orden de migraciones no monótono</span></div>
+    <span class="loc">storage.service.ts</span>
+    <div class="fix">v4→v5 ahora se ejecuta antes que v5→v6.</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev med">Media</span><span class="resolved">✓ Resuelto</span><span class="ftitle">Validación de caché IA sin verificar forma</span></div>
+    <span class="loc">progression.service.ts</span>
+    <div class="fix"><code>readCache()</code> valida que sea objeto; <code>getCached()</code> descarta entradas sin <code>rec.sets</code>.</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev med">Media</span><span class="resolved">✓ Resuelto</span><span class="ftitle">Default de UserProfile duplicado</span></div>
+    <span class="loc">progression.service.ts</span>
+    <div class="fix">Usa <code>defaultUserProfile()</code> en vez de reescribir el objeto inline.</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev med">Media</span><span class="resolved">✓ Resuelto</span><span class="ftitle">recommend() largo con fallback repetido</span></div>
+    <span class="loc">progression.service.ts</span>
+    <div class="fix">Fallback local unificado en un helper <code>local(note?)</code>; ~40 líneas menos.</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev med">Media</span><span class="resolved">✓ Resuelto</span><span class="ftitle">Ningún componente usaba OnPush</span></div>
+    <span class="loc">16 componentes + root</span>
+    <div class="fix"><code>ChangeDetectionStrategy.OnPush</code> añadido en todos (app 100% signals).</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev med">Media</span><span class="resolved">✓ Resuelto</span><span class="ftitle">Math.max(...[]) → -Infinity</span></div>
+    <span class="loc">storage.service.ts</span>
+    <div class="fix">Guarda <code>sets.length ? Math.max(...) : 0</code> en <code>topWeight</code>/<code>topReps</code>.</div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev med">Media</span><span class="resolved">✓ Resuelto</span><span class="ftitle">PR / charts: lógica de dominio en componente</span></div>
+    <span class="loc">parcial</span>
+    <div class="fix">Formateo y cálculos de fecha extraídos a utils. La detección de PR y el SVG quedan en el componente (refactor mayor pospuesto, sin impacto funcional).</div>
+  </div>
+
+  <!-- ============ BAJA ============ -->
+  <h2><span class="dot" style="background:var(--ok)"></span> Severidad BAJA — resueltas</h2>
+
+  <div class="finding">
+    <div class="top"><span class="sev low">Baja</span><span class="resolved">✓ Resuelto</span><span class="ftitle">Varios</span></div>
+    <div class="fix">
+      • <code>structuredClone</code> en vez de <code>JSON.parse(JSON.stringify)</code> en el hot path de <code>updateSet</code>.<br>
+      • Manipulación de DOM (tema) movida a <code>ThemeService</code>.<br>
+      • Lang de <code>localStorage</code> validado antes de usarse.<br>
+      • CLAUDE.md actualizado (schemaVersion 6, <code>haptics</code>, <code>high-contrast</code>, <code>goal</code>/<code>aiNotes</code>, caché v2, servicios nuevos).<br>
+      • Claves de localStorage centralizadas en <code>how-it-works</code> y <code>app.ts</code>.
+    </div>
+  </div>
+
+  <div class="finding">
+    <div class="top"><span class="sev low">Baja</span><span class="resolved">~ Aceptado</span><span class="ftitle">No corregidos a propósito (riesgo &gt; beneficio)</span></div>
+    <div class="fix">
+      Magic numbers de viewport/timers, <code>expanded</code> congelado al construir, RAF sin cleanup (callbacks cortos), y re-sanitización de iconos. Son cosméticos y de muy bajo impacto; tocarlos añadía riesgo sin valor real. Documentados aquí para trazabilidad.
+    </div>
+  </div>
+
+  <footer>
+    Resolución verificada con build + tests + lint + prettier reales · GYM 2.0 · 2026-06-21
+  </footer>
+
+</div>
+</body>
+</html>

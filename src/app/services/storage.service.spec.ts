@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { StorageService, isValidAppState } from './storage.service';
-import { UIStateService } from './ui-state.service';
 import { AppState, Session, SetRecord } from '../models/workout.model';
 
 const STORAGE_KEY = 'gym_app_state_v2';
@@ -51,12 +50,10 @@ function makeSession(
 
 describe('StorageService', () => {
   let service: StorageService;
-  let uiState: UIStateService;
 
   beforeEach(() => {
     localStorage.clear();
     service = TestBed.inject(StorageService);
-    uiState = TestBed.inject(UIStateService);
   });
 
   afterEach(() => {
@@ -321,19 +318,27 @@ describe('StorageService', () => {
   });
 
   describe('save()', () => {
-    it('captura QuotaExceededError, setea uiState.saveError y no propaga', () => {
+    it('captura QuotaExceededError y devuelve { ok: false, reason: "quota" } sin propagar', () => {
       vi.spyOn(console, 'warn').mockImplementation(() => {});
       const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
         throw new DOMException('quota', 'QuotaExceededError');
       });
 
-      expect(() => service.save(baseState())).not.toThrow();
-      expect(uiState.saveError()).toContain('almacenamiento lleno');
+      let result!: ReturnType<StorageService['save']>;
+      expect(() => {
+        result = service.save(baseState());
+      }).not.toThrow();
+      expect(result).toEqual({ ok: false, reason: 'quota' });
 
-      // Al volver a funcionar el guardado, el error se limpia
+      // Otro fallo no-quota se reporta como 'unknown'
+      spy.mockImplementation(() => {
+        throw new Error('boom');
+      });
+      expect(service.save(baseState())).toEqual({ ok: false, reason: 'unknown' });
+
+      // Al volver a funcionar el guardado, devuelve ok
       spy.mockRestore();
-      service.save(baseState());
-      expect(uiState.saveError()).toBeNull();
+      expect(service.save(baseState())).toEqual({ ok: true });
     });
   });
 

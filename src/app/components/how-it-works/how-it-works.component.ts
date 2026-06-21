@@ -1,7 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
 import { TranslationService } from '../../services/translation.service';
 import { StateService } from '../../services/state.service';
+import { STORAGE_KEYS } from '../../services/storage-keys';
 
 @Component({
   selector: 'app-how-it-works',
@@ -9,11 +10,12 @@ import { StateService } from '../../services/state.service';
   imports: [IconComponent],
   templateUrl: './how-it-works.component.html',
   styleUrl: './how-it-works.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HowItWorksComponent {
   protected readonly T = inject(TranslationService).T;
 
-  protected readonly visible = signal(localStorage.getItem('gym_hiw_dismissed') !== '1');
+  protected readonly visible = signal(localStorage.getItem(STORAGE_KEYS.hiwDismissed) !== '1');
 
   constructor() {
     const state = inject(StateService);
@@ -24,7 +26,7 @@ export class HowItWorksComponent {
   }
 
   protected dismiss(): void {
-    localStorage.setItem('gym_hiw_dismissed', '1');
+    localStorage.setItem(STORAGE_KEYS.hiwDismissed, '1');
     this.visible.set(false);
   }
 }

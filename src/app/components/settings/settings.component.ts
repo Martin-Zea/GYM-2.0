@@ -1,9 +1,18 @@
-import { Component, HostListener, OnDestroy, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  OnDestroy,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
 import { FocusTrapDirective } from '../../directives/focus-trap.directive';
 import { StateService } from '../../services/state.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
+import { BackupService } from '../../services/backup.service';
 import { AppSettings, TrainingGoal, UserProfile, WeightLogEntry } from '../../models/workout.model';
 import { APP_VERSION } from '../../version';
 
@@ -15,11 +24,13 @@ const PAST_LOG_LIMIT = 3;
   imports: [IconComponent, FocusTrapDirective],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsComponent implements OnDestroy {
   protected readonly state = inject(StateService);
   protected readonly uiState = inject(UIStateService);
   protected readonly tr = inject(TranslationService);
+  protected readonly backup = inject(BackupService);
   protected readonly T = this.tr.T;
 
   protected readonly appVersion = APP_VERSION;
@@ -156,10 +167,10 @@ export class SettingsComponent implements OnDestroy {
 
   protected async importData(): Promise<void> {
     try {
-      await this.state.importData();
+      await this.backup.importData();
       this.importError.set('');
     } catch (e) {
-      this.importError.set((e as Error).message ?? 'Error al importar');
+      this.importError.set((e as Error).message || this.T().import_invalid_backup);
     }
   }
 
