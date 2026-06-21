@@ -25,168 +25,184 @@
 
       <div class="divider"></div>
 
-      @for (ex of exercises(); track ex.id; let i = $index) {
-        <div
-          style="
-            background: var(--bg-2);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 12px 14px;
-            margin-bottom: 10px;
-          "
-        >
-          <!-- Cabecera: siempre visible -->
-          <div style="display: flex; align-items: center; gap: 6px">
-            <input
-              class="input"
-              type="text"
-              autocomplete="off"
-              [placeholder]="T().day_editor_exercise_placeholder"
-              style="flex: 1"
-              [value]="ex.name"
-              (input)="setExName(i, $event)"
-              (focus)="focusName(i)"
-              (blur)="blurName()"
-            />
-            <button
-              class="icon-btn"
-              (click)="moveUp(i)"
-              [title]="T().exercise_move_up"
-              [attr.aria-label]="T().exercise_move_up"
-              [style.opacity]="i === 0 ? 0.3 : 1"
-            >
-              ↑
-            </button>
-            <button
-              class="icon-btn"
-              (click)="moveDown(i)"
-              [title]="T().exercise_move_down"
-              [attr.aria-label]="T().exercise_move_down"
-              [style.opacity]="i === exercises().length - 1 ? 0.3 : 1"
-            >
-              ↓
-            </button>
-            <button
-              class="icon-btn"
-              (click)="removeExercise(i)"
-              [title]="T().exercise_remove"
-              [attr.aria-label]="T().exercise_remove"
-              style="color: var(--danger)"
-            >
-              <app-icon name="trash" [size]="14" />
-            </button>
-            <button
-              class="icon-btn ex-expand-btn"
-              [class.ex-expand-btn--open]="isExpanded(i)"
-              (click)="toggleExpand(i)"
-              [attr.aria-label]="isExpanded(i) ? T().exercise_collapse : T().exercise_expand"
-              [attr.aria-expanded]="isExpanded(i)"
-            >
-              <app-icon name="chevron" [size]="14" />
-            </button>
-          </div>
+      <div cdkDropList class="ex-list" (cdkDropListDropped)="onDrop($event)">
+        @for (ex of exercises(); track ex.id; let i = $index) {
+          <div cdkDrag cdkDragLockAxis="y" class="ex-card">
+            <ng-template cdkDragPlaceholder>
+              <div class="ex-drag-placeholder"></div>
+            </ng-template>
 
-          <!-- Cuerpo: visible solo cuando está expandido -->
-          @if (isExpanded(i)) {
-            <div style="margin-top: 10px">
-              @if (activeNameField() === i && activeSuggestions().length) {
-                <div class="ex-suggest">
-                  <div class="ex-suggest-label">{{ T().day_editor_existing_title }}</div>
-                  @for (s of activeSuggestions(); track s.ex.id) {
-                    <button
-                      class="ex-suggest-item"
-                      type="button"
-                      (pointerdown)="$event.preventDefault(); selectSuggestion(i, s.ex)"
-                    >
-                      <span class="ex-suggest-main">
-                        <span class="ex-suggest-name">{{ s.ex.name }}</span>
-                        @if (s.archived) {
-                          <span class="ex-suggest-tag">{{ T().exercise_archived }}</span>
-                        }
-                      </span>
-                      @if (s.sessions > 0) {
-                        <span class="ex-suggest-hint">{{ sessionsLabel(s.sessions) }}</span>
-                      }
-                    </button>
-                  }
-                </div>
-              }
-
-              <div class="field-row">
-                <div class="field">
-                  <label class="field-label">{{ T().day_editor_sets }}</label>
-                  <input
-                    class="input"
-                    type="number"
-                    min="1"
-                    max="10"
-                    [value]="ex.defaultSets"
-                    (input)="setExNum(i, 'defaultSets', $event)"
-                  />
-                </div>
-                <div class="field">
-                  <label class="field-label">{{ T().day_editor_rep_target }}</label>
-                  <input
-                    class="input"
-                    type="number"
-                    min="1"
-                    max="50"
-                    [value]="ex.defaultRepTarget"
-                    (input)="setExNum(i, 'defaultRepTarget', $event)"
-                  />
-                </div>
+            <!-- Header: siempre visible, click = toggle expand -->
+            <div class="ex-header" (click)="toggleExpand(i)">
+              <div
+                cdkDragHandle
+                class="ex-drag-handle"
+                [attr.aria-label]="T().more_options"
+                (click)="$event.stopPropagation()"
+              >
+                <app-icon name="menu" [size]="16" />
               </div>
-
-              <div class="field-row">
-                <div class="field">
-                  <label class="field-label">{{ T().day_editor_brick }}</label>
-                  <input
-                    class="input"
-                    type="text"
-                    inputmode="decimal"
-                    [value]="ex.brick"
-                    (change)="setExBrick(i, $event)"
-                  />
-                </div>
-                <div class="field">
-                  <label class="field-label">{{ T().day_editor_rest }}</label>
-                  <input
-                    class="input"
-                    type="number"
-                    min="15"
-                    step="15"
-                    [value]="ex.restSeconds"
-                    (input)="setExNum(i, 'restSeconds', $event)"
-                  />
-                </div>
-              </div>
-
-              <div class="field">
-                <label class="field-label">{{ T().day_editor_unit }}</label>
-                <select class="select" [value]="ex.unit" (change)="setExUnit(i, $event)">
-                  @for (unit of units; track unit) {
-                    <option [value]="unit">{{ tr.unitLabel(unit) }}</option>
-                  }
-                </select>
-              </div>
+              <input
+                class="input ex-name-input"
+                type="text"
+                autocomplete="off"
+                [placeholder]="T().day_editor_exercise_placeholder"
+                [value]="ex.name"
+                (input)="setExName(i, $event)"
+                (focus)="focusName(i)"
+                (blur)="blurName()"
+                (click)="$event.stopPropagation()"
+              />
+              <app-icon
+                name="chevron"
+                [size]="14"
+                class="ex-chevron"
+                [class.ex-chevron--open]="isExpanded(i)"
+              />
             </div>
-          }
-        </div>
-      }
 
-      <button class="btn" style="width: 100%; justify-content: center" (click)="addExercise()">
+            <!-- Cuerpo: visible solo cuando está expandido -->
+            @if (isExpanded(i)) {
+              <div class="ex-body">
+                @if (activeNameField() === i && activeSuggestions().length) {
+                  <div class="ex-suggest">
+                    <div class="ex-suggest-label">{{ T().day_editor_existing_title }}</div>
+                    @for (s of activeSuggestions(); track s.ex.id) {
+                      <button
+                        class="ex-suggest-item"
+                        type="button"
+                        (pointerdown)="$event.preventDefault(); selectSuggestion(i, s.ex)"
+                      >
+                        <span class="ex-suggest-main">
+                          <span class="ex-suggest-name">{{ s.ex.name }}</span>
+                          @if (s.archived) {
+                            <span class="ex-suggest-tag">{{ T().exercise_archived }}</span>
+                          }
+                        </span>
+                        @if (s.sessions > 0) {
+                          <span class="ex-suggest-hint">{{ sessionsLabel(s.sessions) }}</span>
+                        }
+                      </button>
+                    }
+                  </div>
+                }
+
+                <div class="field-row">
+                  <div class="field">
+                    <label class="field-label">{{ T().day_editor_sets }}</label>
+                    <input
+                      class="input"
+                      type="number"
+                      min="1"
+                      max="10"
+                      [value]="ex.defaultSets"
+                      (input)="setExNum(i, 'defaultSets', $event)"
+                    />
+                  </div>
+                  <div class="field">
+                    <label class="field-label">{{ T().day_editor_rep_target }}</label>
+                    <input
+                      class="input"
+                      type="number"
+                      min="1"
+                      max="50"
+                      [value]="ex.defaultRepTarget"
+                      (input)="setExNum(i, 'defaultRepTarget', $event)"
+                    />
+                  </div>
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label class="field-label">{{ T().day_editor_brick }}</label>
+                    <input
+                      class="input"
+                      type="text"
+                      inputmode="decimal"
+                      [value]="ex.brick"
+                      (change)="setExBrick(i, $event)"
+                    />
+                  </div>
+                  <div class="field">
+                    <label class="field-label">{{ T().day_editor_rest }}</label>
+                    <input
+                      class="input"
+                      type="number"
+                      min="15"
+                      step="15"
+                      [value]="ex.restSeconds"
+                      (input)="setExNum(i, 'restSeconds', $event)"
+                    />
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="field-label">{{ T().day_editor_unit }}</label>
+                  <select class="select" [value]="ex.unit" (change)="setExUnit(i, $event)">
+                    @for (unit of units; track unit) {
+                      <option [value]="unit">{{ tr.unitLabel(unit) }}</option>
+                    }
+                  </select>
+                </div>
+
+                <!-- Eliminar ejercicio: botón + confirmación inline -->
+                @if (confirmDeleteExIndex() === i) {
+                  <div class="ex-delete-confirm">
+                    <span class="ex-delete-confirm-q">{{ T().exercise_remove_confirm }}</span>
+                    <div class="ex-delete-confirm-actions">
+                      <button class="btn btn-sm" (click)="cancelDeleteExercise()">
+                        {{ T().cancel }}
+                      </button>
+                      <button class="btn btn-sm btn-danger" (click)="confirmRemoveExercise(i)">
+                        {{ T().confirm }}
+                      </button>
+                    </div>
+                  </div>
+                } @else {
+                  <button class="ex-delete-btn" (click)="requestDeleteExercise(i)">
+                    <app-icon name="trash" [size]="13" />
+                    {{ T().exercise_remove }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <button
+        class="btn"
+        style="width: 100%; justify-content: center; margin-top: 4px"
+        (click)="addExercise()"
+      >
         <app-icon name="plus" [size]="14" />
         {{ T().day_editor_add_exercise }}
       </button>
+
+      <!-- Eliminar día: en el cuerpo, separado del footer -->
+      @if (!isNew) {
+        <div class="delete-day-section">
+          @if (confirmDeleteDay()) {
+            <div class="delete-day-confirm">
+              <span class="delete-day-confirm-q">{{ T().day_editor_delete_confirm }}</span>
+              <div class="delete-day-confirm-actions">
+                <button class="btn btn-sm" (click)="cancelDeleteDay()">{{ T().cancel }}</button>
+                <button class="btn btn-sm btn-danger" (click)="deleteDay()">
+                  {{ T().day_editor_delete_day }}
+                </button>
+              </div>
+            </div>
+          } @else {
+            <button class="delete-day-btn" (click)="requestDeleteDay()">
+              <app-icon name="trash" [size]="13" />
+              {{ T().day_editor_delete_day }}
+            </button>
+          }
+        </div>
+      }
     </div>
 
     <div class="sheet-footer">
-      @if (!isNew) {
-        <button class="btn btn-danger" (click)="deleteDay()">
-          <app-icon name="trash" [size]="13" />
-          {{ T().day_editor_delete_day }}
-        </button>
-      }
       <button class="btn btn-ghost" (click)="close()">{{ T().cancel }}</button>
       <button
         class="btn btn-primary"

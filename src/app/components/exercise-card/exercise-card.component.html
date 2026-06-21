@@ -76,6 +76,12 @@
         }
       </div>
 
+      @if (prevSetsLine()) {
+        <p class="ex-prev-sets">
+          <span class="ex-prev-label">{{ T().prev_sets_label }}:</span> {{ prevSetsLine() }}
+        </p>
+      }
+
       <div class="sets">
         <div class="sets-header">
           <span></span>

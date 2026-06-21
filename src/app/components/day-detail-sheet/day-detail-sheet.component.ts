@@ -18,7 +18,8 @@ export class DayDetailSheetComponent {
   protected readonly state = inject(StateService);
   protected readonly storage = inject(StorageService);
   protected readonly uiState = inject(UIStateService);
-  protected readonly T = inject(TranslationService).T;
+  protected readonly tr = inject(TranslationService);
+  protected readonly T = this.tr.T;
 
   protected readonly day = computed(() => this.uiState.dayDetail());
 
@@ -47,9 +48,9 @@ export class DayDetailSheetComponent {
     const days = Math.floor(
       (new Date(todayISO).getTime() - new Date(session.dateISO).getTime()) / 86_400_000,
     );
-    if (days === 0) return 'Hoy';
-    if (days === 1) return 'Hace 1 día';
-    return `Hace ${days} días`;
+    if (days === 0) return this.T().today_ago;
+    if (days === 1) return this.T().days_ago_one;
+    return this.tr.tp('days_ago_many', { n: days });
   });
 
   protected close(): void {

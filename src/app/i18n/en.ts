@@ -93,6 +93,13 @@ export const en: Translations = {
   rest_timer_next_exercise: 'Next exercise',
   rest_done_notification: 'Rest finished',
 
+  detail_last_session_prefix: 'Last session',
+  detail_no_data: 'No data',
+  detail_view_history: 'View full history',
+  detail_train_day: 'Train this day',
+
+  prev_sets_label: 'Previous',
+
   history_empty: 'No sessions recorded for this day yet.',
   history_edit: 'Edit session',
   history_delete: 'Delete session',
@@ -267,6 +274,8 @@ export const en: Translations = {
   day_editor_unit: 'Unit',
   day_editor_add_exercise: 'Add exercise',
   day_editor_delete_day: 'Delete',
+  day_editor_delete_confirm: 'Delete this day from the routine?',
+  exercise_remove_confirm: 'Remove this exercise?',
   day_editor_existing_title: 'Already tracked — reuses your history',
   exercise_sessions_one: '1 session',
   exercise_sessions_many: '{n} sessions',

@@ -6,7 +6,7 @@
       <div>
         <h3 class="sheet-title">{{ day()?.name }}</h3>
         @if (sessionDateLabel()) {
-          <p class="sheet-sub">Última sesión · {{ sessionDateLabel() }}</p>
+          <p class="sheet-sub">{{ T().detail_last_session_prefix }} · {{ sessionDateLabel() }}</p>
         }
       </div>
       <button class="icon-btn" (click)="close()" [attr.aria-label]="T().close_btn">
@@ -17,7 +17,7 @@
     <div class="sheet-body">
       @if (!lastSession()) {
         <div class="detail-empty">
-          <p>Todavía no hay sesiones registradas para este día.</p>
+          <p>{{ T().history_empty }}</p>
         </div>
       } @else {
         <div class="detail-exercises">
@@ -33,7 +33,7 @@
                   }
                 </div>
               } @else {
-                <span class="detail-no-data">Sin datos</span>
+                <span class="detail-no-data">{{ T().detail_no_data }}</span>
               }
             </div>
           }
@@ -44,7 +44,7 @@
     <div class="sheet-footer">
       <button class="btn btn-ghost btn-sm" (click)="openHistory()">
         <app-icon name="history" [size]="13" />
-        Ver todo el historial
+        {{ T().detail_view_history }}
       </button>
       <button class="btn btn-ghost btn-sm" (click)="editDay()">
         <app-icon name="edit" [size]="13" />
@@ -52,7 +52,7 @@
       </button>
       <button class="btn btn-primary btn-sm" (click)="trainDay()">
         <app-icon name="dumbbell" [size]="13" />
-        Entrenar este día
+        {{ T().detail_train_day }}
       </button>
     </div>
   </div>

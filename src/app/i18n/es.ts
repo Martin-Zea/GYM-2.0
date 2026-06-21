@@ -93,6 +93,13 @@ export const es: Translations = {
   rest_timer_next_exercise: 'Siguiente ejercicio',
   rest_done_notification: 'Descanso terminado',
 
+  detail_last_session_prefix: 'Última sesión',
+  detail_no_data: 'Sin datos',
+  detail_view_history: 'Ver todo el historial',
+  detail_train_day: 'Entrenar este día',
+
+  prev_sets_label: 'Anterior',
+
   history_empty: 'Todavía no hay sesiones registradas para este día.',
   history_edit: 'Editar sesión',
   history_delete: 'Eliminar sesión',
@@ -268,6 +275,8 @@ export const es: Translations = {
   day_editor_unit: 'Unidad',
   day_editor_add_exercise: 'Agregar ejercicio',
   day_editor_delete_day: 'Eliminar',
+  day_editor_delete_confirm: '¿Eliminar este día de la rutina?',
+  exercise_remove_confirm: '¿Eliminar este ejercicio?',
   day_editor_existing_title: 'Ya lo hacés — reutiliza tu historial',
   exercise_sessions_one: '1 sesión',
   exercise_sessions_many: '{n} sesiones',

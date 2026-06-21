@@ -4,7 +4,7 @@
     <div class="sheet-handle"></div>
     <div class="sheet-header">
       <div>
-        <h3 class="sheet-title">Historial</h3>
+        <h3 class="sheet-title">{{ T().history_title }}</h3>
         <p class="sheet-sub">{{ day()?.name }}</p>
       </div>
       <button class="icon-btn" (click)="close()" [attr.aria-label]="T().close_btn">

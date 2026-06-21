@@ -79,6 +79,23 @@ export class ExerciseCardComponent {
 
   protected readonly doneSetsCount = computed(() => this.setsArray().filter((s) => s.done).length);
 
+  protected readonly lastSets = computed(
+    () => this.storage.lastSetsForExercise(this.state.state(), this.exercise().id) ?? [],
+  );
+
+  protected readonly prevSetsLine = computed(() => {
+    const sets = this.lastSets();
+    if (!sets.length) return '';
+    const unit = this.exercise().unit;
+    return sets
+      .map((s) => {
+        if (unit === 'peso corporal') return `${s.reps}r`;
+        if (unit === 'tiempo') return `${s.reps}s`;
+        return `${s.weight}×${s.reps}`;
+      })
+      .join(' / ');
+  });
+
   protected readonly isDone = computed(() => {
     const arr = this.setsArray();
     return arr.length > 0 && arr.every((s) => s.done);

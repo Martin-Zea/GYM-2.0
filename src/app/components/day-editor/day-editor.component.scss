@@ -65,12 +65,169 @@
   white-space: nowrap;
 }
 
-.ex-expand-btn {
-  app-icon {
-    transition: transform 0.18s ease;
-  }
+/* ── Exercise list (CDK drop container) ── */
 
-  &--open app-icon {
+.ex-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Exercise card ── */
+
+.ex-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.ex-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ex-drag-handle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--text-3);
+  cursor: grab;
+  touch-action: none;
+  border-radius: var(--radius-sm);
+
+  &:active {
+    cursor: grabbing;
+    color: var(--text-1);
+  }
+}
+
+.ex-name-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.ex-chevron {
+  flex-shrink: 0;
+  color: var(--text-3);
+  transition: transform 0.18s ease;
+
+  &--open {
     transform: rotate(180deg);
   }
+}
+
+.ex-body {
+  padding: 0 12px 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+}
+
+/* ── Delete exercise (inline) ── */
+
+.ex-delete-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--danger);
+  cursor: pointer;
+  opacity: 0.7;
+
+  &:active {
+    opacity: 1;
+  }
+}
+
+.ex-delete-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--danger) 8%, transparent);
+  border: 1px solid color-mix(in oklab, var(--danger) 20%, transparent);
+}
+
+.ex-delete-confirm-q {
+  font-size: 13px;
+  color: var(--text-1);
+  flex: 1;
+}
+
+.ex-delete-confirm-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ── CDK drag ── */
+
+.ex-drag-placeholder {
+  background: var(--bg-hover);
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  min-height: 48px;
+}
+
+/* ── Delete day section (in body, above footer) ── */
+
+.delete-day-section {
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.delete-day-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--danger);
+  cursor: pointer;
+  opacity: 0.7;
+
+  &:active {
+    opacity: 1;
+  }
+}
+
+.delete-day-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--danger) 8%, transparent);
+  border: 1px solid color-mix(in oklab, var(--danger) 20%, transparent);
+}
+
+.delete-day-confirm-q {
+  font-size: 13px;
+  color: var(--text-1);
+}
+
+.delete-day-confirm-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }

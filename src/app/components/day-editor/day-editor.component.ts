@@ -1,4 +1,12 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  CdkDragDrop,
+  CdkDrag,
+  CdkDropList,
+  moveItemInArray,
+  CdkDragHandle,
+  CdkDragPlaceholder,
+} from '@angular/cdk/drag-drop';
 import { IconComponent } from '../icon/icon.component';
 import { FocusTrapDirective } from '../../directives/focus-trap.directive';
 import { StateService } from '../../services/state.service';
@@ -10,13 +18,20 @@ import { Exercise, ExerciseUnit, WorkoutDay } from '../../models/workout.model';
 interface ExerciseSuggestion {
   ex: Exercise;
   sessions: number;
-  archived: boolean; // está en el catálogo pero ya no en ninguna rutina
+  archived: boolean;
 }
 
 @Component({
   selector: 'app-day-editor',
   standalone: true,
-  imports: [IconComponent, FocusTrapDirective],
+  imports: [
+    IconComponent,
+    FocusTrapDirective,
+    CdkDrag,
+    CdkDropList,
+    CdkDragHandle,
+    CdkDragPlaceholder,
+  ],
   templateUrl: './day-editor.component.html',
   styleUrl: './day-editor.component.scss',
 })
@@ -29,16 +44,11 @@ export class DayEditorComponent implements OnInit {
 
   protected readonly dayName = signal('');
   protected readonly exercises = signal<Exercise[]>([]);
-  /** Índice de la fila cuyo input de nombre está enfocado (o null). */
   protected readonly activeNameField = signal<number | null>(null);
-  /** Set de índices de ejercicios expandidos en el acordeón. */
   protected readonly expandedIndices = signal<Set<number>>(new Set<number>());
+  protected readonly confirmDeleteExIndex = signal<number | null>(null);
+  protected readonly confirmDeleteDay = signal(false);
 
-  /**
-   * Sugerencias del catálogo para la fila activa: ejercicios cuyo nombre normalizado
-   * contiene lo tipeado y que no están ya en este día. Ordenadas por más historial
-   * primero. Elegir una reusa su id → reconecta el historial en vez de duplicar.
-   */
   protected readonly activeSuggestions = computed<ExerciseSuggestion[]>(() => {
     const i = this.activeNameField();
     if (i === null) return [];
@@ -48,7 +58,6 @@ export class DayEditorComponent implements OnInit {
     if (!query) return [];
     const usedIds = new Set(this.exercises().map((e) => e.id));
     const appState = this.state.state();
-    // Ids referenciados por alguna rutina: los que no estén acá están "archivados".
     const activeIds = new Set(appState.days.flatMap((d) => d.exerciseIds));
     const out: ExerciseSuggestion[] = [];
     for (const ex of this.state.exercises()) {
@@ -63,6 +72,7 @@ export class DayEditorComponent implements OnInit {
     out.sort((a, b) => b.sessions - a.sessions || a.ex.name.localeCompare(b.ex.name));
     return out.slice(0, 5);
   });
+
   protected readonly units: ExerciseUnit[] = [
     'kg',
     'kg por mano',
@@ -111,7 +121,16 @@ export class DayEditorComponent implements OnInit {
     });
   }
 
-  protected removeExercise(i: number): void {
+  protected requestDeleteExercise(i: number): void {
+    this.confirmDeleteExIndex.set(i);
+  }
+
+  protected cancelDeleteExercise(): void {
+    this.confirmDeleteExIndex.set(null);
+  }
+
+  protected confirmRemoveExercise(i: number): void {
+    this.confirmDeleteExIndex.set(null);
     this.exercises.update((arr) => arr.filter((_, idx) => idx !== i));
     this.expandedIndices.update((s) => {
       const next = new Set<number>();
@@ -123,27 +142,42 @@ export class DayEditorComponent implements OnInit {
     });
   }
 
-  protected moveUp(i: number): void {
-    if (i <= 0) return;
-    this.exercises.update((arr) => {
-      const copy = [...arr];
-      [copy[i - 1], copy[i]] = [copy[i], copy[i - 1]];
-      return copy;
-    });
-    this.swapExpanded(i, i - 1);
+  protected requestDeleteDay(): void {
+    this.confirmDeleteDay.set(true);
   }
 
-  protected moveDown(i: number): void {
-    if (i >= this.exercises().length - 1) return;
-    this.exercises.update((arr) => {
-      const copy = [...arr];
-      [copy[i], copy[i + 1]] = [copy[i + 1], copy[i]];
-      return copy;
-    });
-    this.swapExpanded(i, i + 1);
+  protected cancelDeleteDay(): void {
+    this.confirmDeleteDay.set(false);
+  }
+
+  protected onDrop(event: CdkDragDrop<Exercise[]>): void {
+    const from = event.previousIndex;
+    const to = event.currentIndex;
+    if (from === to) return;
+
+    const old = this.expandedIndices();
+    const next = new Set<number>();
+    for (const idx of old) {
+      if (idx === from) {
+        next.add(to);
+      } else if (from < to && idx > from && idx <= to) {
+        next.add(idx - 1);
+      } else if (from > to && idx >= to && idx < from) {
+        next.add(idx + 1);
+      } else {
+        next.add(idx);
+      }
+    }
+
+    const arr = [...this.exercises()];
+    moveItemInArray(arr, from, to);
+    this.exercises.set(arr);
+    this.expandedIndices.set(next);
+    this.confirmDeleteExIndex.set(null);
   }
 
   protected toggleExpand(i: number): void {
+    this.confirmDeleteExIndex.set(null);
     this.expandedIndices.update((s) => {
       const next = new Set(s);
       if (next.has(i)) next.delete(i);
@@ -154,19 +188,6 @@ export class DayEditorComponent implements OnInit {
 
   protected isExpanded(i: number): boolean {
     return this.expandedIndices().has(i);
-  }
-
-  private swapExpanded(a: number, b: number): void {
-    this.expandedIndices.update((s) => {
-      const next = new Set(s);
-      const aExp = s.has(a);
-      const bExp = s.has(b);
-      if (aExp) next.add(b);
-      else next.delete(b);
-      if (bExp) next.add(a);
-      else next.delete(a);
-      return next;
-    });
   }
 
   protected setDayName(event: Event): void {
@@ -182,12 +203,10 @@ export class DayEditorComponent implements OnInit {
     this.activeNameField.set(i);
   }
 
-  /** Oculta el dropdown tras un respiro para que un tap en una sugerencia alcance a registrarse. */
   protected blurName(): void {
     setTimeout(() => this.activeNameField.set(null), 120);
   }
 
-  /** Adopta la definición completa del catálogo (incluido su id → reconecta historial). */
   protected selectSuggestion(i: number, ex: Exercise): void {
     this.exercises.update((arr) => arr.map((row, idx) => (idx === i ? { ...ex } : row)));
     this.activeNameField.set(null);

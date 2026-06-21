@@ -102,6 +102,15 @@ export interface Translations {
   rest_timer_next_exercise: string;
   rest_done_notification: string;
 
+  // Day detail sheet
+  detail_last_session_prefix: string;
+  detail_no_data: string;
+  detail_view_history: string;
+  detail_train_day: string;
+
+  // Exercise card
+  prev_sets_label: string;
+
   // Day history sheet — edit/delete sessions
   history_empty: string;
   history_edit: string;
@@ -286,6 +295,8 @@ export interface Translations {
   day_editor_unit: string;
   day_editor_add_exercise: string;
   day_editor_delete_day: string;
+  day_editor_delete_confirm: string;
+  exercise_remove_confirm: string;
   day_editor_existing_title: string; // encabezado del dropdown de sugerencias
   exercise_sessions_one: string;
   exercise_sessions_many: string; // {n}
