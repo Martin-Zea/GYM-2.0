@@ -251,17 +251,25 @@
               class="btn btn-sm"
               [class.btn-primary]="settings().userProfile.goal === 'strength'"
               (click)="setGoal(settings().userProfile.goal === 'strength' ? null : 'strength')"
-            >{{ T().settings_goal_strength }}</button>
+            >
+              {{ T().settings_goal_strength }}
+            </button>
             <button
               class="btn btn-sm"
               [class.btn-primary]="settings().userProfile.goal === 'hypertrophy'"
-              (click)="setGoal(settings().userProfile.goal === 'hypertrophy' ? null : 'hypertrophy')"
-            >{{ T().settings_goal_hypertrophy }}</button>
+              (click)="
+                setGoal(settings().userProfile.goal === 'hypertrophy' ? null : 'hypertrophy')
+              "
+            >
+              {{ T().settings_goal_hypertrophy }}
+            </button>
             <button
               class="btn btn-sm"
               [class.btn-primary]="settings().userProfile.goal === 'endurance'"
               (click)="setGoal(settings().userProfile.goal === 'endurance' ? null : 'endurance')"
-            >{{ T().settings_goal_endurance }}</button>
+            >
+              {{ T().settings_goal_endurance }}
+            </button>
           </div>
         </div>
       </div>

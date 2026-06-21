@@ -51,7 +51,9 @@ export class ExerciseCardComponent {
   /** Indices where AI wrote the value and user hasn't edited yet — derived from persisted state */
   protected readonly aiPrefilledIndices = computed((): ReadonlySet<number> => {
     const s = new Set<number>();
-    this.setsArray().forEach((set, i) => { if (set.aiPrefilled) s.add(i); });
+    this.setsArray().forEach((set, i) => {
+      if (set.aiPrefilled) s.add(i);
+    });
     return s;
   });
 
@@ -79,14 +81,17 @@ export class ExerciseCardComponent {
         done: false,
       };
     });
-    console.log(`[setsArray] ${ex.name}`, result.map((s, i) => ({
-      i,
-      weight: s.weight,
-      reps: s.reps,
-      done: s.done,
-      aiPrefilled: (s as TodaySetProgress & { aiPrefilled?: boolean }).aiPrefilled,
-      fromSaved: !!saved[i],
-    })));
+    console.log(
+      `[setsArray] ${ex.name}`,
+      result.map((s, i) => ({
+        i,
+        weight: s.weight,
+        reps: s.reps,
+        done: s.done,
+        aiPrefilled: (s as TodaySetProgress & { aiPrefilled?: boolean }).aiPrefilled,
+        fromSaved: !!saved[i],
+      })),
+    );
     return result;
   });
 
@@ -239,7 +244,10 @@ export class ExerciseCardComponent {
     const current = this.setsArray()[i]?.weight;
     const base = current !== '' && current !== undefined ? Number(current) : 0;
     const next = Math.max(0, Math.round((base + delta) * 4) / 4);
-    this.state.updateSet(this.day().id, this.exercise().id, i, { weight: next, aiPrefilled: false });
+    this.state.updateSet(this.day().id, this.exercise().id, i, {
+      weight: next,
+      aiPrefilled: false,
+    });
   }
 
   protected stepReps(i: number, delta: number): void {

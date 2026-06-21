@@ -202,7 +202,8 @@ export const es: Translations = {
   settings_goal_hypertrophy: 'Hipertrofia',
   settings_goal_endurance: 'Resistencia',
   settings_ai_notes_label: 'Contexto personal',
-  settings_ai_notes_desc: 'El asistente lo usará al sugerirte pesos. Ej.: lesión en hombro, priorizo fuerza explosiva.',
+  settings_ai_notes_desc:
+    'El asistente lo usará al sugerirte pesos. Ej.: lesión en hombro, priorizo fuerza explosiva.',
   settings_ai_notes_placeholder_no_key: 'Requiere Groq o Cohere configurado arriba',
   settings_ai_section: 'Inteligencia artificial',
   settings_api_key_label: 'API Key de Groq (IA gratis)',

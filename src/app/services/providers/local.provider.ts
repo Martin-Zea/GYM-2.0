@@ -254,7 +254,11 @@ export class LocalProvider implements AiProvider {
     lang: 'es' | 'en' = 'es',
   ): AiRecommendation {
     const brick = exercise.brick || 2.5;
-    const repTarget = goalRepTarget(userProfile.goal, exercise.defaultRepTarget || 10, exercise.unit);
+    const repTarget = goalRepTarget(
+      userProfile.goal,
+      exercise.defaultRepTarget || 10,
+      exercise.unit,
+    );
     const setsTarget = exercise.defaultSets || 3;
     const r = buildReasons(lang);
 

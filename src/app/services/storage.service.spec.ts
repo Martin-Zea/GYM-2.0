@@ -21,7 +21,15 @@ function baseState(overrides: Partial<AppState> = {}): AppState {
       sounds: true,
       haptics: true,
       theme: 'dark',
-      userProfile: { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [], goal: null, aiNotes: '' },
+      userProfile: {
+        weightKg: null,
+        heightCm: null,
+        age: null,
+        sex: null,
+        weightLog: [],
+        goal: null,
+        aiNotes: '',
+      },
     },
     ...overrides,
   };
@@ -94,7 +102,15 @@ describe('StorageService', () => {
         sounds: true,
         haptics: true,
         theme: 'dark',
-        userProfile: { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [], goal: null, aiNotes: '' },
+        userProfile: {
+          weightKg: null,
+          heightCm: null,
+          age: null,
+          sex: null,
+          weightLog: [],
+          goal: null,
+          aiNotes: '',
+        },
       });
     });
 

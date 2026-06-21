@@ -208,7 +208,15 @@ export function createInitialState(): AppState {
       sounds: true,
       haptics: true,
       theme: 'dark',
-      userProfile: { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [], goal: null, aiNotes: '' },
+      userProfile: {
+        weightKg: null,
+        heightCm: null,
+        age: null,
+        sex: null,
+        weightLog: [],
+        goal: null,
+        aiNotes: '',
+      },
     },
   };
 }

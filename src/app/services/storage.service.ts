@@ -46,7 +46,15 @@ export interface HistoryEntry {
 }
 
 function defaultUserProfile(): UserProfile {
-  return { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [], goal: null, aiNotes: '' };
+  return {
+    weightKg: null,
+    heightCm: null,
+    age: null,
+    sex: null,
+    weightLog: [],
+    goal: null,
+    aiNotes: '',
+  };
 }
 
 @Injectable({ providedIn: 'root' })

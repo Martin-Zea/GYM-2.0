@@ -58,23 +58,34 @@ export function buildProfileNote(perfilParts: string[], userProfile: UserProfile
 }
 
 // Used only by LocalProvider — AI providers receive goal as context, not as a rep directive
-export function goalRepTarget(goal: TrainingGoal | null | undefined, defaultRep: number, unit?: ExerciseUnit): number {
+export function goalRepTarget(
+  goal: TrainingGoal | null | undefined,
+  defaultRep: number,
+  unit?: ExerciseUnit,
+): number {
   if (unit === 'peso corporal' || unit === 'tiempo') return defaultRep;
   if (goal === 'strength') return Math.min(defaultRep, 5);
   if (goal === 'endurance') return Math.max(defaultRep, 15);
   return defaultRep;
 }
 
-export function buildGoalNote(goal: TrainingGoal | null | undefined, aiNotes: string | undefined): string {
+export function buildGoalNote(
+  goal: TrainingGoal | null | undefined,
+  aiNotes: string | undefined,
+): string {
   const lines: string[] = [];
   if (goal) {
     const labels: Record<TrainingGoal, string> = {
-      strength: 'fuerza (priorizar carga pesada, 3-5 reps en compuestos; en aislamiento ajustá según historial y tipo de ejercicio)',
+      strength:
+        'fuerza (priorizar carga pesada, 3-5 reps en compuestos; en aislamiento ajustá según historial y tipo de ejercicio)',
       hypertrophy: 'hipertrofia (rango 6-12 reps, volumen moderado-alto)',
-      endurance: 'resistencia muscular (15+ reps, pesos moderados; ajustá según el tipo de ejercicio y su historial)',
+      endurance:
+        'resistencia muscular (15+ reps, pesos moderados; ajustá según el tipo de ejercicio y su historial)',
     };
     lines.push(`- Objetivo del atleta: ${labels[goal]}.`);
-    lines.push(`- El campo "objetivo" en los datos refleja el target natural del ejercicio. Aplicá el goal como guía profesional, no como directiva rígida de reps.`);
+    lines.push(
+      `- El campo "objetivo" en los datos refleja el target natural del ejercicio. Aplicá el goal como guía profesional, no como directiva rígida de reps.`,
+    );
   }
   if (aiNotes?.trim()) {
     lines.push(`- Contexto personal del atleta: ${aiNotes.trim()}`);
