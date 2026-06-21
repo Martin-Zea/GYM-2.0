@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1782075765940,
+  "timestamp": 1782075849055,
   "index": "/GYM-2.0/index.html",
   "assetGroups": [
     {
@@ -21,7 +21,7 @@
         "/GYM-2.0/chunk-UZDJNW6Q.js",
         "/GYM-2.0/favicon.ico",
         "/GYM-2.0/index.html",
-        "/GYM-2.0/main-DSF2KU3F.js",
+        "/GYM-2.0/main-6URZ76VM.js",
         "/GYM-2.0/manifest.webmanifest",
         "/GYM-2.0/styles-XAXF2KAB.css"
       ],
@@ -109,8 +109,8 @@
     "/GYM-2.0/icons/gainai-maskable-72x72.png": "0b0f41d966bdaa037028ad8dfefc83e76fc32bae",
     "/GYM-2.0/icons/gainai-maskable-96x96.png": "88f28a3c5cc3ed7663f9f3ed08894ea950c53539",
     "/GYM-2.0/icons/gainai-maskable.svg": "4ada5e0f771b75a937c5dd2d679b75b30b6496d9",
-    "/GYM-2.0/index.html": "05fdb66453a0c91ef0d2e4cd0a2df4984b159320",
-    "/GYM-2.0/main-DSF2KU3F.js": "3fd733b9ad76aaa2400f543b2a4ca57de4c5f21e",
+    "/GYM-2.0/index.html": "8c7655b8db01277298629c812d4eab9d32cc9cbf",
+    "/GYM-2.0/main-6URZ76VM.js": "89fc71c1979d3face7c74c48098169d93e43053f",
     "/GYM-2.0/manifest.webmanifest": "347d778acecce3cebc1eff3066b8cb6c5cd4870c",
     "/GYM-2.0/media/inter-cyrillic-JEOLYBOO.woff2": "9f73b2f43ea3bf37cc8e90a5aa8c7e668ec44504",
     "/GYM-2.0/media/inter-cyrillic-ext-IYF56FF6.woff2": "705d625066dba0c159f137e73f91e232097d208d",
