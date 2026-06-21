@@ -219,7 +219,7 @@ export class StateService {
 
   /** El historial cambió: las recomendaciones cacheadas ya no valen */
   private invalidateAiCache(): void {
-    localStorage.removeItem('gym_ai_cache_v1');
+    localStorage.removeItem('gym_ai_cache_v2');
   }
 
   getTodayProgress(dayId: string): TodayDayProgress {

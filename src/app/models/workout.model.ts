@@ -55,6 +55,7 @@ export interface TodaySetProgress {
   reps: number | string;
   done: boolean;
   isWarmup?: boolean;
+  aiPrefilled?: boolean;
 }
 
 export interface TodayDayProgress {
@@ -67,12 +68,16 @@ export interface WeightLogEntry {
   weightKg: number;
 }
 
+export type TrainingGoal = 'strength' | 'hypertrophy' | 'endurance';
+
 export interface UserProfile {
   weightKg: number | null;
   heightCm: number | null;
   age: number | null;
   sex: 'male' | 'female' | 'other' | null;
   weightLog: WeightLogEntry[];
+  goal: TrainingGoal | null;
+  aiNotes: string;
 }
 
 export interface AppSettings {

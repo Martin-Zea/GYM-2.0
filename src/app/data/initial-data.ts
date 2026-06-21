@@ -194,7 +194,7 @@ export function createInitialState(): AppState {
   ];
 
   return {
-    schemaVersion: 5,
+    schemaVersion: 6,
     exercises,
     days,
     sessions,
@@ -208,7 +208,7 @@ export function createInitialState(): AppState {
       sounds: true,
       haptics: true,
       theme: 'dark',
-      userProfile: { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [] },
+      userProfile: { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [], goal: null, aiNotes: '' },
     },
   };
 }

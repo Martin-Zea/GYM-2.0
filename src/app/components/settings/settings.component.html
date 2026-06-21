@@ -242,6 +242,28 @@
             <option value="other">{{ T().settings_sex_other }}</option>
           </select>
         </div>
+        <!-- Objetivo de entrenamiento -->
+        <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 8px">
+          <div class="settings-row-label">{{ T().settings_goal_label }}</div>
+          <div class="settings-row-desc">{{ T().settings_goal_desc }}</div>
+          <div style="display: flex; gap: 6px">
+            <button
+              class="btn btn-sm"
+              [class.btn-primary]="settings().userProfile.goal === 'strength'"
+              (click)="setGoal(settings().userProfile.goal === 'strength' ? null : 'strength')"
+            >{{ T().settings_goal_strength }}</button>
+            <button
+              class="btn btn-sm"
+              [class.btn-primary]="settings().userProfile.goal === 'hypertrophy'"
+              (click)="setGoal(settings().userProfile.goal === 'hypertrophy' ? null : 'hypertrophy')"
+            >{{ T().settings_goal_hypertrophy }}</button>
+            <button
+              class="btn btn-sm"
+              [class.btn-primary]="settings().userProfile.goal === 'endurance'"
+              (click)="setGoal(settings().userProfile.goal === 'endurance' ? null : 'endurance')"
+            >{{ T().settings_goal_endurance }}</button>
+          </div>
+        </div>
       </div>
 
       <!-- IA -->
@@ -303,6 +325,23 @@
               {{ showCohereKey() ? T().settings_hide : T().settings_show }}
             </button>
           </div>
+        </div>
+        <!-- Contexto personal para la IA -->
+        <div
+          class="settings-row"
+          style="flex-direction: column; align-items: stretch; gap: 8px; margin-top: 12px"
+        >
+          <div class="settings-row-label">{{ T().settings_ai_notes_label }}</div>
+          <div class="settings-row-desc">{{ T().settings_ai_notes_desc }}</div>
+          <textarea
+            class="input"
+            rows="3"
+            maxlength="200"
+            style="resize: none; font-size: 14px; line-height: 1.4"
+            [placeholder]="hasApiKey ? '' : T().settings_ai_notes_placeholder_no_key"
+            [value]="settings().userProfile.aiNotes"
+            (input)="patchAiNotes($event)"
+          ></textarea>
         </div>
         <p class="settings-row-desc settings-ai-privacy" style="margin-top: 12px">
           <app-icon

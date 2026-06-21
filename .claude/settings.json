@@ -16,7 +16,8 @@
       "Bash(npm root *)",
       "Bash(ls \"$\\(npm root -g\\)/playwright-core\")",
       "Bash(# playwright-core viene del paquete npx cacheado - busco donde vive *)",
-      "Read(//c/Users/marti/**)"
+      "Read(//c/Users/marti/**)",
+      "Bash(npx vitest *)"
     ]
   }
 }

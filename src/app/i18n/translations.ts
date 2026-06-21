@@ -217,6 +217,14 @@ export interface Translations {
   settings_sex_male: string;
   settings_sex_female: string;
   settings_sex_other: string;
+  settings_goal_label: string;
+  settings_goal_desc: string;
+  settings_goal_strength: string;
+  settings_goal_hypertrophy: string;
+  settings_goal_endurance: string;
+  settings_ai_notes_label: string;
+  settings_ai_notes_desc: string;
+  settings_ai_notes_placeholder_no_key: string;
   settings_ai_section: string;
   settings_api_key_label: string;
   settings_api_key_desc: string;

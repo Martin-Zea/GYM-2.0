@@ -1,4 +1,4 @@
-import { UserProfile } from '../../models/workout.model';
+import { ExerciseUnit, TrainingGoal, UserProfile } from '../../models/workout.model';
 import { HistoryEntry } from '../storage.service';
 
 export const AI_TIMEOUT_MS = 12000;
@@ -57,6 +57,31 @@ export function buildProfileNote(perfilParts: string[], userProfile: UserProfile
   return `- Perfil: ${perfilParts.join(', ')}. ${tips}\n`;
 }
 
+// Used only by LocalProvider — AI providers receive goal as context, not as a rep directive
+export function goalRepTarget(goal: TrainingGoal | null | undefined, defaultRep: number, unit?: ExerciseUnit): number {
+  if (unit === 'peso corporal' || unit === 'tiempo') return defaultRep;
+  if (goal === 'strength') return Math.min(defaultRep, 5);
+  if (goal === 'endurance') return Math.max(defaultRep, 15);
+  return defaultRep;
+}
+
+export function buildGoalNote(goal: TrainingGoal | null | undefined, aiNotes: string | undefined): string {
+  const lines: string[] = [];
+  if (goal) {
+    const labels: Record<TrainingGoal, string> = {
+      strength: 'fuerza (priorizar carga pesada, 3-5 reps en compuestos; en aislamiento ajustá según historial y tipo de ejercicio)',
+      hypertrophy: 'hipertrofia (rango 6-12 reps, volumen moderado-alto)',
+      endurance: 'resistencia muscular (15+ reps, pesos moderados; ajustá según el tipo de ejercicio y su historial)',
+    };
+    lines.push(`- Objetivo del atleta: ${labels[goal]}.`);
+    lines.push(`- El campo "objetivo" en los datos refleja el target natural del ejercicio. Aplicá el goal como guía profesional, no como directiva rígida de reps.`);
+  }
+  if (aiNotes?.trim()) {
+    lines.push(`- Contexto personal del atleta: ${aiNotes.trim()}`);
+  }
+  return lines.length ? lines.join('\n') + '\n' : '';
+}
+
 /**
  * Principios de progresión compartidos por todos los providers de IA.
  * compact=false → Groq (modelo grande, prompt detallado)
@@ -94,11 +119,29 @@ export function buildHistoryDetail(
   }));
 }
 
+export interface ParseNormalizeSetsOptions {
+  unit?: ExerciseUnit;
+  lastSets?: Array<{ reps: number | string }> | null;
+}
+
+export function bodyweightRepFloor(
+  unit: ExerciseUnit | undefined,
+  lastSets: Array<{ reps: number | string }> | null | undefined,
+): number {
+  if (unit !== 'peso corporal' && unit !== 'tiempo') return 1;
+  if (!lastSets?.length) return 1;
+  const max = Math.max(
+    ...lastSets.map((s) => (typeof s.reps === 'number' ? s.reps : Number(s.reps)) || 0),
+  );
+  return max > 0 ? max : 1;
+}
+
 export function parseAndNormalizeSets(
   parsed: unknown,
   setsTarget: number,
   brick: number,
   repTarget: number,
+  opts: ParseNormalizeSetsOptions = {},
 ): { weight: number; reps: number }[] {
   if (
     typeof parsed !== 'object' ||
@@ -125,8 +168,9 @@ export function parseAndNormalizeSets(
     (_, i) => validSets[i] ?? validSets[validSets.length - 1],
   );
 
+  const floor = bodyweightRepFloor(opts.unit, opts.lastSets);
   return normalized.map((s) => ({
     weight: roundToBrick(s.weight || 0, brick),
-    reps: Math.max(1, Math.round(s.reps || repTarget)),
+    reps: Math.max(floor, Math.round(s.reps || repTarget)),
   }));
 }

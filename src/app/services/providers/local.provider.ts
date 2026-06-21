@@ -8,7 +8,7 @@ import {
 } from '../../models/workout.model';
 import { HistoryEntry } from '../storage.service';
 import { AiProvider, AiProviderContext } from './ai-provider';
-import { roundToBrick } from './prompt-helpers';
+import { goalRepTarget, roundToBrick } from './prompt-helpers';
 
 const DELOAD_SESSIONS = 4;
 const PLATEAU_SESSIONS = 5;
@@ -247,12 +247,14 @@ export class LocalProvider implements AiProvider {
       age: null,
       sex: null,
       weightLog: [],
+      goal: null,
+      aiNotes: '',
     },
     lastSessionDate: string | null = null,
     lang: 'es' | 'en' = 'es',
   ): AiRecommendation {
     const brick = exercise.brick || 2.5;
-    const repTarget = exercise.defaultRepTarget || 10;
+    const repTarget = goalRepTarget(userProfile.goal, exercise.defaultRepTarget || 10, exercise.unit);
     const setsTarget = exercise.defaultSets || 3;
     const r = buildReasons(lang);
 

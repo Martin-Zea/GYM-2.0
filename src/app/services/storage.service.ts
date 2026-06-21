@@ -13,7 +13,7 @@ import { createInitialState } from '../data/initial-data';
 import { UIStateService } from './ui-state.service';
 
 const STORAGE_KEY = 'gym_app_state_v2';
-const CURRENT_SCHEMA = 5;
+const CURRENT_SCHEMA = 6;
 
 /**
  * Normaliza el nombre de un ejercicio para comparar identidad: sin espacios al
@@ -46,14 +46,14 @@ export interface HistoryEntry {
 }
 
 function defaultUserProfile(): UserProfile {
-  return { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [] };
+  return { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [], goal: null, aiNotes: '' };
 }
 
 @Injectable({ providedIn: 'root' })
 export class StorageService {
   private readonly uiState = inject(UIStateService);
 
-  /** Migra estado de schemas anteriores al schema actual (v5), encadenando versiones */
+  /** Migra estado de schemas anteriores al schema actual (v6), encadenando versiones */
   private migrate(p: Partial<AppState>): Partial<AppState> {
     const version = typeof p.schemaVersion === 'number' ? p.schemaVersion : 1;
     let m: Partial<AppState> = p;
@@ -70,6 +70,21 @@ export class StorageService {
           ? [{ dateISO: this.todayISO(), weightKg: profile.weightKg }]
           : []);
       m = { ...m, settings: { ...m.settings, userProfile: { ...profile, weightLog } } };
+    }
+    // v5 → v6: objetivo de entrenamiento y notas para la IA en el perfil de usuario
+    if (version < 6 && m.settings?.userProfile) {
+      const profile = m.settings.userProfile;
+      m = {
+        ...m,
+        settings: {
+          ...m.settings,
+          userProfile: {
+            ...profile,
+            goal: profile.goal ?? null,
+            aiNotes: profile.aiNotes ?? '',
+          },
+        },
+      };
     }
     // v4 → v5: catálogo de ejercicios. Los ejercicios dejan de vivir embebidos en
     // cada día y pasan a un catálogo maestro; los días referencian por id. Además
@@ -170,6 +185,8 @@ export class StorageService {
           age: profile?.age ?? null,
           sex: profile?.sex ?? null,
           weightLog: profile?.weightLog ?? [],
+          goal: profile?.goal ?? null,
+          aiNotes: profile?.aiNotes ?? '',
         },
       },
     };

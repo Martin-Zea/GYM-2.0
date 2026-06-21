@@ -4,7 +4,7 @@ import { FocusTrapDirective } from '../../directives/focus-trap.directive';
 import { StateService } from '../../services/state.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
-import { AppSettings, UserProfile, WeightLogEntry } from '../../models/workout.model';
+import { AppSettings, TrainingGoal, UserProfile, WeightLogEntry } from '../../models/workout.model';
 import { APP_VERSION } from '../../version';
 
 const PAST_LOG_LIMIT = 3;
@@ -84,6 +84,19 @@ export class SettingsComponent implements OnDestroy {
   protected patchProfileSex(event: Event): void {
     const val = (event.target as HTMLSelectElement).value;
     this.patchProfile({ sex: (val || null) as UserProfile['sex'] });
+  }
+
+  protected setGoal(goal: TrainingGoal | null): void {
+    this.patchProfile({ goal });
+  }
+
+  protected patchAiNotes(event: Event): void {
+    this.patchProfile({ aiNotes: (event.target as HTMLTextAreaElement).value.slice(0, 200) });
+  }
+
+  protected get hasApiKey(): boolean {
+    const s = this.settings();
+    return !!(s.apiKey || s.cohereApiKey);
   }
 
   protected saveTodayWeight(event: Event): void {

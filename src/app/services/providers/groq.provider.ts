@@ -1,6 +1,7 @@
 import { AiRecommendation } from '../../models/workout.model';
 import { AiProvider, AiProviderContext } from './ai-provider';
 import {
+  buildGoalNote,
   buildHistoryDetail,
   buildPerfilParts,
   buildPrinciplesPrompt,
@@ -31,6 +32,7 @@ export class GroqProvider implements AiProvider {
     const doneSets = todaySets.filter((s) => s?.done && !s.isWarmup);
     const perfilParts = buildPerfilParts(userProfile);
     const profileNote = buildProfileNote(perfilParts, userProfile);
+    const goalNote = buildGoalNote(userProfile.goal, userProfile.aiNotes);
 
     const summary = {
       ejercicio: exercise.name,
@@ -67,8 +69,7 @@ Datos:
 ${JSON.stringify(summary, null, 2)}
 
 ${buildPrinciplesPrompt(brick)}
-${profileNote}
-${langInstruction}
+${goalNote}${profileNote}${langInstruction}
 Respondé EXCLUSIVAMENTE con JSON válido (sin markdown):
 {"sets": [{"weight": <number>, "reps": <number>}, ...], "reason": "<string>"}
 El array "sets" debe tener EXACTAMENTE ${setsTarget} elementos.`;
@@ -102,7 +103,10 @@ El array "sets" debe tener EXACTAMENTE ${setsTarget} elementos.`;
     }
 
     return {
-      sets: parseAndNormalizeSets(parsed, setsTarget, brick, repTarget),
+      sets: parseAndNormalizeSets(parsed, setsTarget, brick, repTarget, {
+        unit: exercise.unit,
+        lastSets,
+      }),
       reason: (parsed as { reason?: string }).reason ?? '',
       source: 'groq',
     };

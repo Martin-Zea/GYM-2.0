@@ -25,7 +25,7 @@ function makeSettings(overrides: Partial<AppSettings> = {}): AppSettings {
     sounds: true,
     haptics: true,
     theme: 'dark',
-    userProfile: { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [] },
+    userProfile: { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [], goal: null, aiNotes: '' },
     ...overrides,
   };
 }

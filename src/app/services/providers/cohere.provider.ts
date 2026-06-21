@@ -1,6 +1,7 @@
 import { AiRecommendation } from '../../models/workout.model';
 import { AiProvider, AiProviderContext } from './ai-provider';
 import {
+  buildGoalNote,
   buildHistoryDetail,
   buildPerfilParts,
   buildPrinciplesPrompt,
@@ -30,6 +31,7 @@ export class CohereProvider implements AiProvider {
     const doneSets = todaySets.filter((s) => s?.done && !s.isWarmup);
     const perfilParts = buildPerfilParts(userProfile);
     const profileNote = buildProfileNote(perfilParts, userProfile);
+    const goalNote = buildGoalNote(userProfile.goal, userProfile.aiNotes);
 
     const summary = {
       ejercicio: exercise.name,
@@ -56,7 +58,7 @@ export class CohereProvider implements AiProvider {
 
     const prompt = `Entrenador de hipertrofia. Analizá los datos y decidí la recomendación para la próxima sesión.
 Datos: ${JSON.stringify(summary)}
-${buildPrinciplesPrompt(brick, true)}${profileNote}${langInstruction}
+${buildPrinciplesPrompt(brick, true)}${goalNote}${profileNote}${langInstruction}
 JSON EXCLUSIVO (sin markdown): {"sets":[{"weight":<n>,"reps":<n>}...],"reason":"<s>"}
 Sets: EXACTAMENTE ${setsTarget} elementos.`;
 
@@ -89,7 +91,10 @@ Sets: EXACTAMENTE ${setsTarget} elementos.`;
     }
 
     return {
-      sets: parseAndNormalizeSets(parsed, setsTarget, brick, repTarget),
+      sets: parseAndNormalizeSets(parsed, setsTarget, brick, repTarget, {
+        unit: exercise.unit,
+        lastSets,
+      }),
       reason: (parsed as { reason?: string }).reason ?? '',
       source: 'cohere',
     };

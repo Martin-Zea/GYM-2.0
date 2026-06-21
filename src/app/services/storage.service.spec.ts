@@ -21,7 +21,7 @@ function baseState(overrides: Partial<AppState> = {}): AppState {
       sounds: true,
       haptics: true,
       theme: 'dark',
-      userProfile: { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [] },
+      userProfile: { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [], goal: null, aiNotes: '' },
     },
     ...overrides,
   };
@@ -82,7 +82,7 @@ describe('StorageService', () => {
 
     it('acepta un estado válido mínimo y rellena defaults', () => {
       const result = service.validateImport({ days: [] });
-      expect(result.schemaVersion).toBe(5);
+      expect(result.schemaVersion).toBe(6);
       expect(result.exercises).toEqual([]);
       expect(result.days).toEqual([]);
       expect(result.sessions).toEqual([]);
@@ -94,7 +94,7 @@ describe('StorageService', () => {
         sounds: true,
         haptics: true,
         theme: 'dark',
-        userProfile: { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [] },
+        userProfile: { weightKg: null, heightCm: null, age: null, sex: null, weightLog: [], goal: null, aiNotes: '' },
       });
     });
 
@@ -126,7 +126,7 @@ describe('StorageService', () => {
         sessions,
         activeDayIndex: 2,
       });
-      expect(result.schemaVersion).toBe(5);
+      expect(result.schemaVersion).toBe(6);
       expect(result.days).toEqual(migratedDays);
       expect(result.sessions).toEqual(sessions);
       // v1 no tenía routinePointer: se deriva de activeDayIndex
@@ -140,7 +140,7 @@ describe('StorageService', () => {
         sessions,
         activeDayIndex: 1,
       });
-      expect(result.schemaVersion).toBe(5);
+      expect(result.schemaVersion).toBe(6);
       expect(result.days).toEqual(migratedDays);
       expect(result.sessions).toEqual(sessions);
       expect(result.routinePointer).toBe(1);
@@ -184,7 +184,7 @@ describe('StorageService', () => {
           userProfile: { weightKg: 78.5, heightCm: 175, age: 34, sex: 'male' },
         },
       });
-      expect(result.schemaVersion).toBe(5);
+      expect(result.schemaVersion).toBe(6);
       expect(result.settings.userProfile.weightKg).toBe(78.5);
       expect(result.settings.userProfile.weightLog).toEqual([
         { dateISO: '2026-06-10', weightKg: 78.5 },
@@ -204,7 +204,7 @@ describe('StorageService', () => {
           userProfile: { weightKg: null, heightCm: null, age: null, sex: null },
         },
       });
-      expect(result.schemaVersion).toBe(5);
+      expect(result.schemaVersion).toBe(6);
       expect(result.settings.userProfile.weightLog).toEqual([]);
     });
 
@@ -216,7 +216,7 @@ describe('StorageService', () => {
         activeDayIndex: 3,
         settings: { userProfile: { weightKg: 80 } },
       });
-      expect(result.schemaVersion).toBe(5);
+      expect(result.schemaVersion).toBe(6);
       expect(result.routinePointer).toBe(3);
       expect(result.settings.userProfile.weightLog).toEqual([
         { dateISO: '2026-06-10', weightKg: 80 },
@@ -281,7 +281,7 @@ describe('StorageService', () => {
       expect(() => {
         state = service.load();
       }).not.toThrow();
-      expect(state.schemaVersion).toBe(5);
+      expect(state.schemaVersion).toBe(6);
       expect(state.days.length).toBe(5);
     });
 
@@ -291,7 +291,7 @@ describe('StorageService', () => {
       expect(() => {
         state = service.load();
       }).not.toThrow();
-      expect(state.schemaVersion).toBe(5);
+      expect(state.schemaVersion).toBe(6);
       expect(state.days.length).toBe(5);
     });
 

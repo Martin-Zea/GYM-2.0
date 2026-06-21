@@ -89,11 +89,11 @@ describe('StateService', () => {
     });
 
     it('invalida el caché de IA', () => {
-      localStorage.setItem('gym_ai_cache_v1', '{}');
+      localStorage.setItem('gym_ai_cache_v2', '{}');
 
       service.deleteSession(service.sessions()[0].id);
 
-      expect(localStorage.getItem('gym_ai_cache_v1')).toBeNull();
+      expect(localStorage.getItem('gym_ai_cache_v2')).toBeNull();
     });
   });
 
@@ -143,11 +143,11 @@ describe('StateService', () => {
       const session = service
         .sessions()
         .find((s) => s.dayId === day.id && s.sets.some((sr) => sr.exerciseId === exercise.id))!;
-      localStorage.setItem('gym_ai_cache_v1', '{}');
+      localStorage.setItem('gym_ai_cache_v2', '{}');
 
       service.updateSessionSet(session.id, exercise.id, 0, { weight: 10 });
 
-      expect(localStorage.getItem('gym_ai_cache_v1')).toBeNull();
+      expect(localStorage.getItem('gym_ai_cache_v2')).toBeNull();
     });
   });
 

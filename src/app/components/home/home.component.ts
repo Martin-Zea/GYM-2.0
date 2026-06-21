@@ -272,10 +272,19 @@ export class HomeComponent {
           const el = document.querySelector(`[data-exercise-id="${ex.id}"]`);
           if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
+        this.prefetchDayAi(day);
         return;
       }
     }
     this.activeExerciseId.set(null);
+  }
+
+  private prefetchDayAi(day: WorkoutDay): void {
+    for (const exercise of day.exercises) {
+      if (!this.aiCache()[exercise.id]) {
+        void this.requestAi(exercise);
+      }
+    }
   }
 
   protected scrollToExercise(exerciseId: string): void {
@@ -309,6 +318,8 @@ export class HomeComponent {
     const day = this.state.activeDay();
     if (!day) return;
 
+    console.log(`[requestAi] iniciando para "${exercise.name}" (${exercise.id})`);
+
     this.aiCache.update((c) => ({
       ...c,
       [exercise.id]: { sets: [], reason: '', source: 'local', loading: true },
@@ -321,6 +332,13 @@ export class HomeComponent {
     const history = this.storage.historyForExercise(s, exercise.id);
     const lastSession = this.storage.lastSessionForExercise(s, exercise.id);
 
+    console.log(`[requestAi] contexto enviado a IA`, {
+      todaySets,
+      lastSets,
+      lastSessionDate: lastSession?.dateISO ?? null,
+      historyLength: history.length,
+    });
+
     const rec = await this.progression.recommend(
       this.state.settings(),
       exercise,
@@ -330,6 +348,8 @@ export class HomeComponent {
       this.tr.lang(),
       lastSession?.dateISO ?? null,
     );
+
+    console.log(`[requestAi] rec recibida`, rec);
     this.aiCache.update((c) => ({ ...c, [exercise.id]: rec }));
   }
 }

@@ -48,8 +48,12 @@ export class ExerciseCardComponent {
 
   protected readonly expanded = signal(typeof window !== 'undefined' && window.innerWidth >= 1024);
 
-  /** Indices where AI wrote the initial value — cleared on user edit */
-  protected readonly aiPrefilledIndices = signal<ReadonlySet<number>>(new Set());
+  /** Indices where AI wrote the value and user hasn't edited yet — derived from persisted state */
+  protected readonly aiPrefilledIndices = computed((): ReadonlySet<number> => {
+    const s = new Set<number>();
+    this.setsArray().forEach((set, i) => { if (set.aiPrefilled) s.add(i); });
+    return s;
+  });
 
   protected readonly activeSetIndex = computed(() => this.setsArray().findIndex((s) => !s.done));
 
@@ -63,7 +67,7 @@ export class ExerciseCardComponent {
     const tp = this.state.getTodayProgress(this.day().id);
     const saved = tp.sets[ex.id] ?? [];
     const last = this.storage.lastSetsForExercise(this.state.state(), ex.id);
-    return Array.from({ length: ex.defaultSets }, (_, i) => {
+    const result = Array.from({ length: ex.defaultSets }, (_, i) => {
       if (saved[i]) return saved[i];
       const prev = last?.[i];
       return {
@@ -75,6 +79,15 @@ export class ExerciseCardComponent {
         done: false,
       };
     });
+    console.log(`[setsArray] ${ex.name}`, result.map((s, i) => ({
+      i,
+      weight: s.weight,
+      reps: s.reps,
+      done: s.done,
+      aiPrefilled: (s as TodaySetProgress & { aiPrefilled?: boolean }).aiPrefilled,
+      fromSaved: !!saved[i],
+    })));
+    return result;
   });
 
   protected readonly doneSetsCount = computed(() => this.setsArray().filter((s) => s.done).length);
@@ -122,10 +135,8 @@ export class ExerciseCardComponent {
       const active = this.isActive();
       if (active) {
         untracked(() => {
-          if (!this.expanded()) {
-            this.expanded.set(true);
-            if (!this.aiRec()) this.requestAi.emit();
-          }
+          if (!this.expanded()) this.expanded.set(true);
+          if (!this.aiRec()) this.requestAi.emit();
           requestAnimationFrame(() => {
             this.el.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
           });
@@ -134,25 +145,33 @@ export class ExerciseCardComponent {
     });
 
     // Pre-fill state from AI rec when it arrives (only for untouched sets)
+    // exercise() and day() are read inside untracked() to avoid tracking them as reactive
+    // dependencies — updateSet() changes state() → days() creates new references → day input
+    // changes → if tracked here, the effect would re-fire infinitely (NG0103).
     effect(() => {
       const rec = this.aiRec();
+      console.log(`[prefill effect] aiRec cambió`, { loading: rec?.loading, sets: rec?.sets });
       if (!rec || rec.loading || !rec.sets?.length) return;
-      const ex = this.exercise();
-      const day = this.day();
       untracked(() => {
+        const ex = this.exercise();
+        const day = this.day();
         const tp = this.state.getTodayProgress(day.id);
-        const filled = new Set<number>();
+        console.log(`[prefill effect] ejecutando prefill para "${ex.name}"`, {
+          recSets: rec.sets,
+          todayProgressSets: tp.sets[ex.id],
+        });
         for (let i = 0; i < ex.defaultSets; i++) {
           const existing = tp.sets[ex.id]?.[i];
-          if (existing?.done) continue;
-          if (existing && (existing.weight !== '' || existing.reps !== '')) continue;
+          if (existing?.done) {
+            console.log(`[prefill effect] set ${i} ya done, skip`);
+            continue;
+          }
           const setRec = rec.sets[i] ?? rec.sets[rec.sets.length - 1];
-          const patch: Partial<TodaySetProgress> = { reps: setRec.reps };
+          const patch: Partial<TodaySetProgress> = { reps: setRec.reps, aiPrefilled: true };
           if (ex.unit !== 'peso corporal' && setRec.weight > 0) patch.weight = setRec.weight;
+          console.log(`[prefill effect] set ${i}: existing=`, existing, '→ patch=', patch);
           this.state.updateSet(day.id, ex.id, i, patch);
-          filled.add(i);
         }
-        this.aiPrefilledIndices.set(filled);
       });
     });
 
@@ -207,47 +226,27 @@ export class ExerciseCardComponent {
       const num = Number(val);
       weight = isNaN(num) ? ('' as unknown as number) : num;
     }
-    this.state.updateSet(this.day().id, this.exercise().id, i, { weight });
-    this.aiPrefilledIndices.update((s) => {
-      const n = new Set(s);
-      n.delete(i);
-      return n;
-    });
+    this.state.updateSet(this.day().id, this.exercise().id, i, { weight, aiPrefilled: false });
   }
 
   protected updateReps(i: number, event: Event): void {
     const val = (event.target as HTMLInputElement).value;
     const reps = val === '' ? ('' as unknown as number) : Number(val);
-    this.state.updateSet(this.day().id, this.exercise().id, i, { reps });
-    this.aiPrefilledIndices.update((s) => {
-      const n = new Set(s);
-      n.delete(i);
-      return n;
-    });
+    this.state.updateSet(this.day().id, this.exercise().id, i, { reps, aiPrefilled: false });
   }
 
   protected stepWeight(i: number, delta: number): void {
     const current = this.setsArray()[i]?.weight;
     const base = current !== '' && current !== undefined ? Number(current) : 0;
     const next = Math.max(0, Math.round((base + delta) * 4) / 4);
-    this.state.updateSet(this.day().id, this.exercise().id, i, { weight: next });
-    this.aiPrefilledIndices.update((s) => {
-      const n = new Set(s);
-      n.delete(i);
-      return n;
-    });
+    this.state.updateSet(this.day().id, this.exercise().id, i, { weight: next, aiPrefilled: false });
   }
 
   protected stepReps(i: number, delta: number): void {
     const current = this.setsArray()[i]?.reps;
     const base = current !== '' && current !== undefined ? Number(current) : 0;
     const next = Math.max(1, base + delta);
-    this.state.updateSet(this.day().id, this.exercise().id, i, { reps: next });
-    this.aiPrefilledIndices.update((s) => {
-      const n = new Set(s);
-      n.delete(i);
-      return n;
-    });
+    this.state.updateSet(this.day().id, this.exercise().id, i, { reps: next, aiPrefilled: false });
   }
 
   /** Sets already celebrated as PR — prevents re-celebrating on undo + redo */

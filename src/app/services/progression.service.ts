@@ -7,6 +7,7 @@ import {
   TodaySetProgress,
   UserProfile,
 } from '../models/workout.model';
+
 import { HistoryEntry, StorageService } from './storage.service';
 import { AiProvider, AiProviderContext } from './providers/ai-provider';
 import { CohereProvider } from './providers/cohere.provider';
@@ -14,13 +15,14 @@ import { GroqProvider } from './providers/groq.provider';
 import { LocalProvider } from './providers/local.provider';
 import { roundToBrick } from './providers/prompt-helpers';
 
-const AI_CACHE_KEY = 'gym_ai_cache_v1';
+const AI_CACHE_KEY = 'gym_ai_cache_v2';
 
 interface AiCacheEntry {
   rec: AiRecommendation;
   lastSessionISO: string | null;
   cachedForDate: string;
   doneSig: string;
+  profileSig: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -43,15 +45,24 @@ export class ProgressionService {
       .join(',');
   }
 
+  private profileSig(profile: UserProfile): string {
+    const noteHash = profile.aiNotes
+      ? String(profile.aiNotes.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0))
+      : '';
+    return `${profile.goal ?? ''}:${noteHash}`;
+  }
+
   private getCached(
     exerciseId: string,
     lastSessionISO: string | null,
     todaySets: TodaySetProgress[],
+    profile: UserProfile,
   ): AiRecommendation | null {
     const entry = this.readCache()[exerciseId];
     if (!entry) return null;
     if (entry.cachedForDate !== this.storage.todayISO()) return null;
     if (entry.lastSessionISO !== lastSessionISO) return null;
+    if (entry.profileSig !== this.profileSig(profile)) return null;
     if (navigator.onLine && entry.doneSig !== this.doneSig(todaySets)) return null;
     return entry.rec;
   }
@@ -61,6 +72,7 @@ export class ProgressionService {
     lastSessionISO: string | null,
     todaySets: TodaySetProgress[],
     rec: AiRecommendation,
+    profile: UserProfile,
   ): void {
     const cache = this.readCache();
     cache[exerciseId] = {
@@ -68,6 +80,7 @@ export class ProgressionService {
       lastSessionISO,
       cachedForDate: this.storage.todayISO(),
       doneSig: this.doneSig(todaySets),
+      profileSig: this.profileSig(profile),
     };
     localStorage.setItem(AI_CACHE_KEY, JSON.stringify(cache));
   }
@@ -131,6 +144,8 @@ export class ProgressionService {
       age: null,
       sex: null,
       weightLog: [],
+      goal: null,
+      aiNotes: '',
     },
     lastSessionDate: string | null = null,
     lang: 'es' | 'en' = 'es',
@@ -158,7 +173,15 @@ export class ProgressionService {
     const hasDoneOrHistory = lastSets?.length || todaySets.some((s) => s?.done);
     const providers = this.buildProviders(settings);
 
+    console.log(`[progression.recommend] "${exercise.name}"`, {
+      hasDoneOrHistory,
+      providers: providers.map((p) => p.constructor.name),
+      hasApiKey: !!settings.apiKey,
+      hasCohereKey: !!settings.cohereApiKey,
+    });
+
     if (!providers.length || !hasDoneOrHistory) {
+      console.log(`[progression.recommend] → LOCAL (sin providers o sin historial)`);
       return this.localRecommendation(
         exercise,
         todaySets,
@@ -171,10 +194,15 @@ export class ProgressionService {
     }
 
     const lastSessionISO = history.at(-1)?.dateISO ?? null;
-    const cached = this.getCached(exercise.id, lastSessionISO, todaySets);
-    if (cached) return cached;
+    const cached = this.getCached(exercise.id, lastSessionISO, todaySets, settings.userProfile);
+    if (cached) {
+      console.log(`[progression.recommend] → CACHE HIT`, cached);
+      return cached;
+    }
+    console.log(`[progression.recommend] cache miss, lastSessionISO=${lastSessionISO}`);
 
     if (!navigator.onLine) {
+      console.log(`[progression.recommend] → LOCAL (offline)`);
       const local = this.localRecommendation(
         exercise,
         todaySets,
@@ -200,7 +228,9 @@ export class ProgressionService {
 
     for (const provider of providers) {
       try {
+        console.log(`[progression.recommend] → llamando ${provider.constructor.name}`);
         const rec = await provider.recommend(ctx);
+        console.log(`[progression.recommend] ← ${provider.constructor.name} respondió`, rec);
         const adjusted = this.applyLongRestAdjustment(
           rec,
           exercise,
@@ -208,13 +238,15 @@ export class ProgressionService {
           lastSessionDate,
           lang,
         );
-        this.setCached(exercise.id, lastSessionISO, todaySets, adjusted);
+        console.log(`[progression.recommend] ajuste por descanso largo`, adjusted);
+        this.setCached(exercise.id, lastSessionISO, todaySets, adjusted, settings.userProfile);
         return adjusted;
       } catch (e) {
         console.info(`${provider.constructor.name} falló:`, (e as Error).message);
       }
     }
 
+    console.log(`[progression.recommend] → LOCAL (todos los providers fallaron)`);
     const local = this.localRecommendation(
       exercise,
       todaySets,
