@@ -63,7 +63,7 @@ export class GroqProvider implements AiProvider {
         ? 'The "reason" field must be in English. Maximum 1 sentence, technical and motivating.'
         : 'La razón: máximo 1 oración, español, técnica y motivadora.';
 
-    const prompt = `Sos un entrenador profesional de hipertrofia muscular. Analizá los datos reales del atleta y decidí la mejor recomendación para la próxima sesión.
+    const prompt = `Sos un entrenador profesional. Analizá los datos reales del atleta y decidí la mejor recomendación para la próxima sesión.
 
 Datos:
 ${JSON.stringify(summary, null, 2)}
@@ -71,8 +71,9 @@ ${JSON.stringify(summary, null, 2)}
 ${buildPrinciplesPrompt(brick)}
 ${goalNote}${profileNote}${langInstruction}
 Respondé EXCLUSIVAMENTE con JSON válido (sin markdown):
-{"sets": [{"weight": <number>, "reps": <number>}, ...], "reason": "<string>"}
-El array "sets" debe tener EXACTAMENTE ${setsTarget} elementos.`;
+{"sets": [{"weight": <number>, "reps": <number>}, ...], "reason": "<string>", "deload": <boolean>}
+El array "sets" debe tener EXACTAMENTE ${setsTarget} elementos.
+Poné "deload" en true SOLO cuando recomendás una descarga o back-off intencional (menos reps/segundos o menos carga que la sesión anterior para recuperar). Si no, "deload": false.`;
 
     const resp = await fetchWithTimeout(GROQ_URL, {
       method: 'POST',
@@ -106,6 +107,7 @@ El array "sets" debe tener EXACTAMENTE ${setsTarget} elementos.`;
       sets: parseAndNormalizeSets(parsed, setsTarget, brick, repTarget, {
         unit: exercise.unit,
         lastSets,
+        deload: (parsed as { deload?: boolean }).deload === true,
       }),
       reason: (parsed as { reason?: string }).reason ?? '',
       source: 'groq',

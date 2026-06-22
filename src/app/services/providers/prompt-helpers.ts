@@ -133,18 +133,33 @@ export function buildHistoryDetail(
 export interface ParseNormalizeSetsOptions {
   unit?: ExerciseUnit;
   lastSets?: { reps: number | string }[] | null;
+  /**
+   * La IA declaró una descarga/back-off intencional (campo `deload` en su JSON).
+   * Relaja el piso de no-regresión para permitir bajar reps/segundos a propósito,
+   * pero acotado para no dejar pasar valores alucinados. Ver bodyweightRepFloor.
+   */
+  deload?: boolean;
 }
+
+// Cota mínima de un deload: una descarga real ronda 60-75% y un back-off por exceso
+// 80-90%, así que un piso del 50% permite la bajada legítima sin dejar pasar basura
+// (p. ej. la IA tirando 1 rep cuando el atleta venía haciendo 20).
+const DELOAD_FLOOR_RATIO = 0.5;
 
 export function bodyweightRepFloor(
   unit: ExerciseUnit | undefined,
   lastSets: { reps: number | string }[] | null | undefined,
+  deload = false,
 ): number {
   if (unit !== 'peso corporal' && unit !== 'tiempo') return 1;
   if (!lastSets?.length) return 1;
   const max = Math.max(
     ...lastSets.map((s) => (typeof s.reps === 'number' ? s.reps : Number(s.reps)) || 0),
   );
-  return max > 0 ? max : 1;
+  if (max <= 0) return 1;
+  // Sin deload: no se permite regresión (piso = máximo anterior).
+  // Con deload: se permite bajar hasta una cota de seguridad acotada.
+  return deload ? Math.max(1, Math.round(max * DELOAD_FLOOR_RATIO)) : max;
 }
 
 export function parseAndNormalizeSets(
@@ -179,7 +194,7 @@ export function parseAndNormalizeSets(
     (_, i) => validSets[i] ?? validSets[validSets.length - 1],
   );
 
-  const floor = bodyweightRepFloor(opts.unit, opts.lastSets);
+  const floor = bodyweightRepFloor(opts.unit, opts.lastSets, opts.deload);
   return normalized.map((s) => ({
     weight: roundToBrick(s.weight || 0, brick),
     reps: Math.max(floor, Math.round(s.reps || repTarget)),

@@ -59,8 +59,8 @@ export class CohereProvider implements AiProvider {
     const prompt = `Entrenador de hipertrofia. Analizá los datos y decidí la recomendación para la próxima sesión.
 Datos: ${JSON.stringify(summary)}
 ${buildPrinciplesPrompt(brick, true)}${goalNote}${profileNote}${langInstruction}
-JSON EXCLUSIVO (sin markdown): {"sets":[{"weight":<n>,"reps":<n>}...],"reason":"<s>"}
-Sets: EXACTAMENTE ${setsTarget} elementos.`;
+JSON EXCLUSIVO (sin markdown): {"sets":[{"weight":<n>,"reps":<n>}...],"reason":"<s>","deload":<bool>}
+Sets: EXACTAMENTE ${setsTarget} elementos. "deload" true SOLO si recomendás descarga/back-off intencional (menos reps/segundos o carga que la sesión anterior); si no, false.`;
 
     const resp = await fetchWithTimeout(COHERE_URL, {
       method: 'POST',
@@ -94,6 +94,7 @@ Sets: EXACTAMENTE ${setsTarget} elementos.`;
       sets: parseAndNormalizeSets(parsed, setsTarget, brick, repTarget, {
         unit: exercise.unit,
         lastSets,
+        deload: (parsed as { deload?: boolean }).deload === true,
       }),
       reason: (parsed as { reason?: string }).reason ?? '',
       source: 'cohere',
