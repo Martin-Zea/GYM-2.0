@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1782108541174,
+  "timestamp": 1782244110776,
   "index": "/GYM-2.0/index.html",
   "assetGroups": [
     {
@@ -12,8 +12,8 @@
       },
       "urls": [
         "/GYM-2.0/chunk-4GWDEJ5F.js",
+        "/GYM-2.0/chunk-55XP2AIJ.js",
         "/GYM-2.0/chunk-7UBN5XFQ.js",
-        "/GYM-2.0/chunk-DIZFGEKO.js",
         "/GYM-2.0/chunk-FW7SO3SD.js",
         "/GYM-2.0/chunk-J24JIIEW.js",
         "/GYM-2.0/chunk-JCPXMZBX.js",
@@ -22,7 +22,7 @@
         "/GYM-2.0/chunk-YI7JOSJH.js",
         "/GYM-2.0/favicon.ico",
         "/GYM-2.0/index.html",
-        "/GYM-2.0/main-DKEXMXUW.js",
+        "/GYM-2.0/main-H3VF6UZP.js",
         "/GYM-2.0/manifest.webmanifest",
         "/GYM-2.0/styles-XAXF2KAB.css"
       ],
@@ -82,8 +82,8 @@
     "/GYM-2.0/android-chrome-512x512.png": "abcf6cb18e543149ba006efe1281db75f5be4f75",
     "/GYM-2.0/apple-touch-icon.png": "84b753511f91c81e9e10a431d775bedd08bf9f36",
     "/GYM-2.0/chunk-4GWDEJ5F.js": "25248a2dc07a2715e578a8d8df0a6c55d10af726",
+    "/GYM-2.0/chunk-55XP2AIJ.js": "caa3c84045bd0bbd27f89b07440a7fe1f0218635",
     "/GYM-2.0/chunk-7UBN5XFQ.js": "e05f32d5bd7fde4af86c2c34697fd98bf38e084d",
-    "/GYM-2.0/chunk-DIZFGEKO.js": "d878ae4d07805f0aad48c2b77f02542942992ff3",
     "/GYM-2.0/chunk-FW7SO3SD.js": "039c2153dc761685a8851e05f86157cd4a06b52f",
     "/GYM-2.0/chunk-J24JIIEW.js": "bfbc1d06c367a386e35fe0585bf7232028f06bb2",
     "/GYM-2.0/chunk-JCPXMZBX.js": "52a388a4f4a403036ceca5c484f4e82d5626728f",
@@ -111,8 +111,8 @@
     "/GYM-2.0/icons/gainai-maskable-72x72.png": "0b0f41d966bdaa037028ad8dfefc83e76fc32bae",
     "/GYM-2.0/icons/gainai-maskable-96x96.png": "88f28a3c5cc3ed7663f9f3ed08894ea950c53539",
     "/GYM-2.0/icons/gainai-maskable.svg": "4ada5e0f771b75a937c5dd2d679b75b30b6496d9",
-    "/GYM-2.0/index.html": "405f78951aaaed38278680778a619d178b7ef1c4",
-    "/GYM-2.0/main-DKEXMXUW.js": "92f396c35e9ef5f7c0a082e1f482b90f0ba70394",
+    "/GYM-2.0/index.html": "d509587b5586852c991ebc9e1e6ab8ffd3d594cb",
+    "/GYM-2.0/main-H3VF6UZP.js": "515af99136d8594cbfe9a10ff0774b05ce0d659f",
     "/GYM-2.0/manifest.webmanifest": "347d778acecce3cebc1eff3066b8cb6c5cd4870c",
     "/GYM-2.0/media/inter-cyrillic-JEOLYBOO.woff2": "9f73b2f43ea3bf37cc8e90a5aa8c7e668ec44504",
     "/GYM-2.0/media/inter-cyrillic-ext-IYF56FF6.woff2": "705d625066dba0c159f137e73f91e232097d208d",
