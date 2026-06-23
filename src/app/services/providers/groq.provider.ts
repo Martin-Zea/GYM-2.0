@@ -6,7 +6,7 @@ import {
   buildPerfilParts,
   buildPrinciplesPrompt,
   buildProfileNote,
-  fetchWithTimeout,
+  fetchAiWithRateLimit,
   parseAndNormalizeSets,
 } from './prompt-helpers';
 
@@ -75,7 +75,7 @@ Respondé EXCLUSIVAMENTE con JSON válido (sin markdown):
 El array "sets" debe tener EXACTAMENTE ${setsTarget} elementos.
 Poné "deload" en true SOLO cuando recomendás una descarga o back-off intencional (menos reps/segundos o menos carga que la sesión anterior para recuperar). Si no, "deload": false.`;
 
-    const resp = await fetchWithTimeout(GROQ_URL, {
+    const resp = await fetchAiWithRateLimit('Groq', GROQ_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.apiKey}` },
       body: JSON.stringify({

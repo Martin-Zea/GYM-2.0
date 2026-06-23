@@ -1,5 +1,11 @@
-import { describe, expect, it } from 'vitest';
-import { bodyweightRepFloor, parseAndNormalizeSets } from './prompt-helpers';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  bodyweightRepFloor,
+  fetchAiWithRateLimit,
+  parseAndNormalizeSets,
+  parseRetryAfterMs,
+  RateLimitError,
+} from './prompt-helpers';
 
 describe('bodyweightRepFloor', () => {
   it('returns 1 for cargas en kg (no aplica piso de no-regresión)', () => {
@@ -28,6 +34,78 @@ describe('bodyweightRepFloor', () => {
 
   it('parsea reps en string de la sesión anterior', () => {
     expect(bodyweightRepFloor('peso corporal', [{ reps: '12' }])).toBe(12);
+  });
+});
+
+describe('parseRetryAfterMs', () => {
+  it('convierte segundos numéricos a ms', () => {
+    expect(parseRetryAfterMs('5')).toBe(5000);
+    expect(parseRetryAfterMs('0')).toBe(0);
+  });
+
+  it('devuelve null sin header o con valor inválido', () => {
+    expect(parseRetryAfterMs(null)).toBeNull();
+    expect(parseRetryAfterMs('mañana')).toBeNull();
+  });
+});
+
+describe('fetchAiWithRateLimit', () => {
+  const res = (status: number, retryAfter?: string) => ({
+    status,
+    ok: status >= 200 && status < 300,
+    headers: {
+      get: (h: string) => (h.toLowerCase() === 'retry-after' ? (retryAfter ?? null) : null),
+    },
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('devuelve la respuesta tal cual si no hay 429 (una sola llamada)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(res(200));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const resp = await fetchAiWithRateLimit('Groq', 'url', {});
+
+    expect(resp.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('ante 429 con retry-after corto, espera y reintenta una vez', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(res(429, '0')).mockResolvedValueOnce(res(200));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const resp = await fetchAiWithRateLimit('Groq', 'url', {});
+
+    expect(resp.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('si retry-after excede el tope, lanza RateLimitError sin reintentar', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(res(429, '60'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchAiWithRateLimit('Groq', 'url', {})).rejects.toBeInstanceOf(RateLimitError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('si el reintento vuelve a dar 429, lanza RateLimitError', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(res(429, '0'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchAiWithRateLimit('Cohere', 'url', {})).rejects.toBeInstanceOf(RateLimitError);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('un error no-429 se devuelve tal cual (lo maneja el provider)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(res(500));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const resp = await fetchAiWithRateLimit('Groq', 'url', {});
+
+    expect(resp.status).toBe(500);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -13,7 +13,7 @@ import { AiProvider, AiProviderContext } from './providers/ai-provider';
 import { CohereProvider } from './providers/cohere.provider';
 import { GroqProvider } from './providers/groq.provider';
 import { LocalProvider } from './providers/local.provider';
-import { roundToBrick } from './providers/prompt-helpers';
+import { RateLimitError, roundToBrick } from './providers/prompt-helpers';
 import { STORAGE_KEYS } from './storage-keys';
 
 const AI_CACHE_KEY = STORAGE_KEYS.aiCache;
@@ -218,7 +218,8 @@ export class ProgressionService {
         this.setCached(exercise.id, lastSessionISO, todaySets, adjusted, settings.userProfile);
         return adjusted;
       } catch (e) {
-        console.info(`${provider.constructor.name} falló:`, (e as Error).message);
+        const label = e instanceof RateLimitError ? 'rate limit' : 'falló';
+        console.info(`${provider.constructor.name} ${label}:`, (e as Error).message);
       }
     }
 

@@ -6,7 +6,7 @@ import {
   buildPerfilParts,
   buildPrinciplesPrompt,
   buildProfileNote,
-  fetchWithTimeout,
+  fetchAiWithRateLimit,
   parseAndNormalizeSets,
 } from './prompt-helpers';
 
@@ -62,7 +62,7 @@ ${buildPrinciplesPrompt(brick, true)}${goalNote}${profileNote}${langInstruction}
 JSON EXCLUSIVO (sin markdown): {"sets":[{"weight":<n>,"reps":<n>}...],"reason":"<s>","deload":<bool>}
 Sets: EXACTAMENTE ${setsTarget} elementos. "deload" true SOLO si recomendás descarga/back-off intencional (menos reps/segundos o carga que la sesión anterior); si no, false.`;
 
-    const resp = await fetchWithTimeout(COHERE_URL, {
+    const resp = await fetchAiWithRateLimit('Cohere', COHERE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.apiKey}` },
       body: JSON.stringify({

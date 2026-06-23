@@ -48,6 +48,14 @@ export class HomeComponent {
 
   protected readonly aiCache = signal<Partial<Record<string, AiRecommendation>>>({});
 
+  // Cola de llamadas a IA (concurrencia 1): TODO pedido — prefetch del día, card activo,
+  // expandir, botón manual — pasa por requestAi() y se serializa para no disparar una ráfaga
+  // de fetch concurrentes contra el límite de tokens/min de Groq. aiInFlight deduplica pedidos
+  // del mismo ejercicio ya encolados o en curso.
+  private readonly aiQueue: Exercise[] = [];
+  private readonly aiInFlight = new Set<string>();
+  private aiDraining = false;
+
   protected readonly exerciseDoneCounts = computed(
     (): Partial<Record<string, { done: number; total: number }>> => {
       const day = this.state.activeDay();
@@ -178,6 +186,10 @@ export class HomeComponent {
       const idx = this.state.activeDayIndex();
       untracked(() => {
         this.aiCache.set({});
+        // Cambió el día: descarta los pedidos pendientes del día anterior. El que ya está
+        // corriendo termina solo; su delete sobre el Set vacío es no-op.
+        this.aiQueue.length = 0;
+        this.aiInFlight.clear();
         if (this.mode() === 'training') {
           const day = this.state.days()[idx];
           if (day) this.initActiveExercise(day.id);
@@ -269,19 +281,14 @@ export class HomeComponent {
           const el = document.querySelector(`[data-exercise-id="${ex.id}"]`);
           if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
-        this.prefetchDayAi(day);
+        // Carga perezosa: NO se precarga todo el día. El card activo pide su recomendación
+        // solo (effect sobre isActive) y los siguientes la piden cuando se vuelven activos al
+        // completar el anterior, o al expandirlos manualmente. Reparte las llamadas a lo largo
+        // del entrenamiento → mucho menos riesgo de chocar el límite de tokens/min de Groq.
         return;
       }
     }
     this.activeExerciseId.set(null);
-  }
-
-  private prefetchDayAi(day: WorkoutDay): void {
-    for (const exercise of day.exercises) {
-      if (!this.aiCache()[exercise.id]) {
-        void this.requestAi(exercise);
-      }
-    }
   }
 
   protected scrollToExercise(exerciseId: string): void {
@@ -311,14 +318,41 @@ export class HomeComponent {
     if (day) this.uiState.openDayDetail(day);
   }
 
-  protected async requestAi(exercise: Exercise): Promise<void> {
-    const day = this.state.activeDay();
-    if (!day) return;
+  protected requestAi(exercise: Exercise): void {
+    // Deduplica: ya encolado o en curso → no agendar de nuevo.
+    if (this.aiInFlight.has(exercise.id)) return;
+    this.aiInFlight.add(exercise.id);
 
+    // Estado de carga inmediato (spinner) aunque el fetch espere su turno en la cola.
     this.aiCache.update((c) => ({
       ...c,
       [exercise.id]: { sets: [], reason: '', source: 'local', loading: true },
     }));
+
+    this.aiQueue.push(exercise);
+    void this.drainAiQueue();
+  }
+
+  private async drainAiQueue(): Promise<void> {
+    if (this.aiDraining) return;
+    this.aiDraining = true;
+    try {
+      while (this.aiQueue.length) {
+        const exercise = this.aiQueue.shift()!;
+        try {
+          await this.runAiRequest(exercise);
+        } finally {
+          this.aiInFlight.delete(exercise.id);
+        }
+      }
+    } finally {
+      this.aiDraining = false;
+    }
+  }
+
+  private async runAiRequest(exercise: Exercise): Promise<void> {
+    const day = this.state.activeDay();
+    if (!day) return;
 
     const s = this.state.state();
     const tp = this.state.getTodayProgress(day.id);

@@ -71,7 +71,7 @@ export class ExerciseCardComponent {
     const ex = this.exercise();
     const tp = this.state.getTodayProgress(this.day().id);
     const saved = tp.sets[ex.id] ?? [];
-    const last = this.storage.lastSetsForExercise(this.state.state(), ex.id);
+    const last = this.storage.lastSetsForExercise(this.state.state(), ex.id, this.state.todayKey);
     return Array.from({ length: ex.defaultSets }, (_, i) => {
       if (saved[i]) return saved[i];
       const prev = last?.[i];
@@ -89,7 +89,12 @@ export class ExerciseCardComponent {
   protected readonly doneSetsCount = computed(() => this.setsArray().filter((s) => s.done).length);
 
   protected readonly lastSets = computed(
-    () => this.storage.lastSetsForExercise(this.state.state(), this.exercise().id) ?? [],
+    () =>
+      this.storage.lastSetsForExercise(
+        this.state.state(),
+        this.exercise().id,
+        this.state.todayKey,
+      ) ?? [],
   );
 
   protected readonly prevSetsLine = computed(() => {

@@ -19,6 +19,70 @@ export async function fetchWithTimeout(url: string, options: RequestInit): Promi
   }
 }
 
+// Tope de espera ante un 429: si el proveedor pide más que esto, no esperamos —
+// saltamos directo al siguiente provider (Cohere → local) para no congelar la UI.
+export const RATE_LIMIT_RETRY_CAP_MS = 8000;
+
+/** Error de rate limit (HTTP 429). Lo distingue de otros fallos para diagnóstico/decisión. */
+export class RateLimitError extends Error {
+  constructor(
+    readonly provider: string,
+    readonly retryAfterMs: number | null,
+    message?: string,
+  ) {
+    super(message ?? `${provider} rate limited`);
+    this.name = 'RateLimitError';
+  }
+}
+
+/** Parsea el header `retry-after` (segundos numéricos o fecha HTTP) a milisegundos. */
+export function parseRetryAfterMs(header: string | null): number | null {
+  if (!header) return null;
+  const secs = Number(header);
+  if (Number.isFinite(secs)) return Math.max(0, secs * 1000);
+  const dateMs = Date.parse(header);
+  if (Number.isFinite(dateMs)) return Math.max(0, dateMs - Date.now());
+  return null;
+}
+
+const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Igual que fetchWithTimeout pero maneja 429: respeta `retry-after` y reintenta UNA vez
+ * si la espera entra dentro de RATE_LIMIT_RETRY_CAP_MS. Si la espera excede el tope, o el
+ * reintento vuelve a dar 429, lanza RateLimitError (la cadena de providers cae al siguiente).
+ * Las respuestas no-429 (incluidos otros errores) se devuelven tal cual para que el provider
+ * las maneje con su chequeo de `resp.ok` habitual.
+ */
+export async function fetchAiWithRateLimit(
+  provider: string,
+  url: string,
+  options: RequestInit,
+): Promise<Response> {
+  let resp = await fetchWithTimeout(url, options);
+  if (resp.status !== 429) return resp;
+
+  const waitMs = parseRetryAfterMs(resp.headers.get('retry-after'));
+  if (waitMs !== null && waitMs > RATE_LIMIT_RETRY_CAP_MS) {
+    throw new RateLimitError(
+      provider,
+      waitMs,
+      `${provider} 429: retry-after ${Math.round(waitMs / 1000)}s`,
+    );
+  }
+
+  await delay(waitMs ?? 1000);
+  resp = await fetchWithTimeout(url, options);
+  if (resp.status === 429) {
+    throw new RateLimitError(
+      provider,
+      parseRetryAfterMs(resp.headers.get('retry-after')),
+      `${provider} 429 tras reintento`,
+    );
+  }
+  return resp;
+}
+
 export function buildPerfilParts(userProfile: UserProfile): string[] {
   const parts: string[] = [];
   if (userProfile.weightKg) parts.push(`peso corporal ${userProfile.weightKg}kg`);
