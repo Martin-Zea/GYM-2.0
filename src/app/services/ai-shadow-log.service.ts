@@ -1,7 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { AiRecommendation, SetRecommendation } from '../models/workout.model';
 import { AiProviderContext } from './providers/ai-provider';
-import { GROQ_MODEL, GroqRequestOverrides, fetchGroqRecommendation } from './providers/groq.provider';
+import {
+  GROQ_MODEL,
+  GroqRequestOverrides,
+  fetchGroqRecommendation,
+} from './providers/groq.provider';
 import { StorageService } from './storage.service';
 import { STORAGE_KEYS } from './storage-keys';
 
@@ -21,7 +25,10 @@ const SAMPLE_RATE = 2; // 1 de cada 2 recomendaciones reales de Groq
  * razonamiento + la respuesta.
  */
 const SHADOW_MODELS: readonly [string, GroqRequestOverrides][] = [
-  ['openai/gpt-oss-120b', { reasoning_effort: 'low', reasoning_format: 'hidden', max_tokens: 1000 }],
+  [
+    'openai/gpt-oss-120b',
+    { reasoning_effort: 'low', reasoning_format: 'hidden', max_tokens: 1000 },
+  ],
   ['qwen/qwen3.6-27b', { reasoning_effort: 'none', reasoning_format: 'hidden', max_tokens: 1000 }],
 ];
 
