@@ -13,6 +13,7 @@ import { StateService } from '../../services/state.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
 import { BackupService } from '../../services/backup.service';
+import { AiShadowLogService } from '../../services/ai-shadow-log.service';
 import { AppSettings, TrainingGoal, UserProfile, WeightLogEntry } from '../../models/workout.model';
 import { APP_VERSION } from '../../version';
 
@@ -31,6 +32,7 @@ export class SettingsComponent implements OnDestroy {
   protected readonly uiState = inject(UIStateService);
   protected readonly tr = inject(TranslationService);
   protected readonly backup = inject(BackupService);
+  protected readonly shadowLog = inject(AiShadowLogService);
   protected readonly T = this.tr.T;
 
   protected readonly appVersion = APP_VERSION;

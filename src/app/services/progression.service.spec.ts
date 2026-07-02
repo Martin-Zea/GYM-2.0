@@ -2,6 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { ProgressionService } from './progression.service';
 import { AppSettings, Exercise, SetRecord, TodaySetProgress } from '../models/workout.model';
 import { StorageService } from './storage.service';
+import { AiShadowLogService } from './ai-shadow-log.service';
+import { STORAGE_KEYS } from './storage-keys';
 
 function makeExercise(overrides: Partial<Exercise> = {}): Exercise {
   return {
@@ -65,6 +67,10 @@ describe('ProgressionService', () => {
   beforeEach(() => {
     localStorage.clear(); // limpia también el cache IA (gym_ai_cache_v1)
     service = TestBed.inject(ProgressionService);
+    // El shadow logging es una feature ortogonal (ver specs/ai-shadow-log.md) — se
+    // no-opea acá para que los tests de recommend() no se vean afectados por los
+    // fetch adicionales que dispararía. Tiene su propio describe block más abajo.
+    vi.spyOn(TestBed.inject(AiShadowLogService), 'maybeRecord').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -432,6 +438,145 @@ describe('ProgressionService', () => {
       await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), history2);
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('shadow logging (ver specs/ai-shadow-log.md)', () => {
+    const settings = makeSettings({ apiKey: 'test-key' });
+
+    const groqSets = (weight = 20) =>
+      JSON.stringify({
+        sets: [
+          { weight, reps: 10 },
+          { weight, reps: 10 },
+          { weight, reps: 10 },
+        ],
+        reason: 'ok',
+      });
+
+    beforeEach(() => {
+      // Restaura el comportamiento real (el beforeEach global lo no-opea para el resto de la suite)
+      vi.spyOn(TestBed.inject(AiShadowLogService), 'maybeRecord').mockRestore();
+    });
+
+    function fetchModelAware(
+      handlers: Record<string, () => Promise<unknown> | unknown>,
+    ): ReturnType<typeof vi.fn> {
+      return vi.fn().mockImplementation((_url: string, opts: RequestInit) => {
+        const model = (JSON.parse(opts.body as string) as { model: string }).model;
+        const handler = handlers[model];
+        return handler ? handler() : Promise.resolve(groqResponse(groqSets()));
+      });
+    }
+
+    it('no bloquea la respuesta real aunque los candidatos tarden o nunca resuelvan', async () => {
+      const fetchMock = fetchModelAware({
+        'openai/gpt-oss-120b': () => new Promise(() => {}), // nunca resuelve
+        'qwen/qwen3.6-27b': () => new Promise(() => {}),
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      // 1ra llamada: counter=1, no muestreada. 2da: counter=2, muestreada (dispara shadow).
+      await service.recommend(settings, makeExercise({ id: 'ex1' }), [], lastSetsAt(20, 10), []);
+      const rec = await service.recommend(
+        settings,
+        makeExercise({ id: 'ex2' }),
+        [],
+        lastSetsAt(20, 10),
+        [],
+      );
+
+      expect(rec.source).toBe('groq');
+      expect(rec.sets[0].weight).toBe(20);
+    });
+
+    it('un candidato que falla no afecta al otro ni llega al usuario, y ambos quedan en el log', async () => {
+      const fetchMock = fetchModelAware({
+        'openai/gpt-oss-120b': () => Promise.resolve(groqResponse(groqSets(22.5))),
+        'qwen/qwen3.6-27b': () =>
+          Promise.resolve({ ok: false, status: 500, text: async () => 'boom' }),
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      await service.recommend(settings, makeExercise({ id: 'ex1' }), [], lastSetsAt(20, 10), []);
+      const rec = await service.recommend(
+        settings,
+        makeExercise({ id: 'ex2' }),
+        [],
+        lastSetsAt(20, 10),
+        [],
+      );
+      expect(rec.source).toBe('groq'); // el fallo del candidato nunca llega al usuario
+
+      await vi.waitFor(() => {
+        const log = JSON.parse(localStorage.getItem(STORAGE_KEYS.aiShadowLog) ?? '[]');
+        expect(log.length).toBe(1);
+      });
+
+      const [entry] = JSON.parse(localStorage.getItem(STORAGE_KEYS.aiShadowLog) ?? '[]');
+      const ok = entry.shadowModels.find((m: { name: string }) => m.name === 'openai/gpt-oss-120b');
+      const failed = entry.shadowModels.find(
+        (m: { name: string }) => m.name === 'qwen/qwen3.6-27b',
+      );
+      expect(ok.ok).toBe(true);
+      expect(ok.sets[0].weight).toBe(22.5);
+      expect(failed.ok).toBe(false);
+      expect(failed.error).toBeTruthy();
+    });
+
+    it('no dispara shadow cuando la recomendación real no vino de Groq', async () => {
+      const cohereOnly = makeSettings({ cohereApiKey: 'cohere-key' });
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ message: { content: [{ text: groqSets() }] } }),
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      await service.recommend(cohereOnly, makeExercise({ id: 'ex1' }), [], lastSetsAt(20, 10), []);
+      const rec = await service.recommend(
+        cohereOnly,
+        makeExercise({ id: 'ex2' }),
+        [],
+        lastSetsAt(20, 10),
+        [],
+      );
+
+      expect(rec.source).toBe('cohere');
+      // Solo las 2 llamadas reales a Cohere — ninguna extra por shadow
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(localStorage.getItem(STORAGE_KEYS.aiShadowLog)).toBeNull();
+    });
+
+    it('el log respeta el tope de 150 entradas, descartando las más viejas (FIFO)', async () => {
+      const seeded = Array.from({ length: 150 }, (_, i) => ({
+        id: `seed-${i}`,
+        dateISO: '2026-01-01',
+        exerciseId: 'ex1',
+        exerciseName: 'Press',
+        unit: 'kg',
+        context: { objetivo: '', diasDesdeUltimaSesion: null, sesionHoy: [], sesionAnterior: [] },
+        currentModel: { name: 'llama-3.3-70b-versatile', sets: [], reason: '' },
+        shadowModels: [],
+      }));
+      localStorage.setItem(STORAGE_KEYS.aiShadowLog, JSON.stringify(seeded));
+
+      const fetchMock = vi.fn().mockResolvedValue(groqResponse(groqSets()));
+      vi.stubGlobal('fetch', fetchMock);
+
+      await service.recommend(settings, makeExercise({ id: 'ex1' }), [], lastSetsAt(20, 10), []);
+      await service.recommend(settings, makeExercise({ id: 'ex2' }), [], lastSetsAt(20, 10), []);
+
+      // Espera la condición real (que el append async haya ocurrido), no solo length===150
+      // — eso ya era true con la data sembrada, antes de que el append asincrónico corra.
+      await vi.waitFor(() => {
+        const log = JSON.parse(localStorage.getItem(STORAGE_KEYS.aiShadowLog) ?? '[]');
+        expect(log.some((e: { exerciseId: string }) => e.exerciseId === 'ex2')).toBe(true);
+      });
+
+      const log = JSON.parse(localStorage.getItem(STORAGE_KEYS.aiShadowLog) ?? '[]');
+      expect(log.length).toBe(150);
+      expect(log.find((e: { id: string }) => e.id === 'seed-0')).toBeUndefined();
+      expect(log.at(-1).exerciseId).toBe('ex2');
     });
   });
 });

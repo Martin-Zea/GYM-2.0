@@ -221,6 +221,7 @@ export const en: Translations = {
   settings_hide: 'Hide',
   settings_data: 'Data',
   settings_export: 'Export JSON',
+  settings_export_shadow_log: 'Export AI comparison log',
   settings_import: 'Import JSON',
   settings_reset: 'Reset all',
   settings_reset_word: 'DELETE',

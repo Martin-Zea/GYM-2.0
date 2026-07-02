@@ -222,6 +222,7 @@ export const es: Translations = {
   settings_hide: 'Ocultar',
   settings_data: 'Datos',
   settings_export: 'Exportar JSON',
+  settings_export_shadow_log: 'Exportar log de comparación IA',
   settings_import: 'Importar JSON',
   settings_reset: 'Reiniciar todo',
   settings_reset_word: 'BORRAR',

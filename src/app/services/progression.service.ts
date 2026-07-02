@@ -9,6 +9,7 @@ import {
 } from '../models/workout.model';
 
 import { HistoryEntry, StorageService, defaultUserProfile } from './storage.service';
+import { AiShadowLogService } from './ai-shadow-log.service';
 import { AiProvider, AiProviderContext } from './providers/ai-provider';
 import { CohereProvider } from './providers/cohere.provider';
 import { GroqProvider } from './providers/groq.provider';
@@ -29,6 +30,7 @@ interface AiCacheEntry {
 @Injectable({ providedIn: 'root' })
 export class ProgressionService {
   private readonly storage = inject(StorageService);
+  private readonly shadowLog = inject(AiShadowLogService);
   private readonly local = new LocalProvider();
 
   private readCache(): Partial<Record<string, AiCacheEntry>> {
@@ -216,6 +218,9 @@ export class ProgressionService {
           lang,
         );
         this.setCached(exercise.id, lastSessionISO, todaySets, adjusted, settings.userProfile);
+        if (adjusted.source === 'groq') {
+          this.shadowLog.maybeRecord(ctx, settings.apiKey, adjusted);
+        }
         return adjusted;
       } catch (e) {
         const label = e instanceof RateLimitError ? 'rate limit' : 'falló';

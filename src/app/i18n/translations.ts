@@ -240,6 +240,7 @@ export interface Translations {
   settings_hide: string;
   settings_data: string;
   settings_export: string;
+  settings_export_shadow_log: string;
   settings_import: string;
   settings_reset: string;
   settings_reset_word: string;

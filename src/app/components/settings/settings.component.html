@@ -373,6 +373,12 @@
             <app-icon name="arrow_left" [size]="13" />
             {{ T().settings_import }}
           </button>
+          @if (shadowLog.hasEntries()) {
+            <button class="btn btn-sm" (click)="shadowLog.exportLog()">
+              <app-icon name="arrow_right" [size]="13" />
+              {{ T().settings_export_shadow_log }}
+            </button>
+          }
           @if (!resetConfirm()) {
             <button class="btn btn-danger btn-sm" (click)="openResetConfirm()">
               <app-icon name="refresh" [size]="13" />

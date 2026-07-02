@@ -11,4 +11,5 @@ export const STORAGE_KEYS = {
   hiwDismissed: 'gym_hiw_dismissed',
   onboardingDone: 'gym_onboarding_done_v1',
   legalAccepted: 'gym_legal_accepted_v1',
+  aiShadowLog: 'gym_ai_shadow_log_v1',
 } as const;
