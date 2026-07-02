@@ -14,6 +14,18 @@ export const GROQ_MODEL = 'llama-3.3-70b-versatile';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 /**
+ * Overrides del body de chat completions para modelos "de razonamiento" (piensan antes
+ * de responder). Sin esto, el `max_tokens` bajo de esta función se agota en tokens de
+ * razonamiento antes de llegar al JSON, y Groq devuelve 400 "Failed to validate JSON".
+ * `llama-3.3-70b-versatile` no es un modelo de razonamiento y no necesita overrides.
+ */
+export interface GroqRequestOverrides {
+  reasoning_effort?: string;
+  reasoning_format?: 'hidden' | 'raw' | 'parsed';
+  max_tokens?: number;
+}
+
+/**
  * Arma el prompt y pega a la API de Groq con el `model` dado, devolviendo la
  * recomendación normalizada. Parametrizada por modelo para poder reusarla tanto desde
  * `GroqProvider` (modelo de producción) como desde el shadow logging (modelos candidatos
@@ -23,6 +35,7 @@ export async function fetchGroqRecommendation(
   { exercise, todaySets, lastSets, history, userProfile, lastSessionDate, lang }: AiProviderContext,
   apiKey: string,
   model: string,
+  overrides: GroqRequestOverrides = {},
 ): Promise<AiRecommendation> {
   const brick = exercise.brick || 2.5;
   const repTarget = exercise.defaultRepTarget || 10;
@@ -81,8 +94,10 @@ Poné "deload" en true SOLO cuando recomendás una descarga o back-off intencion
       model,
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.3,
-      max_tokens: 300,
+      max_tokens: overrides.max_tokens ?? 300,
       response_format: { type: 'json_object' },
+      ...(overrides.reasoning_effort && { reasoning_effort: overrides.reasoning_effort }),
+      ...(overrides.reasoning_format && { reasoning_format: overrides.reasoning_format }),
     }),
   });
 

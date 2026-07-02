@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { AiRecommendation, SetRecommendation } from '../models/workout.model';
 import { AiProviderContext } from './providers/ai-provider';
-import { GROQ_MODEL, fetchGroqRecommendation } from './providers/groq.provider';
+import { GROQ_MODEL, GroqRequestOverrides, fetchGroqRecommendation } from './providers/groq.provider';
 import { StorageService } from './storage.service';
 import { STORAGE_KEYS } from './storage-keys';
 
@@ -10,10 +10,20 @@ import { STORAGE_KEYS } from './storage-keys';
  * (deprecado por Groq, decommission 2026-08-16) — ver `specs/ai-shadow-log.md`.
  * Se retira del código una vez tomada la decisión de a qué modelo migrar.
  */
-const SHADOW_MODELS = ['openai/gpt-oss-120b', 'qwen/qwen3.6-27b'] as const;
 const LOG_CAP = 150;
 const REASON_MAX_LEN = 300;
 const SAMPLE_RATE = 2; // 1 de cada 2 recomendaciones reales de Groq
+
+/**
+ * Ambos candidatos son modelos "de razonamiento" (piensan antes de responder) — sin
+ * apagar/reducir ese razonamiento, agotan el presupuesto de tokens antes del JSON final
+ * y Groq devuelve 400 "Failed to validate JSON". `max_tokens` sube para dejar margen al
+ * razonamiento + la respuesta.
+ */
+const SHADOW_MODELS: readonly [string, GroqRequestOverrides][] = [
+  ['openai/gpt-oss-120b', { reasoning_effort: 'low', reasoning_format: 'hidden', max_tokens: 1000 }],
+  ['qwen/qwen3.6-27b', { reasoning_effort: 'none', reasoning_format: 'hidden', max_tokens: 1000 }],
+];
 
 export interface AiShadowModelResult {
   name: string;
@@ -79,7 +89,7 @@ export class AiShadowLogService {
     current: AiRecommendation,
   ): Promise<void> {
     const shadowModels = await Promise.all(
-      SHADOW_MODELS.map((model) => this.runCandidate(ctx, apiKey, model)),
+      SHADOW_MODELS.map(([model, overrides]) => this.runCandidate(ctx, apiKey, model, overrides)),
     );
 
     this.append({
@@ -102,9 +112,10 @@ export class AiShadowLogService {
     ctx: AiProviderContext,
     apiKey: string,
     model: string,
+    overrides: GroqRequestOverrides,
   ): Promise<AiShadowModelResult> {
     try {
-      const rec = await fetchGroqRecommendation(ctx, apiKey, model);
+      const rec = await fetchGroqRecommendation(ctx, apiKey, model, overrides);
       return { name: model, ok: true, sets: rec.sets, reason: rec.reason.slice(0, REASON_MAX_LEN) };
     } catch (e) {
       return {
