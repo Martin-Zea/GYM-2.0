@@ -281,7 +281,11 @@
                 </button>
               </div>
             }
-            <button class="btn btn-ghost btn-sm" style="margin-top: 6px" (click)="state.emptyTrash()">
+            <button
+              class="btn btn-ghost btn-sm"
+              style="margin-top: 6px"
+              (click)="state.emptyTrash()"
+            >
               {{ T().settings_trash_clear }}
             </button>
           } @else {

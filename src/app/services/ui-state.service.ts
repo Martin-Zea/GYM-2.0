@@ -3,7 +3,13 @@ import { Exercise, RestTimerState, WorkoutDay } from '../models/workout.model';
 
 export type EditingDayState = WorkoutDay | 'new' | null;
 
-type OverlayName = 'settings' | 'editingDay' | 'dayDetail' | 'dayPicker' | 'dayHistory' | 'chartSheet';
+type OverlayName =
+  | 'settings'
+  | 'editingDay'
+  | 'dayDetail'
+  | 'dayPicker'
+  | 'dayHistory'
+  | 'chartSheet';
 
 @Injectable({ providedIn: 'root' })
 export class UIStateService {

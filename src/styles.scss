@@ -419,13 +419,11 @@ textarea:focus-visible {
   letter-spacing: 0.04em;
 }
 
-
 /* ============ Main content ============ */
 .main {
   flex: 1;
   padding: 16px 16px calc(100px + env(safe-area-inset-bottom));
 }
-
 
 /* ============ Buttons ============ */
 .btn {

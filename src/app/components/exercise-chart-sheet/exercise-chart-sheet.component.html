@@ -35,14 +35,21 @@
             <path [attr.d]="c.areaPath" fill="url(#grad-sheet)" stroke="none" />
             <polyline [attr.points]="c.points" class="cs-line" fill="none" />
             @for (pt of c.pts; track $index) {
-              <circle [attr.cx]="pt.x.toFixed(1)" [attr.cy]="pt.y.toFixed(1)" r="3" class="cs-dot" />
+              <circle
+                [attr.cx]="pt.x.toFixed(1)"
+                [attr.cy]="pt.y.toFixed(1)"
+                r="3"
+                class="cs-dot"
+              />
             }
             <g class="cs-axis">
               @for (lbl of c.yLabels; track $index) {
                 <text x="28" [attr.y]="lbl.y" text-anchor="end">{{ lbl.value }}</text>
               }
               @for (lbl of c.xLabels; track lbl.label) {
-                <text [attr.x]="lbl.x.toFixed(1)" y="106" text-anchor="middle">{{ lbl.label }}</text>
+                <text [attr.x]="lbl.x.toFixed(1)" y="106" text-anchor="middle">
+                  {{ lbl.label }}
+                </text>
               }
             </g>
           </svg>

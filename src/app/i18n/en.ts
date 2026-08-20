@@ -127,7 +127,8 @@ export const en: Translations = {
 
   pr_celebration: 'New record! {exercise}: {weight} kg',
 
-  nav_guard_confirm: 'Your session is still active. Your sets are saved and you can come back to continue from Home.',
+  nav_guard_confirm:
+    'Your session is still active. Your sets are saved and you can come back to continue from Home.',
 
   close_btn: 'Close',
   more_options: 'More options',
@@ -378,7 +379,8 @@ export const en: Translations = {
   settings_snapshots_desc: 'Weekly local snapshot (last 4 are kept).',
   settings_snapshots_empty: 'No automatic backups yet.',
   settings_snapshot_restore: 'Restore',
-  settings_snapshot_restore_confirm: 'This replaces ALL current data with the {date} snapshot. Continue?',
+  settings_snapshot_restore_confirm:
+    'This replaces ALL current data with the {date} snapshot. Continue?',
   settings_trash_title: 'Trash',
   settings_trash_desc: 'Deleted sessions wait here for 30 days before disappearing.',
   settings_trash_empty: 'Trash is empty.',

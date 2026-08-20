@@ -112,7 +112,9 @@
           <span class="asc-plates-label">{{ tr.tp('plates_per_side', { bar: barWeight() }) }}</span>
           <span class="asc-plates-list mono">{{ p.perSide.join(' + ') }}</span>
           @if (p.remainderKg > 0) {
-            <span class="asc-plates-rem">{{ tr.tp('plates_remainder', { n: p.remainderKg }) }}</span>
+            <span class="asc-plates-rem">{{
+              tr.tp('plates_remainder', { n: p.remainderKg })
+            }}</span>
           }
         }
       </div>

@@ -66,7 +66,10 @@ await page.waitForTimeout(500);
 const restVisible = (await page.locator('.rest-overlay').count()) === 1;
 check('descanso: overlay visible tras marcar serie', restVisible);
 if (restVisible) {
-  const nextText = await page.locator('.rest-next').textContent().catch(() => '');
+  const nextText = await page
+    .locator('.rest-next')
+    .textContent()
+    .catch(() => '');
   check('descanso: muestra la próxima serie', /Serie|Set/.test(nextText ?? ''));
   await page.screenshot({ path: `${OUT}/03-rest.png` });
   await page.locator('.rest-skip').click();
@@ -95,7 +98,10 @@ if (feelShown) {
   await page.waitForTimeout(300);
   await page.locator('.asc-next-btn').click();
   await page.waitForTimeout(400);
-  check('sesión: avanza al siguiente ejercicio', (await page.locator('.asc-done-btn').count()) === 1);
+  check(
+    'sesión: avanza al siguiente ejercicio',
+    (await page.locator('.asc-done-btn').count()) === 1,
+  );
 }
 await page.screenshot({ path: `${OUT}/04-exercise-done.png`, fullPage: true });
 
@@ -114,7 +120,10 @@ const chartLink = page.locator('.asc-link', { hasText: /progresi|chart|gráfic/i
 if (await chartLink.count()) {
   await chartLink.click();
   await page.waitForTimeout(400);
-  check('sesión: sheet de progresión abre', (await page.locator('app-exercise-chart-sheet').count()) === 1);
+  check(
+    'sesión: sheet de progresión abre',
+    (await page.locator('app-exercise-chart-sheet').count()) === 1,
+  );
   await page.screenshot({ path: `${OUT}/06-chart-sheet.png` });
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
@@ -133,13 +142,19 @@ check('terminar: vuelve al dashboard', (await page.locator('.today-card').count(
 await page.goto(`${BASE}/history`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(600);
 check('historial: calendario', (await page.locator('.cal-grid').count()) === 1);
-check('historial: día entrenado es botón', (await page.locator('button.cal-day.trained').count()) > 0);
+check(
+  'historial: día entrenado es botón',
+  (await page.locator('button.cal-day.trained').count()) > 0,
+);
 check('historial: selector + gráfico', (await page.locator('.hist-ex-select').count()) === 1);
 const hit = page.locator('.chart-hit').first();
 if (await hit.count()) {
   await hit.click();
   await page.waitForTimeout(300);
-  check('historial: tap en punto muestra detalle', (await page.locator('.chart-point-info').count()) === 1);
+  check(
+    'historial: tap en punto muestra detalle',
+    (await page.locator('.chart-point-info').count()) === 1,
+  );
 }
 await page.screenshot({ path: `${OUT}/08-history.png`, fullPage: true });
 

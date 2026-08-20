@@ -128,7 +128,8 @@ export const es: Translations = {
 
   pr_celebration: '¡Nuevo récord! {exercise}: {weight} kg',
 
-  nav_guard_confirm: 'La sesión sigue activa. Tus series quedan guardadas y podés volver a continuarla desde Inicio.',
+  nav_guard_confirm:
+    'La sesión sigue activa. Tus series quedan guardadas y podés volver a continuarla desde Inicio.',
 
   close_btn: 'Cerrar',
   more_options: 'Más opciones',
@@ -380,7 +381,8 @@ export const es: Translations = {
   settings_snapshots_desc: 'Snapshot semanal local (se guardan las últimas 4).',
   settings_snapshots_empty: 'Todavía no hay copias automáticas.',
   settings_snapshot_restore: 'Restaurar',
-  settings_snapshot_restore_confirm: 'Esto reemplaza TODOS los datos actuales por la copia del {date}. ¿Continuar?',
+  settings_snapshot_restore_confirm:
+    'Esto reemplaza TODOS los datos actuales por la copia del {date}. ¿Continuar?',
   settings_trash_title: 'Papelera',
   settings_trash_desc: 'Las sesiones borradas esperan 30 días aquí antes de desaparecer.',
   settings_trash_empty: 'La papelera está vacía.',

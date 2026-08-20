@@ -44,7 +44,9 @@
     </div>
 
     <div class="cal-footer">
-      <span class="cal-stat mono"><strong>{{ stats().total }}</strong> {{ T().cal_stat_sessions }}</span>
+      <span class="cal-stat mono"
+        ><strong>{{ stats().total }}</strong> {{ T().cal_stat_sessions }}</span
+      >
       <span
         class="cal-stat mono"
         [class.cal-stat--up]="stats().delta30 > 0"
@@ -56,7 +58,9 @@
           {{ tr.tp('cal_stat_vs_prev', { n: (stats().delta30 > 0 ? '+' : '') + stats().delta30 }) }}
         }
       </span>
-      <span class="cal-stat mono">{{ T().cal_stat_streak.toLowerCase() }} <strong>{{ stats().streak }}</strong></span>
+      <span class="cal-stat mono"
+        >{{ T().cal_stat_streak.toLowerCase() }} <strong>{{ stats().streak }}</strong></span
+      >
     </div>
 
     <div class="cal-legend">

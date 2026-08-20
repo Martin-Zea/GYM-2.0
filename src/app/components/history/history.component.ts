@@ -318,7 +318,9 @@ export class HistoryComponent {
     if (!ex) return;
     const session = this.state
       .sessions()
-      .find((s) => s.dateISO === dateISO && !s.skipped && s.sets.some((x) => x.exerciseId === ex.id));
+      .find(
+        (s) => s.dateISO === dateISO && !s.skipped && s.sets.some((x) => x.exerciseId === ex.id),
+      );
     if (!session) return;
     const day = this.state.days().find((d) => d.id === session.dayId);
     if (day) this.uiState.openDayHistory(day, dateISO);

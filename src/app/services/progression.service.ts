@@ -188,10 +188,7 @@ export class ProgressionService {
       return local(lang === 'en' ? ' (offline mode)' : ' (modo offline)');
     }
 
-    const lastSessionObj = this.storage.lastSessionForExercise(
-      this.storage.load(),
-      exercise.id,
-    );
+    const lastSessionObj = this.storage.lastSessionForExercise(this.storage.load(), exercise.id);
     const ctx: AiProviderContext = {
       exercise,
       todaySets,

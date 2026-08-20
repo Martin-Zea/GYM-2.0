@@ -96,7 +96,10 @@
               <app-icon name="edit" [size]="12" />
               {{ T().edit_routine }}
             </button>
-            <button class="today-action-btn today-action-btn--muted" (click)="confirmSkip.set(true)">
+            <button
+              class="today-action-btn today-action-btn--muted"
+              (click)="confirmSkip.set(true)"
+            >
               <app-icon name="x" [size]="12" />
               {{ T().skip_day }}
             </button>
@@ -189,11 +192,15 @@
         <span class="session-day-name">{{ sessionDay()?.name }}</span>
       </button>
       <div class="session-header-right">
-        <span class="session-progress mono">{{ dayProgress().done }}/{{ dayProgress().total }}</span>
+        <span class="session-progress mono"
+          >{{ dayProgress().done }}/{{ dayProgress().total }}</span
+        >
         <div class="session-progress-bar">
           <div
             class="session-progress-fill"
-            [style.width.%]="dayProgress().total ? (dayProgress().done / dayProgress().total) * 100 : 0"
+            [style.width.%]="
+              dayProgress().total ? (dayProgress().done / dayProgress().total) * 100 : 0
+            "
           ></div>
         </div>
         <button

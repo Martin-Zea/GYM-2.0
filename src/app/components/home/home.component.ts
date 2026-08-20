@@ -213,9 +213,7 @@ export class HomeComponent {
     });
   });
 
-  protected readonly weekSessionCount = computed(
-    () => this.weekMap().filter(Boolean).length,
-  );
+  protected readonly weekSessionCount = computed(() => this.weekMap().filter(Boolean).length);
 
   protected readonly weekStatsDisplay = computed(() => {
     const { streak, weeklyVolume } = this.storage.weeklyStats(this.state.state());

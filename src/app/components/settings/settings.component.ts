@@ -120,7 +120,6 @@ export class SettingsComponent implements OnInit {
     this.patch({ cohereApiKey: (event.target as HTMLInputElement).value });
   }
 
-
   protected async importData(): Promise<void> {
     try {
       await this.backup.importData();

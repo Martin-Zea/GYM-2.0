@@ -14,12 +14,7 @@ import { StateService } from '../../services/state.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
 import { SetLoggingService } from '../../services/set-logging.service';
-import {
-  AiRecommendation,
-  Exercise,
-  TrainingFeel,
-  WorkoutDay,
-} from '../../models/workout.model';
+import { AiRecommendation, Exercise, TrainingFeel, WorkoutDay } from '../../models/workout.model';
 import { DEFAULT_BAR_KG, DEFAULT_PLATES_KG, plateBreakdown } from '../../utils/plates';
 
 /**

@@ -1,45 +1,45 @@
 <div class="app" [class.app--session]="uiState.trainingActive()">
   @if (!uiState.trainingActive()) {
     <header class="topbar">
-    <div class="brand">
-      <div class="brand-mark">
-        <app-icon name="dumbbell" [size]="14" />
+      <div class="brand">
+        <div class="brand-mark">
+          <app-icon name="dumbbell" [size]="14" />
+        </div>
+        <span>{{ T().app_name }}</span>
       </div>
-      <span>{{ T().app_name }}</span>
-    </div>
-    <div class="topbar-actions">
-      <button
-        class="icon-btn"
-        (click)="toggleTheme()"
-        [title]="
-          theme() === 'dark'
-            ? T().theme_toggle_dark
-            : theme() === 'light'
-              ? T().theme_toggle_light
-              : T().theme_toggle_high_contrast
-        "
-        [attr.aria-label]="
-          theme() === 'dark'
-            ? T().theme_toggle_dark
-            : theme() === 'light'
-              ? T().theme_toggle_light
-              : T().theme_toggle_high_contrast
-        "
-      >
-        <app-icon
-          [name]="theme() === 'dark' ? 'sun' : theme() === 'light' ? 'contrast' : 'moon'"
-          [size]="16"
-        />
-      </button>
-      <button
-        class="icon-btn"
-        [title]="T().settings_btn"
-        [attr.aria-label]="T().settings_btn"
-        (click)="uiState.openSettings()"
-      >
-        <app-icon name="settings" [size]="16" />
-      </button>
-    </div>
+      <div class="topbar-actions">
+        <button
+          class="icon-btn"
+          (click)="toggleTheme()"
+          [title]="
+            theme() === 'dark'
+              ? T().theme_toggle_dark
+              : theme() === 'light'
+                ? T().theme_toggle_light
+                : T().theme_toggle_high_contrast
+          "
+          [attr.aria-label]="
+            theme() === 'dark'
+              ? T().theme_toggle_dark
+              : theme() === 'light'
+                ? T().theme_toggle_light
+                : T().theme_toggle_high_contrast
+          "
+        >
+          <app-icon
+            [name]="theme() === 'dark' ? 'sun' : theme() === 'light' ? 'contrast' : 'moon'"
+            [size]="16"
+          />
+        </button>
+        <button
+          class="icon-btn"
+          [title]="T().settings_btn"
+          [attr.aria-label]="T().settings_btn"
+          (click)="uiState.openSettings()"
+        >
+          <app-icon name="settings" [size]="16" />
+        </button>
+      </div>
     </header>
   }
 
