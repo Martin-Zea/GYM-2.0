@@ -11,6 +11,8 @@ import {
 } from '../models/workout.model';
 import { createInitialState } from '../data/initial-data';
 import { STORAGE_KEYS } from './storage-keys';
+import { IDB_SNAPSHOT_STORE, IDB_STATE_STORE, idbDelete, idbGet, idbKeys, idbPut } from './idb';
+import { daysBetweenISO as daysBetween } from '../utils/date';
 
 const STORAGE_KEY = STORAGE_KEYS.appState;
 const CURRENT_SCHEMA = 6;
@@ -181,6 +183,7 @@ export class StorageService {
       activeDayIndex: migrated.activeDayIndex ?? 0,
       routinePointer: migrated.routinePointer ?? migrated.activeDayIndex ?? 0,
       todayProgress: migrated.todayProgress ?? {},
+      trash: this.purgeTrash(migrated.trash ?? []),
       settings: {
         apiKey: migrated.settings?.apiKey ?? '',
         cohereApiKey: migrated.settings?.cohereApiKey ?? '',
@@ -188,6 +191,8 @@ export class StorageService {
         sounds: migrated.settings?.sounds ?? true,
         haptics: migrated.settings?.haptics ?? true,
         theme: migrated.settings?.theme ?? 'dark',
+        barWeightKg: migrated.settings?.barWeightKg,
+        platesKg: migrated.settings?.platesKg,
         userProfile: {
           weightKg: profile?.weightKg ?? null,
           heightCm: profile?.heightCm ?? null,
@@ -220,8 +225,13 @@ export class StorageService {
   }
 
   save(state: AppState): SaveResult {
+    const savedAt = Date.now();
+    // IndexedDB es la fuente de verdad durable (localStorage es purgable por el SO);
+    // el espejo en localStorage sigue siendo la fuente de arranque rápido (sincrónica).
+    void this.mirrorToIdb(state, savedAt);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEYS.stateSavedAt, String(savedAt));
       return { ok: true };
     } catch (e) {
       console.warn('StorageService.save falló:', e);
@@ -229,6 +239,74 @@ export class StorageService {
         e instanceof DOMException && e.name === 'QuotaExceededError' ? 'quota' : 'unknown';
       return { ok: false, reason };
     }
+  }
+
+  // ── IndexedDB: espejo durable + snapshots automáticos ──────────────────────
+
+  private lastSnapshotCheck = 0;
+
+  private async mirrorToIdb(state: AppState, savedAt: number): Promise<void> {
+    await idbPut(IDB_STATE_STORE, 'current', { state, savedAt });
+    // Snapshot semanal rotativo (máx. 4): red de seguridad contra ediciones destructivas.
+    const now = Date.now();
+    if (now - this.lastSnapshotCheck < 60_000) return; // chequeo barato, no en cada save
+    this.lastSnapshotCheck = now;
+    const keys = (await idbKeys(IDB_SNAPSHOT_STORE)).sort();
+    const last = keys.at(-1);
+    const today = this.todayISO();
+    if (!last || daysBetween(last, today) >= 7) {
+      await this.writeSnapshot(state, today);
+    }
+  }
+
+  /** Escribe un snapshot con fecha (usado por el ciclo semanal y antes de un reset). */
+  async writeSnapshot(state: AppState, label?: string): Promise<void> {
+    const key = label ?? this.todayISO();
+    await idbPut(IDB_SNAPSHOT_STORE, key, { dateISO: key, savedAt: Date.now(), state });
+    const keys = (await idbKeys(IDB_SNAPSHOT_STORE)).sort();
+    for (const stale of keys.slice(0, Math.max(0, keys.length - 4))) {
+      await idbDelete(IDB_SNAPSHOT_STORE, stale);
+    }
+  }
+
+  listSnapshots(): Promise<string[]> {
+    return idbKeys(IDB_SNAPSHOT_STORE).then((k) => k.sort().reverse());
+  }
+
+  async getSnapshot(key: string): Promise<AppState | null> {
+    const entry = await idbGet<{ state: unknown }>(IDB_SNAPSHOT_STORE, key);
+    if (!entry || !isValidAppState(entry.state)) return null;
+    return this.buildState(entry.state as Partial<AppState>);
+  }
+
+  /**
+   * Si IndexedDB tiene un estado MÁS NUEVO que el que arrancó de localStorage
+   * (p. ej. el SO purgó localStorage), lo devuelve para que StateService lo adopte.
+   */
+  async loadNewerFromIdb(): Promise<AppState | null> {
+    const entry = await idbGet<{ state: unknown; savedAt: number }>(IDB_STATE_STORE, 'current');
+    if (!entry || !isValidAppState(entry.state)) return null;
+    const lsSavedAt = Number(localStorage.getItem(STORAGE_KEYS.stateSavedAt) ?? 0);
+    const lsHasState = localStorage.getItem(STORAGE_KEY) !== null;
+    if (lsHasState && entry.savedAt <= lsSavedAt) return null;
+    return this.buildState(entry.state as Partial<AppState>);
+  }
+
+  /** Marca el origen como persistente para que el navegador no purgue el almacenamiento. */
+  requestPersistentStorage(): void {
+    try {
+      void navigator.storage?.persist?.().catch(() => {});
+    } catch {
+      /* API no disponible */
+    }
+  }
+
+  /** Purga la papelera: las sesiones borradas hace más de 30 días desaparecen. */
+  private purgeTrash(trash: AppState['trash']): NonNullable<AppState['trash']> {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 30);
+    const cutoffISO = cutoff.toISOString().slice(0, 10);
+    return (trash ?? []).filter((t) => t.deletedISO >= cutoffISO);
   }
 
   /**

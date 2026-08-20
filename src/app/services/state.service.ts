@@ -7,6 +7,7 @@ import {
   StoredWorkoutDay,
   TodayDayProgress,
   TodaySetProgress,
+  TrainingFeel,
   WorkoutDay,
 } from '../models/workout.model';
 import { StorageService, normalizeExerciseName } from './storage.service';
@@ -60,6 +61,13 @@ export class StateService {
   }
 
   constructor() {
+    // Almacenamiento durable: si el SO purgó localStorage pero IndexedDB conserva un
+    // estado más nuevo, adoptarlo. Y pedir persistencia del origen (una sola vez).
+    this.storage.requestPersistentStorage();
+    void this.storage.loadNewerFromIdb().then((newer) => {
+      if (newer) this.state.set(newer);
+    });
+
     // Persistencia: la capa de storage reporta el fallo; aquí lo traducimos y exponemos a la UI.
     effect(() => {
       const result = this.storage.save(this.state());
@@ -174,19 +182,23 @@ export class StateService {
     });
   }
 
-  skipDay(): void {
+  /** Salta el día actual. Devuelve el id de la sesión "saltada" creada (para poder deshacer). */
+  skipDay(): string | null {
     const day = this.currentDay();
-    if (!day) return;
+    if (!day) return null;
     const alreadySkipped = this.state().sessions.some(
       (s) => s.dayId === day.id && s.dateISO === this.todayKey && s.skipped,
     );
+    let sessionId: string | null = null;
     if (!alreadySkipped) {
+      sessionId = this.storage.uid();
+      const id = sessionId;
       this.state.update((s) => ({
         ...s,
         sessions: [
           ...s.sessions,
           {
-            id: this.storage.uid(),
+            id,
             dayId: day.id,
             dateISO: this.todayKey,
             sets: [],
@@ -196,14 +208,50 @@ export class StateService {
       }));
     }
     this.advanceRoutine();
+    return sessionId;
+  }
+
+  /** Deshace un skipDay() inmediato: borra la sesión saltada y retrocede el puntero un paso. */
+  undoSkipDay(sessionId: string | null): void {
+    this.state.update((s) => ({
+      ...s,
+      sessions: sessionId ? s.sessions.filter((x) => x.id !== sessionId) : s.sessions,
+      routinePointer: Math.max(0, s.routinePointer - 1),
+    }));
   }
 
   deleteSession(sessionId: string): void {
-    this.state.update((s) => ({
-      ...s,
-      sessions: s.sessions.filter((x) => x.id !== sessionId),
-    }));
+    this.state.update((s) => {
+      const victim = s.sessions.find((x) => x.id === sessionId);
+      const trash = victim
+        ? [...(s.trash ?? []), { session: victim, deletedISO: this.todayKey }].slice(-50)
+        : s.trash;
+      return {
+        ...s,
+        sessions: s.sessions.filter((x) => x.id !== sessionId),
+        trash,
+      };
+    });
     this.invalidateAiCache();
+  }
+
+  /** Restaura una sesión desde la papelera. */
+  restoreSession(sessionId: string): void {
+    this.state.update((s) => {
+      const entry = (s.trash ?? []).find((t) => t.session.id === sessionId);
+      if (!entry) return s;
+      return {
+        ...s,
+        sessions: [...s.sessions, entry.session],
+        trash: (s.trash ?? []).filter((t) => t.session.id !== sessionId),
+      };
+    });
+    this.invalidateAiCache();
+  }
+
+  /** Vacía la papelera de sesiones. */
+  emptyTrash(): void {
+    this.state.update((s) => ({ ...s, trash: [] }));
   }
 
   updateSessionSet(
@@ -339,6 +387,76 @@ export class StateService {
     }
   }
 
+  /** Sensación del ejercicio al completarlo — se guarda en la sesión de HOY. */
+  setExerciseFeel(dayId: string, exerciseId: string, feel: TrainingFeel | null): void {
+    this.state.update((s) => ({
+      ...s,
+      sessions: s.sessions.map((session) => {
+        if (session.dayId !== dayId || session.dateISO !== this.todayKey || session.skipped) {
+          return session;
+        }
+        const feelings = { ...(session.feelings ?? {}) };
+        if (feel) feelings[exerciseId] = feel;
+        else delete feelings[exerciseId];
+        return { ...session, feelings };
+      }),
+    }));
+  }
+
+  /** Nota rápida por ejercicio — se guarda en la sesión de HOY. */
+  setExerciseNote(dayId: string, exerciseId: string, note: string): void {
+    this.state.update((s) => ({
+      ...s,
+      sessions: s.sessions.map((session) => {
+        if (session.dayId !== dayId || session.dateISO !== this.todayKey || session.skipped) {
+          return session;
+        }
+        const notes = { ...(session.notes ?? {}) };
+        const trimmed = note.trim().slice(0, 200);
+        if (trimmed) notes[exerciseId] = trimmed;
+        else delete notes[exerciseId];
+        return { ...session, notes };
+      }),
+    }));
+  }
+
+  /** Sustituye un ejercicio SOLO POR HOY (p. ej. máquina ocupada). No toca la rutina. */
+  substituteToday(dayId: string, originalExId: string, substituteExId: string | null): void {
+    this.state.update((s) => {
+      const today: TodayDayProgress =
+        s.todayProgress[dayId]?.dateISO === this.todayKey
+          ? structuredClone(s.todayProgress[dayId])
+          : { dateISO: this.todayKey, sets: {} };
+      const overrides = { ...(today.overrides ?? {}) };
+      if (substituteExId) overrides[originalExId] = substituteExId;
+      else delete overrides[originalExId];
+      today.overrides = overrides;
+      return { ...s, todayProgress: { ...s.todayProgress, [dayId]: today } };
+    });
+  }
+
+  /** Añade un ejercicio existente del catálogo a un día guardado (dedupe por id). */
+  addExerciseToDay(dayId: string, exerciseId: string): void {
+    this.state.update((s) => ({
+      ...s,
+      days: s.days.map((d) =>
+        d.id !== dayId || d.exerciseIds.includes(exerciseId)
+          ? d
+          : { ...d, exerciseIds: [...d.exerciseIds, exerciseId] },
+      ),
+    }));
+  }
+
+  /** Quita un ejercicio de un día guardado (el catálogo y el historial no se tocan). */
+  removeExerciseFromDay(dayId: string, exerciseId: string): void {
+    this.state.update((s) => ({
+      ...s,
+      days: s.days.map((d) =>
+        d.id !== dayId ? d : { ...d, exerciseIds: d.exerciseIds.filter((id) => id !== exerciseId) },
+      ),
+    }));
+  }
+
   /** Elimina entradas de todayProgress que no sean del día actual */
   private pruneTodayProgress(tp: AppState['todayProgress']): AppState['todayProgress'] {
     const today = this.todayKey;
@@ -350,6 +468,13 @@ export class StateService {
   }
 
   resetAll(): void {
+    // Red de seguridad: snapshot del estado actual antes de destruirlo
+    void this.storage.writeSnapshot(this.state(), `pre-reset-${this.todayKey}`);
     this.state.set(createInitialState());
+  }
+
+  /** Reemplaza el estado con una plantilla de rutina (wizard de primer arranque). */
+  applyTemplate(days: 3 | 4 | 5): void {
+    this.state.set(createInitialState(days));
   }
 }

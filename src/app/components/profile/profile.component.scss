@@ -26,62 +26,14 @@
   }
 }
 
-// Profile data grid
-.profile-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.profile-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.profile-stat-label {
-  font-size: 11px;
-  color: var(--text-2);
-}
-
-.profile-stat-value {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-0);
-
-  &.mono {
-    font-family: 'JetBrains Mono', monospace;
-  }
-}
-
-// Body weight
-.weight-row {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.weight-value {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--text-0);
-}
-
 .weight-trend {
   font-size: 13px;
-  color: var(--accent);
+  color: var(--success);
+  margin: 8px 2px 0;
 
   &.neg {
     color: var(--danger);
   }
-}
-
-.section-empty {
-  font-size: 13px;
-  color: var(--text-2);
-  margin: 0;
 }
 
 // Achievements
@@ -172,4 +124,159 @@
 
 .mono {
   font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Registro de peso (movido desde Ajustes) ── */
+.weight-log {
+  margin: 0 0 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-1);
+}
+.weight-log-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--border);
+  &:last-child {
+    border-bottom: none;
+  }
+}
+.weight-log-today {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.weight-log-today-label {
+  font-weight: 600;
+  color: var(--accent);
+}
+.weight-log-date {
+  font-size: 13px;
+  color: var(--text-2);
+  min-width: 58px;
+  flex-shrink: 0;
+}
+.weight-log-val-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+.weight-log-input {
+  width: 60px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  font-size: 14px;
+  color: var(--text-0);
+  padding: 2px 0;
+  text-align: right;
+  transition: border-color 0.15s;
+  -moz-appearance: textfield;
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+  &:focus {
+    border-bottom-color: var(--accent);
+    outline: none;
+  }
+}
+.weight-log-unit {
+  font-size: 12px;
+  color: var(--text-2);
+}
+.weight-log-del {
+  opacity: 0.35;
+  flex-shrink: 0;
+  &:hover {
+    opacity: 1;
+  }
+}
+.weight-log-del-placeholder {
+  width: 28px;
+  flex-shrink: 0;
+}
+.weight-log-undo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-2);
+  padding: 6px 0 4px;
+  gap: 8px;
+}
+
+/* ── Filas editables de datos personales ── */
+.profile-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  min-height: 52px;
+  border-bottom: 1px solid var(--border);
+  &:last-child {
+    border-bottom: none;
+  }
+}
+.profile-row-label {
+  font-size: 14px;
+  color: var(--text-0);
+  font-weight: 500;
+}
+.profile-row-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .input {
+    width: 75px;
+    text-align: center;
+  }
+}
+.profile-row-unit {
+  font-size: 12px;
+  color: var(--text-2);
+}
+.profile-row-select {
+  width: 150px;
+}
+
+/* ── Objetivo + notas para la IA ── */
+.profile-section-desc {
+  font-size: 12px;
+  color: var(--text-2);
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+.profile-goal-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+
+  .btn {
+    min-height: 44px;
+  }
+}
+.profile-notes-label {
+  display: block;
+  font-size: 14px;
+  color: var(--text-0);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.profile-notes-input {
+  resize: none;
+  font-size: 14px;
+  line-height: 1.4;
+  width: 100%;
+}
+.profile-ai-note {
+  margin: 10px 0 0;
+  color: var(--text-3);
 }

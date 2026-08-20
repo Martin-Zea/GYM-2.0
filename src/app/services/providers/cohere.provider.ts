@@ -1,6 +1,7 @@
 import { AiRecommendation } from '../../models/workout.model';
 import { AiProvider, AiProviderContext } from './ai-provider';
 import {
+  buildFeedbackNote,
   buildGoalNote,
   buildHistoryDetail,
   buildPerfilParts,
@@ -23,6 +24,8 @@ export class CohereProvider implements AiProvider {
     userProfile,
     lastSessionDate,
     lang,
+    lastFeel,
+    lastNote,
   }: AiProviderContext): Promise<AiRecommendation> {
     const brick = exercise.brick || 2.5;
     const repTarget = exercise.defaultRepTarget || 10;
@@ -32,6 +35,7 @@ export class CohereProvider implements AiProvider {
     const perfilParts = buildPerfilParts(userProfile);
     const profileNote = buildProfileNote(perfilParts, userProfile);
     const goalNote = buildGoalNote(userProfile.goal, userProfile.aiNotes);
+    const feedbackNote = buildFeedbackNote(lastFeel, lastNote);
 
     const summary = {
       ejercicio: exercise.name,
@@ -58,7 +62,7 @@ export class CohereProvider implements AiProvider {
 
     const prompt = `Entrenador de hipertrofia. Analizá los datos y decidí la recomendación para la próxima sesión.
 Datos: ${JSON.stringify(summary)}
-${buildPrinciplesPrompt(brick, true)}${goalNote}${profileNote}${langInstruction}
+${buildPrinciplesPrompt(brick, true)}${goalNote}${feedbackNote}${profileNote}${langInstruction}
 JSON EXCLUSIVO (sin markdown): {"sets":[{"weight":<n>,"reps":<n>}...],"reason":"<s>","deload":<bool>}
 Sets: EXACTAMENTE ${setsTarget} elementos. "deload" true SOLO si recomendás descarga/back-off intencional (menos reps/segundos o carga que la sesión anterior); si no, false.`;
 
@@ -69,7 +73,7 @@ Sets: EXACTAMENTE ${setsTarget} elementos. "deload" true SOLO si recomendás des
         model: 'command-r7b-12-2024',
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' },
-        temperature: 0.3,
+        temperature: 0,
         max_tokens: 300,
       }),
     });

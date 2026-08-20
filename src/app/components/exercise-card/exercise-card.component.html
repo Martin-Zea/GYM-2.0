@@ -22,7 +22,7 @@
       </div>
     </div>
     <div class="exercise-status">
-      <span class="set-pill">{{ doneSetsCount() }}/{{ exercise().defaultSets }}</span>
+      <span class="set-pill">{{ doneSetsCount() }}/{{ setsArray().length }}</span>
       <a
         class="chart-icon-btn"
         [href]="ytUrl()"
@@ -34,16 +34,14 @@
       >
         <app-icon name="youtube" [size]="13" />
       </a>
-      <a
+      <button
         class="chart-icon-btn"
-        [routerLink]="['/charts']"
-        [fragment]="exercise().id"
         [title]="T().view_chart"
         [attr.aria-label]="T().view_chart"
-        (click)="$event.stopPropagation()"
+        (click)="$event.stopPropagation(); openChart()"
       >
         <app-icon name="chart" [size]="13" />
-      </a>
+      </button>
     </div>
     <app-icon name="chevron" [size]="16" class="chevron" />
   </div>
@@ -51,7 +49,16 @@
   @if (expanded()) {
     <div class="exercise-body">
       <!-- AI nudge: shows source badge (sparkle = Groq, ruler = local) -->
-      <div class="ai-nudge">
+      <div
+        class="ai-nudge"
+        [attr.title]="
+          aiRec() && !aiRec()!.loading
+            ? aiRec()!.source !== 'local'
+              ? T().ai_badge_title_ai
+              : T().ai_badge_title_local
+            : null
+        "
+      >
         @if (aiRec()?.loading) {
           <span class="ai-nudge-loading">
             <span class="ai-nudge-spinner"></span>
@@ -205,6 +212,10 @@
             </button>
           </div>
         }
+        <button class="add-set-btn" (click)="$event.stopPropagation(); addExtraSet()">
+          <app-icon name="plus" [size]="12" />
+          {{ T().asc_extra_set }}
+        </button>
       </div>
     </div>
   }

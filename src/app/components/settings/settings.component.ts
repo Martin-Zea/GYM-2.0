@@ -2,7 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
-  OnDestroy,
+  OnInit,
   computed,
   inject,
   signal,
@@ -10,14 +10,14 @@ import {
 import { IconComponent } from '../icon/icon.component';
 import { FocusTrapDirective } from '../../directives/focus-trap.directive';
 import { StateService } from '../../services/state.service';
+import { StorageService } from '../../services/storage.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
 import { BackupService } from '../../services/backup.service';
 import { AiShadowLogService } from '../../services/ai-shadow-log.service';
-import { AppSettings, TrainingGoal, UserProfile, WeightLogEntry } from '../../models/workout.model';
+import { AppSettings } from '../../models/workout.model';
+import { DEFAULT_BAR_KG, DEFAULT_PLATES_KG } from '../../utils/plates';
 import { APP_VERSION } from '../../version';
-
-const PAST_LOG_LIMIT = 3;
 
 @Component({
   selector: 'app-settings',
@@ -27,8 +27,9 @@ const PAST_LOG_LIMIT = 3;
   styleUrl: './settings.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SettingsComponent implements OnDestroy {
+export class SettingsComponent implements OnInit {
   protected readonly state = inject(StateService);
+  private readonly storage = inject(StorageService);
   protected readonly uiState = inject(UIStateService);
   protected readonly tr = inject(TranslationService);
   protected readonly backup = inject(BackupService);
@@ -44,27 +45,58 @@ export class SettingsComponent implements OnDestroy {
 
   protected readonly settings = computed(() => this.state.settings());
 
-  protected readonly weightLogDesc = computed(() =>
-    [...this.settings().userProfile.weightLog].sort((a, b) => b.dateISO.localeCompare(a.dateISO)),
+  // ── Calculadora de discos ──
+  protected readonly barWeight = computed(() => this.settings().barWeightKg ?? DEFAULT_BAR_KG);
+  protected readonly platesCsv = computed(() =>
+    (this.settings().platesKg ?? DEFAULT_PLATES_KG).join(', '),
   );
 
-  protected readonly todayEntry = computed(
-    () => this.weightLogDesc().find((e) => e.dateISO === this.state.todayKey) ?? null,
-  );
+  protected patchBarWeight(event: Event): void {
+    const num = Number((event.target as HTMLInputElement).value);
+    if (isNaN(num) || num <= 0) return;
+    this.patch({ barWeightKg: num });
+  }
 
-  // Tope fijo: las correcciones reales son siempre recientes; un dato viejo errado
-  // es ruido de tendencia. Sin "ver más" — Ajustes se mantiene corto.
-  protected readonly pastLogDisplayed = computed(() =>
-    this.weightLogDesc()
-      .filter((e) => e.dateISO !== this.state.todayKey)
-      .slice(0, PAST_LOG_LIMIT),
-  );
+  protected patchPlates(event: Event): void {
+    const raw = (event.target as HTMLInputElement).value;
+    const plates = raw
+      .split(/[,;]/)
+      .map((p) => Number(p.trim().replace(',', '.')))
+      .filter((n) => !isNaN(n) && n > 0);
+    if (plates.length) this.patch({ platesKg: plates });
+  }
 
-  protected readonly undoEntry = signal<WeightLogEntry | null>(null);
-  private undoTimer: ReturnType<typeof setTimeout> | null = null;
+  // ── Copias automáticas (snapshots en IndexedDB) ──
+  protected readonly snapshots = signal<string[]>([]);
+  protected readonly snapshotRestored = signal(false);
 
-  ngOnDestroy(): void {
-    if (this.undoTimer) clearTimeout(this.undoTimer);
+  private async refreshSnapshots(): Promise<void> {
+    this.snapshots.set(await this.storage.listSnapshots());
+  }
+
+  protected async restoreSnapshot(key: string): Promise<void> {
+    const msg = this.tr.tp('settings_snapshot_restore_confirm', { date: key });
+    if (!window.confirm(msg)) return;
+    const snap = await this.storage.getSnapshot(key);
+    if (!snap) return;
+    this.state.state.set(snap);
+    this.snapshotRestored.set(true);
+    setTimeout(() => this.snapshotRestored.set(false), 3000);
+  }
+
+  // ── Papelera de sesiones ──
+  protected readonly trash = computed(() => [...(this.state.state().trash ?? [])].reverse());
+
+  protected trashLabel(dateISO: string): string {
+    return `${dateISO.slice(8, 10)}/${dateISO.slice(5, 7)}/${dateISO.slice(2, 4)}`;
+  }
+
+  protected dayNameFor(dayId: string): string {
+    return this.state.days().find((d) => d.id === dayId)?.name ?? '—';
+  }
+
+  ngOnInit(): void {
+    void this.refreshSnapshots();
   }
 
   @HostListener('document:keydown.escape')
@@ -88,84 +120,6 @@ export class SettingsComponent implements OnDestroy {
     this.patch({ cohereApiKey: (event.target as HTMLInputElement).value });
   }
 
-  protected patchProfileNum(key: 'heightCm' | 'age', event: Event): void {
-    const val = (event.target as HTMLInputElement).value;
-    const num = val === '' ? null : Number(val);
-    this.patchProfile({ [key]: num } as Partial<UserProfile>);
-  }
-
-  protected patchProfileSex(event: Event): void {
-    const val = (event.target as HTMLSelectElement).value;
-    this.patchProfile({ sex: (val || null) as UserProfile['sex'] });
-  }
-
-  protected setGoal(goal: TrainingGoal | null): void {
-    this.patchProfile({ goal });
-  }
-
-  protected patchAiNotes(event: Event): void {
-    this.patchProfile({ aiNotes: (event.target as HTMLTextAreaElement).value.slice(0, 200) });
-  }
-
-  protected get hasApiKey(): boolean {
-    const s = this.settings();
-    return !!(s.apiKey || s.cohereApiKey);
-  }
-
-  protected saveTodayWeight(event: Event): void {
-    const val = (event.target as HTMLInputElement).value;
-    const num = val === '' ? null : Number(val);
-    if (num === null || isNaN(num) || num <= 0) return;
-    const today = this.state.todayKey;
-    const weightLog = [
-      ...this.settings().userProfile.weightLog.filter((e) => e.dateISO !== today),
-      { dateISO: today, weightKg: num },
-    ];
-    this.patchProfile({ weightKg: num, weightLog });
-  }
-
-  protected updateWeightEntry(dateISO: string, event: Event): void {
-    const val = (event.target as HTMLInputElement).value;
-    const num = val === '' ? null : Number(val);
-    if (num === null || isNaN(num) || num <= 0) return;
-    const updated = this.settings().userProfile.weightLog.map((e) =>
-      e.dateISO === dateISO ? { ...e, weightKg: num } : e,
-    );
-    const sorted = [...updated].sort((a, b) => a.dateISO.localeCompare(b.dateISO));
-    this.patchProfile({ weightKg: sorted[sorted.length - 1].weightKg, weightLog: updated });
-  }
-
-  protected deleteWeightEntry(dateISO: string): void {
-    const entry = this.settings().userProfile.weightLog.find((e) => e.dateISO === dateISO);
-    if (!entry) return;
-    const filtered = this.settings().userProfile.weightLog.filter((e) => e.dateISO !== dateISO);
-    const sorted = [...filtered].sort((a, b) => a.dateISO.localeCompare(b.dateISO));
-    const weightKg = sorted.length ? sorted[sorted.length - 1].weightKg : null;
-    this.patchProfile({ weightKg, weightLog: filtered });
-    if (this.undoTimer) clearTimeout(this.undoTimer);
-    this.undoEntry.set(entry);
-    this.undoTimer = setTimeout(() => this.undoEntry.set(null), 3000);
-  }
-
-  protected undoDelete(): void {
-    const entry = this.undoEntry();
-    if (!entry) return;
-    if (this.undoTimer) clearTimeout(this.undoTimer);
-    const existing = this.settings().userProfile.weightLog;
-    const restored = [...existing.filter((e) => e.dateISO !== entry.dateISO), entry];
-    const sorted = [...restored].sort((a, b) => a.dateISO.localeCompare(b.dateISO));
-    this.patchProfile({ weightKg: sorted[sorted.length - 1].weightKg, weightLog: restored });
-    this.undoEntry.set(null);
-  }
-
-  protected formatLogDate(dateISO: string): string {
-    return `${dateISO.slice(8, 10)}/${dateISO.slice(5, 7)}/${dateISO.slice(2, 4)}`;
-  }
-
-  private patchProfile(p: Partial<UserProfile>): void {
-    const s = this.settings();
-    this.state.saveSettings({ ...s, userProfile: { ...s.userProfile, ...p } });
-  }
 
   protected async importData(): Promise<void> {
     try {

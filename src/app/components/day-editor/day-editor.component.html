@@ -13,8 +13,9 @@
 
     <div class="sheet-body">
       <div class="field">
-        <label class="field-label">{{ T().day_editor_day_name }}</label>
+        <label class="field-label" for="day-editor-name">{{ T().day_editor_day_name }}</label>
         <input
+          id="day-editor-name"
           class="input"
           type="text"
           [placeholder]="T().day_editor_day_name_placeholder"
@@ -42,17 +43,33 @@
               >
                 <app-icon name="menu" [size]="16" />
               </div>
-              <input
-                class="input ex-name-input"
-                type="text"
-                autocomplete="off"
-                [placeholder]="T().day_editor_exercise_placeholder"
-                [value]="ex.name"
-                (input)="setExName(i, $event)"
-                (focus)="focusName(i)"
-                (blur)="blurName()"
-                (click)="$event.stopPropagation()"
-              />
+              @if (renamingIndex() === i) {
+                <input
+                  class="input ex-name-input"
+                  type="text"
+                  autocomplete="off"
+                  [attr.data-rename-index]="i"
+                  [placeholder]="T().day_editor_exercise_placeholder"
+                  [value]="ex.name"
+                  (input)="setExName(i, $event)"
+                  (focus)="focusName(i)"
+                  (blur)="blurName(); finishRename()"
+                  (keydown.enter)="finishRename()"
+                  (click)="$event.stopPropagation()"
+                />
+              } @else {
+                <span class="ex-name-label" [class.ex-name-label--empty]="!ex.name.trim()">
+                  {{ ex.name.trim() || T().day_editor_exercise_placeholder }}
+                </span>
+                <button
+                  class="icon-btn ex-rename-btn"
+                  [title]="T().day_editor_rename"
+                  [attr.aria-label]="T().day_editor_rename"
+                  (click)="$event.stopPropagation(); startRename(i)"
+                >
+                  <app-icon name="edit" [size]="13" />
+                </button>
+              }
               <app-icon
                 name="chevron"
                 [size]="14"
@@ -145,6 +162,18 @@
                   </select>
                 </div>
 
+                @if (canMove(ex) && otherDays().length) {
+                  <div class="field">
+                    <label class="field-label">{{ T().day_editor_move }}</label>
+                    <select class="select" (change)="moveExercise(i, $event)">
+                      <option value="">{{ T().day_editor_move_pick }}</option>
+                      @for (d of otherDays(); track d.id) {
+                        <option [value]="d.id">{{ d.name }}</option>
+                      }
+                    </select>
+                  </div>
+                }
+
                 <!-- Eliminar ejercicio: botón + confirmación inline -->
                 @if (confirmDeleteExIndex() === i) {
                   <div class="ex-delete-confirm">
@@ -182,6 +211,10 @@
       <!-- Eliminar día: en el cuerpo, separado del footer -->
       @if (!isNew) {
         <div class="delete-day-section">
+          <button class="btn duplicate-day-btn" (click)="duplicateDay()">
+            <app-icon name="plus" [size]="13" />
+            {{ T().day_editor_duplicate }}
+          </button>
           @if (confirmDeleteDay()) {
             <div class="delete-day-confirm">
               <span class="delete-day-confirm-q">{{ T().day_editor_delete_confirm }}</span>

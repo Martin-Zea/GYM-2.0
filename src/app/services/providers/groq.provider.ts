@@ -1,6 +1,7 @@
 import { AiRecommendation } from '../../models/workout.model';
 import { AiProvider, AiProviderContext } from './ai-provider';
 import {
+  buildFeedbackNote,
   buildGoalNote,
   buildHistoryDetail,
   buildPerfilParts,
@@ -32,7 +33,17 @@ export interface GroqRequestOverrides {
  * a evaluar) sin duplicar el armado del prompt — ver `specs/ai-shadow-log.md`.
  */
 export async function fetchGroqRecommendation(
-  { exercise, todaySets, lastSets, history, userProfile, lastSessionDate, lang }: AiProviderContext,
+  {
+    exercise,
+    todaySets,
+    lastSets,
+    history,
+    userProfile,
+    lastSessionDate,
+    lang,
+    lastFeel,
+    lastNote,
+  }: AiProviderContext,
   apiKey: string,
   model: string,
   overrides: GroqRequestOverrides = {},
@@ -45,6 +56,7 @@ export async function fetchGroqRecommendation(
   const perfilParts = buildPerfilParts(userProfile);
   const profileNote = buildProfileNote(perfilParts, userProfile);
   const goalNote = buildGoalNote(userProfile.goal, userProfile.aiNotes);
+  const feedbackNote = buildFeedbackNote(lastFeel, lastNote);
 
   const summary = {
     ejercicio: exercise.name,
@@ -81,7 +93,7 @@ Datos:
 ${JSON.stringify(summary, null, 2)}
 
 ${buildPrinciplesPrompt(brick)}
-${goalNote}${profileNote}${langInstruction}
+${goalNote}${feedbackNote}${profileNote}${langInstruction}
 Respondé EXCLUSIVAMENTE con JSON válido (sin markdown):
 {"sets": [{"weight": <number>, "reps": <number>}, ...], "reason": "<string>", "deload": <boolean>}
 El array "sets" debe tener EXACTAMENTE ${setsTarget} elementos.
@@ -93,7 +105,7 @@ Poné "deload" en true SOLO cuando recomendás una descarga o back-off intencion
     body: JSON.stringify({
       model,
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.3,
+      temperature: 0,
       max_tokens: overrides.max_tokens ?? 300,
       response_format: { type: 'json_object' },
       ...(overrides.reasoning_effort && { reasoning_effort: overrides.reasoning_effort }),

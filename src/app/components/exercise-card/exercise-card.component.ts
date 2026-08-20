@@ -10,13 +10,12 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { IconComponent } from '../icon/icon.component';
 import { StateService } from '../../services/state.service';
 import { StorageService } from '../../services/storage.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
-import { SoundService } from '../../services/sound.service';
+import { SetLoggingService } from '../../services/set-logging.service';
 import {
   AiRecommendation,
   Exercise,
@@ -28,7 +27,7 @@ import { formatRecLabel } from '../../utils/rec-label';
 @Component({
   selector: 'app-exercise-card',
   standalone: true,
-  imports: [IconComponent, RouterLink],
+  imports: [IconComponent],
   templateUrl: './exercise-card.component.html',
   styleUrl: './exercise-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,7 +36,7 @@ export class ExerciseCardComponent {
   private readonly state = inject(StateService);
   private readonly storage = inject(StorageService);
   private readonly uiState = inject(UIStateService);
-  private readonly sound = inject(SoundService);
+  private readonly setLogging = inject(SetLoggingService);
   private readonly el = inject(ElementRef);
   protected readonly tr = inject(TranslationService);
   protected readonly T = this.tr.T;
@@ -68,22 +67,8 @@ export class ExerciseCardComponent {
   }
 
   protected readonly setsArray = computed((): TodaySetProgress[] => {
-    const ex = this.exercise();
-    const tp = this.state.getTodayProgress(this.day().id);
-    const saved = tp.sets[ex.id] ?? [];
-    const last = this.storage.lastSetsForExercise(this.state.state(), ex.id, this.state.todayKey);
-    return Array.from({ length: ex.defaultSets }, (_, i) => {
-      if (saved[i]) return saved[i];
-      const prev = last?.[i];
-      return {
-        weight:
-          prev && ex.unit !== 'peso corporal' && (prev.weight as number) > 0
-            ? prev.weight
-            : ('' as unknown as number),
-        reps: prev && (prev.reps as number) > 0 ? prev.reps : ('' as unknown as number),
-        done: false,
-      };
-    });
+    this.state.state(); // dependencia reactiva: el servicio lee el estado sin señales propias
+    return this.setLogging.buildSetsArray(this.day(), this.exercise());
   });
 
   protected readonly doneSetsCount = computed(() => this.setsArray().filter((s) => s.done).length);
@@ -141,19 +126,7 @@ export class ExerciseCardComponent {
     effect(() => {
       const rec = this.aiRec();
       if (!rec || rec.loading || !rec.sets?.length) return;
-      untracked(() => {
-        const ex = this.exercise();
-        const day = this.day();
-        const tp = this.state.getTodayProgress(day.id);
-        for (let i = 0; i < ex.defaultSets; i++) {
-          const existing = tp.sets[ex.id]?.[i];
-          if (existing?.done) continue;
-          const setRec = rec.sets[i] ?? rec.sets[rec.sets.length - 1];
-          const patch: Partial<TodaySetProgress> = { reps: setRec.reps, aiPrefilled: true };
-          if (ex.unit !== 'peso corporal' && setRec.weight > 0) patch.weight = setRec.weight;
-          this.state.updateSet(day.id, ex.id, i, patch);
-        }
-      });
+      untracked(() => this.setLogging.applyRecPrefill(this.day(), this.exercise(), rec));
     });
 
     // Auto-scroll + focus next pending set when rest timer ends
@@ -233,58 +206,15 @@ export class ExerciseCardComponent {
     this.state.updateSet(this.day().id, this.exercise().id, i, { reps: next, aiPrefilled: false });
   }
 
-  /** Sets already celebrated as PR — prevents re-celebrating on undo + redo */
-  private readonly celebratedPrSets = new Set<string>();
-
   protected toggleDone(setIndex: number): void {
-    const result = this.state.toggleSetDone(this.day().id, this.exercise(), setIndex);
-    if (result === 'done') {
-      if (this.state.settings().haptics && navigator.vibrate) navigator.vibrate(40);
-      this.maybeCelebratePr(setIndex);
-      const ex = this.exercise();
-      const restSecs = ex.restSeconds || this.state.settings().defaultRest;
-      const arr = this.setsArray();
-      const nextIdx = arr.findIndex((s, i) => i > setIndex && !s.done);
-      const nextLabel =
-        nextIdx >= 0
-          ? this.tr.tp('rest_timer_next_set', { n: nextIdx + 1 })
-          : this.T().rest_timer_next_exercise;
-      this.uiState.restTimer.set({
-        seconds: restSecs,
-        exerciseId: ex.id,
-        nextLabel,
-        nextSetIndex: nextIdx,
-      });
-      if (this.isDone()) {
-        this.exerciseCompleted.emit();
-      }
+    const result = this.setLogging.toggleDone(this.day(), this.exercise(), setIndex);
+    if (result === 'done' && this.isDone()) {
+      this.exerciseCompleted.emit();
     }
   }
 
-  private maybeCelebratePr(setIndex: number): void {
-    const ex = this.exercise();
-    // Weight isn't the progress metric for time/bodyweight exercises
-    if (ex.unit === 'tiempo' || ex.unit === 'peso corporal') return;
-
-    const key = `${ex.id}:${setIndex}`;
-    if (this.celebratedPrSets.has(key)) return;
-
-    const set = this.state.getTodayProgress(this.day().id).sets[ex.id]?.[setIndex];
-    const weight = Number(set?.weight) || 0;
-    if (weight <= 0) return;
-
-    // toggleSetDone already committed today's session — exclude it from the historic max
-    const history = this.storage
-      .historyForExercise(this.state.state(), ex.id)
-      .filter((h) => h.dateISO < this.state.todayKey);
-    if (!history.length) return;
-
-    const maxWeight = Math.max(...history.map((h) => h.topWeight));
-    if (weight <= maxWeight) return;
-
-    this.celebratedPrSets.add(key);
-    if (this.state.settings().sounds) this.sound.playPrBeep();
-    this.uiState.celebratePr(ex.name, weight, ex.unit);
+  protected addExtraSet(): void {
+    this.setLogging.addExtraSet(this.day(), this.exercise());
   }
 
   protected ytUrl(): string {
@@ -295,5 +225,9 @@ export class ExerciseCardComponent {
 
   protected onRequestAi(): void {
     this.requestAi.emit();
+  }
+
+  protected openChart(): void {
+    this.uiState.openChartSheet(this.exercise());
   }
 }

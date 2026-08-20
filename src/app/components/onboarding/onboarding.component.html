@@ -28,6 +28,19 @@
           <h2 class="slide-title">{{ T().onboarding_slide3_title }}</h2>
           <p class="slide-desc">{{ T().onboarding_slide3_desc }}</p>
         </div>
+
+        <div class="slide">
+          <div class="slide-icon-wrap">
+            <app-icon name="calendar" [size]="52" />
+          </div>
+          <h2 class="slide-title">{{ T().onboarding_days_q }}</h2>
+          <p class="slide-desc">{{ T().onboarding_days_desc }}</p>
+          <div class="days-options">
+            <button class="days-option" (click)="pickDays(3)">{{ T().onboarding_days_3 }}</button>
+            <button class="days-option" (click)="pickDays(4)">{{ T().onboarding_days_4 }}</button>
+            <button class="days-option" (click)="pickDays(5)">{{ T().onboarding_days_5 }}</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -45,13 +58,11 @@
       >
         {{ T().onboarding_back }}
       </button>
-      <button class="btn-primary" (click)="next()">
-        @if (current() < slideCount - 1) {
+      @if (current() < slideCount - 1) {
+        <button class="btn-primary" (click)="next()">
           {{ T().onboarding_next }}
-        } @else {
-          {{ T().onboarding_start }}
-        }
-      </button>
+        </button>
+      }
     </div>
   </div>
 </div>

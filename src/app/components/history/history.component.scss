@@ -1,0 +1,427 @@
+.calendar {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+}
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.cal-month {
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+.cal-dow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  text-align: center;
+  padding: 4px 0;
+  font-weight: 500;
+}
+.cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-1);
+  border-radius: var(--radius-md);
+  font-variant-numeric: tabular-nums;
+  transition: background 0.12s;
+  padding: 0;
+}
+.cal-day.outside {
+  color: var(--text-3);
+  opacity: 0.4;
+}
+.cal-day.today {
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.cal-day.trained {
+  background: var(--success);
+  color: var(--success-fg);
+  font-weight: 600;
+  cursor: pointer;
+}
+.cal-day.trained:hover {
+  background: color-mix(in oklab, var(--success) 85%, var(--bg-0));
+}
+.cal-day.trained:active {
+  opacity: 0.8;
+}
+.cal-day.trained.today {
+  color: var(--success-fg);
+}
+.cal-day.skipped {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.cal-legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.cal-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-2);
+}
+.cal-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.cal-legend-dot.trained {
+  background: var(--success);
+}
+.cal-legend-dot.today {
+  background: transparent;
+  border: 2px solid var(--accent);
+}
+.cal-legend-dot.skipped {
+  background: color-mix(in oklab, var(--danger) 40%, transparent);
+  border: 1px solid var(--danger);
+}
+
+.routine-summary {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  margin-top: 12px;
+}
+.routine-summary-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-2);
+  font-weight: 500;
+  margin: 0 0 10px;
+}
+.routine-day-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: opacity 0.12s;
+  &:active {
+    opacity: 0.75;
+  }
+}
+.routine-day-row:last-child {
+  border-bottom: none;
+}
+.routine-day-name {
+  color: var(--text-0);
+  font-weight: 500;
+}
+.routine-day-ago {
+  color: var(--text-3);
+  font-size: 12px;
+}
+.routine-day-ago.fresh {
+  color: var(--success);
+  font-weight: 600;
+}
+
+/* Delta de los últimos 30 días vs los 30 anteriores */
+.stat-sub--up {
+  color: var(--success);
+  font-weight: 600;
+}
+.stat-sub--down {
+  color: var(--danger);
+  font-weight: 600;
+}
+.chart-empty-msg {
+  font-size: 12px;
+  color: var(--text-3);
+  margin: 2px 0 0;
+}
+.chart-card {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.chart-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.chart-title {
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.chart-sub {
+  font-size: 11px;
+  color: var(--text-2);
+  margin-top: 2px;
+}
+.chart-stats-right {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.chart-stat {
+  text-align: right;
+}
+.chart-stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  font-weight: 500;
+}
+.chart-stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  letter-spacing: -0.01em;
+}
+.chart-stat-vol {
+  color: var(--text-2);
+  font-size: 13px;
+}
+.chart-delta {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+.chart-delta-arrow {
+  display: inline-flex;
+  line-height: 1;
+}
+.chart-delta-value {
+  font-weight: 600;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  color: var(--text-2);
+}
+.chart-delta--up .chart-delta-arrow,
+.chart-delta--up .chart-delta-value {
+  color: var(--success);
+}
+.chart-delta--down .chart-delta-arrow,
+.chart-delta--down .chart-delta-value {
+  color: var(--danger);
+}
+.chart-svg-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 300 / 110;
+}
+.chart-svg-wrap svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.chart-grid line {
+  stroke: var(--border);
+  stroke-dasharray: 2 3;
+}
+.chart-axis text {
+  font-size: 11px;
+  fill: var(--text-2);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+.chart-line {
+  stroke: var(--accent);
+  stroke-width: 2;
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.chart-dot {
+  fill: var(--bg-1);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+/* ── Interacción con puntos ── */
+.chart-hit {
+  fill: transparent;
+  cursor: pointer;
+  outline: none;
+}
+.chart-hit:focus-visible {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.chart-dot--selected {
+  fill: var(--accent);
+}
+
+.chart-point-info {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 10px;
+  padding: 9px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+  animation: fadeIn 0.15s ease;
+}
+.chart-point-date {
+  font-weight: 500;
+  color: var(--text-1);
+}
+.chart-point-value {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 600;
+  color: var(--text-0);
+  font-variant-numeric: tabular-nums;
+}
+.chart-point-vol {
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.chart-point-open {
+  margin-left: auto;
+}
+
+/* ── Escritorio: limitar el zoom proporcional del SVG ── */
+@media (min-width: 1024px) {
+  .chart-svg-wrap {
+    max-width: 520px;
+    margin-inline: auto;
+  }
+}
+
+/* ── Pie del calendario: stats compactas ── */
+.cal-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+
+  strong {
+    color: var(--text-0);
+  }
+}
+.cal-stat--up {
+  color: var(--success);
+  font-weight: 600;
+}
+.cal-stat--down {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.calendar {
+  margin-bottom: 12px;
+}
+
+/* ── Controles del gráfico unificado ── */
+.hist-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.hist-ex-select {
+  width: 100%;
+  min-height: 44px;
+  font-weight: 600;
+}
+.hist-segs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+
+  .btn {
+    min-height: 40px;
+    padding: 0 12px;
+  }
+}
+
+/* ── PRs top 3 ── */
+.hist-prs {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.hist-pr-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.hist-pr-rank {
+  width: 20px;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.hist-pr-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hist-pr-value {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.hist-prs-all {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.hist-prs-all:hover {
+  color: var(--accent);
+}
+.mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}

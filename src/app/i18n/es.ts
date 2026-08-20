@@ -128,7 +128,7 @@ export const es: Translations = {
 
   pr_celebration: '¡Nuevo récord! {exercise}: {weight} kg',
 
-  nav_guard_confirm: '¿Salir del entrenamiento? El progreso no guardado se perderá.',
+  nav_guard_confirm: 'La sesión sigue activa. Tus series quedan guardadas y podés volver a continuarla desde Inicio.',
 
   close_btn: 'Cerrar',
   more_options: 'Más opciones',
@@ -164,7 +164,7 @@ export const es: Translations = {
 
   settings_title: 'Ajustes',
   settings_appearance: 'Apariencia',
-  settings_dark_theme: 'Tema oscuro',
+  settings_dark_theme: 'Tema',
   settings_session: 'Sesión',
   settings_default_rest: 'Descanso por defecto',
   settings_rest_desc: 'segundos entre series',
@@ -207,7 +207,6 @@ export const es: Translations = {
   settings_ai_notes_label: 'Contexto personal',
   settings_ai_notes_desc:
     'El asistente lo usará al sugerirte pesos. Ej.: lesión en hombro, priorizo fuerza explosiva.',
-  settings_ai_notes_placeholder_no_key: 'Requiere Groq o Cohere configurado arriba',
   settings_ai_section: 'Inteligencia artificial',
   settings_api_key_label: 'API Key de Groq (IA gratis)',
   settings_api_key_desc: 'Sin key se usa lógica local.',
@@ -306,4 +305,89 @@ export const es: Translations = {
   profile_pr_share: 'Compartir',
   pr_share_text: '🏆 Nuevo récord: {exercise} — {weight} {unit} 💪\nDescargá GainAI: {url}',
   pr_share_fallback_msg: 'Imagen descargada. Link copiado al portapapeles.',
+
+  // UX audit additions
+  profile_view_sub: 'Tus datos, tu objetivo y tus récords',
+  skip_done_toast: 'Día saltado',
+  ai_badge_title_ai: 'Sugerencia generada por IA (según tu historial y objetivo)',
+  ai_badge_title_local: 'Sugerencia calculada localmente, sin IA',
+  charts_filter_all: 'Todos',
+  charts_filter_day_label: 'Filtrar por día de rutina',
+  charts_section_exercises: 'Ejercicios',
+  charts_view_session: 'Ver sesión',
+  cal_stat_vs_prev: '{n} vs 30 días previos',
+
+  // Rediseño: sesión enfocada
+  session_active_eyebrow: 'Sesión activa',
+  session_exit: 'Salir del entrenamiento',
+  session_view_list: 'Ver lista completa',
+  session_view_focused: 'Vista enfocada',
+  asc_set_of: 'Serie {n} de {total}',
+  asc_target: 'objetivo: {n} reps',
+  asc_set_done: 'Serie hecha',
+  asc_view_table: 'Ver tabla',
+  asc_exercise_done: 'Ejercicio completo',
+  asc_undo_set: 'Deshacer serie',
+  asc_next_exercise: 'Siguiente ejercicio',
+  asc_extra_set: 'Serie extra',
+  asc_note_add: 'Añadir nota',
+  asc_note_edit: 'Editar nota',
+  asc_note_placeholder: 'Ej.: me molestó el hombro, bajé el peso…',
+  asc_substitute: 'Cambiar hoy',
+  asc_substitute_hint: 'Solo por hoy (máquina ocupada, etc.). La rutina no cambia.',
+  asc_substitute_pick: 'Elegir ejercicio…',
+  feel_question: '¿Cómo se sintió?',
+  feel_easy: 'Fácil',
+  feel_ok: 'Bien',
+  feel_hard: 'Pesado',
+  plates_btn_title: 'Ver discos por lado',
+  plates_per_side: 'Por lado (barra {bar} kg):',
+  plates_bar_only: 'Solo la barra ({bar} kg)',
+  plates_below_bar: 'Menos que la barra ({bar} kg)',
+  plates_remainder: 'faltan {n} kg sin disco exacto',
+  chart_sheet_sub: 'Progresión rápida',
+  chart_sheet_last_sessions: 'Últimas sesiones',
+  day_switch_confirm: 'Tus series de hoy quedan guardadas. ¿Cambiar de día de entrenamiento?',
+
+  // Rediseño: dashboard
+  today_ex_count: '{n} ejercicios',
+  week_line_sessions: '{n} esta semana',
+  week_summary_title: 'La semana pasada',
+  week_summary_body: '{n} sesiones · {vol} levantadas',
+
+  // Rediseño: historial unificado
+  nav_history: 'Historial',
+  history_view_sub: 'Calendario y progresión, juntos',
+  history_exercise_label: 'Ejercicio',
+  history_prs_all: 'Ver todos en Perfil',
+
+  // Rediseño: wizard de rutina
+  onboarding_days_q: '¿Cuántos días entrenás por semana?',
+  onboarding_days_desc: 'Te armamos una rutina base editable. Podés cambiarla cuando quieras.',
+  onboarding_days_3: '3 días · Empuje / Tirón / Pierna',
+  onboarding_days_4: '4 días · Torso / Pierna ×2',
+  onboarding_days_5: '5 días · Split por grupo muscular',
+
+  // Rediseño: editor
+  day_editor_duplicate: 'Duplicar día',
+  day_editor_copy_suffix: '(copia)',
+  day_editor_move: 'Mover a otro día',
+  day_editor_move_pick: 'Elegir día…',
+  day_editor_rename: 'Renombrar ejercicio',
+
+  // Rediseño: datos (snapshots + papelera + discos)
+  settings_snapshots_title: 'Copias automáticas',
+  settings_snapshots_desc: 'Snapshot semanal local (se guardan las últimas 4).',
+  settings_snapshots_empty: 'Todavía no hay copias automáticas.',
+  settings_snapshot_restore: 'Restaurar',
+  settings_snapshot_restore_confirm: 'Esto reemplaza TODOS los datos actuales por la copia del {date}. ¿Continuar?',
+  settings_trash_title: 'Papelera',
+  settings_trash_desc: 'Las sesiones borradas esperan 30 días aquí antes de desaparecer.',
+  settings_trash_empty: 'La papelera está vacía.',
+  settings_trash_restore: 'Restaurar',
+  settings_trash_clear: 'Vaciar papelera',
+  trash_deleted_on: 'borrada el {date}',
+  settings_bar_weight: 'Peso de la barra (kg)',
+  settings_plates_label: 'Discos disponibles (kg, por lado)',
+  settings_plates_hint: 'Separados por coma. Usados por la calculadora de discos en sesión.',
 };

@@ -9,6 +9,7 @@ import { ErrorService } from './services/error.service';
 import { ShareService } from './services/share.service';
 import { BackupService } from './services/backup.service';
 import { ThemeService } from './services/theme.service';
+import { WakeLockService } from './services/wake-lock.service';
 import { STORAGE_KEYS } from './services/storage-keys';
 import { IconComponent } from './components/icon/icon.component';
 import { RestTimerComponent } from './components/rest-timer/rest-timer.component';
@@ -17,6 +18,7 @@ import { SettingsComponent } from './components/settings/settings.component';
 import { DayDetailSheetComponent } from './components/day-detail-sheet/day-detail-sheet.component';
 import { DayPickerSheetComponent } from './components/day-picker-sheet/day-picker-sheet.component';
 import { DayHistorySheetComponent } from './components/day-history-sheet/day-history-sheet.component';
+import { ExerciseChartSheetComponent } from './components/exercise-chart-sheet/exercise-chart-sheet.component';
 import { BottomNavComponent } from './components/bottom-nav/bottom-nav.component';
 import { OnboardingComponent } from './components/onboarding/onboarding.component';
 import { LegalGateComponent } from './components/legal-gate/legal-gate.component';
@@ -33,6 +35,7 @@ import { LegalGateComponent } from './components/legal-gate/legal-gate.component
     DayDetailSheetComponent,
     DayPickerSheetComponent,
     DayHistorySheetComponent,
+    ExerciseChartSheetComponent,
     BottomNavComponent,
     OnboardingComponent,
     LegalGateComponent,
@@ -52,6 +55,8 @@ export class App {
   private readonly backup = inject(BackupService);
   // Inyectado para activar el efecto que aplica el tema al <html>
   private readonly themeService = inject(ThemeService);
+  // Inyectado para mantener la pantalla despierta durante la sesión
+  private readonly wakeLock = inject(WakeLockService);
 
   protected readonly theme = computed(() => this.state.settings().theme);
   protected readonly T = this.tr.T;
@@ -120,9 +125,15 @@ export class App {
     void this.shareService.share(pr.exerciseName, pr.weight, pr.unit, this.storage.todayISO());
   }
 
-  completeOnboarding(): void {
+  completeOnboarding(days: 3 | 4 | 5): void {
     localStorage.setItem(STORAGE_KEYS.onboardingDone, '1');
     this.showOnboarding.set(false);
+    // Aplica la plantilla elegida solo si el usuario aún no tiene datos propios
+    // (el onboarding solo aparece en el primer arranque, pero por si acaso).
+    const hasRealData = this.state
+      .sessions()
+      .some((s) => !s.skipped && s.dateISO >= this.storage.todayISO());
+    if (!hasRealData) this.state.applyTemplate(days);
   }
 
   acceptLegal(): void {

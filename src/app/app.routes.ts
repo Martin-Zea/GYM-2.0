@@ -8,19 +8,17 @@ export const routes: Routes = [
     canDeactivate: [trainingGuard],
   },
   {
-    path: 'charts',
+    path: 'history',
     loadComponent: () =>
-      import('./components/charts/charts.component').then((m) => m.ChartsComponent),
-  },
-  {
-    path: 'calendar',
-    loadComponent: () =>
-      import('./components/calendar/calendar.component').then((m) => m.CalendarComponent),
+      import('./components/history/history.component').then((m) => m.HistoryComponent),
   },
   {
     path: 'profile',
     loadComponent: () =>
       import('./components/profile/profile.component').then((m) => m.ProfileComponent),
   },
+  // Compatibilidad con enlaces viejos (bookmarks, shortcuts)
+  { path: 'charts', redirectTo: 'history' },
+  { path: 'calendar', redirectTo: 'history' },
   { path: '**', redirectTo: '' },
 ];

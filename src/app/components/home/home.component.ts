@@ -10,20 +10,39 @@ import {
 import { RouterLink } from '@angular/router';
 import { IconComponent } from '../icon/icon.component';
 import { ExerciseCardComponent } from '../exercise-card/exercise-card.component';
+import { ActiveSetCardComponent } from '../active-set-card/active-set-card.component';
 import { HowItWorksComponent } from '../how-it-works/how-it-works.component';
+import { ProgressBarComponent } from '../progress-bar/progress-bar.component';
 import { StateService } from '../../services/state.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { StorageService } from '../../services/storage.service';
 import { ProgressionService } from '../../services/progression.service';
 import { TranslationService } from '../../services/translation.service';
+import { STORAGE_KEYS } from '../../services/storage-keys';
 import { AiRecommendation, Exercise, WorkoutDay } from '../../models/workout.model';
 import { daysBetweenISO } from '../../utils/date';
-import { formatRecLabel } from '../../utils/rec-label';
+
+type SessionView = 'focused' | 'list';
+
+interface SessionQueueItem {
+  exercise: Exercise;
+  done: boolean;
+  active: boolean;
+  doneCount: number;
+  total: number;
+}
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [IconComponent, ExerciseCardComponent, HowItWorksComponent, RouterLink],
+  imports: [
+    IconComponent,
+    ExerciseCardComponent,
+    ActiveSetCardComponent,
+    HowItWorksComponent,
+    ProgressBarComponent,
+    RouterLink,
+  ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,10 +60,16 @@ export class HomeComponent {
   );
 
   protected readonly confirmSkip = signal(false);
-  protected readonly showDayMenu = signal(false);
-  protected readonly showTrainingMenu = signal(false);
+  protected readonly skipUndoVisible = signal(false);
+  private lastSkipSessionId: string | null = null;
+  private skipUndoTimer: ReturnType<typeof setTimeout> | null = null;
   protected readonly showFinishModal = signal(false);
   protected readonly activeExerciseId = signal<string | null>(null);
+
+  /** Vista de sesión: enfocada (una serie protagonista) o lista (tabla clásica). */
+  protected readonly sessionView = signal<SessionView>(
+    (localStorage.getItem(STORAGE_KEYS.sessionView) as SessionView | null) ?? 'focused',
+  );
 
   protected readonly aiCache = signal<Partial<Record<string, AiRecommendation>>>({});
 
@@ -56,40 +81,77 @@ export class HomeComponent {
   private readonly aiInFlight = new Set<string>();
   private aiDraining = false;
 
-  protected readonly exerciseDoneCounts = computed(
-    (): Partial<Record<string, { done: number; total: number }>> => {
-      const day = this.state.activeDay();
-      if (!day) return {};
-      const tp = this.state.getTodayProgress(day.id);
-      const result: Partial<Record<string, { done: number; total: number }>> = {};
-      for (const ex of day.exercises) {
-        result[ex.id] = {
-          done: (tp.sets[ex.id] ?? []).filter((s) => s?.done).length,
-          total: ex.defaultSets,
-        };
-      }
-      return result;
-    },
-  );
+  /**
+   * Día de sesión: el día activo con las sustituciones "solo por hoy" aplicadas.
+   * Todo el modo entreno (cola, tarjetas, progreso) lee de aquí, así el sustituto
+   * registra bajo SU id y su historial queda correcto.
+   */
+  protected readonly sessionDay = computed<WorkoutDay | null>(() => {
+    const day = this.state.activeDay();
+    if (!day) return null;
+    const tp = this.state.getTodayProgress(day.id);
+    const overrides = tp.overrides ?? {};
+    if (!Object.keys(overrides).length) return day;
+    const catalog = new Map(this.state.exercises().map((e) => [e.id, e]));
+    return {
+      ...day,
+      exercises: day.exercises.map((ex) => {
+        const subId = overrides[ex.id];
+        return subId ? (catalog.get(subId) ?? ex) : ex;
+      }),
+    };
+  });
 
-  protected readonly weekStatsDisplay = computed(() => {
-    const { streak, weeklyVolume } = this.storage.weeklyStats(this.state.state());
-    const vol =
-      weeklyVolume >= 1000
-        ? `${(weeklyVolume / 1000).toFixed(1).replace(/\.0$/, '')}t`
-        : `${Math.round(weeklyVolume)}kg`;
-    return { streak, vol, isEmpty: streak === 0 && weeklyVolume === 0 };
+  private setCounts(day: WorkoutDay, ex: Exercise): { done: number; total: number } {
+    const tp = this.state.getTodayProgress(day.id);
+    const saved = tp.sets[ex.id] ?? [];
+    return {
+      done: saved.filter((s) => s?.done).length,
+      total: Math.max(ex.defaultSets, saved.length),
+    };
+  }
+
+  protected readonly sessionQueue = computed<SessionQueueItem[]>(() => {
+    const day = this.sessionDay();
+    if (!day) return [];
+    const activeId = this.activeSessionExercise()?.id ?? null;
+    return day.exercises.map((ex) => {
+      const { done, total } = this.setCounts(day, ex);
+      return {
+        exercise: ex,
+        done: total > 0 && done >= total,
+        active: ex.id === activeId,
+        doneCount: done,
+        total,
+      };
+    });
+  });
+
+  /** Ejercicio protagonista en vista enfocada: el elegido, o el primero sin terminar. */
+  protected readonly activeSessionExercise = computed<Exercise | null>(() => {
+    const day = this.sessionDay();
+    if (!day || !day.exercises.length) return null;
+    const chosenId = this.activeExerciseId();
+    if (chosenId) {
+      const chosen = day.exercises.find((e) => e.id === chosenId);
+      if (chosen) return chosen;
+    }
+    for (const ex of day.exercises) {
+      const { done, total } = this.setCounts(day, ex);
+      if (done < total) return ex;
+    }
+    return null;
   });
 
   protected readonly dayProgress = computed(() => {
-    const day = this.state.activeDay();
+    const day = this.sessionDay();
     if (!day) return { done: 0, total: 0 };
-    const tp = this.state.getTodayProgress(day.id);
     let done = 0,
       total = 0;
     for (const ex of day.exercises) {
-      total += ex.defaultSets;
-      done += (tp.sets[ex.id] ?? []).filter((s) => s?.done).length;
+      const c = this.setCounts(day, ex);
+      done += c.done;
+      total += c.total;
     }
     return { done, total };
   });
@@ -97,12 +159,12 @@ export class HomeComponent {
   protected readonly currentDayProgress = computed(() => {
     const day = this.state.currentDay();
     if (!day) return { done: 0, total: 0 };
-    const tp = this.state.getTodayProgress(day.id);
     let done = 0,
       total = 0;
     for (const ex of day.exercises) {
-      total += ex.defaultSets;
-      done += (tp.sets[ex.id] ?? []).filter((s) => s?.done).length;
+      const c = this.setCounts(day, ex);
+      done += c.done;
+      total += c.total;
     }
     return { done, total };
   });
@@ -126,27 +188,70 @@ export class HomeComponent {
     this.state.sessions().some((s) => !s.skipped),
   );
 
-  protected readonly lastWeightByExercise = computed((): Partial<Record<string, string>> => {
-    const s = this.state.state();
-    const day = this.state.currentDay();
-    if (!day) return {};
-    const todayISO = this.storage.todayISO();
-    const result: Partial<Record<string, string>> = {};
-    for (const ex of day.exercises) {
-      if (ex.unit === 'tiempo' || ex.unit === 'peso corporal') continue;
-      const lastSets = this.storage.lastSetsForExercise(s, ex.id, todayISO);
-      if (!lastSets?.length) continue;
-      const topSet = lastSets.reduce(
-        (best, curr) => ((curr.weight as number) > (best.weight as number) ? curr : best),
-        lastSets[0],
-      );
-      const suffix = ex.unit === 'kg por mano' ? '/m' : ex.unit === 'kg por brazo' ? '/b' : '';
-      result[ex.id] = `${topSet.weight}kg${suffix} × ${topSet.reps}`;
-    }
-    return result;
+  // ── Semana: mapa Lun-Dom + total + volumen ──
+
+  /** ISO (YYYY-MM-DD) del lunes de la semana actual. */
+  private mondayISO(): string {
+    const now = new Date();
+    const dow = (now.getDay() + 6) % 7; // 0 = lunes
+    now.setDate(now.getDate() - dow);
+    return now.toISOString().slice(0, 10);
+  }
+
+  protected readonly weekMap = computed<boolean[]>(() => {
+    const monday = new Date(this.mondayISO() + 'T12:00:00Z');
+    const trained = new Set(
+      this.state
+        .sessions()
+        .filter((s) => !s.skipped && s.sets.length)
+        .map((s) => s.dateISO),
+    );
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(d.getDate() + i);
+      return trained.has(d.toISOString().slice(0, 10));
+    });
   });
 
-  protected readonly routineExpanded = signal(true);
+  protected readonly weekSessionCount = computed(
+    () => this.weekMap().filter(Boolean).length,
+  );
+
+  protected readonly weekStatsDisplay = computed(() => {
+    const { streak, weeklyVolume } = this.storage.weeklyStats(this.state.state());
+    const vol =
+      weeklyVolume >= 1000
+        ? `${(weeklyVolume / 1000).toFixed(1).replace(/\.0$/, '')}t`
+        : `${Math.round(weeklyVolume)}kg`;
+    return { streak, vol, isEmpty: streak === 0 && weeklyVolume === 0 };
+  });
+
+  /** Resumen de la semana pasada — solo lunes/martes, si hubo al menos 1 sesión. */
+  protected readonly lastWeekSummary = computed(() => {
+    const dow = (new Date().getDay() + 6) % 7;
+    if (dow > 1) return null;
+    const monday = this.mondayISO();
+    const prevMonday = new Date(monday + 'T12:00:00Z');
+    prevMonday.setDate(prevMonday.getDate() - 7);
+    const from = prevMonday.toISOString().slice(0, 10);
+    const sessions = this.state
+      .sessions()
+      .filter((s) => !s.skipped && s.sets.length && s.dateISO >= from && s.dateISO < monday);
+    if (!sessions.length) return null;
+    let volume = 0;
+    for (const s of sessions) {
+      for (const set of s.sets) {
+        if (!set.isWarmup) volume += (set.weight || 0) * (set.reps || 0);
+      }
+    }
+    const vol =
+      volume >= 1000
+        ? `${(volume / 1000).toFixed(1).replace(/\.0$/, '')}t`
+        : `${Math.round(volume)}kg`;
+    return { sessions: sessions.length, vol };
+  });
+
+  protected readonly routineExpanded = signal(false);
 
   protected readonly routineDays = computed(() => {
     const s = this.state.state();
@@ -190,6 +295,7 @@ export class HomeComponent {
         // corriendo termina solo; su delete sobre el Set vacío es no-op.
         this.aiQueue.length = 0;
         this.aiInFlight.clear();
+        this.activeExerciseId.set(null);
         if (this.mode() === 'training') {
           const day = this.state.days()[idx];
           if (day) this.initActiveExercise(day.id);
@@ -207,22 +313,27 @@ export class HomeComponent {
         });
       }
     });
+
+    // Atajo del manifest ("Empezar entrenamiento"): /?start=1 arranca la sesión directo
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('start') === '1') {
+      history.replaceState(null, '', window.location.pathname);
+      if (this.mode() !== 'training' && this.state.days().length) {
+        setTimeout(() => this.startTraining());
+      }
+    }
   }
 
-  protected isRecLoading(exercise: Exercise): boolean {
-    return this.aiCache()[exercise.id]?.loading === true;
+  protected setSessionView(view: SessionView): void {
+    this.sessionView.set(view);
+    localStorage.setItem(STORAGE_KEYS.sessionView, view);
   }
 
-  protected recSource(exercise: Exercise): 'groq' | 'cohere' | 'local' | null {
-    const rec = this.aiCache()[exercise.id];
-    if (!rec || rec.loading) return null;
-    return rec.source ?? null;
-  }
-
-  protected recLabel(exercise: Exercise): string {
-    const rec = this.aiCache()[exercise.id];
-    if (!rec || rec.loading) return '';
-    return formatRecLabel(exercise.unit, rec.sets);
+  protected selectExercise(exerciseId: string): void {
+    this.activeExerciseId.set(exerciseId);
+    if (this.sessionView() === 'list') {
+      this.scrollToExercise(exerciseId);
+    }
   }
 
   protected startTraining(): void {
@@ -232,31 +343,38 @@ export class HomeComponent {
     const idx = days.findIndex((d) => d.id === currentDay.id);
     if (idx >= 0) this.state.setActiveDay(idx);
     this.confirmSkip.set(false);
-    this.showDayMenu.set(false);
     this.mode.set('training');
     this.initActiveExercise(currentDay.id);
+  }
+
+  /** Salir sin terminar: sin progreso sale directo; con progreso, confirma. */
+  protected async exitSession(): Promise<void> {
+    if (this.dayProgress().done > 0) {
+      const ok = await this.uiState.requestTrainingExit();
+      if (!ok) return;
+    }
+    this.activeExerciseId.set(null);
+    this.mode.set('today');
   }
 
   protected finishTraining(): void {
     this.state.advanceRoutine(this.state.activeDayIndex());
     this.showFinishModal.set(false);
-    this.showTrainingMenu.set(false);
     this.activeExerciseId.set(null);
     this.mode.set('today');
   }
 
   protected onExerciseCompleted(completedExercise: Exercise): void {
-    const day = this.state.activeDay();
+    const day = this.sessionDay();
     if (!day) return;
-    const tp = this.state.getTodayProgress(day.id);
     const exs = day.exercises;
     const completedIdx = exs.findIndex((ex) => ex.id === completedExercise.id);
     for (let offset = 1; offset < exs.length; offset++) {
       const ex = exs[(completedIdx + offset) % exs.length];
-      const sets = tp.sets[ex.id] ?? [];
-      const allDone = sets.length >= ex.defaultSets && sets.every((s) => s.done);
-      if (!allDone) {
+      const { done, total } = this.setCounts(day, ex);
+      if (done < total) {
         this.activeExerciseId.set(ex.id);
+        if (this.sessionView() === 'list') this.scrollToExercise(ex.id);
         return;
       }
     }
@@ -276,11 +394,7 @@ export class HomeComponent {
       const allDone = sets.length >= ex.defaultSets && sets.every((s) => s.done);
       if (!allDone) {
         this.activeExerciseId.set(ex.id);
-        // Scroll to active card after Angular renders it
-        requestAnimationFrame(() => {
-          const el = document.querySelector(`[data-exercise-id="${ex.id}"]`);
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
+        if (this.sessionView() === 'list') this.scrollToExercise(ex.id);
         // Carga perezosa: NO se precarga todo el día. El card activo pide su recomendación
         // solo (effect sobre isActive) y los siguientes la piden cuando se vuelven activos al
         // completar el anterior, o al expandirlos manualmente. Reparte las llamadas a lo largo
@@ -292,7 +406,6 @@ export class HomeComponent {
   }
 
   protected scrollToExercise(exerciseId: string): void {
-    this.activeExerciseId.set(exerciseId);
     requestAnimationFrame(() => {
       const el = document.querySelector(`[data-exercise-id="${exerciseId}"]`);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -300,9 +413,19 @@ export class HomeComponent {
   }
 
   protected doSkip(): void {
-    this.state.skipDay();
+    const sessionId = this.state.skipDay();
     this.confirmSkip.set(false);
-    this.showDayMenu.set(false);
+    this.lastSkipSessionId = sessionId;
+    this.skipUndoVisible.set(true);
+    if (this.skipUndoTimer) clearTimeout(this.skipUndoTimer);
+    this.skipUndoTimer = setTimeout(() => this.skipUndoVisible.set(false), 6000);
+  }
+
+  protected undoSkip(): void {
+    if (this.skipUndoTimer) clearTimeout(this.skipUndoTimer);
+    this.state.undoSkipDay(this.lastSkipSessionId);
+    this.lastSkipSessionId = null;
+    this.skipUndoVisible.set(false);
   }
 
   protected openDayDetail(day: WorkoutDay): void {
@@ -311,11 +434,6 @@ export class HomeComponent {
 
   protected openDayPicker(): void {
     this.uiState.openDayPicker();
-  }
-
-  protected openActiveHistory(): void {
-    const day = this.state.activeDay();
-    if (day) this.uiState.openDayDetail(day);
   }
 
   protected requestAi(exercise: Exercise): void {

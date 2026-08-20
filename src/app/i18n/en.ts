@@ -127,7 +127,7 @@ export const en: Translations = {
 
   pr_celebration: 'New record! {exercise}: {weight} kg',
 
-  nav_guard_confirm: 'Leave training? Unsaved progress will be lost.',
+  nav_guard_confirm: 'Your session is still active. Your sets are saved and you can come back to continue from Home.',
 
   close_btn: 'Close',
   more_options: 'More options',
@@ -163,7 +163,7 @@ export const en: Translations = {
 
   settings_title: 'Settings',
   settings_appearance: 'Appearance',
-  settings_dark_theme: 'Dark theme',
+  settings_dark_theme: 'Theme',
   settings_session: 'Session',
   settings_default_rest: 'Default rest',
   settings_rest_desc: 'seconds between sets',
@@ -206,7 +206,6 @@ export const en: Translations = {
   settings_ai_notes_label: 'Personal context',
   settings_ai_notes_desc:
     'The assistant will use this when suggesting weights. E.g.: shoulder injury, focus on explosive strength.',
-  settings_ai_notes_placeholder_no_key: 'Requires Groq or Cohere configured above',
   settings_ai_section: 'Artificial Intelligence',
   settings_api_key_label: 'Groq API Key (free AI)',
   settings_api_key_desc: 'No key uses local logic.',
@@ -304,4 +303,89 @@ export const en: Translations = {
   profile_pr_share: 'Share',
   pr_share_text: '🏆 New record: {exercise} — {weight} {unit} 💪\nDownload GainAI: {url}',
   pr_share_fallback_msg: 'Image downloaded. Link copied to clipboard.',
+
+  // UX audit additions
+  profile_view_sub: 'Your data, your goal and your records',
+  skip_done_toast: 'Day skipped',
+  ai_badge_title_ai: 'AI-generated suggestion (based on your history and goal)',
+  ai_badge_title_local: 'Locally computed suggestion, no AI',
+  charts_filter_all: 'All',
+  charts_filter_day_label: 'Filter by routine day',
+  charts_section_exercises: 'Exercises',
+  charts_view_session: 'View session',
+  cal_stat_vs_prev: '{n} vs previous 30 days',
+
+  // Redesign: focused session
+  session_active_eyebrow: 'Active session',
+  session_exit: 'Exit workout',
+  session_view_list: 'View full list',
+  session_view_focused: 'Focused view',
+  asc_set_of: 'Set {n} of {total}',
+  asc_target: 'target: {n} reps',
+  asc_set_done: 'Set done',
+  asc_view_table: 'View table',
+  asc_exercise_done: 'Exercise complete',
+  asc_undo_set: 'Undo set',
+  asc_next_exercise: 'Next exercise',
+  asc_extra_set: 'Extra set',
+  asc_note_add: 'Add note',
+  asc_note_edit: 'Edit note',
+  asc_note_placeholder: 'E.g.: shoulder felt off, lowered the weight…',
+  asc_substitute: 'Swap for today',
+  asc_substitute_hint: 'Today only (machine busy, etc.). Your routine stays unchanged.',
+  asc_substitute_pick: 'Pick an exercise…',
+  feel_question: 'How did it feel?',
+  feel_easy: 'Easy',
+  feel_ok: 'Good',
+  feel_hard: 'Hard',
+  plates_btn_title: 'Show plates per side',
+  plates_per_side: 'Per side (bar {bar} kg):',
+  plates_bar_only: 'Bar only ({bar} kg)',
+  plates_below_bar: 'Below bar weight ({bar} kg)',
+  plates_remainder: '{n} kg left without an exact plate',
+  chart_sheet_sub: 'Quick progression',
+  chart_sheet_last_sessions: 'Recent sessions',
+  day_switch_confirm: 'Your sets from today stay saved. Switch training day?',
+
+  // Redesign: dashboard
+  today_ex_count: '{n} exercises',
+  week_line_sessions: '{n} this week',
+  week_summary_title: 'Last week',
+  week_summary_body: '{n} sessions · {vol} lifted',
+
+  // Redesign: unified history
+  nav_history: 'History',
+  history_view_sub: 'Calendar and progression, together',
+  history_exercise_label: 'Exercise',
+  history_prs_all: 'See all in Profile',
+
+  // Redesign: routine wizard
+  onboarding_days_q: 'How many days a week do you train?',
+  onboarding_days_desc: 'We build an editable starter routine. Change it any time.',
+  onboarding_days_3: '3 days · Push / Pull / Legs',
+  onboarding_days_4: '4 days · Upper / Lower ×2',
+  onboarding_days_5: '5 days · Muscle group split',
+
+  // Redesign: editor
+  day_editor_duplicate: 'Duplicate day',
+  day_editor_copy_suffix: '(copy)',
+  day_editor_move: 'Move to another day',
+  day_editor_move_pick: 'Pick a day…',
+  day_editor_rename: 'Rename exercise',
+
+  // Redesign: data (snapshots + trash + plates)
+  settings_snapshots_title: 'Automatic backups',
+  settings_snapshots_desc: 'Weekly local snapshot (last 4 are kept).',
+  settings_snapshots_empty: 'No automatic backups yet.',
+  settings_snapshot_restore: 'Restore',
+  settings_snapshot_restore_confirm: 'This replaces ALL current data with the {date} snapshot. Continue?',
+  settings_trash_title: 'Trash',
+  settings_trash_desc: 'Deleted sessions wait here for 30 days before disappearing.',
+  settings_trash_empty: 'Trash is empty.',
+  settings_trash_restore: 'Restore',
+  settings_trash_clear: 'Empty trash',
+  trash_deleted_on: 'deleted on {date}',
+  settings_bar_weight: 'Bar weight (kg)',
+  settings_plates_label: 'Available plates (kg, per side)',
+  settings_plates_hint: 'Comma separated. Used by the in-session plate calculator.',
 };

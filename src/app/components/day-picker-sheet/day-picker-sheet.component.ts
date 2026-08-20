@@ -42,7 +42,20 @@ export class DayPickerSheetComponent {
     });
   });
 
-  protected select(index: number): void {
+  protected async select(index: number): Promise<void> {
+    // Cambiar de día con series ya hechas en el día activo merece un aviso (las series
+    // quedan guardadas, pero el contexto de la sesión cambia). Sin progreso: cambio directo.
+    const current = this.state.activeDay();
+    const switching = index !== this.state.activeDayIndex();
+    const hasProgress =
+      !!current &&
+      Object.values(this.state.getTodayProgress(current.id).sets).some((arr) =>
+        arr.some((s) => s?.done),
+      );
+    if (switching && hasProgress) {
+      const ok = await this.uiState.requestTrainingExit(this.T().day_switch_confirm);
+      if (!ok) return;
+    }
     this.state.setActiveDay(index);
     this.uiState.closeDayPicker();
   }

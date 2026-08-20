@@ -23,6 +23,6 @@ describe('App', () => {
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.brand span')?.textContent).toContain('GainAI');
-    expect(compiled.querySelectorAll('.bottom-nav a.nav-item').length).toBe(4);
+    expect(compiled.querySelectorAll('.bottom-nav a.nav-item').length).toBe(3);
   });
 });

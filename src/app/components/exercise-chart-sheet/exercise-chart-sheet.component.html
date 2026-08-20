@@ -1,0 +1,65 @@
+<div class="sheet-backdrop" (click)="close()"></div>
+<div class="sheet">
+  <div class="sheet-panel" appFocusTrap role="dialog" aria-modal="true">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div>
+        <h3 class="sheet-title">{{ exercise()?.name }}</h3>
+        <p class="sheet-sub">{{ T().chart_sheet_sub }}</p>
+      </div>
+      <button class="icon-btn" (click)="close()" [attr.aria-label]="T().close_btn">
+        <app-icon name="x" [size]="16" />
+      </button>
+    </div>
+
+    <div class="sheet-body">
+      @if (chart(); as c) {
+        <div class="cs-pr-row">
+          <span class="cs-pr-label">PR</span>
+          <span class="cs-pr-value mono">{{ c.pr }} kg</span>
+        </div>
+
+        <div class="cs-svg-wrap">
+          <svg viewBox="0 0 300 110">
+            <defs>
+              <linearGradient id="grad-sheet" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.25" />
+                <stop offset="100%" stop-color="var(--accent)" stop-opacity="0" />
+              </linearGradient>
+            </defs>
+            <g class="cs-grid">
+              <line x1="32" y1="8" x2="292" y2="8" />
+              <line x1="32" y1="48" x2="292" y2="48" />
+              <line x1="32" y1="88" x2="292" y2="88" />
+            </g>
+            <path [attr.d]="c.areaPath" fill="url(#grad-sheet)" stroke="none" />
+            <polyline [attr.points]="c.points" class="cs-line" fill="none" />
+            @for (pt of c.pts; track $index) {
+              <circle [attr.cx]="pt.x.toFixed(1)" [attr.cy]="pt.y.toFixed(1)" r="3" class="cs-dot" />
+            }
+            <g class="cs-axis">
+              @for (lbl of c.yLabels; track $index) {
+                <text x="28" [attr.y]="lbl.y" text-anchor="end">{{ lbl.value }}</text>
+              }
+              @for (lbl of c.xLabels; track lbl.label) {
+                <text [attr.x]="lbl.x.toFixed(1)" y="106" text-anchor="middle">{{ lbl.label }}</text>
+              }
+            </g>
+          </svg>
+        </div>
+
+        <p class="cs-last-title">{{ T().chart_sheet_last_sessions }}</p>
+        <div class="cs-last-list">
+          @for (item of c.lastLines; track item.dateISO) {
+            <div class="cs-last-row">
+              <span class="cs-last-date">{{ formatDate(item.dateISO) }}</span>
+              <span class="cs-last-sets mono">{{ item.line }}</span>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="cs-empty">{{ T().charts_empty_exercise }}</p>
+      }
+    </div>
+  </div>
+</div>

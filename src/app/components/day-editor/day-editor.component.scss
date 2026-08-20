@@ -49,7 +49,7 @@
 
 .ex-suggest-tag {
   flex: none;
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-2);
@@ -230,4 +230,35 @@
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+}
+
+/* ── Nombre como etiqueta + lápiz (la fila entera expande) ── */
+.ex-name-label {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-md);
+  font-weight: 500;
+  color: var(--text-0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ex-name-label--empty {
+  color: var(--text-3);
+  font-style: italic;
+}
+.ex-rename-btn {
+  flex-shrink: 0;
+  min-width: 40px;
+  min-height: 40px;
+  color: var(--text-3);
+}
+.ex-rename-btn:hover {
+  color: var(--accent);
+}
+
+.duplicate-day-btn {
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 8px;
 }

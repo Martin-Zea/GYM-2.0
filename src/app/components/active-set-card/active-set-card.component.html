@@ -1,0 +1,218 @@
+<div class="asc" [class.asc--done]="isDone()">
+  <!-- Cabecera: nombre + serie actual -->
+  <div class="asc-head">
+    <div class="asc-head-info">
+      <h2 class="asc-name">{{ exercise().name }}</h2>
+      <p class="asc-meta">
+        {{ exercise().defaultSets }}×{{ exercise().defaultRepTarget }} ·
+        {{ tr.unitLabel(exercise().unit) }} · {{ T().rest_label.toLowerCase() }}
+        {{ exercise().restSeconds || state.settings().defaultRest }}s
+      </p>
+    </div>
+    @if (!isDone()) {
+      <span class="asc-set-chip mono">
+        {{ tr.tp('asc_set_of', { n: currentIdx() + 1, total: setsArray().length }) }}
+      </span>
+    } @else {
+      <span class="asc-set-chip asc-set-chip--done mono">
+        <app-icon name="check" [size]="12" />
+        {{ doneCount() }}/{{ setsArray().length }}
+      </span>
+    }
+  </div>
+
+  <!-- Recomendación con su porqué (una línea, clamp) -->
+  @if (aiRec()?.loading) {
+    <div class="asc-ai">
+      <span class="asc-ai-spinner"></span>
+      <span class="asc-ai-text">{{ T().ai_analyzing }}</span>
+    </div>
+  } @else if (aiRec() && aiReason()) {
+    <div
+      class="asc-ai"
+      [title]="aiRec()!.source !== 'local' ? T().ai_badge_title_ai : T().ai_badge_title_local"
+    >
+      <app-icon
+        [name]="aiRec()!.source !== 'local' ? 'sparkle' : 'ruler'"
+        [size]="12"
+        class="asc-ai-icon"
+        [class.asc-ai-icon--local]="aiRec()!.source === 'local'"
+      />
+      <span class="asc-ai-text">{{ aiReason() }}</span>
+    </div>
+  }
+
+  @if (!isDone()) {
+    <!-- Steppers gigantes -->
+    <div class="asc-steppers" [class.asc-steppers--single]="!needsWeight()">
+      @if (needsWeight()) {
+        <div class="asc-stepper">
+          <p class="asc-stepper-label">
+            {{ exercise().unit === 'tiempo' ? T().col_seconds : T().col_weight }}
+          </p>
+          <div class="asc-stepper-row">
+            <button
+              class="asc-step-btn"
+              (click)="stepWeight(-1)"
+              [attr.aria-label]="T().ctrl_weight_down"
+            >
+              −
+            </button>
+            @if (exercise().unit === 'kg') {
+              <button
+                class="asc-value mono"
+                [class.asc-value--empty]="displayWeight() === null"
+                (click)="showPlates.set(!showPlates())"
+                [title]="T().plates_btn_title"
+              >
+                {{ displayWeight() ?? '—' }}
+              </button>
+            } @else {
+              <span class="asc-value mono" [class.asc-value--empty]="displayWeight() === null">
+                {{ displayWeight() ?? '—' }}
+              </span>
+            }
+            <button
+              class="asc-step-btn"
+              (click)="stepWeight(1)"
+              [attr.aria-label]="T().ctrl_weight_up"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      }
+      <div class="asc-stepper">
+        <p class="asc-stepper-label">{{ T().col_reps }}</p>
+        <div class="asc-stepper-row">
+          <button class="asc-step-btn" (click)="stepReps(-1)" [attr.aria-label]="T().ctrl_rep_down">
+            −
+          </button>
+          <span class="asc-value mono" [class.asc-value--empty]="displayReps() === null">
+            {{ displayReps() ?? exercise().defaultRepTarget }}
+          </span>
+          <button class="asc-step-btn" (click)="stepReps(1)" [attr.aria-label]="T().ctrl_rep_up">
+            +
+          </button>
+        </div>
+        <p class="asc-stepper-hint">
+          {{ tr.tp('asc_target', { n: exercise().defaultRepTarget }) }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Calculadora de discos -->
+    @if (showPlates() && plates(); as p) {
+      <div class="asc-plates">
+        @if (p.belowBar) {
+          <span>{{ tr.tp('plates_below_bar', { bar: barWeight() }) }}</span>
+        } @else if (!p.perSide.length) {
+          <span>{{ tr.tp('plates_bar_only', { bar: barWeight() }) }}</span>
+        } @else {
+          <span class="asc-plates-label">{{ tr.tp('plates_per_side', { bar: barWeight() }) }}</span>
+          <span class="asc-plates-list mono">{{ p.perSide.join(' + ') }}</span>
+          @if (p.remainderKg > 0) {
+            <span class="asc-plates-rem">{{ tr.tp('plates_remainder', { n: p.remainderKg }) }}</span>
+          }
+        }
+      </div>
+    }
+
+    <!-- EL botón -->
+    <button class="asc-done-btn" (click)="completeSet()">
+      <app-icon name="check" [size]="20" />
+      {{ T().asc_set_done }}
+    </button>
+
+    <div class="asc-secondary">
+      <button class="asc-link" (click)="showTable.emit()">{{ T().asc_view_table }}</button>
+      <button
+        class="asc-link"
+        [class.asc-link--active]="current()?.isWarmup"
+        (click)="toggleWarmup()"
+      >
+        {{ T().set_warmup_toggle }}
+      </button>
+      <button class="asc-link" (click)="openChart()">{{ T().view_chart }}</button>
+    </div>
+  } @else {
+    <!-- Ejercicio completo: sensación + siguiente -->
+    <div class="asc-complete">
+      <p class="asc-complete-msg">
+        <app-icon name="check" [size]="15" />
+        {{ T().asc_exercise_done }}
+      </p>
+      <p class="asc-feel-q">{{ T().feel_question }}</p>
+      <div class="asc-feel-chips">
+        <button
+          class="asc-feel-chip"
+          [class.asc-feel-chip--active]="todayFeel() === 'easy'"
+          (click)="setFeel('easy')"
+        >
+          {{ T().feel_easy }}
+        </button>
+        <button
+          class="asc-feel-chip"
+          [class.asc-feel-chip--active]="todayFeel() === 'ok'"
+          (click)="setFeel('ok')"
+        >
+          {{ T().feel_ok }}
+        </button>
+        <button
+          class="asc-feel-chip"
+          [class.asc-feel-chip--active]="todayFeel() === 'hard'"
+          (click)="setFeel('hard')"
+        >
+          {{ T().feel_hard }}
+        </button>
+      </div>
+      <button class="asc-next-btn" (click)="nextExercise.emit()">
+        {{ T().asc_next_exercise }}
+        <app-icon name="arrow_right" [size]="16" />
+      </button>
+      <div class="asc-secondary">
+        <button class="asc-link" (click)="undoLastSet()">{{ T().asc_undo_set }}</button>
+        <button class="asc-link" (click)="addExtraSet()">{{ T().asc_extra_set }}</button>
+        <button class="asc-link" (click)="openChart()">{{ T().view_chart }}</button>
+      </div>
+    </div>
+  }
+
+  <!-- Nota rápida + sustituto -->
+  <div class="asc-footer">
+    <button class="asc-link" (click)="showNote.set(!showNote())">
+      {{ todayNote() ? T().asc_note_edit : T().asc_note_add }}
+    </button>
+    @if (canSubstitute() && substituteOptions().length) {
+      <button class="asc-link" (click)="showSubstitute.set(!showSubstitute())">
+        {{ T().asc_substitute }}
+      </button>
+    }
+    @if (!isDone() && doneCount() > 0) {
+      <button class="asc-link" (click)="undoLastSet()">{{ T().asc_undo_set }}</button>
+    }
+  </div>
+
+  @if (showNote()) {
+    <textarea
+      class="input asc-note-input"
+      rows="2"
+      maxlength="200"
+      [placeholder]="T().asc_note_placeholder"
+      [value]="todayNote()"
+      (change)="saveNote($event)"
+    ></textarea>
+  }
+
+  @if (showSubstitute()) {
+    <div class="asc-substitute">
+      <p class="asc-substitute-hint">{{ T().asc_substitute_hint }}</p>
+      <select class="select" (change)="substitute($event)">
+        <option value="">{{ T().asc_substitute_pick }}</option>
+        @for (opt of substituteOptions(); track opt.id) {
+          <option [value]="opt.id">{{ opt.name }}</option>
+        }
+      </select>
+    </div>
+  }
+</div>

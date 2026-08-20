@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, output, signal } from '@ang
 import { TranslationService } from '../../services/translation.service';
 import { IconComponent } from '../icon/icon.component';
 
-const SLIDE_COUNT = 3;
+const SLIDE_COUNT = 4;
 
 @Component({
   selector: 'app-onboarding',
@@ -15,7 +15,8 @@ const SLIDE_COUNT = 3;
 export class OnboardingComponent {
   protected readonly T = inject(TranslationService).T;
 
-  readonly done = output<void>();
+  /** Emite la cantidad de días elegida en el wizard de rutina. */
+  readonly done = output<3 | 4 | 5>();
 
   protected readonly slideCount = SLIDE_COUNT;
   protected readonly slideIndices = Array.from({ length: SLIDE_COUNT }, (_, i) => i);
@@ -24,9 +25,11 @@ export class OnboardingComponent {
   protected next(): void {
     if (this.current() < SLIDE_COUNT - 1) {
       this.current.update((s) => s + 1);
-    } else {
-      this.done.emit();
     }
+  }
+
+  protected pickDays(days: 3 | 4 | 5): void {
+    this.done.emit(days);
   }
 
   protected back(): void {

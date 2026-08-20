@@ -23,7 +23,6 @@ interface AiCacheEntry {
   rec: AiRecommendation;
   lastSessionISO: string | null;
   cachedForDate: string;
-  doneSig: string;
   profileSig: string;
 }
 
@@ -44,13 +43,6 @@ export class ProgressionService {
     }
   }
 
-  private doneSig(todaySets: TodaySetProgress[]): string {
-    return todaySets
-      .filter((s) => s.done)
-      .map((s) => `${s.weight}x${s.reps}`)
-      .join(',');
-  }
-
   private profileSig(profile: UserProfile): string {
     const noteHash = profile.aiNotes
       ? String(profile.aiNotes.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0))
@@ -58,10 +50,12 @@ export class ProgressionService {
     return `${profile.goal ?? ''}:${noteHash}`;
   }
 
+  // La recomendación del día es ESTABLE: una vez emitida para (ejercicio, fecha, última
+  // sesión, perfil) no cambia aunque el usuario marque series — un número que baila sin
+  // datos nuevos destruye la confianza. La adaptación llega vía feedback explícito.
   private getCached(
     exerciseId: string,
     lastSessionISO: string | null,
-    todaySets: TodaySetProgress[],
     profile: UserProfile,
   ): AiRecommendation | null {
     const entry = this.readCache()[exerciseId];
@@ -70,14 +64,12 @@ export class ProgressionService {
     if (entry.cachedForDate !== this.storage.todayISO()) return null;
     if (entry.lastSessionISO !== lastSessionISO) return null;
     if (entry.profileSig !== this.profileSig(profile)) return null;
-    if (navigator.onLine && entry.doneSig !== this.doneSig(todaySets)) return null;
     return entry.rec;
   }
 
   private setCached(
     exerciseId: string,
     lastSessionISO: string | null,
-    todaySets: TodaySetProgress[],
     rec: AiRecommendation,
     profile: UserProfile,
   ): void {
@@ -86,7 +78,6 @@ export class ProgressionService {
       rec,
       lastSessionISO,
       cachedForDate: this.storage.todayISO(),
-      doneSig: this.doneSig(todaySets),
       profileSig: this.profileSig(profile),
     };
     localStorage.setItem(AI_CACHE_KEY, JSON.stringify(cache));
@@ -190,13 +181,17 @@ export class ProgressionService {
     if (!providers.length || !hasDoneOrHistory) return local();
 
     const lastSessionISO = history.at(-1)?.dateISO ?? null;
-    const cached = this.getCached(exercise.id, lastSessionISO, todaySets, settings.userProfile);
+    const cached = this.getCached(exercise.id, lastSessionISO, settings.userProfile);
     if (cached) return cached;
 
     if (!navigator.onLine) {
       return local(lang === 'en' ? ' (offline mode)' : ' (modo offline)');
     }
 
+    const lastSessionObj = this.storage.lastSessionForExercise(
+      this.storage.load(),
+      exercise.id,
+    );
     const ctx: AiProviderContext = {
       exercise,
       todaySets,
@@ -205,6 +200,8 @@ export class ProgressionService {
       userProfile: settings.userProfile,
       lang,
       lastSessionDate,
+      lastFeel: lastSessionObj?.feelings?.[exercise.id] ?? null,
+      lastNote: lastSessionObj?.notes?.[exercise.id] ?? null,
     };
 
     for (const provider of providers) {
@@ -217,7 +214,7 @@ export class ProgressionService {
           lastSessionDate,
           lang,
         );
-        this.setCached(exercise.id, lastSessionISO, todaySets, adjusted, settings.userProfile);
+        this.setCached(exercise.id, lastSessionISO, adjusted, settings.userProfile);
         if (adjusted.source === 'groq') {
           this.shadowLog.maybeRecord(ctx, settings.apiKey, adjusted);
         }

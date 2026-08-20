@@ -133,6 +133,26 @@ export function goalRepTarget(
   return defaultRep;
 }
 
+/** Línea de contexto con el feedback subjetivo de la última sesión (feel + nota). */
+export function buildFeedbackNote(
+  lastFeel: 'easy' | 'ok' | 'hard' | null | undefined,
+  lastNote: string | null | undefined,
+): string {
+  const lines: string[] = [];
+  if (lastFeel) {
+    const labels = {
+      easy: 'FÁCIL — probablemente haya margen para subir más de lo habitual',
+      ok: 'BIEN — progresión normal',
+      hard: 'PESADA — sé conservador: mantené o bajá la carga antes que subirla',
+    } as const;
+    lines.push(`- El atleta marcó la última sesión de este ejercicio como ${labels[lastFeel]}.`);
+  }
+  if (lastNote?.trim()) {
+    lines.push(`- Nota del atleta en la última sesión: "${lastNote.trim()}"`);
+  }
+  return lines.length ? lines.join('\n') + '\n' : '';
+}
+
 export function buildGoalNote(
   goal: TrainingGoal | null | undefined,
   aiNotes: string | undefined,

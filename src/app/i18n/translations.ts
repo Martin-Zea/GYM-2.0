@@ -226,7 +226,6 @@ export interface Translations {
   settings_goal_endurance: string;
   settings_ai_notes_label: string;
   settings_ai_notes_desc: string;
-  settings_ai_notes_placeholder_no_key: string;
   settings_ai_section: string;
   settings_api_key_label: string;
   settings_api_key_desc: string;
@@ -325,6 +324,91 @@ export interface Translations {
   profile_pr_share: string;
   pr_share_text: string; // {exercise} {weight} {unit} {url}
   pr_share_fallback_msg: string;
+
+  // UX audit additions
+  profile_view_sub: string;
+  skip_done_toast: string;
+  ai_badge_title_ai: string;
+  ai_badge_title_local: string;
+  charts_filter_all: string;
+  charts_filter_day_label: string;
+  charts_section_exercises: string;
+  charts_view_session: string;
+  cal_stat_vs_prev: string; // {n}
+
+  // Rediseño: sesión enfocada
+  session_active_eyebrow: string;
+  session_exit: string;
+  session_view_list: string;
+  session_view_focused: string;
+  asc_set_of: string; // {n} {total}
+  asc_target: string; // {n}
+  asc_set_done: string;
+  asc_view_table: string;
+  asc_exercise_done: string;
+  asc_undo_set: string;
+  asc_next_exercise: string;
+  asc_extra_set: string;
+  asc_note_add: string;
+  asc_note_edit: string;
+  asc_note_placeholder: string;
+  asc_substitute: string;
+  asc_substitute_hint: string;
+  asc_substitute_pick: string;
+  feel_question: string;
+  feel_easy: string;
+  feel_ok: string;
+  feel_hard: string;
+  plates_btn_title: string;
+  plates_per_side: string; // {bar}
+  plates_bar_only: string; // {bar}
+  plates_below_bar: string; // {bar}
+  plates_remainder: string; // {n}
+  chart_sheet_sub: string;
+  chart_sheet_last_sessions: string;
+  day_switch_confirm: string;
+
+  // Rediseño: dashboard
+  today_ex_count: string; // {n}
+  week_line_sessions: string; // {n}
+  week_summary_title: string;
+  week_summary_body: string; // {n} {vol}
+
+  // Rediseño: historial unificado
+  nav_history: string;
+  history_view_sub: string;
+  history_exercise_label: string;
+  history_prs_all: string;
+
+  // Rediseño: wizard de rutina
+  onboarding_days_q: string;
+  onboarding_days_desc: string;
+  onboarding_days_3: string;
+  onboarding_days_4: string;
+  onboarding_days_5: string;
+
+  // Rediseño: editor
+  day_editor_duplicate: string;
+  day_editor_copy_suffix: string;
+  day_editor_move: string;
+  day_editor_move_pick: string;
+  day_editor_rename: string;
+
+  // Rediseño: datos (snapshots + papelera + discos)
+  settings_snapshots_title: string;
+  settings_snapshots_desc: string;
+  settings_snapshots_empty: string;
+  settings_snapshot_restore: string;
+  settings_snapshot_restore_confirm: string;
+  settings_trash_title: string;
+  settings_trash_desc: string;
+  settings_trash_empty: string;
+  settings_trash_restore: string;
+  settings_trash_clear: string;
+  trash_deleted_on: string; // {date}
+  settings_bar_weight: string;
+  settings_plates_label: string;
+  settings_plates_hint: string;
 }
 
 export { es } from './es';

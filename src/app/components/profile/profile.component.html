@@ -1,70 +1,182 @@
 <div class="main">
   <div class="view-header">
     <h2 class="view-title">{{ T().nav_profile }}</h2>
+    <p class="view-sub">{{ T().profile_view_sub }}</p>
   </div>
 
-  <!-- Datos del usuario -->
+  <!-- Peso corporal: se registra y edita aquí -->
   <section class="profile-section">
-    <div class="section-header">
-      <p class="section-title">{{ T().profile_data_section }}</p>
-      <button class="btn btn-sm" (click)="openSettings()">
-        <app-icon name="settings" [size]="14" />
-        {{ T().profile_edit_settings }}
-      </button>
+    <p class="section-title">{{ T().bodyweight_chart_title }}</p>
+    <div class="weight-log">
+      <!-- Fila de hoy: siempre visible, crea o actualiza la entrada de hoy -->
+      <div class="weight-log-row weight-log-today">
+        <label class="weight-log-date weight-log-today-label" for="weight-today">{{
+          T().weight_log_today
+        }}</label>
+        <div class="weight-log-val-wrap">
+          <input
+            id="weight-today"
+            class="weight-log-input mono"
+            type="number"
+            min="30"
+            max="300"
+            step="0.5"
+            inputmode="decimal"
+            placeholder="—"
+            [value]="todayEntry()?.weightKg ?? ''"
+            (change)="saveTodayWeight($event)"
+          />
+          <span class="weight-log-unit">kg</span>
+        </div>
+        @if (todayEntry()) {
+          <button
+            class="icon-btn weight-log-del"
+            (click)="deleteWeightEntry(stateService.todayKey)"
+            [attr.aria-label]="T().weight_log_delete"
+          >
+            <app-icon name="x" [size]="13" />
+          </button>
+        } @else {
+          <span class="weight-log-del-placeholder"></span>
+        }
+      </div>
+      @for (entry of pastLogDisplayed(); track entry.dateISO) {
+        <div class="weight-log-row">
+          <span class="weight-log-date mono">{{ formatLogDate(entry.dateISO) }}</span>
+          <div class="weight-log-val-wrap">
+            <input
+              class="weight-log-input mono"
+              type="number"
+              min="30"
+              max="300"
+              step="0.5"
+              inputmode="decimal"
+              [value]="entry.weightKg"
+              (change)="updateWeightEntry(entry.dateISO, $event)"
+              [attr.aria-label]="formatLogDate(entry.dateISO)"
+            />
+            <span class="weight-log-unit">kg</span>
+          </div>
+          <button
+            class="icon-btn weight-log-del"
+            (click)="deleteWeightEntry(entry.dateISO)"
+            [attr.aria-label]="T().weight_log_delete"
+          >
+            <app-icon name="x" [size]="13" />
+          </button>
+        </div>
+      }
     </div>
-    <div class="profile-grid">
-      <div class="profile-stat">
-        <span class="profile-stat-label">{{ T().settings_weight }}</span>
-        <span class="profile-stat-value mono">
-          @if (profile().weightKg !== null) {
-            {{ profile().weightKg }} kg
-          } @else {
-            {{ T().profile_no_data }}
-          }
-        </span>
+    @if (undoEntry(); as undo) {
+      <div class="weight-log-undo">
+        <span>{{ tr.tp('weight_log_deleted', { weight: undo.weightKg }) }}</span>
+        <button class="btn btn-ghost btn-sm" (click)="undoDelete()">
+          {{ T().weight_log_undo }}
+        </button>
       </div>
-      <div class="profile-stat">
-        <span class="profile-stat-label">{{ T().settings_height }}</span>
-        <span class="profile-stat-value mono">
-          @if (profile().heightCm !== null) {
-            {{ profile().heightCm }} cm
-          } @else {
-            {{ T().profile_no_data }}
-          }
-        </span>
+    }
+    @if (weightSummary(); as ws) {
+      @if (ws.delta !== null && ws.days !== null) {
+        <p class="weight-trend" [class.neg]="ws.delta.startsWith('−')">
+          {{ tr.tp('profile_bodyweight_change', { delta: ws.delta, days: ws.days }) }}
+        </p>
+      }
+    }
+  </section>
+
+  <!-- Datos personales: editables aquí (antes en Ajustes) -->
+  <section class="profile-section">
+    <p class="section-title">{{ T().profile_data_section }}</p>
+    <div class="profile-row">
+      <label class="profile-row-label" for="profile-height">{{ T().settings_height }}</label>
+      <div class="profile-row-input">
+        <input
+          id="profile-height"
+          class="input"
+          type="number"
+          min="100"
+          max="250"
+          inputmode="numeric"
+          placeholder="—"
+          [value]="profile().heightCm ?? ''"
+          (input)="patchProfileNum('heightCm', $event)"
+        />
+        <span class="profile-row-unit" aria-hidden="true">cm</span>
       </div>
-      <div class="profile-stat">
-        <span class="profile-stat-label">{{ T().settings_age }}</span>
-        <span class="profile-stat-value mono">
-          @if (profile().age !== null) {
-            {{ profile().age }} {{ T().settings_age_unit }}
-          } @else {
-            {{ T().profile_no_data }}
-          }
-        </span>
+    </div>
+    <div class="profile-row">
+      <label class="profile-row-label" for="profile-age">{{ T().settings_age }}</label>
+      <div class="profile-row-input">
+        <input
+          id="profile-age"
+          class="input"
+          type="number"
+          min="10"
+          max="100"
+          inputmode="numeric"
+          placeholder="—"
+          [value]="profile().age ?? ''"
+          (input)="patchProfileNum('age', $event)"
+        />
+        <span class="profile-row-unit" aria-hidden="true">{{ T().settings_age_unit }}</span>
       </div>
-      <div class="profile-stat">
-        <span class="profile-stat-label">{{ T().settings_sex }}</span>
-        <span class="profile-stat-value">{{ sexLabel(profile().sex) }}</span>
-      </div>
+    </div>
+    <div class="profile-row">
+      <label class="profile-row-label" for="profile-sex">{{ T().settings_sex }}</label>
+      <select
+        id="profile-sex"
+        class="select profile-row-select"
+        [value]="profile().sex ?? ''"
+        (change)="patchProfileSex($event)"
+      >
+        <option value="">{{ T().settings_sex_none }}</option>
+        <option value="male">{{ T().settings_sex_male }}</option>
+        <option value="female">{{ T().settings_sex_female }}</option>
+        <option value="other">{{ T().settings_sex_other }}</option>
+      </select>
     </div>
   </section>
 
-  <!-- Peso corporal -->
+  <!-- Objetivo y notas: lo que más pesa en la recomendación de la IA -->
   <section class="profile-section">
-    <p class="section-title">{{ T().bodyweight_chart_title }}</p>
-    @if (weightSummary(); as ws) {
-      <div class="weight-row">
-        <span class="weight-value mono">{{ ws.last }} kg</span>
-        @if (ws.delta !== null && ws.days !== null) {
-          <span class="weight-trend" [class.neg]="ws.delta.startsWith('−')">
-            {{ tr.tp('profile_bodyweight_change', { delta: ws.delta, days: ws.days }) }}
-          </span>
-        }
-      </div>
-    } @else {
-      <p class="section-empty">{{ T().profile_bodyweight_no_data }}</p>
-    }
+    <p class="section-title">{{ T().settings_goal_label }}</p>
+    <p class="profile-section-desc">{{ T().settings_goal_desc }}</p>
+    <div class="profile-goal-chips">
+      <button
+        class="btn btn-sm"
+        [class.btn-primary]="profile().goal === 'strength'"
+        (click)="setGoal(profile().goal === 'strength' ? null : 'strength')"
+      >
+        {{ T().settings_goal_strength }}
+      </button>
+      <button
+        class="btn btn-sm"
+        [class.btn-primary]="profile().goal === 'hypertrophy'"
+        (click)="setGoal(profile().goal === 'hypertrophy' ? null : 'hypertrophy')"
+      >
+        {{ T().settings_goal_hypertrophy }}
+      </button>
+      <button
+        class="btn btn-sm"
+        [class.btn-primary]="profile().goal === 'endurance'"
+        (click)="setGoal(profile().goal === 'endurance' ? null : 'endurance')"
+      >
+        {{ T().settings_goal_endurance }}
+      </button>
+    </div>
+    <label class="profile-notes-label" for="profile-ai-notes">{{
+      T().settings_ai_notes_label
+    }}</label>
+    <p class="profile-section-desc">{{ T().settings_ai_notes_desc }}</p>
+    <textarea
+      id="profile-ai-notes"
+      class="input profile-notes-input"
+      rows="3"
+      maxlength="200"
+      [value]="profile().aiNotes"
+      (input)="patchAiNotes($event)"
+    ></textarea>
+    <p class="profile-section-desc profile-ai-note">{{ T().settings_profile_ai_note }}</p>
   </section>
 
   <!-- Récords personales -->
@@ -82,9 +194,13 @@
                 <span class="achievement-date">{{ formatDate(pr.dateISO) }}</span>
               </span>
             </div>
-            <button class="btn btn-sm" (click)="sharePr(pr)">
-              <app-icon name="globe" [size]="14" />
-              {{ T().profile_pr_share }}
+            <button
+              class="icon-btn"
+              (click)="sharePr(pr)"
+              [title]="T().profile_pr_share"
+              [attr.aria-label]="T().profile_pr_share"
+            >
+              <app-icon name="globe" [size]="16" />
             </button>
           </li>
         }

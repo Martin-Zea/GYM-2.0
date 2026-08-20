@@ -107,170 +107,33 @@
             (click)="patch({ haptics: !settings().haptics })"
           ></button>
         </div>
-      </div>
-
-      <!-- Perfil -->
-      <div class="settings-section">
-        <p class="settings-section-title">{{ T().settings_profile }}</p>
-        <p class="settings-row-desc" style="margin-bottom: 12px">
-          {{ T().settings_profile_ai_note }}
-        </p>
-        <!-- Peso: lista unificada de mediciones -->
-        <div class="settings-row-label" style="margin-bottom: 8px">{{ T().settings_weight }}</div>
-        <div class="weight-log">
-          <!-- Fila de hoy: siempre visible, crea o actualiza la entrada de hoy -->
-          <div class="weight-log-row weight-log-today">
-            <span class="weight-log-date weight-log-today-label">{{ T().weight_log_today }}</span>
-            <div class="weight-log-val-wrap">
-              <input
-                class="weight-log-input mono"
-                type="number"
-                min="30"
-                max="300"
-                step="0.5"
-                inputmode="decimal"
-                placeholder="—"
-                [value]="todayEntry()?.weightKg ?? ''"
-                (change)="saveTodayWeight($event)"
-              />
-              <span class="weight-log-unit">kg</span>
-            </div>
-            @if (todayEntry()) {
-              <button
-                class="icon-btn weight-log-del"
-                (click)="deleteWeightEntry(state.todayKey)"
-                [attr.aria-label]="T().weight_log_delete"
-              >
-                <app-icon name="x" [size]="13" />
-              </button>
-            } @else {
-              <span class="weight-log-del-placeholder"></span>
-            }
-          </div>
-          <!-- Entradas anteriores -->
-          @for (entry of pastLogDisplayed(); track entry.dateISO) {
-            <div class="weight-log-row">
-              <span class="weight-log-date mono">{{ formatLogDate(entry.dateISO) }}</span>
-              <div class="weight-log-val-wrap">
-                <input
-                  class="weight-log-input mono"
-                  type="number"
-                  min="30"
-                  max="300"
-                  step="0.5"
-                  inputmode="decimal"
-                  [value]="entry.weightKg"
-                  (change)="updateWeightEntry(entry.dateISO, $event)"
-                />
-                <span class="weight-log-unit">kg</span>
-              </div>
-              <button
-                class="icon-btn weight-log-del"
-                (click)="deleteWeightEntry(entry.dateISO)"
-                [attr.aria-label]="T().weight_log_delete"
-              >
-                <app-icon name="x" [size]="13" />
-              </button>
-            </div>
-          }
-        </div>
-        <!-- Undo toast -->
-        @if (undoEntry(); as undo) {
-          <div class="weight-log-undo">
-            <span>{{ tr.tp('weight_log_deleted', { weight: undo.weightKg }) }}</span>
-            <button class="btn btn-ghost btn-sm" (click)="undoDelete()">
-              {{ T().weight_log_undo }}
-            </button>
-          </div>
-        }
         <div class="settings-row">
-          <label class="settings-row-main" for="profile-height">
-            <div class="settings-row-label">{{ T().settings_height }}</div>
+          <label class="settings-row-main" for="bar-weight">
+            <div class="settings-row-label">{{ T().settings_bar_weight }}</div>
           </label>
-          <div style="display: flex; align-items: center; gap: 6px">
-            <input
-              id="profile-height"
-              class="input"
-              type="number"
-              min="100"
-              max="250"
-              inputmode="numeric"
-              placeholder="—"
-              style="width: 75px; text-align: center"
-              [value]="settings().userProfile.heightCm ?? ''"
-              (input)="patchProfileNum('heightCm', $event)"
-            />
-            <span style="font-size: 12px; color: var(--text-2)" aria-hidden="true">cm</span>
-          </div>
+          <input
+            id="bar-weight"
+            class="input"
+            type="number"
+            min="1"
+            step="0.5"
+            inputmode="decimal"
+            style="width: 75px; text-align: center"
+            [value]="barWeight()"
+            (change)="patchBarWeight($event)"
+          />
         </div>
-        <div class="settings-row">
-          <label class="settings-row-main" for="profile-age">
-            <div class="settings-row-label">{{ T().settings_age }}</div>
-          </label>
-          <div style="display: flex; align-items: center; gap: 6px">
-            <input
-              id="profile-age"
-              class="input"
-              type="number"
-              min="10"
-              max="100"
-              inputmode="numeric"
-              placeholder="—"
-              style="width: 75px; text-align: center"
-              [value]="settings().userProfile.age ?? ''"
-              (input)="patchProfileNum('age', $event)"
-            />
-            <span style="font-size: 12px; color: var(--text-2)" aria-hidden="true">{{
-              T().settings_age_unit
-            }}</span>
-          </div>
-        </div>
-        <div class="settings-row">
-          <label class="settings-row-main" for="profile-sex">
-            <div class="settings-row-label">{{ T().settings_sex }}</div>
-          </label>
-          <select
-            id="profile-sex"
-            class="select"
-            style="width: 150px"
-            [value]="settings().userProfile.sex ?? ''"
-            (change)="patchProfileSex($event)"
-          >
-            <option value="">{{ T().settings_sex_none }}</option>
-            <option value="male">{{ T().settings_sex_male }}</option>
-            <option value="female">{{ T().settings_sex_female }}</option>
-            <option value="other">{{ T().settings_sex_other }}</option>
-          </select>
-        </div>
-        <!-- Objetivo de entrenamiento -->
-        <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 8px">
-          <div class="settings-row-label">{{ T().settings_goal_label }}</div>
-          <div class="settings-row-desc">{{ T().settings_goal_desc }}</div>
-          <div style="display: flex; gap: 6px">
-            <button
-              class="btn btn-sm"
-              [class.btn-primary]="settings().userProfile.goal === 'strength'"
-              (click)="setGoal(settings().userProfile.goal === 'strength' ? null : 'strength')"
-            >
-              {{ T().settings_goal_strength }}
-            </button>
-            <button
-              class="btn btn-sm"
-              [class.btn-primary]="settings().userProfile.goal === 'hypertrophy'"
-              (click)="
-                setGoal(settings().userProfile.goal === 'hypertrophy' ? null : 'hypertrophy')
-              "
-            >
-              {{ T().settings_goal_hypertrophy }}
-            </button>
-            <button
-              class="btn btn-sm"
-              [class.btn-primary]="settings().userProfile.goal === 'endurance'"
-              (click)="setGoal(settings().userProfile.goal === 'endurance' ? null : 'endurance')"
-            >
-              {{ T().settings_goal_endurance }}
-            </button>
-          </div>
+        <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 6px">
+          <label class="settings-row-label" for="plates-csv">{{ T().settings_plates_label }}</label>
+          <div class="settings-row-desc">{{ T().settings_plates_hint }}</div>
+          <input
+            id="plates-csv"
+            class="input"
+            type="text"
+            inputmode="decimal"
+            [value]="platesCsv()"
+            (change)="patchPlates($event)"
+          />
         </div>
       </div>
 
@@ -334,23 +197,6 @@
             </button>
           </div>
         </div>
-        <!-- Contexto personal para la IA -->
-        <div
-          class="settings-row"
-          style="flex-direction: column; align-items: stretch; gap: 8px; margin-top: 12px"
-        >
-          <div class="settings-row-label">{{ T().settings_ai_notes_label }}</div>
-          <div class="settings-row-desc">{{ T().settings_ai_notes_desc }}</div>
-          <textarea
-            class="input"
-            rows="3"
-            maxlength="200"
-            style="resize: none; font-size: 14px; line-height: 1.4"
-            [placeholder]="hasApiKey ? '' : T().settings_ai_notes_placeholder_no_key"
-            [value]="settings().userProfile.aiNotes"
-            (input)="patchAiNotes($event)"
-          ></textarea>
-        </div>
         <p class="settings-row-desc settings-ai-privacy" style="margin-top: 12px">
           <app-icon
             name="globe"
@@ -389,6 +235,60 @@
         @if (importError()) {
           <p style="color: var(--danger); font-size: 12px; margin-top: 8px">{{ importError() }}</p>
         }
+        <!-- Copias automáticas (IndexedDB) -->
+        <div class="settings-subsection">
+          <div class="settings-row-label" style="margin-bottom: 2px">
+            {{ T().settings_snapshots_title }}
+          </div>
+          <div class="settings-row-desc">{{ T().settings_snapshots_desc }}</div>
+          @if (snapshots().length) {
+            @for (snap of snapshots(); track snap) {
+              <div class="snapshot-row">
+                <span class="snapshot-date mono">{{ snap }}</span>
+                <button class="btn btn-sm" (click)="restoreSnapshot(snap)">
+                  {{ T().settings_snapshot_restore }}
+                </button>
+              </div>
+            }
+          } @else {
+            <p class="settings-row-desc" style="margin-top: 6px">
+              {{ T().settings_snapshots_empty }}
+            </p>
+          }
+          @if (snapshotRestored()) {
+            <p class="settings-restored-msg">✓</p>
+          }
+        </div>
+
+        <!-- Papelera de sesiones (30 días) -->
+        <div class="settings-subsection">
+          <div class="settings-row-label" style="margin-bottom: 2px">
+            {{ T().settings_trash_title }}
+          </div>
+          <div class="settings-row-desc">{{ T().settings_trash_desc }}</div>
+          @if (trash().length) {
+            @for (item of trash(); track item.session.id) {
+              <div class="snapshot-row">
+                <span class="snapshot-date">
+                  <span class="mono">{{ trashLabel(item.session.dateISO) }}</span>
+                  · {{ dayNameFor(item.session.dayId) }}
+                  <span class="trash-meta">{{
+                    tr.tp('trash_deleted_on', { date: trashLabel(item.deletedISO) })
+                  }}</span>
+                </span>
+                <button class="btn btn-sm" (click)="state.restoreSession(item.session.id)">
+                  {{ T().settings_trash_restore }}
+                </button>
+              </div>
+            }
+            <button class="btn btn-ghost btn-sm" style="margin-top: 6px" (click)="state.emptyTrash()">
+              {{ T().settings_trash_clear }}
+            </button>
+          } @else {
+            <p class="settings-row-desc" style="margin-top: 6px">{{ T().settings_trash_empty }}</p>
+          }
+        </div>
+
         @if (resetConfirm()) {
           <div class="reset-confirm">
             <p class="reset-confirm-label">

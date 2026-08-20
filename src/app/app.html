@@ -1,5 +1,6 @@
-<div class="app">
-  <header class="topbar" [class.training-active]="uiState.trainingActive()">
+<div class="app" [class.app--session]="uiState.trainingActive()">
+  @if (!uiState.trainingActive()) {
+    <header class="topbar">
     <div class="brand">
       <div class="brand-mark">
         <app-icon name="dumbbell" [size]="14" />
@@ -26,7 +27,7 @@
         "
       >
         <app-icon
-          [name]="theme() === 'dark' ? 'sun' : theme() === 'light' ? 'sparkle' : 'moon'"
+          [name]="theme() === 'dark' ? 'sun' : theme() === 'light' ? 'contrast' : 'moon'"
           [size]="16"
         />
       </button>
@@ -39,13 +40,16 @@
         <app-icon name="settings" [size]="16" />
       </button>
     </div>
-  </header>
+    </header>
+  }
 
   <main class="app-content">
     <router-outlet />
   </main>
 
-  <app-bottom-nav />
+  @if (!uiState.trainingActive()) {
+    <app-bottom-nav />
+  }
 
   @if (uiState.restTimer()) {
     <app-rest-timer />
@@ -69,6 +73,10 @@
 
   @if (uiState.dayHistory()) {
     <app-day-history-sheet />
+  }
+
+  @if (uiState.chartSheet()) {
+    <app-exercise-chart-sheet />
   }
 
   @if (uiState.saveError()) {
@@ -125,7 +133,7 @@
   }
 
   @if (showOnboarding()) {
-    <app-onboarding (done)="completeOnboarding()" />
+    <app-onboarding (done)="completeOnboarding($event)" />
   } @else if (showLegalGate()) {
     <app-legal-gate (accepted)="acceptLegal()" />
   }
@@ -138,7 +146,7 @@
         role="alertdialog"
         aria-modal="true"
       >
-        <p class="exit-confirm-msg">{{ T().nav_guard_confirm }}</p>
+        <p class="exit-confirm-msg">{{ uiState.exitConfirmMsg() ?? T().nav_guard_confirm }}</p>
         <div class="exit-confirm-actions">
           <button class="btn btn-ghost" (click)="uiState.resolveExitConfirm(false)">
             {{ T().close_btn }}

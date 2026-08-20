@@ -4,6 +4,8 @@
  */
 export const STORAGE_KEYS = {
   appState: 'gym_app_state_v2',
+  stateSavedAt: 'gym_state_saved_at',
+  sessionView: 'gym_session_view',
   aiCache: 'gym_ai_cache_v2',
   lang: 'gym_lang',
   lastExport: 'gym_last_export',

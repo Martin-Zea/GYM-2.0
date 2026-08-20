@@ -53,6 +53,8 @@ export class DayEditorComponent implements OnInit {
   protected readonly dayName = signal('');
   protected readonly exercises = signal<Exercise[]>([]);
   protected readonly activeNameField = signal<number | null>(null);
+  /** Fila en modo "renombrar": el nombre solo se edita con un tap explícito en el lápiz. */
+  protected readonly renamingIndex = signal<number | null>(null);
   protected readonly expandedIndices = signal<Set<number>>(new Set<number>());
   protected readonly confirmDeleteExIndex = signal<number | null>(null);
   protected readonly confirmDeleteDay = signal(false);
@@ -99,6 +101,7 @@ export class DayEditorComponent implements OnInit {
       this.dayName.set('');
       this.exercises.set([this.makeExercise()]);
       this.expandedIndices.set(new Set([0]));
+      this.renamingIndex.set(0);
     } else if (editing) {
       const day = editing as WorkoutDay;
       this.dayName.set(day.name);
@@ -127,6 +130,57 @@ export class DayEditorComponent implements OnInit {
       next.add(this.exercises().length - 1);
       return next;
     });
+    this.startRename(this.exercises().length - 1);
+  }
+
+  protected startRename(i: number): void {
+    this.renamingIndex.set(i);
+    setTimeout(() => {
+      const input = document.querySelector<HTMLInputElement>(`input[data-rename-index="${i}"]`);
+      input?.focus();
+      input?.select();
+    });
+  }
+
+  protected finishRename(): void {
+    this.renamingIndex.set(null);
+  }
+
+  /** Días destino disponibles para "mover a otro día". */
+  protected readonly otherDays = computed(() => {
+    const editing = this.uiState.editingDay();
+    const currentId = editing && editing !== 'new' ? (editing as WorkoutDay).id : null;
+    return this.state.days().filter((d) => d.id !== currentId);
+  });
+
+  protected canMove(ex: Exercise): boolean {
+    // Solo ejercicios que ya existen en el catálogo (los nuevos aún no se guardaron)
+    return !this.isNew && this.state.exercises().some((e) => e.id === ex.id);
+  }
+
+  /** Mueve el ejercicio a otro día YA (estado real), y lo quita del borrador local. */
+  protected moveExercise(i: number, event: Event): void {
+    const targetDayId = (event.target as HTMLSelectElement).value;
+    if (!targetDayId) return;
+    const ex = this.exercises()[i];
+    const editing = this.uiState.editingDay();
+    if (!ex || !editing || editing === 'new') return;
+    this.state.addExerciseToDay(targetDayId, ex.id);
+    this.state.removeExerciseFromDay((editing as WorkoutDay).id, ex.id);
+    this.confirmRemoveExercise(i);
+  }
+
+  /** Crea una copia del día (mismo catálogo de ejercicios) y cierra el editor. */
+  protected duplicateDay(): void {
+    const name = this.dayName().trim();
+    if (!name) return;
+    const copy: WorkoutDay = {
+      id: this.storage.uid(),
+      name: `${name} ${this.T().day_editor_copy_suffix}`,
+      exercises: this.exercises().filter((e) => e.name.trim()),
+    };
+    this.state.saveDay(copy);
+    this.uiState.closeEditingDay();
   }
 
   protected requestDeleteExercise(i: number): void {

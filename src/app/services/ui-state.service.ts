@@ -1,9 +1,9 @@
 import { Injectable, signal } from '@angular/core';
-import { RestTimerState, WorkoutDay } from '../models/workout.model';
+import { Exercise, RestTimerState, WorkoutDay } from '../models/workout.model';
 
 export type EditingDayState = WorkoutDay | 'new' | null;
 
-type OverlayName = 'settings' | 'editingDay' | 'dayDetail' | 'dayPicker' | 'dayHistory';
+type OverlayName = 'settings' | 'editingDay' | 'dayDetail' | 'dayPicker' | 'dayHistory' | 'chartSheet';
 
 @Injectable({ providedIn: 'root' })
 export class UIStateService {
@@ -19,6 +19,9 @@ export class UIStateService {
 
   // Day history sheet: full session history for a day
   readonly dayHistory = signal<WorkoutDay | null>(null);
+
+  // Progression chart sheet: quick look at an exercise's chart without leaving the session
+  readonly chartSheet = signal<Exercise | null>(null);
   // When set, DayHistorySheet shows only the session for this ISO date
   readonly dayHistoryFilterISO = signal<string | null>(null);
 
@@ -89,6 +92,10 @@ export class UIStateService {
     this.dayHistory.set(day);
     this.dayHistoryFilterISO.set(filterISO ?? null);
   }
+  openChartSheet(exercise: Exercise): void {
+    this._push('chartSheet');
+    this.chartSheet.set(exercise);
+  }
 
   // --- Close methods: pop from stack + pop history entry ---
 
@@ -106,6 +113,9 @@ export class UIStateService {
   }
   closeDayHistory(): void {
     this._close('dayHistory');
+  }
+  closeChartSheet(): void {
+    this._close('chartSheet');
   }
 
   // Called by the AppComponent popstate handler when the user pressed back.
@@ -148,17 +158,23 @@ export class UIStateService {
         this.dayHistory.set(null);
         this.dayHistoryFilterISO.set(null);
         break;
+      case 'chartSheet':
+        this.chartSheet.set(null);
+        break;
     }
   }
 
   // Exit-training confirmation dialog
   readonly showExitConfirm = signal(false);
+  // Mensaje del diálogo; null → la vista usa el texto por defecto (nav_guard_confirm)
+  readonly exitConfirmMsg = signal<string | null>(null);
   private _exitResolve: ((v: boolean) => void) | null = null;
 
-  requestTrainingExit(): Promise<boolean> {
+  requestTrainingExit(message?: string): Promise<boolean> {
     // Si ya había una confirmación pendiente, resuélvela como cancelada para no dejar
     // su promesa colgada para siempre (await que nunca retorna).
     this._exitResolve?.(false);
+    this.exitConfirmMsg.set(message ?? null);
     this.showExitConfirm.set(true);
     return new Promise((resolve) => {
       this._exitResolve = resolve;
@@ -167,6 +183,7 @@ export class UIStateService {
 
   resolveExitConfirm(confirmed: boolean): void {
     this.showExitConfirm.set(false);
+    this.exitConfirmMsg.set(null);
     this._exitResolve?.(confirmed);
     this._exitResolve = null;
   }

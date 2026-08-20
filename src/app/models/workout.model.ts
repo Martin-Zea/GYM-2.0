@@ -42,12 +42,19 @@ export interface SetRecord {
   isWarmup?: boolean;
 }
 
+/** Sensación subjetiva de un ejercicio al completarlo (RPE simplificado → prompt de IA). */
+export type TrainingFeel = 'easy' | 'ok' | 'hard';
+
 export interface Session {
   id: string;
   dayId: string;
   dateISO: string;
   sets: SetRecord[];
   skipped?: boolean;
+  /** Sensación por ejercicio (exerciseId → feel), registrada al completar el ejercicio. */
+  feelings?: Record<string, TrainingFeel>;
+  /** Nota rápida por ejercicio (exerciseId → texto), p. ej. "me molestó el hombro". */
+  notes?: Record<string, string>;
 }
 
 export interface TodaySetProgress {
@@ -61,6 +68,8 @@ export interface TodaySetProgress {
 export interface TodayDayProgress {
   dateISO: string;
   sets: Record<string, TodaySetProgress[]>;
+  /** Sustituciones "solo por hoy": exerciseId original → exerciseId del catálogo que lo reemplaza. */
+  overrides?: Record<string, string>;
 }
 
 export interface WeightLogEntry {
@@ -88,6 +97,16 @@ export interface AppSettings {
   haptics: boolean;
   theme: 'dark' | 'light' | 'high-contrast';
   userProfile: UserProfile;
+  /** Calculadora de discos: peso de la barra (kg). Por defecto 20. */
+  barWeightKg?: number;
+  /** Calculadora de discos: discos disponibles por lado (kg). */
+  platesKg?: number[];
+}
+
+/** Sesión borrada: espera 30 días en la papelera antes de desaparecer de verdad. */
+export interface TrashedSession {
+  session: Session;
+  deletedISO: string;
 }
 
 export interface AppState {
@@ -100,6 +119,8 @@ export interface AppState {
   routinePointer: number;
   todayProgress: Record<string, TodayDayProgress>;
   settings: AppSettings;
+  /** Papelera de sesiones (30 días). Opcional: estados viejos no la tienen. */
+  trash?: TrashedSession[];
 }
 
 export interface SetRecommendation {
