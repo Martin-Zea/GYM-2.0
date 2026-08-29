@@ -1,7 +1,8 @@
 # Spec 001 — GymTrack AI (adaptación de app existente)
 
-**Rama sugerida:** `001-gymtrack-adaptacion` · **Estado:** lista para /plan
+**Rama sugerida:** `001-gymtrack-adaptacion` · **Estado:** ambigüedades resueltas (T-001) — lista para implementar
 **Fuente de dominio:** `docs/analisis-app-gym.md` (§ referenciadas) · **Diseño:** `docs/disenos-vistas-gym.html` (IDs de vista)
+**Auditoría de la app existente:** `audit.md` (T-000) — resuelve §8 y condiciona el orden de F1
 
 ## 1. Resumen
 Adaptar la app existente para convertirla en una PWA mobile-first de rutinas y progreso de gym, sin backend, con datos en almacenamiento local y progresión sugerida por IA (Groq/Cohere con key del usuario) sobre un motor de reglas local siempre disponible.
@@ -27,6 +28,7 @@ Adaptar la app existente para convertirla en una PWA mobile-first de rutinas y p
 - **RF-STO-03** CUANDO se escribe estado, el sistema DEBE hacerlo de forma atómica (temporal → validación → swap).
 - **RF-STO-04** CUANDO se lee o importa estado, el sistema DEBE validarlo contra el esquema; SI es inválido ENTONCES DEBE ponerlo en cuarentena sin romper la app.
 - **RF-STO-05** El sistema DEBE permitir exportar todo a JSON (descarga y Web Share) con checksum, e importar con verificación y opción fusionar/reemplazar.
+- **RF-STO-05b** El export NO DEBE incluir las keys de IA por defecto; DEBE ofrecer una opción explícita "incluir credenciales" (apagada) y, para usuarios que vienen del formato anterior, avisar una vez de que **los backups exportados antes de esta versión contienen la key en texto plano** y recomendar rotarla (Art. 10; ver `audit.md` R-8).
 - **RF-STO-06** CUANDO pasan N sesiones sin backup (default 10), el sistema DEBE mostrar un recordatorio no bloqueante.
 - **RF-STO-07** CUANDO cambia `schemaVersion`, el sistema DEBE migrar automáticamente los datos antiguos.
 - **RF-STO-08** El sistema DEBE mostrar espacio usado y permitir purgar historial antiguo y borrar todo con doble confirmación.
@@ -59,7 +61,8 @@ Adaptar la app existente para convertirla en una PWA mobile-first de rutinas y p
 - **RF-SES-05** El sistema DEBE permitir sobre la marcha: añadir/quitar series o ejercicios, sustituir, notas por serie/ejercicio/sesión.
 - **RF-SES-06** CUANDO una marca supera el récord (peso, reps a un peso, e1RM), el sistema DEBE detectarlo y celebrarlo en vivo.
 - **RF-SES-07** CUANDO se cierra la app con sesión sin finalizar, el sistema DEBE ofrecer reanudar/finalizar/descartar al reabrir.
-- **RF-SES-08** CUANDO finaliza la sesión, el sistema DEBE mostrar resumen (duración, tonelaje, series, PRs, vs. anterior) y disparar el análisis de progresión para la próxima.
+- **RF-SES-08** CUANDO finaliza la sesión, el sistema DEBE mostrar resumen (duración, tonelaje, series, PRs, vs. anterior) y disparar el análisis de progresión para la próxima (RF-IA-06b).
+- **RF-SES-08b** El sistema DEBE registrar hora de inicio y de fin de cada sesión nueva. SI una sesión del historial no las tiene (todo lo anterior a la migración), ENTONCES el resumen y las comparativas DEBEN omitir la duración en vez de mostrar cero (RF-PRO-05).
 
 ### RF-IA · Motor de progresión (§4.5, §6, §12, vistas C1–C3, A3)
 - **RF-IA-01** El sistema DEBE incluir un motor de reglas local (doble progresión, deload, estancamiento, ajuste por nivel) que funcione sin key y sin red.
@@ -68,6 +71,8 @@ Adaptar la app existente para convertirla en una PWA mobile-first de rutinas y p
 - **RF-IA-04** El sistema DEBE exigir respuesta JSON, validarla contra esquema y contra límites duros (incremento ≤ 10%, respeto de lesiones); SI es inválida ENTONCES 1 reintento y fallback local.
 - **RF-IA-05** Toda sugerencia DEBE mostrar acción + razón (1 frase) y permitir aceptar/cambiar/rechazar; el feedback DEBE persistirse e incluirse en contextos futuros.
 - **RF-IA-06** El sistema DEBE hacer máximo 1 llamada por sesión finalizada y cachear por hash de contexto.
+- **RF-IA-06b** CUANDO finaliza una sesión, el sistema DEBE calcular y persistir las sugerencias de la **próxima** sesión de ese día, de modo que al empezar a entrenar los valores ya estén precargados. MIENTRAS el usuario está en la sesión activa (H2), el sistema NO DEBE bloquear ni retrasar ninguna interacción esperando una respuesta de IA: si no hay sugerencia persistida, se precarga con la última sesión y el motor local (Art. 2, Art. 8).
+- **RF-IA-06c** La sugerencia emitida para una combinación (ejercicio, fecha, última sesión, perfil) DEBE ser **estable**: registrar series durante el día NO la recalcula. Solo la invalidan datos nuevos reales (sesión finalizada, edición de historial, cambio de perfil) o el feedback explícito del usuario.
 - **RF-IA-07** El sistema DEBE contar tokens (campo `usage`) por día/mes, mostrar el acumulado y cortar a motor local al agotar el presupuesto configurado.
 - **RF-IA-08** El sistema DEBE seleccionar modelo por tarea (pequeño: sugerencia de sesión; grande: rutina/análisis) con override manual.
 - **RF-IA-09** El sistema DEBE validar la key con "probar conexión" y guardarla cifrada (WebCrypto) solo en el dispositivo.
@@ -78,6 +83,7 @@ Adaptar la app existente para convertirla en una PWA mobile-first de rutinas y p
 - **RF-PRO-02** El sistema DEBE mostrar heatmap mensual de asistencia con acceso al detalle de cada sesión.
 - **RF-PRO-03** CUANDO el volumen de un grupo queda fuera del rango objetivo, el sistema DEBE señalarlo.
 - **RF-PRO-04** CUANDO el historial de una gráfica supera 200 puntos, el sistema DEBE agregarlo (semanal) antes de renderizar.
+- **RF-PRO-05** El historial anterior a la migración no tiene duración de sesión ni RPE por serie (`audit.md` R-5). El sistema DEBE distinguir **"sin dato" de cero**: nunca mostrar "0 min", "RPE 0" ni un punto en 0 para una métrica que esa sesión no registró; las series y agregados DEBEN omitir esos puntos en vez de imputarles un valor, y la UI DEBE indicar que el dato no existe para ese tramo.
 
 ### RF-HER · Herramientas (§4.7, vista A6)
 - **RF-HER-01** El sistema DEBE incluir calculadoras de 1RM/porcentajes y de discos (con inventario de discos configurable), conversor kg⇄lb y temporizador libre.
@@ -117,13 +123,44 @@ Dado un presupuesto de 100k tokens con 100k usados, cuando finaliza una sesión,
 - CE-6: tests unitarios verdes en motor de reglas, cálculos, serializador, import y migraciones.
 
 ## 6. Casos borde obligatorios
-Peso 0/negativo o reps absurdas (validar) · cambio de unidad kg↔lb con historial (convertir solo visualización, almacenar canónico en kg) · localStorage lleno (avisar + compresión/purga) · respuesta IA con JSON malformado o campos extra · doble tap en botones de IA · cambio de zona horaria y rachas · import de backup de versión de esquema anterior · dos pestañas abiertas · key revocada a mitad de uso.
+Peso 0/negativo o reps absurdas (validar) · cambio de unidad kg↔lb con historial (convertir solo visualización, almacenar canónico en kg) · localStorage lleno (avisar + compresión/purga) · respuesta IA con JSON malformado o campos extra · doble tap en botones de IA · cambio de zona horaria y rachas · import de backup de versión de esquema anterior · dos pestañas abiertas · key revocada a mitad de uso · **historial previo sin duración ni RPE** (RF-PRO-05) · **corte a mitad de la migración multi-clave** (`audit.md` R-1) · **fusión de dos backups con ids coincidentes** (R-6) · **restauración de un snapshot de esquema anterior** (R-7).
 
 ## 7. Trazabilidad
 Cada RF referencia su sección del análisis (`docs/analisis-app-gym.md`) y su vista (`docs/disenos-vistas-gym.html`). Las checklists §11, §14 y §15.4 del análisis sirven como lista de verificación final de la fase de convergencia.
 
-## 8. Ambigüedades a resolver en /plan (marcar, no adivinar)
-- [ACLARAR] Stack actual de la app existente (framework, build, estado) → condiciona todo el plan.
-- [ACLARAR] ¿localStorage ya en uso? ¿con qué estructura? → define migración inicial.
-- [ACLARAR] Idiomas: ¿ES solo o ES/EN desde el inicio?
-- [ACLARAR] ¿Se mantiene cookie como flag de onboarding por requisito original o se elimina?
+## 8. Ambigüedades resueltas (T-000 / T-001)
+
+Las cuatro quedaron cerradas auditando la app existente. Evidencia completa en `audit.md` §4.
+
+- **RESUELTO · Stack actual.** **Angular 21.2** standalone + signals + TypeScript 5.9 strict, build `@angular/build`,
+  SCSS propio con CSS custom properties, Vitest 4 (98 tests verdes), PWA con `@angular/service-worker`.
+  Estado en un `signal<AppState>` único (`StateService`) que auto-persiste vía `effect()`; UI efímera aparte
+  (`UIStateService`). **Decisión: se conserva** — cumple Art. 1, 2, 3, 7, 8 y 9, el bundle está en ~138 KB gzip
+  (menos de la mitad del techo de CE-2) y la arquitectura de capas del plan §2 ya está implementada.
+- **RESUELTO · localStorage.** Ya en uso, intensamente, con IndexedDB como capa durable. Estructura actual:
+  **un blob JSON único** `gym_app_state_v2` (`schemaVersion: 6`) + 9 claves auxiliares `gym_*`, espejadas en
+  IndexedDB `gainai` con snapshots semanales rotativos (máx. 4). Existe ya un framework de migraciones
+  encadenadas v1→v6 con tests de fixtures. La migración a `gt_*` es un paso **v6 → v7** sobre ese framework,
+  no un punto de partida en blanco; sus riesgos gobiernan el orden de F1 (`audit.md` §5).
+- **RESUELTO · Idiomas: ES/EN desde el inicio.** No es una decisión pendiente sino una restricción heredada:
+  `TranslationService` ya expone `lang` y `T` reactivos con objetos `es`/`en` completos. Toda vista nueva DEBE
+  añadir sus claves a la interfaz `Translations` y a **ambos** objetos. Los prompts de IA, en cambio, deben
+  dejar de depender del idioma del usuario: formato neutro abreviado y el idioma solo como instrucción de
+  salida (ver RF-IA-03 y T-403).
+- **RESUELTO · Cookie de onboarding: ELIMINADA del alcance.** No existe ninguna cookie en la app; el flag vive
+  en `localStorage` (`gym_onboarding_done_v1`, `gym_legal_accepted_v1`) y se migra a `gt_meta`. Reintroducirla
+  contradiría el Art. 3 y el §2.1 del análisis (4 KB no alcanzan), y degradaría la promesa de privacidad ya
+  publicada. **Ningún requisito de esta spec depende de cookies.**
+
+### 8.1 Decisiones de producto tomadas sobre el audit (T-001)
+
+1. **Stack:** Angular 21, confirmado (arriba).
+2. **Paleta:** se adopta la del diseño — acento `#FF6A3D`, fondo `#0B0E11` — **conservando el tema de alto
+   contraste** existente, que el diseño no contempla y es accesibilidad.
+3. **Keys fuera del backup** por defecto, con opción explícita de incluirlas y aviso de rotación para backups
+   anteriores → RF-STO-05b.
+4. **Shadow log de IA apagado por defecto**; si se enciende, sus llamadas cuentan contra el presupuesto de tokens.
+5. **Cookie eliminada** del alcance (arriba).
+6. **Prefill preservado en el rediseño de IA por-sesión:** la sugerencia se calcula al **finalizar** cada sesión
+   para la próxima, nunca con el usuario esperando en H2; la estabilidad determinista se conserva
+   → RF-IA-06b y RF-IA-06c.
