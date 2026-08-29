@@ -13,6 +13,7 @@ import {
 import { StorageService, normalizeExerciseName } from './storage.service';
 import { TranslationService } from './translation.service';
 import { UIStateService } from './ui-state.service';
+import { TabLockService } from './tab-lock.service';
 import { STORAGE_KEYS } from './storage-keys';
 import { createInitialState } from '../data/initial-data';
 
@@ -21,6 +22,7 @@ export class StateService {
   private readonly storage = inject(StorageService);
   private readonly tr = inject(TranslationService);
   private readonly uiState = inject(UIStateService);
+  private readonly tabLock = inject(TabLockService);
 
   readonly state = signal<AppState>(this.storage.load());
 
@@ -68,9 +70,28 @@ export class StateService {
       if (newer) this.state.set(newer);
     });
 
+    // Migración del blob v6 al conjunto `gt_*` (T-102). Es asíncrona porque exige una
+    // copia previa en IndexedDB y el lock entre pestañas; hasta que termina, `save()`
+    // sigue escribiendo el formato viejo, así que nada de lo que el usuario haga se pierde.
+    void this.storage.runPartitionMigration(this.state()).then((result) => {
+      if (result === 'migrated') this.state.set(this.storage.load());
+    });
+
     // Persistencia: la capa de storage reporta el fallo; aquí lo traducimos y exponemos a la UI.
     effect(() => {
-      const result = this.storage.save(this.state());
+      const state = this.state();
+      // Solo la pestaña primaria escribe (RF-STO-09). Una secundaria que guardara
+      // pisaría lo que la primaria acaba de escribir —y, durante una migración,
+      // volcaría el formato viejo encima del ya migrado.
+      if (!this.tabLock.canWrite()) {
+        untracked(() => this.uiState.tabConflict.set(true));
+        return;
+      }
+      // Estado ilegible apartado: NADA se escribe encima hasta que el usuario decida
+      // (RF-STO-04, R-2). Antes, un fallo de validación borraba el historial en el
+      // primer render porque este mismo effect guardaba el estado inicial.
+      if (this.storage.quarantine()) return;
+      const result = this.storage.save(state);
       untracked(() => {
         if (result.ok) {
           if (this.uiState.saveError()) this.uiState.saveError.set(null);
@@ -465,6 +486,31 @@ export class StateService {
       if (progress.dateISO === today) pruned[dayId] = progress;
     }
     return pruned;
+  }
+
+  /**
+   * Cuenta las sesiones anteriores a una fecha, para poder decir cuántas se van ANTES de
+   * borrarlas (RF-STO-08: purgar historial antiguo no puede ser un salto al vacío).
+   */
+  countSessionsBefore(cutoffISO: string): number {
+    return this.state().sessions.filter((s) => s.dateISO < cutoffISO).length;
+  }
+
+  /**
+   * Borra el historial anterior a `cutoffISO`. No pasa por la papelera: es una purga
+   * deliberada para recuperar espacio, no un borrado accidental que haya que deshacer.
+   * Devuelve cuántas sesiones se eliminaron.
+   */
+  purgeSessionsBefore(cutoffISO: string): number {
+    const before = this.state().sessions.length;
+    this.state.update((s) => ({
+      ...s,
+      sessions: s.sessions.filter((sess) => sess.dateISO >= cutoffISO),
+      trash: (s.trash ?? []).filter((t) => t.session.dateISO >= cutoffISO),
+    }));
+    const removed = before - this.state().sessions.length;
+    if (removed > 0) this.invalidateAiCache();
+    return removed;
   }
 
   resetAll(): void {

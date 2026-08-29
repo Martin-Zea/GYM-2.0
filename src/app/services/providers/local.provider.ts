@@ -145,7 +145,7 @@ function estimateStartWeight(exercise: Exercise, userProfile: UserProfile): numb
   const brick = exercise.brick || 2.5;
   if (!bw) return roundToBrick(brick * 4, brick);
   // Rough ratio by unit: bilateral kg ≈ 30% bw, unilateral ≈ 15% per side
-  const ratio = exercise.unit === 'kg por mano' || exercise.unit === 'kg por brazo' ? 0.15 : 0.3;
+  const ratio = exercise.unit === 'KG_PER_HAND' || exercise.unit === 'KG_PER_ARM' ? 0.15 : 0.3;
   return Math.max(brick, roundToBrick(bw * ratio, brick));
 }
 
@@ -277,10 +277,10 @@ export class LocalProvider implements AiProvider {
     const baseSets: SetRecord[] = doneSets.length > 0 ? doneSets : (lastSets ?? []);
 
     // --- Ramas por unidad ---
-    if (exercise.unit === 'tiempo') {
+    if (exercise.unit === 'TIME') {
       return this.computeTime(baseSets, exercise, setsTarget, repTarget, r);
     }
-    if (exercise.unit === 'peso corporal') {
+    if (exercise.unit === 'BODYWEIGHT') {
       return this.computeBodyweight(baseSets, exercise, setsTarget, repTarget, r);
     }
 

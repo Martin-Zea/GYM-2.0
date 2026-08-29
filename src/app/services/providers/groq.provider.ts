@@ -9,6 +9,7 @@ import {
   buildProfileNote,
   fetchAiWithRateLimit,
   parseAndNormalizeSets,
+  unitPromptLabel,
 } from './prompt-helpers';
 
 export const GROQ_MODEL = 'llama-3.3-70b-versatile';
@@ -60,7 +61,7 @@ export async function fetchGroqRecommendation(
 
   const summary = {
     ejercicio: exercise.name,
-    unidad: exercise.unit,
+    unidad: unitPromptLabel(exercise.unit),
     objetivo: `${setsTarget} series x ${repTarget} reps`,
     ladrillo_kg: brick,
     dias_desde_ultima_sesion: lastSessionDate

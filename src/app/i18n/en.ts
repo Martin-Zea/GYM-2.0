@@ -117,6 +117,41 @@ export const en: Translations = {
   save_error_quota: 'Could not save: storage full. Export your data and clear history.',
   save_error_generic: 'Could not save the app state.',
 
+  settings_storage_title: 'Storage used',
+  settings_storage_app: 'Your data: {size}',
+  settings_storage_origin: 'browser: {used} of {quota} ({percent}%)',
+  settings_purge_label: 'Age to purge',
+  settings_purge_months: 'Older than {n} months',
+  settings_purge_btn: 'Purge history',
+  settings_purge_confirm:
+    '{n} sessions older than {date} will be deleted. They do not go to the trash and this cannot be undone. Continue?',
+  settings_purge_done: 'Deleted {n} old sessions.',
+  settings_purge_nothing: 'No sessions that old to delete.',
+
+  settings_import_merge: 'Import and merge',
+  settings_import_replace: 'Import and replace',
+  settings_export_credentials: 'Include AI keys in the backup',
+  settings_export_credentials_desc:
+    'Off by default: the file gets shared and the keys would travel in plain text.',
+  import_merge_report:
+    'Merged: {sessions} new sessions, {skipped} already there, {exercises} exercises and {days} days added.',
+  import_replace_report: 'Data replaced with the backup.',
+  import_remapped: 'Renamed {n} identifiers that clashed with yours.',
+  import_credentials_warning:
+    'That backup carried your AI keys in plain text: consider rotating them.',
+
+  quarantine_title: "We couldn't read your data",
+  quarantine_msg:
+    'Your saved data could not be read, so we set it aside untouched. Nothing is overwritten until you decide. Download a copy in case it can be recovered.',
+  quarantine_download: 'Download copy',
+  quarantine_discard: 'Start fresh',
+  quarantine_discard_confirm:
+    'Discard the data that could not be read and start fresh? This cannot be undone.',
+
+  tab_conflict_msg:
+    'The app is open in another tab and that one is saving. Changes here are not saved: reload to continue in this tab.',
+  tab_conflict_reload: 'Reload',
+
   app_error_generic: 'Something went wrong. Your data is safe.',
 
   update_available: 'New version available!',

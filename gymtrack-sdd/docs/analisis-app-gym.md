@@ -26,13 +26,13 @@ La app permite al usuario crear y ejecutar rutinas de entrenamiento, registrar c
 
 El requerimiento dice "guardar los datos a través de la cookie", pero es importante señalar sus limitaciones reales:
 
-| Aspecto | Cookie | localStorage | IndexedDB |
-|---|---|---|---|
-| Tamaño máximo | ~4 KB por cookie (~20 cookies/dominio) | 5–10 MB | Cientos de MB |
-| Se envía en cada request HTTP | Sí (desperdicio) | No | No |
-| API asíncrona / rendimiento | Pobre | Síncrona simple | Asíncrona, ideal |
-| Datos estructurados | Solo string | Solo string (JSON) | Objetos, índices, blobs |
-| Adecuada para historial de meses | No | Sí (con límite) | Sí |
+| Aspecto                          | Cookie                                 | localStorage       | IndexedDB               |
+| -------------------------------- | -------------------------------------- | ------------------ | ----------------------- |
+| Tamaño máximo                    | ~4 KB por cookie (~20 cookies/dominio) | 5–10 MB            | Cientos de MB           |
+| Se envía en cada request HTTP    | Sí (desperdicio)                       | No                 | No                      |
+| API asíncrona / rendimiento      | Pobre                                  | Síncrona simple    | Asíncrona, ideal        |
+| Datos estructurados              | Solo string                            | Solo string (JSON) | Objetos, índices, blobs |
+| Adecuada para historial de meses | No                                     | Sí (con límite)    | Sí                      |
 
 Un solo mes de entrenamiento (12–20 sesiones × 15–30 series) ya supera fácilmente los 4 KB. **Recomendación:** usar **localStorage** como capa principal (simple y suficiente para JSON de texto) con migración futura a **IndexedDB** si se agregan fotos o el historial crece. La cookie puede conservarse únicamente como flag mínimo (ej. "usuario ya hizo onboarding") si se desea cumplir literalmente el requisito.
 
@@ -58,13 +58,13 @@ Un solo mes de entrenamiento (12–20 sesiones × 15–30 series) ya supera fác
 
 La app pregunta el nivel en el onboarding y ajusta comportamiento:
 
-| Dimensión | Principiante | Intermedio | Avanzado |
-|---|---|---|---|
-| Plantillas sugeridas | Full Body 3×sem | Upper/Lower, PPL | PPL 6d, especialización |
-| Progresión IA | Lineal, agresiva (+2.5 kg frecuente) | Doble progresión | Ondulada, bloques, RPE |
-| Lenguaje | Explicativo, con tips de técnica | Estándar | Técnico (RPE, RIR, tonelaje) |
-| Deload sugerido | Raro | Cada 6–8 semanas | Autoregulado por fatiga |
-| Métricas mostradas | Peso levantado, racha | + 1RM estimado, volumen | + tonelaje, volumen por grupo muscular, fatiga |
+| Dimensión            | Principiante                         | Intermedio              | Avanzado                                       |
+| -------------------- | ------------------------------------ | ----------------------- | ---------------------------------------------- |
+| Plantillas sugeridas | Full Body 3×sem                      | Upper/Lower, PPL        | PPL 6d, especialización                        |
+| Progresión IA        | Lineal, agresiva (+2.5 kg frecuente) | Doble progresión        | Ondulada, bloques, RPE                         |
+| Lenguaje             | Explicativo, con tips de técnica     | Estándar                | Técnico (RPE, RIR, tonelaje)                   |
+| Deload sugerido      | Raro                                 | Cada 6–8 semanas        | Autoregulado por fatiga                        |
+| Métricas mostradas   | Peso levantado, racha                | + 1RM estimado, volumen | + tonelaje, volumen por grupo muscular, fatiga |
 
 ---
 
@@ -139,7 +139,7 @@ Es la pantalla más usada; debe ser rapidísima:
 
 - **Dashboard:** racha de semanas cumplidas, sesiones este mes, tonelaje semanal, próximo entrenamiento, último PR.
 - **Por ejercicio:** gráfica de 1RM estimado (Epley/Brzycki) en el tiempo, mejor serie por sesión, volumen, tabla de historial completo, récords (1RM, mejores reps por peso).
-- **Global:** volumen semanal por grupo muscular (detectar desequilibrios), frecuencia por grupo, duración media de sesión, calendario tipo *heatmap* de asistencia.
+- **Global:** volumen semanal por grupo muscular (detectar desequilibrios), frecuencia por grupo, duración media de sesión, calendario tipo _heatmap_ de asistencia.
 - **Cuerpo:** peso corporal (gráfica), medidas (cintura, brazo, pierna, pecho…) con histórico.
 - Comparativas: este mes vs. anterior; "hace 3 meses levantabas X, hoy Y (+Z%)".
 - Todas las gráficas se calculan en el cliente a partir del JSON local (sin dependencias de red).
@@ -183,19 +183,24 @@ Claves separadas para minimizar escrituras: `gt_profile`, `gt_settings`, `gt_exe
 // gt_sessions (extracto)
 {
   "id": "s_2026-08-29_1",
-  "routineId": "r_ppl", "dayId": "d_push",
-  "date": "2026-08-29", "durationMin": 62,
-  "entries": [{
-    "exerciseId": "press_banca",
-    "sets": [
-      {"kg": 60, "reps": 8, "rpe": 7, "type": "normal"},
-      {"kg": 60, "reps": 8, "rpe": 8, "type": "normal"},
-      {"kg": 60, "reps": 7, "rpe": 9, "type": "normal", "note": "hombro"}
-    ],
-    "suggestionShown": {"accion": "mantener", "razon": "..."},
-    "suggestionAccepted": true
-  }],
-  "prs": ["press_banca:e1rm"], "note": ""
+  "routineId": "r_ppl",
+  "dayId": "d_push",
+  "date": "2026-08-29",
+  "durationMin": 62,
+  "entries": [
+    {
+      "exerciseId": "press_banca",
+      "sets": [
+        { "kg": 60, "reps": 8, "rpe": 7, "type": "normal" },
+        { "kg": 60, "reps": 8, "rpe": 8, "type": "normal" },
+        { "kg": 60, "reps": 7, "rpe": 9, "type": "normal", "note": "hombro" }
+      ],
+      "suggestionShown": { "accion": "mantener", "razon": "..." },
+      "suggestionAccepted": true
+    }
+  ],
+  "prs": ["press_banca:e1rm"],
+  "note": ""
 }
 ```
 
@@ -252,14 +257,14 @@ Además:
 
 ## 9. Riesgos y limitaciones asumidas
 
-| Riesgo | Mitigación |
-|---|---|
-| Pérdida de datos al limpiar navegador | Backups insistentes + `storage.persist()` |
-| Límite de localStorage | Compresión + purga + migración a IndexedDB |
-| Key del usuario expuesta en su dispositivo | Ofuscación + aviso; es SU dispositivo y SU key |
-| CORS o cambios de API de Groq/Cohere | Abstracción de proveedor + fallback local |
-| Sugerencias de IA inadecuadas/peligrosas | Límites duros en prompt + validación local (tope de incremento, respeto de lesiones) + disclaimer "no es consejo médico" |
-| Sin multi-dispositivo | Export/import como flujo de primera clase |
+| Riesgo                                     | Mitigación                                                                                                               |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| Pérdida de datos al limpiar navegador      | Backups insistentes + `storage.persist()`                                                                                |
+| Límite de localStorage                     | Compresión + purga + migración a IndexedDB                                                                               |
+| Key del usuario expuesta en su dispositivo | Ofuscación + aviso; es SU dispositivo y SU key                                                                           |
+| CORS o cambios de API de Groq/Cohere       | Abstracción de proveedor + fallback local                                                                                |
+| Sugerencias de IA inadecuadas/peligrosas   | Límites duros en prompt + validación local (tope de incremento, respeto de lesiones) + disclaimer "no es consejo médico" |
+| Sin multi-dispositivo                      | Export/import como flujo de primera clase                                                                                |
 
 ---
 
@@ -411,7 +416,7 @@ OVERLAYS GLOBALES (sobre cualquier vista)
  G6 Indicador offline (solo afecta IA)
 ```
 
-Regla: registrar una serie nunca requiere salir de H2; todo lo secundario abre como *bottom sheet*, no como pantalla nueva.
+Regla: registrar una serie nunca requiere salir de H2; todo lo secundario abre como _bottom sheet_, no como pantalla nueva.
 
 ### 15.2 Catálogo de vistas (contenido, acciones y estados)
 
@@ -478,4 +483,4 @@ Toda vista define sus 4 estados: **con datos / vacío guiado / cargando / error*
 
 ---
 
-*Documento generado para servir como especificación de adaptación de la app existente. Disclaimer: las sugerencias de la IA no sustituyen consejo médico o de un profesional del entrenamiento.*
+_Documento generado para servir como especificación de adaptación de la app existente. Disclaimer: las sugerencias de la IA no sustituyen consejo médico o de un profesional del entrenamiento._

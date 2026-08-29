@@ -9,6 +9,7 @@ import {
   buildProfileNote,
   fetchAiWithRateLimit,
   parseAndNormalizeSets,
+  unitPromptLabel,
 } from './prompt-helpers';
 
 const COHERE_URL = 'https://api.cohere.com/v2/chat';
@@ -39,7 +40,7 @@ export class CohereProvider implements AiProvider {
 
     const summary = {
       ejercicio: exercise.name,
-      unidad: exercise.unit,
+      unidad: unitPromptLabel(exercise.unit),
       objetivo: `${setsTarget}x${repTarget}`,
       ladrillo_kg: brick,
       dias_desde_ultima: lastSessionDate

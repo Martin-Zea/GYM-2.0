@@ -1,3 +1,5 @@
+import { Injectable } from '@angular/core';
+
 /**
  * Envoltorio mínimo de IndexedDB con promesas — sin dependencias.
  * Todas las funciones degradan a null/no-op cuando IDB no está disponible
@@ -99,4 +101,30 @@ export async function idbDelete(store: string, key: string): Promise<void> {
       resolve();
     }
   });
+}
+
+/**
+ * Fachada inyectable sobre las funciones de arriba.
+ *
+ * La capa durable se consume a través de este servicio y no importando las funciones
+ * sueltas: así puede sustituirse en tests (jsdom no trae IndexedDB) y, llegado el caso,
+ * cambiarse de motor sin tocar `StorageService` — la misma interfaz que pide el plan §2.
+ */
+@Injectable({ providedIn: 'root' })
+export class IdbService {
+  put(store: string, key: string, value: unknown): Promise<boolean> {
+    return idbPut(store, key, value);
+  }
+
+  get<T>(store: string, key: string): Promise<T | null> {
+    return idbGet<T>(store, key);
+  }
+
+  keys(store: string): Promise<string[]> {
+    return idbKeys(store);
+  }
+
+  delete(store: string, key: string): Promise<void> {
+    return idbDelete(store, key);
+  }
 }

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { StateService } from './services/state.service';
-import { StorageService } from './services/storage.service';
+import { FLAGS, StorageService } from './services/storage.service';
 import { UIStateService } from './services/ui-state.service';
 import { TranslationService } from './services/translation.service';
 import { AppUpdateService } from './services/app-update.service';
@@ -61,12 +61,17 @@ export class App {
   protected readonly theme = computed(() => this.state.settings().theme);
   protected readonly T = this.tr.T;
 
+  /** Estado ilegible apartado: la app está en solo lectura hasta que el usuario decida. */
+  protected readonly quarantine = this.storage.quarantine;
+
+  // Las banderas viven en `gt_meta` desde v7; `getFlag` cae a la clave suelta mientras
+  // la migración no haya corrido (T-102).
   protected readonly showOnboarding = signal(
-    localStorage.getItem(STORAGE_KEYS.onboardingDone) !== '1',
+    !this.storage.getFlag(FLAGS.onboardingDone, STORAGE_KEYS.onboardingDone),
   );
 
   protected readonly showLegalGate = signal(
-    localStorage.getItem(STORAGE_KEYS.legalAccepted) !== '1',
+    !this.storage.getFlag(FLAGS.legalAccepted, STORAGE_KEYS.legalAccepted),
   );
 
   constructor() {
@@ -108,6 +113,33 @@ export class App {
     this.uiState.backupReminder.set(false);
   }
 
+  /** Otra pestaña es la dueña de la escritura: recargar adopta su estado (RF-STO-09). */
+  reloadForTabConflict(): void {
+    location.reload();
+  }
+
+  /** Descarga el estado apartado tal cual estaba, sin interpretarlo (RF-STO-04). */
+  downloadQuarantined(key: string): void {
+    const raw = this.storage.readQuarantined(key);
+    if (raw === null) return;
+    const file = new File([raw], `gym-datos-ilegibles-${this.storage.todayISO()}.json`, {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.name;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /** Descartar es destructivo e irreversible: se confirma antes (Art. 7, G4). */
+  discardQuarantine(): void {
+    if (!confirm(this.T().quarantine_discard_confirm)) return;
+    this.storage.discardQuarantine();
+    location.reload();
+  }
+
   toggleTheme(): void {
     const s = this.state.settings();
     const next = s.theme === 'dark' ? 'light' : s.theme === 'light' ? 'high-contrast' : 'dark';
@@ -126,7 +158,7 @@ export class App {
   }
 
   completeOnboarding(days: 3 | 4 | 5): void {
-    localStorage.setItem(STORAGE_KEYS.onboardingDone, '1');
+    this.storage.setFlag(FLAGS.onboardingDone, STORAGE_KEYS.onboardingDone);
     this.showOnboarding.set(false);
     // Aplica la plantilla elegida solo si el usuario aún no tiene datos propios
     // (el onboarding solo aparece en el primer arranque, pero por si acaso).
@@ -137,7 +169,7 @@ export class App {
   }
 
   acceptLegal(): void {
-    localStorage.setItem(STORAGE_KEYS.legalAccepted, '1');
+    this.storage.setFlag(FLAGS.legalAccepted, STORAGE_KEYS.legalAccepted);
     this.showLegalGate.set(false);
   }
 }

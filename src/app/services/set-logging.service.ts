@@ -37,7 +37,7 @@ export class SetLoggingService {
       const prev = last?.[i];
       return {
         weight:
-          prev && ex.unit !== 'peso corporal' && (prev.weight as number) > 0
+          prev && ex.unit !== 'BODYWEIGHT' && (prev.weight as number) > 0
             ? prev.weight
             : ('' as unknown as number),
         reps: prev && (prev.reps as number) > 0 ? prev.reps : ('' as unknown as number),
@@ -56,7 +56,7 @@ export class SetLoggingService {
       if (existing?.done) continue;
       const setRec = rec.sets[i] ?? rec.sets[rec.sets.length - 1];
       const patch: Partial<TodaySetProgress> = { reps: setRec.reps, aiPrefilled: true };
-      if (ex.unit !== 'peso corporal' && setRec.weight > 0) patch.weight = setRec.weight;
+      if (ex.unit !== 'BODYWEIGHT' && setRec.weight > 0) patch.weight = setRec.weight;
       this.state.updateSet(day.id, ex.id, i, patch);
     }
   }
@@ -81,9 +81,9 @@ export class SetLoggingService {
     const w = next.weight !== '' && next.weight !== undefined ? Number(next.weight) : null;
     const r = next.reps !== '' && next.reps !== undefined ? Number(next.reps) : null;
     let detail = '';
-    if (ex.unit === 'tiempo') {
+    if (ex.unit === 'TIME') {
       if (r) detail = `${r}s`;
-    } else if (ex.unit === 'peso corporal') {
+    } else if (ex.unit === 'BODYWEIGHT') {
       if (r) detail = `× ${r}`;
     } else if (w && r) {
       detail = `${w} kg × ${r}`;
@@ -123,7 +123,7 @@ export class SetLoggingService {
 
   private maybeCelebratePr(day: WorkoutDay, ex: Exercise, setIndex: number): void {
     // Weight isn't the progress metric for time/bodyweight exercises
-    if (ex.unit === 'tiempo' || ex.unit === 'peso corporal') return;
+    if (ex.unit === 'TIME' || ex.unit === 'BODYWEIGHT') return;
 
     const key = `${ex.id}:${setIndex}`;
     if (this.celebratedPrSets.has(key)) return;

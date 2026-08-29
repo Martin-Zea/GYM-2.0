@@ -76,7 +76,7 @@ export class ActiveSetCardComponent {
     return Number(c.reps);
   });
 
-  protected readonly needsWeight = computed(() => this.exercise().unit !== 'peso corporal');
+  protected readonly needsWeight = computed(() => this.exercise().unit !== 'BODYWEIGHT');
 
   /** Sensación registrada hoy para este ejercicio (si ya se marcó). */
   protected readonly todayFeel = computed<TrainingFeel | null>(() => {
@@ -96,7 +96,7 @@ export class ActiveSetCardComponent {
   /** Desglose de discos para el peso actual (solo unidad kg de barra). */
   protected readonly plates = computed(() => {
     const w = this.displayWeight();
-    if (w === null || this.exercise().unit !== 'kg') return null;
+    if (w === null || this.exercise().unit !== 'KG') return null;
     const s = this.state.settings();
     return plateBreakdown(w, s.barWeightKg ?? DEFAULT_BAR_KG, s.platesKg ?? DEFAULT_PLATES_KG);
   });

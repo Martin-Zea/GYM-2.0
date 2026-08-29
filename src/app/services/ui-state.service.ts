@@ -49,6 +49,10 @@ export class UIStateService {
   // Set at startup when there are too many sessions since the last export
   readonly backupReminder = signal(false);
 
+  // Set when this tab is not the one authorized to write (another tab owns the state).
+  // Drives the "otra pestaña manda, recargá" banner — see TabLockService (RF-STO-09).
+  readonly tabConflict = signal(false);
+
   // Personal record celebration toast — auto-dismissed by celebratePr()
   readonly prCelebration = signal<{ exerciseName: string; weight: number; unit: string } | null>(
     null,

@@ -130,6 +130,38 @@ export interface Translations {
   save_error_quota: string;
   save_error_generic: string;
 
+  // Storage usage + history purge (RF-STO-08)
+  settings_storage_title: string;
+  settings_storage_app: string;
+  settings_storage_origin: string;
+  settings_purge_label: string;
+  settings_purge_months: string;
+  settings_purge_btn: string;
+  settings_purge_confirm: string;
+  settings_purge_done: string;
+  settings_purge_nothing: string;
+
+  // Backup import/export (RF-STO-05, RF-STO-05b)
+  settings_import_merge: string;
+  settings_import_replace: string;
+  settings_export_credentials: string;
+  settings_export_credentials_desc: string;
+  import_merge_report: string;
+  import_replace_report: string;
+  import_remapped: string;
+  import_credentials_warning: string;
+
+  // Quarantine banner (StorageService, RF-STO-04)
+  quarantine_title: string;
+  quarantine_msg: string;
+  quarantine_download: string;
+  quarantine_discard: string;
+  quarantine_discard_confirm: string;
+
+  // Multi-tab conflict banner (TabLockService, RF-STO-09)
+  tab_conflict_msg: string;
+  tab_conflict_reload: string;
+
   // Global error toast (GlobalErrorHandler)
   app_error_generic: string;
 

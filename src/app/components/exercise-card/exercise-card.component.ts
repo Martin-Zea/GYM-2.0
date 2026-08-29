@@ -88,8 +88,8 @@ export class ExerciseCardComponent {
     const unit = this.exercise().unit;
     return sets
       .map((s) => {
-        if (unit === 'peso corporal') return `${s.reps}r`;
-        if (unit === 'tiempo') return `${s.reps}s`;
+        if (unit === 'BODYWEIGHT') return `${s.reps}r`;
+        if (unit === 'TIME') return `${s.reps}s`;
         return `${s.weight}×${s.reps}`;
       })
       .join(' / ');

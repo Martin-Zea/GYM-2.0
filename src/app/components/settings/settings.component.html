@@ -211,13 +211,17 @@
       <div class="settings-section">
         <p class="settings-section-title">{{ T().settings_data }}</p>
         <div style="display: flex; flex-wrap: wrap; gap: 8px">
-          <button class="btn btn-sm" (click)="backup.exportData()">
+          <button class="btn btn-sm" (click)="exportData()">
             <app-icon name="arrow_right" [size]="13" />
             {{ T().settings_export }}
           </button>
-          <button class="btn btn-sm" (click)="importData()">
+          <button class="btn btn-sm" (click)="importData('merge')">
             <app-icon name="arrow_left" [size]="13" />
-            {{ T().settings_import }}
+            {{ T().settings_import_merge }}
+          </button>
+          <button class="btn btn-sm" (click)="importData('replace')">
+            <app-icon name="arrow_left" [size]="13" />
+            {{ T().settings_import_replace }}
           </button>
           @if (shadowLog.hasEntries()) {
             <button class="btn btn-sm" (click)="shadowLog.exportLog()">
@@ -232,9 +236,66 @@
             </button>
           }
         </div>
+        <label class="settings-row" style="margin-top: 8px">
+          <div>
+            <div class="settings-row-label">{{ T().settings_export_credentials }}</div>
+            <div class="settings-row-desc">{{ T().settings_export_credentials_desc }}</div>
+          </div>
+          <input
+            type="checkbox"
+            [checked]="includeCredentials()"
+            (change)="includeCredentials.set($any($event.target).checked)"
+          />
+        </label>
         @if (importError()) {
           <p style="color: var(--danger); font-size: 12px; margin-top: 8px">{{ importError() }}</p>
         }
+        @if (importReport()) {
+          <p style="color: var(--success); font-size: 12px; margin-top: 8px" role="status">
+            {{ importReport() }}
+          </p>
+        }
+        <!-- Espacio usado y purga de historial (RF-STO-08) -->
+        <div class="settings-subsection">
+          <div class="settings-row-label" style="margin-bottom: 2px">
+            {{ T().settings_storage_title }}
+          </div>
+          @if (storageInfo(); as info) {
+            <div class="settings-row-desc">
+              {{ tr.tp('settings_storage_app', { size: formatBytes(info.appBytes) }) }}
+              @if (info.usedBytes !== null && info.quotaBytes !== null && info.percent !== null) {
+                ·
+                {{
+                  tr.tp('settings_storage_origin', {
+                    used: formatBytes(info.usedBytes),
+                    quota: formatBytes(info.quotaBytes),
+                    percent: info.percent,
+                  })
+                }}
+              }
+            </div>
+          }
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px">
+            <select
+              class="input input-sm"
+              [value]="purgeMonths()"
+              (change)="purgeMonths.set(+$any($event.target).value)"
+              [attr.aria-label]="T().settings_purge_label"
+            >
+              <option [value]="6">{{ tr.tp('settings_purge_months', { n: 6 }) }}</option>
+              <option [value]="12">{{ tr.tp('settings_purge_months', { n: 12 }) }}</option>
+              <option [value]="24">{{ tr.tp('settings_purge_months', { n: 24 }) }}</option>
+            </select>
+            <button class="btn btn-sm" (click)="purgeHistory()">
+              <app-icon name="trash" [size]="13" />
+              {{ T().settings_purge_btn }}
+            </button>
+          </div>
+          @if (purgeReport()) {
+            <p style="font-size: 12px; margin-top: 6px" role="status">{{ purgeReport() }}</p>
+          }
+        </div>
+
         <!-- Copias automáticas (IndexedDB) -->
         <div class="settings-subsection">
           <div class="settings-row-label" style="margin-bottom: 2px">

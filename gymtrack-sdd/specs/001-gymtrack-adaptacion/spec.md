@@ -5,6 +5,7 @@
 **Auditoría de la app existente:** `audit.md` (T-000) — resuelve §8 y condiciona el orden de F1
 
 ## 1. Resumen
+
 Adaptar la app existente para convertirla en una PWA mobile-first de rutinas y progreso de gym, sin backend, con datos en almacenamiento local y progresión sugerida por IA (Groq/Cohere con key del usuario) sobre un motor de reglas local siempre disponible.
 
 **Actores:** Usuario (único, sin cuentas) · Proveedor IA (externo, opcional).
@@ -23,6 +24,7 @@ Adaptar la app existente para convertirla en una PWA mobile-first de rutinas y p
 ## 3. Requisitos funcionales (EARS)
 
 ### RF-STO · Almacenamiento y datos (§2, §5, §13.1)
+
 - **RF-STO-01** El sistema DEBE persistir todo el estado en almacenamiento local del navegador bajo claves con prefijo `gt_` y campo `schemaVersion`.
 - **RF-STO-02** CUANDO el usuario registra una serie, el sistema DEBE persistirla de inmediato (antes de cualquier otra interacción).
 - **RF-STO-03** CUANDO se escribe estado, el sistema DEBE hacerlo de forma atómica (temporal → validación → swap).
@@ -35,18 +37,21 @@ Adaptar la app existente para convertirla en una PWA mobile-first de rutinas y p
 - **RF-STO-09** MIENTRAS haya una sesión activa en otra pestaña, el sistema DEBE impedir la edición concurrente.
 
 ### RF-PER · Perfil y onboarding (§4.1, vistas O1–O6)
+
 - **RF-PER-01** El sistema DEBE capturar en onboarding: unidades (obligatorio), nivel, objetivo, equipo, días/semana, lesiones (opcionales), con cada paso omitible.
 - **RF-PER-02** El sistema DEBE ofrecer escala RPE 1–10 o simplificada (fácil/justo/difícil).
 - **RF-PER-03** CUANDO termina el onboarding, el sistema DEBE ofrecer crear la primera rutina por IA, plantilla, manual o después.
 - **RF-PER-04** El sistema DEBE permitir registrar peso corporal y medidas con histórico.
 
 ### RF-EJ · Biblioteca de ejercicios (§4.2, vista R4)
+
 - **RF-EJ-01** El sistema DEBE incluir un catálogo embebido (estático, fuera de localStorage) con grupo muscular, equipo, tipo y patrón.
 - **RF-EJ-02** El sistema DEBE permitir buscar y filtrar por grupo, equipo y tipo.
 - **RF-EJ-03** El sistema DEBE permitir crear/editar/archivar ejercicios personalizados (estos sí en localStorage).
 - **RF-EJ-04** CUANDO el usuario pide sustituir un ejercicio, el sistema DEBE proponer alternativas del mismo patrón/grupo compatibles con su equipo.
 
 ### RF-RUT · Rutinas (§4.3, vistas R1–R7)
+
 - **RF-RUT-01** El sistema DEBE soportar CRUD de rutinas con estructura Rutina → Días → Ejercicios → Esquema (series × rango reps, peso/RPE objetivo, descanso, tipo, notas).
 - **RF-RUT-02** El sistema DEBE soportar tipos de serie: normal, calentamiento, superserie, dropset, AMRAP.
 - **RF-RUT-03** El sistema DEBE ofrecer plantillas locales filtradas por nivel/días/equipo del perfil, con vista previa antes de importar.
@@ -54,6 +59,7 @@ Adaptar la app existente para convertirla en una PWA mobile-first de rutinas y p
 - **RF-RUT-05** CUANDO el usuario genera una rutina con IA, el sistema DEBE mostrar costo estimado antes, permitir regenerar por día y exigir revisión/edición antes de guardar.
 
 ### RF-SES · Sesión activa (§4.4, vistas H1–H4, G1)
+
 - **RF-SES-01** El sistema DEBE permitir iniciar el entrenamiento del día en 1 tap desde Inicio.
 - **RF-SES-02** El sistema DEBE mostrar por ejercicio la última sesión (peso×reps×RPE) y la sugerencia de hoy.
 - **RF-SES-03** El sistema DEBE precargar cada serie con la sugerencia o la serie anterior; marcarla DEBE costar ≤ 3 taps sin scroll (Art. 8).
@@ -65,6 +71,7 @@ Adaptar la app existente para convertirla en una PWA mobile-first de rutinas y p
 - **RF-SES-08b** El sistema DEBE registrar hora de inicio y de fin de cada sesión nueva. SI una sesión del historial no las tiene (todo lo anterior a la migración), ENTONCES el resumen y las comparativas DEBEN omitir la duración en vez de mostrar cero (RF-PRO-05).
 
 ### RF-IA · Motor de progresión (§4.5, §6, §12, vistas C1–C3, A3)
+
 - **RF-IA-01** El sistema DEBE incluir un motor de reglas local (doble progresión, deload, estancamiento, ajuste por nivel) que funcione sin key y sin red.
 - **RF-IA-02** El sistema DEBE implementar la cascada Groq → Cohere → motor local ante ausencia de key, error, límite o falta de red, con el modo activo visible.
 - **RF-IA-03** El sistema DEBE enviar contexto compacto: serialización CSV-like con abreviaturas, máximo 6 sesiones del día analizado, perfil resumido, lesiones y feedback previo.
@@ -79,6 +86,7 @@ Adaptar la app existente para convertirla en una PWA mobile-first de rutinas y p
 - **RF-IA-10** CUANDO no hay key, el chat DEBE estar deshabilitado con explicación y enlace a configuración; el resto de la app no cambia.
 
 ### RF-PRO · Progreso y analítica (§4.6, vistas P1–P5)
+
 - **RF-PRO-01** El sistema DEBE calcular localmente: e1RM (Epley) por ejercicio, tonelaje, volumen semanal por grupo, racha, adherencia.
 - **RF-PRO-02** El sistema DEBE mostrar heatmap mensual de asistencia con acceso al detalle de cada sesión.
 - **RF-PRO-03** CUANDO el volumen de un grupo queda fuera del rango objetivo, el sistema DEBE señalarlo.
@@ -86,9 +94,11 @@ Adaptar la app existente para convertirla en una PWA mobile-first de rutinas y p
 - **RF-PRO-05** El historial anterior a la migración no tiene duración de sesión ni RPE por serie (`audit.md` R-5). El sistema DEBE distinguir **"sin dato" de cero**: nunca mostrar "0 min", "RPE 0" ni un punto en 0 para una métrica que esa sesión no registró; las series y agregados DEBEN omitir esos puntos en vez de imputarles un valor, y la UI DEBE indicar que el dato no existe para ese tramo.
 
 ### RF-HER · Herramientas (§4.7, vista A6)
+
 - **RF-HER-01** El sistema DEBE incluir calculadoras de 1RM/porcentajes y de discos (con inventario de discos configurable), conversor kg⇄lb y temporizador libre.
 
 ### RF-PWA · PWA y plataforma (§4.10, §7)
+
 - **RF-PWA-01** La app DEBE ser instalable y funcionar 100% offline salvo IA (service worker + manifest).
 - **RF-PWA-02** MIENTRAS hay sesión activa, el sistema DEBE mantener la pantalla encendida (Wake Lock).
 - **RF-PWA-03** El sistema DEBE emitir notificaciones locales de fin de descanso y recordatorios (entrenamiento, backup) configurables.
@@ -115,6 +125,7 @@ Dado un archivo de backup válido, cuando el usuario importa en modo "fusionar",
 Dado un presupuesto de 100k tokens con 100k usados, cuando finaliza una sesión, entonces no se llama a ningún proveedor, se usa el motor local y Ajustes muestra el corte.
 
 ## 5. Criterios de éxito medibles
+
 - CE-1: registrar una serie ≤ 3 taps y ≤ 4 s (medido en dispositivo de gama media).
 - CE-2: carga inicial < 2 s; bundle < 300 KB gzip.
 - CE-3: 0 pérdidas de datos en pruebas de cierre forzado durante sesión (20 repeticiones).
@@ -123,9 +134,11 @@ Dado un presupuesto de 100k tokens con 100k usados, cuando finaliza una sesión,
 - CE-6: tests unitarios verdes en motor de reglas, cálculos, serializador, import y migraciones.
 
 ## 6. Casos borde obligatorios
+
 Peso 0/negativo o reps absurdas (validar) · cambio de unidad kg↔lb con historial (convertir solo visualización, almacenar canónico en kg) · localStorage lleno (avisar + compresión/purga) · respuesta IA con JSON malformado o campos extra · doble tap en botones de IA · cambio de zona horaria y rachas · import de backup de versión de esquema anterior · dos pestañas abiertas · key revocada a mitad de uso · **historial previo sin duración ni RPE** (RF-PRO-05) · **corte a mitad de la migración multi-clave** (`audit.md` R-1) · **fusión de dos backups con ids coincidentes** (R-6) · **restauración de un snapshot de esquema anterior** (R-7).
 
 ## 7. Trazabilidad
+
 Cada RF referencia su sección del análisis (`docs/analisis-app-gym.md`) y su vista (`docs/disenos-vistas-gym.html`). Las checklists §11, §14 y §15.4 del análisis sirven como lista de verificación final de la fase de convergencia.
 
 ## 8. Ambigüedades resueltas (T-000 / T-001)

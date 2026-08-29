@@ -10,10 +10,10 @@ import {
 import { IconComponent } from '../icon/icon.component';
 import { FocusTrapDirective } from '../../directives/focus-trap.directive';
 import { StateService } from '../../services/state.service';
-import { StorageService } from '../../services/storage.service';
+import { StorageEstimateInfo, StorageService } from '../../services/storage.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
-import { BackupService } from '../../services/backup.service';
+import { BackupService, ImportMode, ImportOutcome } from '../../services/backup.service';
 import { AiShadowLogService } from '../../services/ai-shadow-log.service';
 import { AppSettings } from '../../models/workout.model';
 import { DEFAULT_BAR_KG, DEFAULT_PLATES_KG } from '../../utils/plates';
@@ -40,6 +40,9 @@ export class SettingsComponent implements OnInit {
   protected readonly showApiKey = signal(false);
   protected readonly showCohereKey = signal(false);
   protected readonly importError = signal('');
+  protected readonly importReport = signal('');
+  /** Incluir las keys de IA en el export: apagado por defecto (RF-STO-05b). */
+  protected readonly includeCredentials = signal(false);
   protected readonly resetConfirm = signal(false);
   protected readonly resetInput = signal('');
 
@@ -84,6 +87,43 @@ export class SettingsComponent implements OnInit {
     setTimeout(() => this.snapshotRestored.set(false), 3000);
   }
 
+  // ── Espacio usado y purga de historial (RF-STO-08) ──
+  protected readonly storageInfo = signal<StorageEstimateInfo | null>(null);
+  protected readonly purgeMonths = signal(12);
+  protected readonly purgeReport = signal('');
+
+  private async refreshStorageInfo(): Promise<void> {
+    this.storageInfo.set(await this.storage.storageEstimate());
+  }
+
+  protected formatBytes(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  /** Fecha de corte de la purga: hoy menos los meses elegidos. */
+  private purgeCutoffISO(): string {
+    const d = new Date();
+    d.setMonth(d.getMonth() - this.purgeMonths());
+    return d.toISOString().slice(0, 10);
+  }
+
+  protected async purgeHistory(): Promise<void> {
+    const cutoff = this.purgeCutoffISO();
+    const count = this.state.countSessionsBefore(cutoff);
+    if (count === 0) {
+      this.purgeReport.set(this.T().settings_purge_nothing);
+      return;
+    }
+    // Purgar no pasa por la papelera: se avisa cuántas se van antes de tocarlas (G4).
+    if (!window.confirm(this.tr.tp('settings_purge_confirm', { n: count, date: cutoff }))) return;
+
+    const removed = this.state.purgeSessionsBefore(cutoff);
+    this.purgeReport.set(this.tr.tp('settings_purge_done', { n: removed }));
+    await this.refreshStorageInfo();
+  }
+
   // ── Papelera de sesiones ──
   protected readonly trash = computed(() => [...(this.state.state().trash ?? [])].reverse());
 
@@ -97,6 +137,7 @@ export class SettingsComponent implements OnInit {
 
   ngOnInit(): void {
     void this.refreshSnapshots();
+    void this.refreshStorageInfo();
   }
 
   @HostListener('document:keydown.escape')
@@ -120,13 +161,45 @@ export class SettingsComponent implements OnInit {
     this.patch({ cohereApiKey: (event.target as HTMLInputElement).value });
   }
 
-  protected async importData(): Promise<void> {
+  protected async importData(mode: ImportMode): Promise<void> {
     try {
-      await this.backup.importData();
+      const outcome = await this.backup.importData(mode);
       this.importError.set('');
+      this.importReport.set(outcome ? this.describeImport(outcome) : '');
     } catch (e) {
+      this.importReport.set('');
       this.importError.set((e as Error).message || this.T().import_invalid_backup);
     }
+  }
+
+  protected exportData(): void {
+    void this.backup.exportData({ includeCredentials: this.includeCredentials() });
+  }
+
+  /** Resumen de lo importado: el usuario tiene que ver qué entró y qué ya estaba (EA-5). */
+  private describeImport(outcome: ImportOutcome): string {
+    const t = this.T();
+    const parts: string[] = [];
+
+    if (outcome.summary) {
+      const s = outcome.summary;
+      parts.push(
+        this.tr.tp('import_merge_report', {
+          sessions: s.sessionsAdded,
+          skipped: s.sessionsSkipped,
+          exercises: s.exercisesAdded,
+          days: s.daysAdded,
+        }),
+      );
+      if (s.idsRemapped > 0) {
+        parts.push(this.tr.tp('import_remapped', { n: s.idsRemapped }));
+      }
+    } else {
+      parts.push(t.import_replace_report);
+    }
+
+    if (outcome.includedCredentials) parts.push(t.import_credentials_warning);
+    return parts.join(' ');
   }
 
   protected openResetConfirm(): void {

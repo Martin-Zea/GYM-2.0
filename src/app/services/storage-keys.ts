@@ -14,4 +14,6 @@ export const STORAGE_KEYS = {
   onboardingDone: 'gym_onboarding_done_v1',
   legalAccepted: 'gym_legal_accepted_v1',
   aiShadowLog: 'gym_ai_shadow_log_v1',
+  /** Dueño actual de la escritura (fallback de `TabLockService` sin Web Locks). */
+  tabOwner: 'gt_tab_owner',
 } as const;

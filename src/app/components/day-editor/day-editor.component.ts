@@ -84,11 +84,11 @@ export class DayEditorComponent implements OnInit {
   });
 
   protected readonly units: ExerciseUnit[] = [
-    'kg',
-    'kg por mano',
-    'kg por brazo',
-    'tiempo',
-    'peso corporal',
+    'KG',
+    'KG_PER_HAND',
+    'KG_PER_ARM',
+    'TIME',
+    'BODYWEIGHT',
   ];
 
   protected get isNew(): boolean {
@@ -118,7 +118,7 @@ export class DayEditorComponent implements OnInit {
       defaultSets: 3,
       defaultRepTarget: 10,
       restSeconds: 90,
-      unit: 'kg',
+      unit: 'KG',
       notes: '',
     };
   }

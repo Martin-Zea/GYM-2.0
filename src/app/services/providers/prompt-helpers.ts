@@ -4,6 +4,26 @@ import { HistoryEntry } from '../storage.service';
 export const AI_TIMEOUT_MS = 12000;
 export const HISTORY_SESSIONS = 5;
 
+/**
+ * Unidad → descripción en el idioma del prompt.
+ *
+ * Desde v7 el valor almacenado es un enum neutro (`KG_PER_HAND`, …). Mandarlo crudo al
+ * modelo lo dejaría sin contexto y desalineado con las instrucciones del prompt, que
+ * hablan de "peso corporal" y "tiempo". Traducir acá mantiene el dato neutro en disco y
+ * legible en el prompt (`audit.md` R-4).
+ */
+const UNIT_PROMPT_LABEL: Record<ExerciseUnit, string> = {
+  KG: 'kg',
+  KG_PER_HAND: 'kg por mano',
+  KG_PER_ARM: 'kg por brazo',
+  TIME: 'tiempo',
+  BODYWEIGHT: 'peso corporal',
+};
+
+export function unitPromptLabel(unit: ExerciseUnit): string {
+  return UNIT_PROMPT_LABEL[unit] ?? 'kg';
+}
+
 export function roundToBrick(weight: number, brick: number): number {
   if (!brick || brick <= 0) return Math.round(weight * 2) / 2;
   return Math.round(weight / brick) * brick;
@@ -127,7 +147,7 @@ export function goalRepTarget(
   defaultRep: number,
   unit?: ExerciseUnit,
 ): number {
-  if (unit === 'peso corporal' || unit === 'tiempo') return defaultRep;
+  if (unit === 'BODYWEIGHT' || unit === 'TIME') return defaultRep;
   if (goal === 'strength') return Math.min(defaultRep, 5);
   if (goal === 'endurance') return Math.max(defaultRep, 15);
   return defaultRep;
@@ -235,7 +255,7 @@ export function bodyweightRepFloor(
   lastSets: { reps: number | string }[] | null | undefined,
   deload = false,
 ): number {
-  if (unit !== 'peso corporal' && unit !== 'tiempo') return 1;
+  if (unit !== 'BODYWEIGHT' && unit !== 'TIME') return 1;
   if (!lastSets?.length) return 1;
   const max = Math.max(
     ...lastSets.map((s) => (typeof s.reps === 'number' ? s.reps : Number(s.reps)) || 0),

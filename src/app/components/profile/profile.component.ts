@@ -22,7 +22,7 @@ interface PrRecord {
   dateISO: string;
 }
 
-const EXCLUDED_UNITS = new Set(['tiempo', 'peso corporal']);
+const EXCLUDED_UNITS = new Set(['TIME', 'BODYWEIGHT']);
 const PAST_LOG_LIMIT = 3;
 
 @Component({

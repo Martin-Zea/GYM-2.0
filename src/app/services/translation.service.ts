@@ -8,13 +8,18 @@ function readStoredLang(): 'es' | 'en' {
   return stored === 'en' || stored === 'es' ? stored : 'es';
 }
 
-/** Presentation-only map: stored ExerciseUnit values stay in Spanish (schema compat) */
+/**
+ * Unidad almacenada → clave de traducción. Los valores guardados son neutros (`KG`,
+ * `TIME`, …) desde el esquema v7: antes eran literales en español que hacían de clave de
+ * dominio y de etiqueta a la vez, lo que impedía tener kg/lb como capa de presentación
+ * (`audit.md` R-4).
+ */
 const UNIT_KEYS: Record<ExerciseUnit, keyof Translations> = {
-  kg: 'unit_kg',
-  'kg por mano': 'unit_kg_per_hand',
-  'kg por brazo': 'unit_kg_per_arm',
-  tiempo: 'unit_time',
-  'peso corporal': 'unit_bodyweight',
+  KG: 'unit_kg',
+  KG_PER_HAND: 'unit_kg_per_hand',
+  KG_PER_ARM: 'unit_kg_per_arm',
+  TIME: 'unit_time',
+  BODYWEIGHT: 'unit_bodyweight',
 };
 
 @Injectable({ providedIn: 'root' })

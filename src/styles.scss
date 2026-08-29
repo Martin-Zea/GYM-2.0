@@ -845,6 +845,46 @@ button.btn[disabled] {
   color: var(--accent-fg);
 }
 
+/* Conflicto multi-pestaña: no es un error del usuario, pero bloquea el guardado */
+.tab-conflict-toast {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* Cuarentena: no es un toast — la app está en solo lectura y exige una decisión */
+.quarantine-banner {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  background: var(--bg-1);
+  border-top: 2px solid var(--danger);
+  box-shadow: var(--shadow-lg);
+}
+
+.quarantine-title {
+  color: var(--danger);
+  font-size: 15px;
+}
+
+.quarantine-msg {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.quarantine-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .app-toast-msg,
 .save-error-msg {
   flex: 1;

@@ -11,7 +11,7 @@
         {{ exercise().defaultSets }}×{{ exercise().defaultRepTarget }}
         <span class="dot"></span>
         {{ tr.unitLabel(exercise().unit) }}
-        @if (exercise().unit !== 'peso corporal' && exercise().unit !== 'tiempo') {
+        @if (exercise().unit !== 'BODYWEIGHT' && exercise().unit !== 'TIME') {
           <span class="dot"></span>
           <span>+{{ weightStep() }}</span>
         }
@@ -94,10 +94,10 @@
           <span></span>
           <span>#</span>
           @switch (exercise().unit) {
-            @case ('peso corporal') {
+            @case ('BODYWEIGHT') {
               <span>—</span>
             }
-            @case ('tiempo') {
+            @case ('TIME') {
               <span>{{ T().col_seconds }}</span>
             }
             @default {
@@ -131,7 +131,7 @@
 
             <!-- Weight column: [ − ] input [ + ] -->
             <div class="set-input-wrap">
-              @if (exercise().unit !== 'peso corporal' && !set.done) {
+              @if (exercise().unit !== 'BODYWEIGHT' && !set.done) {
                 <button
                   class="inline-ctrl-btn"
                   (click)="$event.stopPropagation(); stepWeight(i, -weightStep())"
@@ -140,7 +140,7 @@
                   −
                 </button>
               }
-              @if (exercise().unit !== 'peso corporal') {
+              @if (exercise().unit !== 'BODYWEIGHT') {
                 <input
                   class="set-input set-input-weight"
                   [class.ai-prefilled]="aiPrefilledIndices().has(i) && !set.done"
@@ -157,7 +157,7 @@
               } @else {
                 <span class="set-input set-input-bw">—</span>
               }
-              @if (exercise().unit !== 'peso corporal' && !set.done) {
+              @if (exercise().unit !== 'BODYWEIGHT' && !set.done) {
                 <button
                   class="inline-ctrl-btn"
                   (click)="$event.stopPropagation(); stepWeight(i, weightStep())"

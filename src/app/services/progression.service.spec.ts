@@ -13,7 +13,7 @@ function makeExercise(overrides: Partial<Exercise> = {}): Exercise {
     defaultSets: 3,
     defaultRepTarget: 10,
     restSeconds: 90,
-    unit: 'kg',
+    unit: 'KG',
     notes: '',
     ...overrides,
   };
@@ -553,7 +553,7 @@ describe('ProgressionService', () => {
         dateISO: '2026-01-01',
         exerciseId: 'ex1',
         exerciseName: 'Press',
-        unit: 'kg',
+        unit: 'KG',
         context: { objetivo: '', diasDesdeUltimaSesion: null, sesionHoy: [], sesionAnterior: [] },
         currentModel: { name: 'llama-3.3-70b-versatile', sets: [], reason: '' },
         shadowModels: [],

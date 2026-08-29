@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { StorageService, isValidAppState } from './storage.service';
+import { QUARANTINE_PREFIX, StorageService, isValidAppState } from './storage.service';
 import { AppState, Session, SetRecord } from '../models/workout.model';
 
 const STORAGE_KEY = 'gym_app_state_v2';
@@ -87,7 +87,7 @@ describe('StorageService', () => {
 
     it('acepta un estado válido mínimo y rellena defaults', () => {
       const result = service.validateImport({ days: [] });
-      expect(result.schemaVersion).toBe(6);
+      expect(result.schemaVersion).toBe(7);
       expect(result.exercises).toEqual([]);
       expect(result.days).toEqual([]);
       expect(result.sessions).toEqual([]);
@@ -126,7 +126,7 @@ describe('StorageService', () => {
   describe('migración de schema (via validateImport)', () => {
     // Día legacy (pre-v5) con ejercicios embebidos
     const days = [
-      { id: 'd1', name: 'Día 1', exercises: [{ id: 'e1', name: 'Press Banca', unit: 'kg' }] },
+      { id: 'd1', name: 'Día 1', exercises: [{ id: 'e1', name: 'Press Banca', unit: 'KG' }] },
     ];
     // Tras migrar a v5: el día referencia por id y aparece el catálogo
     const migratedDays = [{ id: 'd1', name: 'Día 1', exerciseIds: ['e1'] }];
@@ -139,7 +139,7 @@ describe('StorageService', () => {
         sessions,
         activeDayIndex: 2,
       });
-      expect(result.schemaVersion).toBe(6);
+      expect(result.schemaVersion).toBe(7);
       expect(result.days).toEqual(migratedDays);
       expect(result.sessions).toEqual(sessions);
       // v1 no tenía routinePointer: se deriva de activeDayIndex
@@ -153,7 +153,7 @@ describe('StorageService', () => {
         sessions,
         activeDayIndex: 1,
       });
-      expect(result.schemaVersion).toBe(6);
+      expect(result.schemaVersion).toBe(7);
       expect(result.days).toEqual(migratedDays);
       expect(result.sessions).toEqual(sessions);
       expect(result.routinePointer).toBe(1);
@@ -163,9 +163,9 @@ describe('StorageService', () => {
       const result = service.validateImport({
         schemaVersion: 4,
         days: [
-          { id: 'd1', name: 'Push', exercises: [{ id: 'eA', name: 'Press Banca', unit: 'kg' }] },
+          { id: 'd1', name: 'Push', exercises: [{ id: 'eA', name: 'Press Banca', unit: 'KG' }] },
           // Mismo ejercicio re-tipeado con otro id (el bug): debe unificarse con eA
-          { id: 'd2', name: 'Torso', exercises: [{ id: 'eB', name: 'press  bancá', unit: 'kg' }] },
+          { id: 'd2', name: 'Torso', exercises: [{ id: 'eB', name: 'press  bancá', unit: 'KG' }] },
         ],
         sessions: [
           makeSession('s1', 'd1', '2026-06-01', [makeSet('eA', 0, 50, 8)]),
@@ -197,7 +197,7 @@ describe('StorageService', () => {
           userProfile: { weightKg: 78.5, heightCm: 175, age: 34, sex: 'male' },
         },
       });
-      expect(result.schemaVersion).toBe(6);
+      expect(result.schemaVersion).toBe(7);
       expect(result.settings.userProfile.weightKg).toBe(78.5);
       expect(result.settings.userProfile.weightLog).toEqual([
         { dateISO: '2026-06-10', weightKg: 78.5 },
@@ -217,7 +217,7 @@ describe('StorageService', () => {
           userProfile: { weightKg: null, heightCm: null, age: null, sex: null },
         },
       });
-      expect(result.schemaVersion).toBe(6);
+      expect(result.schemaVersion).toBe(7);
       expect(result.settings.userProfile.weightLog).toEqual([]);
     });
 
@@ -229,7 +229,7 @@ describe('StorageService', () => {
         activeDayIndex: 3,
         settings: { userProfile: { weightKg: 80 } },
       });
-      expect(result.schemaVersion).toBe(6);
+      expect(result.schemaVersion).toBe(7);
       expect(result.routinePointer).toBe(3);
       expect(result.settings.userProfile.weightLog).toEqual([
         { dateISO: '2026-06-10', weightKg: 80 },
@@ -294,7 +294,7 @@ describe('StorageService', () => {
       expect(() => {
         state = service.load();
       }).not.toThrow();
-      expect(state.schemaVersion).toBe(6);
+      expect(state.schemaVersion).toBe(7);
       expect(state.days.length).toBe(5);
     });
 
@@ -304,7 +304,7 @@ describe('StorageService', () => {
       expect(() => {
         state = service.load();
       }).not.toThrow();
-      expect(state.schemaVersion).toBe(6);
+      expect(state.schemaVersion).toBe(7);
       expect(state.days.length).toBe(5);
     });
 
@@ -314,6 +314,155 @@ describe('StorageService', () => {
       const state = service.load();
       expect(state.days.length).toBe(1);
       expect(state.days[0].name).toBe('Pecho');
+    });
+  });
+
+  describe('cuarentena (RF-STO-04, audit.md R-2)', () => {
+    const quarantineKeys = (): string[] =>
+      Object.keys(localStorage).filter((k) => k.startsWith(QUARANTINE_PREFIX));
+
+    beforeEach(() => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    it('aparta el original SIN borrarlo cuando el JSON no se puede parsear', () => {
+      const original = '{esto no es JSON válido';
+      localStorage.setItem(STORAGE_KEY, original);
+
+      service.load();
+
+      // Lo crítico: la clave viva sigue con el contenido original, byte a byte
+      expect(localStorage.getItem(STORAGE_KEY)).toBe(original);
+      expect(service.quarantine()).not.toBeNull();
+      expect(quarantineKeys()).toHaveLength(1);
+      expect(service.readQuarantined(service.quarantine()!.key)).toBe(original);
+    });
+
+    it('aparta el original cuando la validación profunda encuentra tipos rotos', () => {
+      const corrupto = JSON.stringify({
+        days: [{ id: 'd1', name: 'Pecho', exerciseIds: [] }],
+        sessions: [
+          {
+            id: 's1',
+            dayId: 'd1',
+            dateISO: '2026-08-01',
+            sets: [{ exerciseId: 'e1', setIndex: 0, weight: 'mucho', reps: 8 }],
+          },
+        ],
+      });
+      localStorage.setItem(STORAGE_KEY, corrupto);
+
+      service.load();
+
+      expect(localStorage.getItem(STORAGE_KEY)).toBe(corrupto);
+      expect(service.quarantine()?.reason).toContain('weight');
+    });
+
+    it('MIENTRAS hay cuarentena, save() no escribe nada encima', () => {
+      const original = '{roto';
+      localStorage.setItem(STORAGE_KEY, original);
+      service.load();
+
+      const result = service.save(baseState());
+
+      expect(result).toEqual({ ok: false, reason: 'quarantined' });
+      expect(localStorage.getItem(STORAGE_KEY)).toBe(original);
+    });
+
+    it('descartar borra el original y la copia, y devuelve la escritura', () => {
+      localStorage.setItem(STORAGE_KEY, '{roto');
+      service.load();
+      const key = service.quarantine()!.key;
+
+      service.discardQuarantine();
+
+      expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+      expect(localStorage.getItem(key)).toBeNull();
+      expect(service.quarantine()).toBeNull();
+      expect(service.save(baseState())).toEqual({ ok: true });
+    });
+
+    it('un estado v4 sano NO va a cuarentena: migrar no es corromper', () => {
+      // Regresión de R-2: endurecer la validación no puede convertir en "corrupto"
+      // el estado legítimo de un usuario que todavía no migró.
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          schemaVersion: 4,
+          days: [
+            {
+              id: 'd1',
+              name: 'Pecho',
+              exercises: [
+                {
+                  id: 'e1',
+                  name: 'Press banca',
+                  brick: 2.5,
+                  defaultSets: 3,
+                  defaultRepTarget: 10,
+                  restSeconds: 90,
+                  unit: 'KG',
+                  notes: '',
+                },
+              ],
+            },
+          ],
+          sessions: [
+            {
+              id: 's1',
+              dayId: 'd1',
+              dateISO: '2026-08-01',
+              sets: [{ exerciseId: 'e1', setIndex: 0, weight: 60, reps: 8 }],
+            },
+          ],
+        }),
+      );
+
+      const state = service.load();
+
+      expect(service.quarantine()).toBeNull();
+      expect(quarantineKeys()).toHaveLength(0);
+      expect(state.exercises).toHaveLength(1);
+      expect(state.days[0].exerciseIds).toEqual(['e1']);
+      expect(state.sessions[0].sets[0].weight).toBe(60);
+    });
+
+    it('un ejercicio viejo sin todos los campos se normaliza en vez de ir a cuarentena', () => {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          schemaVersion: 6,
+          days: [{ id: 'd1', name: 'Pecho', exerciseIds: ['e1'] }],
+          exercises: [{ id: 'e1', name: 'Press banca' }],
+        }),
+      );
+
+      const state = service.load();
+
+      expect(service.quarantine()).toBeNull();
+      expect(state.exercises[0]).toMatchObject({ unit: 'KG', notes: '', defaultSets: 3 });
+    });
+  });
+
+  describe('import corrupto (EA-5, T-106)', () => {
+    it('rechaza el backup y deja los datos actuales intactos', () => {
+      const sano = baseState({ days: [{ id: 'd1', name: 'Pecho', exerciseIds: [] }] });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sano));
+      const antes = localStorage.getItem(STORAGE_KEY);
+
+      expect(() => service.validateImport({ days: [{ id: 1, name: null }] })).toThrow();
+      expect(() =>
+        service.validateImport({
+          days: [],
+          sessions: [{ id: 's', dayId: 'd', dateISO: '2026-01-01', sets: 'no-array' }],
+        }),
+      ).toThrow();
+
+      expect(localStorage.getItem(STORAGE_KEY)).toBe(antes);
+    });
+
+    it('el mensaje de error dice QUÉ campo falló, no solo que es inválido', () => {
+      expect(() => service.validateImport({ days: [], sessions: {} })).toThrow(/sessions/);
     });
   });
 

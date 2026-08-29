@@ -21,7 +21,7 @@ function ex(
   sets: number,
   repTarget: number,
   rest: number,
-  unit: ExerciseUnit = 'kg',
+  unit: ExerciseUnit = 'KG',
 ): Exercise {
   return {
     id: uid(),
@@ -138,7 +138,7 @@ export function createInitialState(daysCount: 3 | 4 | 5 = 5): AppState {
   if (daysCount !== 5) {
     const t = buildTemplate(daysCount);
     return {
-      schemaVersion: 6,
+      schemaVersion: 7,
       exercises: t.exercises,
       days: t.days,
       sessions: t.sessions,
@@ -191,7 +191,7 @@ export function createInitialState(daysCount: 3 | 4 | 5 = 5): AppState {
 
   // ── Day 4: Espalda (Auxiliar) y Tríceps ────────────────────────────────
   const d4: Exercise[] = [
-    ex('Remo Unilateral (Máquina)', 2.5, 4, 6, 180, 'kg por brazo'),
+    ex('Remo Unilateral (Máquina)', 2.5, 4, 6, 180, 'KG_PER_ARM'),
     ex('Jalón en P (Polea Alta)', 2.5, 3, 8, 120),
     ex('Press Francés (Máquina)', 2.5, 3, 10, 90),
     ex('Curl Martillo (Máquina/Polea)', 2.5, 3, 12, 90),
@@ -300,7 +300,7 @@ export function createInitialState(daysCount: 3 | 4 | 5 = 5): AppState {
   ];
 
   return {
-    schemaVersion: 6,
+    schemaVersion: 7,
     exercises,
     days,
     sessions,

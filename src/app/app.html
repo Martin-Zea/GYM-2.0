@@ -79,6 +79,28 @@
     <app-exercise-chart-sheet />
   }
 
+  @if (quarantine(); as q) {
+    <div class="quarantine-banner" role="alert">
+      <strong class="quarantine-title">{{ T().quarantine_title }}</strong>
+      <p class="quarantine-msg">{{ T().quarantine_msg }}</p>
+      <div class="quarantine-actions">
+        <button class="btn btn-primary" (click)="downloadQuarantined(q.key)">
+          {{ T().quarantine_download }}
+        </button>
+        <button class="btn" (click)="discardQuarantine()">{{ T().quarantine_discard }}</button>
+      </div>
+    </div>
+  }
+
+  @if (uiState.tabConflict()) {
+    <div class="app-toast tab-conflict-toast" role="alert">
+      <span class="app-toast-msg">{{ T().tab_conflict_msg }}</span>
+      <button class="app-toast-btn" (click)="reloadForTabConflict()">
+        {{ T().tab_conflict_reload }}
+      </button>
+    </div>
+  }
+
   @if (uiState.saveError()) {
     <div class="save-error-toast" role="alert">
       <span class="save-error-msg">{{ uiState.saveError() }}</span>

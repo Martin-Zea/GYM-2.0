@@ -232,4 +232,41 @@ describe('StateService', () => {
       expect(service.activeDayIndex()).toBe(0);
     });
   });
+
+  describe('purga de historial antiguo (RF-STO-08, T-104)', () => {
+    const sesion = (id: string, dateISO: string) => ({
+      id,
+      dayId: day.id,
+      dateISO,
+      sets: [{ exerciseId: exercise.id, setIndex: 0, weight: 60, reps: 8 }],
+    });
+
+    beforeEach(() => {
+      service.state.update((s) => ({
+        ...s,
+        sessions: [
+          sesion('vieja1', '2024-01-05'),
+          sesion('vieja2', '2024-06-10'),
+          sesion('nueva', '2026-08-01'),
+        ],
+      }));
+    });
+
+    it('cuenta cuántas sesiones se irían antes de borrar nada', () => {
+      expect(service.countSessionsBefore('2025-01-01')).toBe(2);
+      // Contar no borra: el usuario todavía no confirmó
+      expect(service.sessions()).toHaveLength(3);
+    });
+
+    it('borra solo las anteriores al corte', () => {
+      expect(service.purgeSessionsBefore('2025-01-01')).toBe(2);
+
+      expect(service.sessions().map((s) => s.id)).toEqual(['nueva']);
+    });
+
+    it('sin sesiones tan viejas no borra nada', () => {
+      expect(service.purgeSessionsBefore('2020-01-01')).toBe(0);
+      expect(service.sessions()).toHaveLength(3);
+    });
+  });
 });

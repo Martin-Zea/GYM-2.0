@@ -9,7 +9,7 @@ interface WeightReps {
 
 /** Sufijo de peso según la unidad: `kg`, `kg/m` (por mano) o `kg/b` (por brazo). */
 export function unitSuffix(unit: ExerciseUnit | string): string {
-  return unit === 'kg por mano' ? 'kg/m' : unit === 'kg por brazo' ? 'kg/b' : 'kg';
+  return unit === 'KG_PER_HAND' ? 'kg/m' : unit === 'KG_PER_ARM' ? 'kg/b' : 'kg';
 }
 
 /**
@@ -24,8 +24,8 @@ export function formatRecLabel(
   if (!sets?.length) return '';
   const first = sets[0];
   const last = sets[sets.length - 1];
-  if (unit === 'peso corporal') return `${first.reps} reps`;
-  if (unit === 'tiempo') return `${first.reps} seg`;
+  if (unit === 'BODYWEIGHT') return `${first.reps} reps`;
+  if (unit === 'TIME') return `${first.reps} seg`;
   const suffix = unitSuffix(unit);
   if (last.weight > first.weight) {
     return opts.withRepsInRange
@@ -37,7 +37,7 @@ export function formatRecLabel(
 
 /** Etiqueta de un set ya registrado, p. ej. `40kg × 8`, `12 reps`, `30 seg`. */
 export function formatSetLine(weight: number, reps: number, unit: ExerciseUnit | string): string {
-  if (unit === 'peso corporal') return `${reps} reps`;
-  if (unit === 'tiempo') return `${reps} seg`;
+  if (unit === 'BODYWEIGHT') return `${reps} reps`;
+  if (unit === 'TIME') return `${reps} seg`;
   return `${weight}${unitSuffix(unit)} × ${reps}`;
 }

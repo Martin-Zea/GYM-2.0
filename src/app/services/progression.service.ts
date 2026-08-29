@@ -93,8 +93,8 @@ export class ProgressionService {
     if (
       !lastSessionDate ||
       !lastSets?.length ||
-      exercise.unit === 'tiempo' ||
-      exercise.unit === 'peso corporal'
+      exercise.unit === 'TIME' ||
+      exercise.unit === 'BODYWEIGHT'
     ) {
       return rec;
     }

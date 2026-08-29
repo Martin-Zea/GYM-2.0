@@ -9,12 +9,12 @@
 
 **Leyenda de clasificación**
 
-| Etiqueta | Significado |
-|---|---|
-| **CUMPLE** | Existe y satisface el requisito tal como está escrito. A lo sumo, retoques cosméticos. |
-| **ADAPTAR** | Existe una base real y reutilizable, pero le falta cobertura, estructura o rigor. Se extiende, no se reescribe. |
-| **FALTA** | No existe. Hay que construirlo. |
-| **ELIMINAR** | Existe y sobra (o contradice la constitución / el alcance de la spec). |
+| Etiqueta     | Significado                                                                                                     |
+| ------------ | --------------------------------------------------------------------------------------------------------------- |
+| **CUMPLE**   | Existe y satisface el requisito tal como está escrito. A lo sumo, retoques cosméticos.                          |
+| **ADAPTAR**  | Existe una base real y reutilizable, pero le falta cobertura, estructura o rigor. Se extiende, no se reescribe. |
+| **FALTA**    | No existe. Hay que construirlo.                                                                                 |
+| **ELIMINAR** | Existe y sobra (o contradice la constitución / el alcance de la spec).                                          |
 
 ---
 
@@ -38,20 +38,20 @@ Y hay **cuatro choques con la constitución** que deben resolverse antes de cons
 
 ### 1.1 Framework y build
 
-| | Realidad medida |
-|---|---|
-| **Framework** | Angular **21.2** — 100% standalone, `signal()`/`computed()`/`effect()`, `input()`/`output()`, `@if`/`@for`, `ChangeDetectionStrategy.OnPush` en todos los componentes, `inject()` (cero constructor DI) |
-| **Lenguaje** | TypeScript 5.9, `strict`, target ES2022 |
-| **Build** | `@angular/build` (esbuild/Vite bajo el capó). `npm start` / `npm run build` |
-| **Routing** | 3 rutas lazy: `/` (home + sesión), `/history`, `/profile`. `/charts` y `/calendar` redirigen a `/history`. Guard `canDeactivate` en `/` |
-| **Estilos** | SCSS propio + CSS custom properties. Sin framework de UI. Mobile-first, `max-width: 720px` |
-| **Fuentes** | Inter + JetBrains Mono **self-hosted** en `src/fonts/` (`@font-face` local, **cero CDN** — ya cumple ese requisito de §14) |
-| **Tests** | Vitest 4 · **5 archivos spec · 98 tests · todos verdes** (verificado ejecutando `npm test`) |
-| **Lint/format** | ESLint 10 + angular-eslint 21 + Prettier 3 |
-| **PWA** | `@angular/service-worker` + `ngsw-config.json` (prefetch del shell, lazy de assets) + `manifest.webmanifest` (standalone, portrait, iconos 72→512) |
-| **E2E** | `npm run e2e` — smoke del flujo sagrado vía `scripts/e2e-smoke.mjs` (Edge + playwright-core) |
-| **Bundle** | Medido sobre `dist/`: **~138 KB gzip de carga inicial**, 176 KB sumando todo el JS de app. **Bajo el techo de 300 KB (CE-2)** |
-| **Dependencias runtime** | Solo Angular + rxjs + `@angular/cdk` (usado únicamente para drag&drop en el editor de días). **Sin librería de gráficas** — el SVG es propio (`utils/chart.ts`) |
+|                          | Realidad medida                                                                                                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Framework**            | Angular **21.2** — 100% standalone, `signal()`/`computed()`/`effect()`, `input()`/`output()`, `@if`/`@for`, `ChangeDetectionStrategy.OnPush` en todos los componentes, `inject()` (cero constructor DI) |
+| **Lenguaje**             | TypeScript 5.9, `strict`, target ES2022                                                                                                                                                                 |
+| **Build**                | `@angular/build` (esbuild/Vite bajo el capó). `npm start` / `npm run build`                                                                                                                             |
+| **Routing**              | 3 rutas lazy: `/` (home + sesión), `/history`, `/profile`. `/charts` y `/calendar` redirigen a `/history`. Guard `canDeactivate` en `/`                                                                 |
+| **Estilos**              | SCSS propio + CSS custom properties. Sin framework de UI. Mobile-first, `max-width: 720px`                                                                                                              |
+| **Fuentes**              | Inter + JetBrains Mono **self-hosted** en `src/fonts/` (`@font-face` local, **cero CDN** — ya cumple ese requisito de §14)                                                                              |
+| **Tests**                | Vitest 4 · **5 archivos spec · 98 tests · todos verdes** (verificado ejecutando `npm test`)                                                                                                             |
+| **Lint/format**          | ESLint 10 + angular-eslint 21 + Prettier 3                                                                                                                                                              |
+| **PWA**                  | `@angular/service-worker` + `ngsw-config.json` (prefetch del shell, lazy de assets) + `manifest.webmanifest` (standalone, portrait, iconos 72→512)                                                      |
+| **E2E**                  | `npm run e2e` — smoke del flujo sagrado vía `scripts/e2e-smoke.mjs` (Edge + playwright-core)                                                                                                            |
+| **Bundle**               | Medido sobre `dist/`: **~138 KB gzip de carga inicial**, 176 KB sumando todo el JS de app. **Bajo el techo de 300 KB (CE-2)**                                                                           |
+| **Dependencias runtime** | Solo Angular + rxjs + `@angular/cdk` (usado únicamente para drag&drop en el editor de días). **Sin librería de gráficas** — el SVG es propio (`utils/chart.ts`)                                         |
 
 **Veredicto de stack:** ✅ **Se conserva.** No viola ningún artículo. Cambiar a Vite+Preact (opción B del plan §1)
 tiraría 9.9k líneas probadas para ganar ~40 KB sobre un presupuesto que ya sobra. No se hace.
@@ -81,17 +81,17 @@ Componentes (OnPush, solo leen signals y llaman mutadores)
 
 **Doble escritura: localStorage (arranque síncrono) + IndexedDB (durabilidad).**
 
-| Clave | Contenido |
-|---|---|
-| `gym_app_state_v2` | **Blob JSON único** con todo el `AppState` (`schemaVersion: 6`) |
-| `gym_state_saved_at` | Timestamp del último save (compara LS vs IDB al arrancar) |
-| `gym_ai_cache_v2` | Caché de recomendaciones IA por `exerciseId` |
-| `gym_lang` | `'es' \| 'en'` |
-| `gym_last_export` / `gym_backup_dismissed` | Fechas ISO para el recordatorio de backup |
-| `gym_session_view` | `'focused' \| 'list'` |
-| `gym_hiw_dismissed` / `gym_onboarding_done_v1` / `gym_legal_accepted_v1` | Flags `'1'` |
-| `gym_ai_shadow_log_v1` | Log de evaluación de modelos IA candidatos |
-| IndexedDB `gainai` | `state.current` (espejo durable) + `snapshots` (semanales, rotativos, máx. 4) |
+| Clave                                                                    | Contenido                                                                     |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| `gym_app_state_v2`                                                       | **Blob JSON único** con todo el `AppState` (`schemaVersion: 6`)               |
+| `gym_state_saved_at`                                                     | Timestamp del último save (compara LS vs IDB al arrancar)                     |
+| `gym_ai_cache_v2`                                                        | Caché de recomendaciones IA por `exerciseId`                                  |
+| `gym_lang`                                                               | `'es' \| 'en'`                                                                |
+| `gym_last_export` / `gym_backup_dismissed`                               | Fechas ISO para el recordatorio de backup                                     |
+| `gym_session_view`                                                       | `'focused' \| 'list'`                                                         |
+| `gym_hiw_dismissed` / `gym_onboarding_done_v1` / `gym_legal_accepted_v1` | Flags `'1'`                                                                   |
+| `gym_ai_shadow_log_v1`                                                   | Log de evaluación de modelos IA candidatos                                    |
+| IndexedDB `gainai`                                                       | `state.current` (espejo durable) + `snapshots` (semanales, rotativos, máx. 4) |
 
 - **`schemaVersion: 6`** con `migrate()` encadenado v1→v2→v3→v4→v5→v6, **con tests de fixtures reales**.
   La migración v4→v5 es notable: extrajo el catálogo de ejercicios y **saneó historiales partidos**
@@ -141,84 +141,84 @@ IDs según `docs/disenos-vistas-gym.html` y §15.2 de `docs/analisis-app-gym.md`
 
 ### 2.1 Onboarding (O)
 
-| ID | Diseño | Qué existe hoy | Estado |
-|---|---|---|---|
-| **O1** | Bienvenida + aviso de privacidad local | `onboarding/` — 4 slides de valor; `legal-gate/` cubre el aviso legal y de privacidad | **ADAPTAR** |
-| **O2** | Perfil básico (apodo, edad, altura, peso, **unidades**) | No en onboarding. Los campos viven en `/profile` (sin apodo, sin unidades) | **FALTA** |
-| **O3** | Nivel y objetivo | `goal` existe en `/profile`; **nivel no existe en ninguna parte** | **FALTA** |
-| **O4** | Equipo, días/semana, duración, lesiones | Solo se elige 3/4/5 días como plantilla de rutina. Sin equipo, duración ni lesiones estructuradas | **FALTA** |
-| **O5** | Config IA con "Omitir — usar solo motor local" | Las keys se ponen en el sheet de Ajustes. La app **ya funciona sin key**, pero la vista no existe | **FALTA** |
-| **O6** | Primera rutina (IA / plantilla / manual / después) | `applyTemplate(3\|4\|5)` — solo el camino "plantilla", obligatorio, sin vista previa | **ADAPTAR** |
+| ID     | Diseño                                                  | Qué existe hoy                                                                                    | Estado      |
+| ------ | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------- |
+| **O1** | Bienvenida + aviso de privacidad local                  | `onboarding/` — 4 slides de valor; `legal-gate/` cubre el aviso legal y de privacidad             | **ADAPTAR** |
+| **O2** | Perfil básico (apodo, edad, altura, peso, **unidades**) | No en onboarding. Los campos viven en `/profile` (sin apodo, sin unidades)                        | **FALTA**   |
+| **O3** | Nivel y objetivo                                        | `goal` existe en `/profile`; **nivel no existe en ninguna parte**                                 | **FALTA**   |
+| **O4** | Equipo, días/semana, duración, lesiones                 | Solo se elige 3/4/5 días como plantilla de rutina. Sin equipo, duración ni lesiones estructuradas | **FALTA**   |
+| **O5** | Config IA con "Omitir — usar solo motor local"          | Las keys se ponen en el sheet de Ajustes. La app **ya funciona sin key**, pero la vista no existe | **FALTA**   |
+| **O6** | Primera rutina (IA / plantilla / manual / después)      | `applyTemplate(3\|4\|5)` — solo el camino "plantilla", obligatorio, sin vista previa              | **ADAPTAR** |
 
 ### 2.2 Tab Hoy (H) + overlays globales (G)
 
-| ID | Diseño | Qué existe hoy | Estado |
-|---|---|---|---|
-| **H1** | Inicio/Hoy: 1 tap para entrenar, racha, PR, chip de IA | `home/` en modo `'today'`: día que toca, CTA grande, resumen semanal Lun-Dom, racha, volumen, saltar día con deshacer | **ADAPTAR** (falta chip de sugerencia pendiente, PR reciente y los estados "sin rutina"/"descanso") |
-| **H2** | Sesión activa: sin scroll, steppers, ✓ grande | `home/` en modo sesión + `active-set-card/` (enfocada, default) y `exercise-card/` (lista). Pantalla completa: oculta topbar y bottom-nav. Steppers 48 px, un tap | **CUMPLE** (supera al diseño: dos vistas conmutables, calculadora de discos inline, `exercise-chart-sheet` de progresión sin salir de la sesión) |
-| **H3** | Resumen de sesión (duración, tonelaje, PRs, vs. anterior) | Solo un modal de confirmación de "Terminar" que avanza el puntero. **No hay pantalla de resumen** | **FALTA** |
-| **H4** | Detalle de sesión pasada (editar/borrar) | `day-history-sheet/` — sesiones por día, editable (peso/reps), borrable con papelera de 30 días, delta de volumen vs. anterior | **CUMPLE** (como sheet en vez de pantalla; el propio §15.1 lo prefiere así) |
-| **G1** | Temporizador de descanso persistente y **minimizable** | `rest-timer/` — overlay global, anillo de countdown, ±15 s, saltar, sonido + vibración, notificación en 2º plano, wake lock | **ADAPTAR** (persistente sí; **minimizable no**: tapa la pantalla) |
-| **G2** | Celebración de PR | Toast `prCelebration` con auto-dismiss 2.5 s + botón compartir | **CUMPLE** |
-| **G3** | Aviso de backup pendiente | Toast a las 10 sesiones (8 tras el primer export), con "exportar ahora" y dismiss por día | **CUMPLE** |
-| **G4** | Confirmaciones destructivas | Diálogo de salida de sesión, confirmación de saltar día, reset con palabra clave `BORRAR`/`DELETE` | **CUMPLE** |
-| **G5** | Snackbar deshacer | Existe para saltar día (6 s) y para el registro de peso corporal. **No es un mecanismo genérico** | **ADAPTAR** |
-| **G6** | Indicador offline | `navigator.onLine` se consulta en `ProgressionService` y la razón dice "(modo offline)". **Sin indicador visual global** | **ADAPTAR** |
+| ID     | Diseño                                                    | Qué existe hoy                                                                                                                                                    | Estado                                                                                                                                           |
+| ------ | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **H1** | Inicio/Hoy: 1 tap para entrenar, racha, PR, chip de IA    | `home/` en modo `'today'`: día que toca, CTA grande, resumen semanal Lun-Dom, racha, volumen, saltar día con deshacer                                             | **ADAPTAR** (falta chip de sugerencia pendiente, PR reciente y los estados "sin rutina"/"descanso")                                              |
+| **H2** | Sesión activa: sin scroll, steppers, ✓ grande             | `home/` en modo sesión + `active-set-card/` (enfocada, default) y `exercise-card/` (lista). Pantalla completa: oculta topbar y bottom-nav. Steppers 48 px, un tap | **CUMPLE** (supera al diseño: dos vistas conmutables, calculadora de discos inline, `exercise-chart-sheet` de progresión sin salir de la sesión) |
+| **H3** | Resumen de sesión (duración, tonelaje, PRs, vs. anterior) | Solo un modal de confirmación de "Terminar" que avanza el puntero. **No hay pantalla de resumen**                                                                 | **FALTA**                                                                                                                                        |
+| **H4** | Detalle de sesión pasada (editar/borrar)                  | `day-history-sheet/` — sesiones por día, editable (peso/reps), borrable con papelera de 30 días, delta de volumen vs. anterior                                    | **CUMPLE** (como sheet en vez de pantalla; el propio §15.1 lo prefiere así)                                                                      |
+| **G1** | Temporizador de descanso persistente y **minimizable**    | `rest-timer/` — overlay global, anillo de countdown, ±15 s, saltar, sonido + vibración, notificación en 2º plano, wake lock                                       | **ADAPTAR** (persistente sí; **minimizable no**: tapa la pantalla)                                                                               |
+| **G2** | Celebración de PR                                         | Toast `prCelebration` con auto-dismiss 2.5 s + botón compartir                                                                                                    | **CUMPLE**                                                                                                                                       |
+| **G3** | Aviso de backup pendiente                                 | Toast a las 10 sesiones (8 tras el primer export), con "exportar ahora" y dismiss por día                                                                         | **CUMPLE**                                                                                                                                       |
+| **G4** | Confirmaciones destructivas                               | Diálogo de salida de sesión, confirmación de saltar día, reset con palabra clave `BORRAR`/`DELETE`                                                                | **CUMPLE**                                                                                                                                       |
+| **G5** | Snackbar deshacer                                         | Existe para saltar día (6 s) y para el registro de peso corporal. **No es un mecanismo genérico**                                                                 | **ADAPTAR**                                                                                                                                      |
+| **G6** | Indicador offline                                         | `navigator.onLine` se consulta en `ProgressionService` y la razón dice "(modo offline)". **Sin indicador visual global**                                          | **ADAPTAR**                                                                                                                                      |
 
 ### 2.3 Tab Rutinas (R)
 
-| ID | Diseño | Qué existe hoy | Estado |
-|---|---|---|---|
-| **R1** | Lista de rutinas (activa, duplicar, archivar) | **No existe el tab.** No existe la entidad Rutina: hay una única lista de días en la home | **FALTA** |
-| **R2** | Detalle de rutina (días, rotación, activar) | Parcial y disperso: la home lista los días y `routinePointer` marca el que toca. Sin reordenar días | **ADAPTAR** |
-| **R3** | Editor de día (reordenable, superseries) | `day-editor/` — bottom sheet con drag&drop de ejercicios (CDK). **Sin superseries** | **ADAPTAR** |
-| **R4** | Biblioteca / selector con filtros y ficha | **No existe.** Los ejercicios se tipean a mano en el editor de día | **FALTA** |
+| ID     | Diseño                                                  | Qué existe hoy                                                                                                                                             | Estado      |
+| ------ | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| **R1** | Lista de rutinas (activa, duplicar, archivar)           | **No existe el tab.** No existe la entidad Rutina: hay una única lista de días en la home                                                                  | **FALTA**   |
+| **R2** | Detalle de rutina (días, rotación, activar)             | Parcial y disperso: la home lista los días y `routinePointer` marca el que toca. Sin reordenar días                                                        | **ADAPTAR** |
+| **R3** | Editor de día (reordenable, superseries)                | `day-editor/` — bottom sheet con drag&drop de ejercicios (CDK). **Sin superseries**                                                                        | **ADAPTAR** |
+| **R4** | Biblioteca / selector con filtros y ficha               | **No existe.** Los ejercicios se tipean a mano en el editor de día                                                                                         | **FALTA**   |
 | **R5** | Editor de esquema (series × rango, RPE, descanso, tipo) | Dentro de `day-editor`: `defaultSets`, `defaultRepTarget`, `restSeconds`, `brick`, `unit`, `notes`. Sin rango de reps, sin RPE objetivo, sin tipo de serie | **ADAPTAR** |
-| **R6** | Plantillas filtradas por perfil con vista previa | `initial-data.ts` tiene 3 plantillas (3/4/5 días), solo ofrecidas en el onboarding, sin filtro ni preview | **ADAPTAR** |
-| **R7** | Generador IA (wizard 3 pasos con costo) | **No existe** | **FALTA** |
+| **R6** | Plantillas filtradas por perfil con vista previa        | `initial-data.ts` tiene 3 plantillas (3/4/5 días), solo ofrecidas en el onboarding, sin filtro ni preview                                                  | **ADAPTAR** |
+| **R7** | Generador IA (wizard 3 pasos con costo)                 | **No existe**                                                                                                                                              | **FALTA**   |
 
 ### 2.4 Tab Progreso (P)
 
-| ID | Diseño | Qué existe hoy | Estado |
-|---|---|---|---|
-| **P1** | Analítica (rangos, tonelaje, volumen por grupo, adherencia) | `history/` tiene rangos 3m/6m/todo y una gráfica; la home muestra volumen semanal y racha. **Sin volumen por grupo muscular ni adherencia** | **ADAPTAR** |
-| **P2** | Detalle de ejercicio (e1RM, récords, tabla) | `history/` (selector de ejercicio + gráfica e1RM/top, puntos interactivos, "ver sesión") y `exercise-chart-sheet/` en sesión. Sin tabla de historial completa ni ficha | **ADAPTAR** |
-| **P3** | Calendario heatmap por tonelaje → H4 | `history/` tiene calendario mensual con días entrenados en verde y tap → sheet filtrado. **Es binario, no heatmap de intensidad** | **ADAPTAR** |
-| **P4** | Cuerpo: peso y medidas | `profile/` + `history/`: `weightLog` con alta/borrado y gráfica. **Sin medidas corporales** | **ADAPTAR** |
-| **P5** | Récords / PRs por ejercicio con fecha | `history/` muestra top 3 PRs; `profile/` la lista completa de logros | **CUMPLE** |
+| ID     | Diseño                                                      | Qué existe hoy                                                                                                                                                         | Estado      |
+| ------ | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| **P1** | Analítica (rangos, tonelaje, volumen por grupo, adherencia) | `history/` tiene rangos 3m/6m/todo y una gráfica; la home muestra volumen semanal y racha. **Sin volumen por grupo muscular ni adherencia**                            | **ADAPTAR** |
+| **P2** | Detalle de ejercicio (e1RM, récords, tabla)                 | `history/` (selector de ejercicio + gráfica e1RM/top, puntos interactivos, "ver sesión") y `exercise-chart-sheet/` en sesión. Sin tabla de historial completa ni ficha | **ADAPTAR** |
+| **P3** | Calendario heatmap por tonelaje → H4                        | `history/` tiene calendario mensual con días entrenados en verde y tap → sheet filtrado. **Es binario, no heatmap de intensidad**                                      | **ADAPTAR** |
+| **P4** | Cuerpo: peso y medidas                                      | `profile/` + `history/`: `weightLog` con alta/borrado y gráfica. **Sin medidas corporales**                                                                            | **ADAPTAR** |
+| **P5** | Récords / PRs por ejercicio con fecha                       | `history/` muestra top 3 PRs; `profile/` la lista completa de logros                                                                                                   | **CUMPLE**  |
 
 ### 2.5 Tab Coach IA (C)
 
-| ID | Diseño | Qué existe hoy | Estado |
-|---|---|---|---|
+| ID     | Diseño                                                                                    | Qué existe hoy                                                                                                                                                        | Estado    |
+| ------ | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | **C1** | Panel: sugerencias por día, aceptar/cambiar/rechazar, estado del proveedor, uso de tokens | **No existe el tab.** La sugerencia se muestra inline en el ejercicio (badge IA + razón). Sin aceptar/rechazar explícito, sin estado de proveedor visible, sin tokens | **FALTA** |
-| **C2** | Chat con contexto (deshabilitado sin key) | **No existe** | **FALTA** |
-| **C3** | Historial de sugerencias y feedback | **No existe** para el usuario. Existe `ai-shadow-log.service.ts`, pero es una herramienta interna de evaluación de modelos, no el historial de C3 | **FALTA** |
+| **C2** | Chat con contexto (deshabilitado sin key)                                                 | **No existe**                                                                                                                                                         | **FALTA** |
+| **C3** | Historial de sugerencias y feedback                                                       | **No existe** para el usuario. Existe `ai-shadow-log.service.ts`, pero es una herramienta interna de evaluación de modelos, no el historial de C3                     | **FALTA** |
 
 ### 2.6 Tab Ajustes (A)
 
-| ID | Diseño | Qué existe hoy | Estado |
-|---|---|---|---|
-| **A1** | Menú de ajustes | `settings/` es un bottom sheet, no un tab con stack. Sin resumen de estado por fila | **ADAPTAR** |
-| **A2** | Perfil (editar todo el onboarding) | `/profile` — peso, altura, edad, sexo, objetivo, notas IA, log de peso, PRs. Falta nivel, equipo, disponibilidad, lesiones estructuradas, unidades | **ADAPTAR** |
-| **A3** | IA y keys (probar conexión, proveedor/modelo, presupuesto, solo local) | Solo dos campos de key en texto plano + nota de privacidad. **Sin probar conexión, sin selector de modelo, sin presupuesto, sin modo "solo local"** | **ADAPTAR** |
-| **A4** | Datos (export JSON/CSV, import fusión/reemplazo, espacio, snapshots, borrar) | Export JSON (share/download), import (**solo reemplaza**), restaurar snapshot, papelera, reset con palabra clave. **Sin CSV, sin fusión, sin medidor de espacio, sin checksum** | **ADAPTAR** |
-| **A5** | Preferencias (unidades, tema, idioma, descansos, incrementos, RPE, notificaciones) | Tema (dark/light/alto contraste), idioma ES/EN, descanso por defecto, sonidos, hápticos, barra y discos. **Sin unidades, sin RPE on/off, sin config de notificaciones** | **ADAPTAR** |
-| **A6** | Herramientas (1RM, discos, conversor, timer) | **No existe la vista.** La calculadora de discos existe (`utils/plates.ts`) pero solo embebida en la tarjeta de serie, con inventario configurable en Ajustes | **ADAPTAR** |
-| **A7** | Acerca de (versión, changelog, disclaimer, privacidad, licencias) | `version.ts` + enlaces a `privacy.html` y `terms.html` desde Ajustes + `legal-gate`. Sin vista unificada ni changelog in-app | **ADAPTAR** |
+| ID     | Diseño                                                                             | Qué existe hoy                                                                                                                                                                  | Estado      |
+| ------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| **A1** | Menú de ajustes                                                                    | `settings/` es un bottom sheet, no un tab con stack. Sin resumen de estado por fila                                                                                             | **ADAPTAR** |
+| **A2** | Perfil (editar todo el onboarding)                                                 | `/profile` — peso, altura, edad, sexo, objetivo, notas IA, log de peso, PRs. Falta nivel, equipo, disponibilidad, lesiones estructuradas, unidades                              | **ADAPTAR** |
+| **A3** | IA y keys (probar conexión, proveedor/modelo, presupuesto, solo local)             | Solo dos campos de key en texto plano + nota de privacidad. **Sin probar conexión, sin selector de modelo, sin presupuesto, sin modo "solo local"**                             | **ADAPTAR** |
+| **A4** | Datos (export JSON/CSV, import fusión/reemplazo, espacio, snapshots, borrar)       | Export JSON (share/download), import (**solo reemplaza**), restaurar snapshot, papelera, reset con palabra clave. **Sin CSV, sin fusión, sin medidor de espacio, sin checksum** | **ADAPTAR** |
+| **A5** | Preferencias (unidades, tema, idioma, descansos, incrementos, RPE, notificaciones) | Tema (dark/light/alto contraste), idioma ES/EN, descanso por defecto, sonidos, hápticos, barra y discos. **Sin unidades, sin RPE on/off, sin config de notificaciones**         | **ADAPTAR** |
+| **A6** | Herramientas (1RM, discos, conversor, timer)                                       | **No existe la vista.** La calculadora de discos existe (`utils/plates.ts`) pero solo embebida en la tarjeta de serie, con inventario configurable en Ajustes                   | **ADAPTAR** |
+| **A7** | Acerca de (versión, changelog, disclaimer, privacidad, licencias)                  | `version.ts` + enlaces a `privacy.html` y `terms.html` desde Ajustes + `legal-gate`. Sin vista unificada ni changelog in-app                                                    | **ADAPTAR** |
 
 ### 2.7 Resumen del mapa
 
-| Tab | Vistas del diseño | CUMPLE | ADAPTAR | FALTA |
-|---|---|---|---|---|
-| O · Onboarding | 6 | 0 | 2 | 4 |
-| H · Hoy | 4 | 2 | 1 | 1 |
-| G · Overlays | 6 | 3 | 3 | 0 |
-| R · Rutinas | 7 | 0 | 4 | 3 |
-| P · Progreso | 5 | 1 | 4 | 0 |
-| C · Coach IA | 3 | 0 | 0 | 3 |
-| A · Ajustes | 7 | 0 | 7 | 0 |
-| **Total** | **38** | **6 (16%)** | **21 (55%)** | **11 (29%)** |
+| Tab            | Vistas del diseño | CUMPLE      | ADAPTAR      | FALTA        |
+| -------------- | ----------------- | ----------- | ------------ | ------------ |
+| O · Onboarding | 6                 | 0           | 2            | 4            |
+| H · Hoy        | 4                 | 2           | 1            | 1            |
+| G · Overlays   | 6                 | 3           | 3            | 0            |
+| R · Rutinas    | 7                 | 0           | 4            | 3            |
+| P · Progreso   | 5                 | 1           | 4            | 0            |
+| C · Coach IA   | 3                 | 0           | 0            | 3            |
+| A · Ajustes    | 7                 | 0           | 7            | 0            |
+| **Total**      | **38**            | **6 (16%)** | **21 (55%)** | **11 (29%)** |
 
 **Lectura:** el 71% de las vistas del diseño tiene algo real detrás. El déficit se concentra en dos bloques
 compactos: **Coach IA completo (C1–C3)** y **el ciclo de rutinas/biblioteca (R1, R4, R7)**. Ninguna vista
@@ -237,175 +237,175 @@ La app además tiene un tema de **alto contraste** que el diseño no contempla: 
 
 #### Datos
 
-| Ítem | Estado | Evidencia / brecha |
-|---|---|---|
+| Ítem                                 | Estado      | Evidencia / brecha                                                                                      |
+| ------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------- |
 | localStorage estructurado por claves | **ADAPTAR** | Existe, pero es **un blob único** `gym_app_state_v2` + claves sueltas. La spec pide particionado `gt_*` |
-| schemaVersion + migraciones | **CUMPLE** | v6, `migrate()` encadenado v1→v6, **con tests de fixtures** |
-| export JSON | **CUMPLE** | `BackupService.exportData()`: Web Share nativo con fallback a `<a download>` |
-| import con fusión/reemplazo | **ADAPTAR** | Import existe pero **solo reemplaza**. Falta modo fusionar y resumen de lo importado (EA-5) |
-| export CSV | **FALTA** | — |
-| recordatorio de backup | **CUMPLE** | Toast a las 10 sesiones (8 tras el primer export), dismiss por día |
-| medidor de espacio | **FALTA** | No hay `navigator.storage.estimate()` |
-| borrar todo con confirmación | **CUMPLE** | Reset exige escribir `BORRAR`/`DELETE` (según idioma) |
-| persistencia por serie | **CUMPLE** | `toggleSetDone` → `commitSession` → `effect` → `save()` |
-| `storage.persist()` | **CUMPLE** | `requestPersistentStorage()` al arrancar |
+| schemaVersion + migraciones          | **CUMPLE**  | v6, `migrate()` encadenado v1→v6, **con tests de fixtures**                                             |
+| export JSON                          | **CUMPLE**  | `BackupService.exportData()`: Web Share nativo con fallback a `<a download>`                            |
+| import con fusión/reemplazo          | **ADAPTAR** | Import existe pero **solo reemplaza**. Falta modo fusionar y resumen de lo importado (EA-5)             |
+| export CSV                           | **FALTA**   | —                                                                                                       |
+| recordatorio de backup               | **CUMPLE**  | Toast a las 10 sesiones (8 tras el primer export), dismiss por día                                      |
+| medidor de espacio                   | **FALTA**   | No hay `navigator.storage.estimate()`                                                                   |
+| borrar todo con confirmación         | **CUMPLE**  | Reset exige escribir `BORRAR`/`DELETE` (según idioma)                                                   |
+| persistencia por serie               | **CUMPLE**  | `toggleSetDone` → `commitSession` → `effect` → `save()`                                                 |
+| `storage.persist()`                  | **CUMPLE**  | `requestPersistentStorage()` al arrancar                                                                |
 
 #### Perfil
 
-| Ítem | Estado | Evidencia / brecha |
-|---|---|---|
-| nivel | **FALTA** | No existe el concepto en el modelo |
-| objetivo | **CUMPLE** | `goal: 'strength'\|'hypertrophy'\|'endurance'`, ya alimenta al motor local y al prompt |
-| equipo | **FALTA** | — |
-| días/semana | **ADAPTAR** | Implícito en el nº de días de la rutina; no hay campo de disponibilidad declarada |
-| lesiones | **ADAPTAR** | `aiNotes` (texto libre) llega al prompt, pero **no es campo estructurado ni límite duro** |
-| unidades kg/lb | **FALTA** | `ExerciseUnit` no contempla lb. Todo se almacena y muestra en kg |
-| peso corporal histórico | **CUMPLE** | `weightLog[]`, upsert diario, gráfica en `/history` |
+| Ítem                    | Estado      | Evidencia / brecha                                                                        |
+| ----------------------- | ----------- | ----------------------------------------------------------------------------------------- |
+| nivel                   | **FALTA**   | No existe el concepto en el modelo                                                        |
+| objetivo                | **CUMPLE**  | `goal: 'strength'\|'hypertrophy'\|'endurance'`, ya alimenta al motor local y al prompt    |
+| equipo                  | **FALTA**   | —                                                                                         |
+| días/semana             | **ADAPTAR** | Implícito en el nº de días de la rutina; no hay campo de disponibilidad declarada         |
+| lesiones                | **ADAPTAR** | `aiNotes` (texto libre) llega al prompt, pero **no es campo estructurado ni límite duro** |
+| unidades kg/lb          | **FALTA**   | `ExerciseUnit` no contempla lb. Todo se almacena y muestra en kg                          |
+| peso corporal histórico | **CUMPLE**  | `weightLog[]`, upsert diario, gráfica en `/history`                                       |
 
 #### Ejercicios
 
-| Ítem | Estado | Evidencia / brecha |
-|---|---|---|
-| catálogo embebido con grupos musculares y equipo | **FALTA** | Existe `AppState.exercises` como catálogo de identidad, pero **vive en localStorage**, se siembra desde plantillas y **no tiene grupo muscular, equipo, tipo ni patrón**. La spec pide catálogo **estático empaquetado** |
-| búsqueda/filtros | **FALTA** | — |
-| ejercicios custom | **CUMPLE** | Todo ejercicio es de hecho custom: se crean y editan en `day-editor` |
-| ficha con historial y récords | **ADAPTAR** | `exercise-chart-sheet` + `/history` dan gráfica e1RM/top y PRs. Falta ficha unificada (técnica, tabla de historial) |
-| sustituciones | **ADAPTAR** | `substituteToday()` sustituye solo por hoy y registra bajo el id correcto (bien resuelto). **No propone alternativas** por patrón/grupo (no hay metadatos) |
+| Ítem                                             | Estado      | Evidencia / brecha                                                                                                                                                                                                       |
+| ------------------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| catálogo embebido con grupos musculares y equipo | **FALTA**   | Existe `AppState.exercises` como catálogo de identidad, pero **vive en localStorage**, se siembra desde plantillas y **no tiene grupo muscular, equipo, tipo ni patrón**. La spec pide catálogo **estático empaquetado** |
+| búsqueda/filtros                                 | **FALTA**   | —                                                                                                                                                                                                                        |
+| ejercicios custom                                | **CUMPLE**  | Todo ejercicio es de hecho custom: se crean y editan en `day-editor`                                                                                                                                                     |
+| ficha con historial y récords                    | **ADAPTAR** | `exercise-chart-sheet` + `/history` dan gráfica e1RM/top y PRs. Falta ficha unificada (técnica, tabla de historial)                                                                                                      |
+| sustituciones                                    | **ADAPTAR** | `substituteToday()` sustituye solo por hoy y registra bajo el id correcto (bien resuelto). **No propone alternativas** por patrón/grupo (no hay metadatos)                                                               |
 
 #### Rutinas
 
-| Ítem | Estado | Evidencia / brecha |
-|---|---|---|
-| CRUD + duplicar + archivar | **ADAPTAR** | CRUD de **días** sí (`saveDay`/`deleteDay`). **No hay entidad Rutina**, ni duplicar, ni archivar |
-| días y esquemas (series/reps/RPE/descanso) | **ADAPTAR** | Series, reps objetivo y descanso sí. **Sin rango de reps, sin RPE objetivo, sin % de 1RM** |
-| superseries / dropsets / AMRAP | **FALTA** | Solo existe `isWarmup` como tipo de serie |
-| plantillas por nivel | **ADAPTAR** | 3 plantillas (3/4/5 días) en `initial-data.ts`, solo accesibles desde el onboarding, sin filtro por nivel/equipo ni vista previa |
-| rutina activa con rotación | **CUMPLE** | `routinePointer` + `advanceRoutine()` + `skipDay()`/`undoSkipDay()` |
-| generador IA con revisión previa | **FALTA** | — |
+| Ítem                                       | Estado      | Evidencia / brecha                                                                                                               |
+| ------------------------------------------ | ----------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| CRUD + duplicar + archivar                 | **ADAPTAR** | CRUD de **días** sí (`saveDay`/`deleteDay`). **No hay entidad Rutina**, ni duplicar, ni archivar                                 |
+| días y esquemas (series/reps/RPE/descanso) | **ADAPTAR** | Series, reps objetivo y descanso sí. **Sin rango de reps, sin RPE objetivo, sin % de 1RM**                                       |
+| superseries / dropsets / AMRAP             | **FALTA**   | Solo existe `isWarmup` como tipo de serie                                                                                        |
+| plantillas por nivel                       | **ADAPTAR** | 3 plantillas (3/4/5 días) en `initial-data.ts`, solo accesibles desde el onboarding, sin filtro por nivel/equipo ni vista previa |
+| rutina activa con rotación                 | **CUMPLE**  | `routinePointer` + `advanceRoutine()` + `skipDay()`/`undoSkipDay()`                                                              |
+| generador IA con revisión previa           | **FALTA**   | —                                                                                                                                |
 
 #### Sesión
 
-| Ítem | Estado | Evidencia / brecha |
-|---|---|---|
-| iniciar en 1 tap | **CUMPLE** | CTA grande en H1 |
-| última sesión visible por ejercicio | **CUMPLE** | En ambas vistas de sesión |
-| sugerencia visible por ejercicio | **CUMPLE** | Badge IA + razón |
-| registro rápido con autocompletar | **CUMPLE** | Prefill desde IA o última sesión, con marca visual del prefill |
-| temporizador con vibración/notificación | **CUMPLE** | Sonido (Web Audio), vibración, notificación vía SW, wake lock |
-| editar sobre la marcha | **ADAPTAR** | Serie extra ✓, sustituir por hoy ✓. **Falta añadir/quitar ejercicio durante la sesión** |
-| notas | **ADAPTAR** | Nota + sensación **por ejercicio** ✓. **Falta nota por serie y por sesión** |
-| PRs en vivo | **CUMPLE** | `maybeCelebratePr()`: compara contra el histórico excluyendo hoy, con anti-spam y exclusión de unidades no comparables |
-| resumen final | **FALTA** | Al terminar solo se avanza el puntero de rutina (H3 no existe) |
-| recuperación de sesión | **ADAPTAR** | El progreso sobrevive al cierre y el CTA cambia a "Continuar entrenamiento". **Falta el banner explícito con antigüedad y las opciones finalizar-como-está / descartar** (F7). Sin timestamp de inicio no se puede decir "hace 40 min" |
+| Ítem                                    | Estado      | Evidencia / brecha                                                                                                                                                                                                                     |
+| --------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| iniciar en 1 tap                        | **CUMPLE**  | CTA grande en H1                                                                                                                                                                                                                       |
+| última sesión visible por ejercicio     | **CUMPLE**  | En ambas vistas de sesión                                                                                                                                                                                                              |
+| sugerencia visible por ejercicio        | **CUMPLE**  | Badge IA + razón                                                                                                                                                                                                                       |
+| registro rápido con autocompletar       | **CUMPLE**  | Prefill desde IA o última sesión, con marca visual del prefill                                                                                                                                                                         |
+| temporizador con vibración/notificación | **CUMPLE**  | Sonido (Web Audio), vibración, notificación vía SW, wake lock                                                                                                                                                                          |
+| editar sobre la marcha                  | **ADAPTAR** | Serie extra ✓, sustituir por hoy ✓. **Falta añadir/quitar ejercicio durante la sesión**                                                                                                                                                |
+| notas                                   | **ADAPTAR** | Nota + sensación **por ejercicio** ✓. **Falta nota por serie y por sesión**                                                                                                                                                            |
+| PRs en vivo                             | **CUMPLE**  | `maybeCelebratePr()`: compara contra el histórico excluyendo hoy, con anti-spam y exclusión de unidades no comparables                                                                                                                 |
+| resumen final                           | **FALTA**   | Al terminar solo se avanza el puntero de rutina (H3 no existe)                                                                                                                                                                         |
+| recuperación de sesión                  | **ADAPTAR** | El progreso sobrevive al cierre y el CTA cambia a "Continuar entrenamiento". **Falta el banner explícito con antigüedad y las opciones finalizar-como-está / descartar** (F7). Sin timestamp de inicio no se puede decir "hace 40 min" |
 
 #### IA
 
-| Ítem | Estado | Evidencia / brecha |
-|---|---|---|
-| keys Groq y Cohere | **CUMPLE** | Dos campos en Ajustes |
-| prueba de conexión | **FALTA** | — |
-| selección de proveedor/modelo | **FALTA** | Modelos hardcodeados (`GROQ_MODEL`, Cohere) |
-| contexto compacto | **FALTA** | El prompt manda `JSON.stringify(summary, null, 2)` — **JSON indentado, lo contrario de la serialización CSV-like** del Art. 5 |
-| salida JSON validada | **ADAPTAR** | `response_format: json_object` + `parseAndNormalizeSets()` valida forma y tipos. **No valida contra límites duros** |
+| Ítem                                     | Estado      | Evidencia / brecha                                                                                                                                         |
+| ---------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| keys Groq y Cohere                       | **CUMPLE**  | Dos campos en Ajustes                                                                                                                                      |
+| prueba de conexión                       | **FALTA**   | —                                                                                                                                                          |
+| selección de proveedor/modelo            | **FALTA**   | Modelos hardcodeados (`GROQ_MODEL`, Cohere)                                                                                                                |
+| contexto compacto                        | **FALTA**   | El prompt manda `JSON.stringify(summary, null, 2)` — **JSON indentado, lo contrario de la serialización CSV-like** del Art. 5                              |
+| salida JSON validada                     | **ADAPTAR** | `response_format: json_object` + `parseAndNormalizeSets()` valida forma y tipos. **No valida contra límites duros**                                        |
 | aceptar/rechazar con feedback persistido | **ADAPTAR** | El feedback subjetivo (`feel` + nota) se persiste y **se reinyecta al prompt** (`buildFeedbackNote`). **No existe aceptar/cambiar/rechazar la sugerencia** |
-| fallback Groq→Cohere→reglas | **CUMPLE** | `buildProviders()` + bucle con `catch`. Cumple EA-2 tal cual |
-| motor de reglas local completo | **CUMPLE** | `LocalProvider`, 549 líneas, con tests |
-| deload y estancamiento | **CUMPLE** | Deload al 70% tras N sesiones progresando; detección de sesiones confirmadas consecutivas |
-| análisis semanal | **FALTA** | — |
-| límites de seguridad | **ADAPTAR** | Solo el cap por descanso largo (90%/85% tras 14/28 días). **Falta el tope de +10% y el respeto de lesiones** |
-| disclaimer | **CUMPLE** | `legal-gate` + `privacy.html` + `terms.html` |
+| fallback Groq→Cohere→reglas              | **CUMPLE**  | `buildProviders()` + bucle con `catch`. Cumple EA-2 tal cual                                                                                               |
+| motor de reglas local completo           | **CUMPLE**  | `LocalProvider`, 549 líneas, con tests                                                                                                                     |
+| deload y estancamiento                   | **CUMPLE**  | Deload al 70% tras N sesiones progresando; detección de sesiones confirmadas consecutivas                                                                  |
+| análisis semanal                         | **FALTA**   | —                                                                                                                                                          |
+| límites de seguridad                     | **ADAPTAR** | Solo el cap por descanso largo (90%/85% tras 14/28 días). **Falta el tope de +10% y el respeto de lesiones**                                               |
+| disclaimer                               | **CUMPLE**  | `legal-gate` + `privacy.html` + `terms.html`                                                                                                               |
 
 #### Progreso
 
-| Ítem | Estado | Evidencia / brecha |
-|---|---|---|
-| dashboard con racha | **CUMPLE** | Racha + volumen semanal + mapa Lun-Dom en H1 |
-| 1RM estimado por ejercicio | **CUMPLE** | Epley en `utils/chart.ts`, seleccionable como métrica |
-| volumen por grupo muscular | **FALTA** | Bloqueado: no hay grupo muscular en el modelo |
-| heatmap calendario | **ADAPTAR** | Calendario mensual binario (entrenado/no). Falta intensidad por tonelaje |
-| medidas corporales | **ADAPTAR** | Solo peso corporal |
-| comparativas temporales | **ADAPTAR** | vs. sesión anterior ✓ y rangos 3m/6m/todo ✓. Faltan los rangos 4/12 semanas y el agregado "vs. mes pasado" |
+| Ítem                       | Estado      | Evidencia / brecha                                                                                         |
+| -------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------- |
+| dashboard con racha        | **CUMPLE**  | Racha + volumen semanal + mapa Lun-Dom en H1                                                               |
+| 1RM estimado por ejercicio | **CUMPLE**  | Epley en `utils/chart.ts`, seleccionable como métrica                                                      |
+| volumen por grupo muscular | **FALTA**   | Bloqueado: no hay grupo muscular en el modelo                                                              |
+| heatmap calendario         | **ADAPTAR** | Calendario mensual binario (entrenado/no). Falta intensidad por tonelaje                                   |
+| medidas corporales         | **ADAPTAR** | Solo peso corporal                                                                                         |
+| comparativas temporales    | **ADAPTAR** | vs. sesión anterior ✓ y rangos 3m/6m/todo ✓. Faltan los rangos 4/12 semanas y el agregado "vs. mes pasado" |
 
 #### Herramientas
 
-| Ítem | Estado | Evidencia / brecha |
-|---|---|---|
-| calculadora 1RM / porcentajes | **FALTA** | Epley se usa para graficar, no hay calculadora |
-| calculadora de discos | **ADAPTAR** | `plateBreakdown()` con inventario configurable (`barWeightKg`, `platesKg`), **ya integrada en la tarjeta de serie**. Falta exponerla como herramienta (A6) |
-| conversor kg/lb | **FALTA** | — |
-| temporizador libre | **FALTA** | Solo el de descanso |
+| Ítem                          | Estado      | Evidencia / brecha                                                                                                                                         |
+| ----------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| calculadora 1RM / porcentajes | **FALTA**   | Epley se usa para graficar, no hay calculadora                                                                                                             |
+| calculadora de discos         | **ADAPTAR** | `plateBreakdown()` con inventario configurable (`barWeightKg`, `platesKg`), **ya integrada en la tarjeta de serie**. Falta exponerla como herramienta (A6) |
+| conversor kg/lb               | **FALTA**   | —                                                                                                                                                          |
+| temporizador libre            | **FALTA**   | Solo el de descanso                                                                                                                                        |
 
 #### PWA / UX
 
-| Ítem | Estado | Evidencia / brecha |
-|---|---|---|
-| instalable + offline | **CUMPLE** | `ngsw-config.json` + manifest; `AppUpdateService` avisa de nueva versión |
-| Wake Lock en sesión | **CUMPLE** | `WakeLockService` cubre **toda** la sesión y re-adquiere al volver a primer plano |
+| Ítem                   | Estado      | Evidencia / brecha                                                                                                                 |
+| ---------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| instalable + offline   | **CUMPLE**  | `ngsw-config.json` + manifest; `AppUpdateService` avisa de nueva versión                                                           |
+| Wake Lock en sesión    | **CUMPLE**  | `WakeLockService` cubre **toda** la sesión y re-adquiere al volver a primer plano                                                  |
 | notificaciones locales | **ADAPTAR** | Fin de descanso ✓ (vía SW). **Faltan recordatorios de entrenamiento y de backup como notificación** (el de backup es toast in-app) |
-| modo oscuro | **CUMPLE** | Dark por defecto + light + alto contraste |
-| navegación de 5 tabs | **ADAPTAR** | Son 3 (Inicio / Historial / Perfil), sin stacks por tab |
-| inputs con steppers | **CUMPLE** | Steppers de 48 px en la vista enfocada |
-| estados vacíos guiados | **ADAPTAR** | Home e Historial sí; no sistemáticamente en todas las vistas |
-| deshacer | **ADAPTAR** | Saltar día (6 s) y peso corporal. No es un mecanismo genérico |
+| modo oscuro            | **CUMPLE**  | Dark por defecto + light + alto contraste                                                                                          |
+| navegación de 5 tabs   | **ADAPTAR** | Son 3 (Inicio / Historial / Perfil), sin stacks por tab                                                                            |
+| inputs con steppers    | **CUMPLE**  | Steppers de 48 px en la vista enfocada                                                                                             |
+| estados vacíos guiados | **ADAPTAR** | Home e Historial sí; no sistemáticamente en todas las vistas                                                                       |
+| deshacer               | **ADAPTAR** | Saltar día (6 s) y peso corporal. No es un mecanismo genérico                                                                      |
 
 ### 3.2 §14 — Checklist adicional
 
 #### Tokens / IA
 
-| Ítem | Estado | Evidencia / brecha |
-|---|---|---|
-| serialización compacta CSV-like | **FALTA** | Se envía JSON con `null, 2` |
-| diccionario de abreviaturas | **FALTA** | Claves largas en español (`dias_desde_ultima_sesion`, `historial_sesiones`) |
-| ventana de 3–6 sesiones | **CUMPLE** | `HISTORY_SESSIONS = 5` |
-| pre-filtrado local de casos obvios | **ADAPTAR** | No se llama si no hay providers ni datos (`hasDoneOrHistory`). Falta el pre-filtro por "caso obvio" (primera sesión, unidad no progresable) |
-| **1 llamada por sesión** | **FALTA** ⚠️ | Hoy es **1 llamada por ejercicio**, encoladas y serializadas. Un día de 6 ejercicios = 6 llamadas. **Choca con Art. 5 y RF-IA-06** → §6.1 |
-| caché por hash de contexto | **ADAPTAR** | Caché por `exerciseId` + fecha + última sesión + firma de perfil. Cumple el propósito (y es deliberadamente determinista), pero **no es un hash del contexto** |
-| max_tokens por tipo de tarea | **ADAPTAR** | Fijo en 300; hoy solo existe una tarea |
-| temperature 0–0.3 | **CUMPLE** | `temperature: 0` en ambos proveedores |
-| contador de tokens (`usage`) | **FALTA** | La respuesta trae `usage` y **se descarta** |
-| presupuesto mensual con corte | **FALTA** | — |
-| modelo pequeño/grande por tarea | **FALTA** | — |
-| confirmación de costo en operaciones caras | **FALTA** | No hay operaciones caras todavía |
-| anti doble-tap | **CUMPLE** | `aiInFlight` (Set) + cola serializada `drainAiQueue()` |
+| Ítem                                       | Estado       | Evidencia / brecha                                                                                                                                             |
+| ------------------------------------------ | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| serialización compacta CSV-like            | **FALTA**    | Se envía JSON con `null, 2`                                                                                                                                    |
+| diccionario de abreviaturas                | **FALTA**    | Claves largas en español (`dias_desde_ultima_sesion`, `historial_sesiones`)                                                                                    |
+| ventana de 3–6 sesiones                    | **CUMPLE**   | `HISTORY_SESSIONS = 5`                                                                                                                                         |
+| pre-filtrado local de casos obvios         | **ADAPTAR**  | No se llama si no hay providers ni datos (`hasDoneOrHistory`). Falta el pre-filtro por "caso obvio" (primera sesión, unidad no progresable)                    |
+| **1 llamada por sesión**                   | **FALTA** ⚠️ | Hoy es **1 llamada por ejercicio**, encoladas y serializadas. Un día de 6 ejercicios = 6 llamadas. **Choca con Art. 5 y RF-IA-06** → §6.1                      |
+| caché por hash de contexto                 | **ADAPTAR**  | Caché por `exerciseId` + fecha + última sesión + firma de perfil. Cumple el propósito (y es deliberadamente determinista), pero **no es un hash del contexto** |
+| max_tokens por tipo de tarea               | **ADAPTAR**  | Fijo en 300; hoy solo existe una tarea                                                                                                                         |
+| temperature 0–0.3                          | **CUMPLE**   | `temperature: 0` en ambos proveedores                                                                                                                          |
+| contador de tokens (`usage`)               | **FALTA**    | La respuesta trae `usage` y **se descarta**                                                                                                                    |
+| presupuesto mensual con corte              | **FALTA**    | —                                                                                                                                                              |
+| modelo pequeño/grande por tarea            | **FALTA**    | —                                                                                                                                                              |
+| confirmación de costo en operaciones caras | **FALTA**    | No hay operaciones caras todavía                                                                                                                               |
+| anti doble-tap                             | **CUMPLE**   | `aiInFlight` (Set) + cola serializada `drainAiQueue()`                                                                                                         |
 
 #### Ingeniería
 
-| Ítem | Estado | Evidencia / brecha |
-|---|---|---|
-| escritura atómica | **FALTA** ⚠️ | `save()` hace `localStorage.setItem()` directo del blob completo. **No hay temporal → validar → swap** (Art. 7). Mitigado parcialmente por el espejo IDB y los snapshots |
+| Ítem                                    | Estado         | Evidencia / brecha                                                                                                                                                                                                                                                             |
+| --------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| escritura atómica                       | **FALTA** ⚠️   | `save()` hace `localStorage.setItem()` directo del blob completo. **No hay temporal → validar → swap** (Art. 7). Mitigado parcialmente por el espejo IDB y los snapshots                                                                                                       |
 | validación de esquema en lectura/import | **ADAPTAR** ⚠️ | `isValidAppState()` es **superficial**: comprueba que `days` sea array y poco más; no valida tipos internos. Y ante estado inválido **`load()` devuelve el estado inicial**, es decir, **tapa datos potencialmente recuperables en vez de ponerlos en cuarentena** (RF-STO-04) |
-| checksum en backups | **FALTA** | El export añade `exportedAt` y `appVersion`, sin checksum |
-| snapshots internos rotativos | **CUMPLE** | IndexedDB, semanales, máx. 4, restaurables desde Ajustes |
-| manejo multi-pestaña | **FALTA** | Sin listener de `storage` ni Web Locks. **Dos pestañas abiertas hoy se pisan** (gana la última en guardar) |
-| key cifrada (WebCrypto) | **FALTA** ⚠️ | Las keys viven en claro dentro de `AppState.settings` **y salen en el backup JSON** → §6.2 |
-| CSP sin CDNs externos | **ADAPTAR** | Cero CDNs: fuentes self-hosted, sin librerías externas. **Falta declarar la CSP** (meta o cabecera) |
-| sanitización de texto libre e imports | **ADAPTAR** | Angular escapa por interpolación y no hay `innerHTML`. Falta saneo explícito de strings importados |
-| respuesta IA validada con límites duros | **FALTA** ⚠️ | → §6.3 |
-| error boundary + log local | **ADAPTAR** | `GlobalErrorHandler` + `ErrorService` + toast. **Sin log persistido** |
-| virtualización y downsampling | **FALTA** | `buildChart()` dibuja todos los puntos; sin agregación >200 (RF-PRO-04) |
-| bundle < 300 KB gzip | **CUMPLE** | ~138 KB gzip de carga inicial |
-| backoff y timeout en IA | **CUMPLE** | 12 s, `retry-after` respetado, 1 reintento, cap de espera 8 s |
-| tests del motor de reglas y migraciones | **CUMPLE** | 98 tests verdes en 5 archivos, con fixtures de migración v1→v6 |
-| abstracción `AIProvider` | **CUMPLE** | Interfaz real; la UI nunca llama a un proveedor |
-| disclaimer + política de privacidad | **CUMPLE** | `legal-gate` + `privacy.html` + `terms.html` |
-| licencia del catálogo | **FALTA** | No aplica hoy (no hay catálogo de terceros); será obligatorio al incorporarlo en T-500 |
+| checksum en backups                     | **FALTA**      | El export añade `exportedAt` y `appVersion`, sin checksum                                                                                                                                                                                                                      |
+| snapshots internos rotativos            | **CUMPLE**     | IndexedDB, semanales, máx. 4, restaurables desde Ajustes                                                                                                                                                                                                                       |
+| manejo multi-pestaña                    | **FALTA**      | Sin listener de `storage` ni Web Locks. **Dos pestañas abiertas hoy se pisan** (gana la última en guardar)                                                                                                                                                                     |
+| key cifrada (WebCrypto)                 | **FALTA** ⚠️   | Las keys viven en claro dentro de `AppState.settings` **y salen en el backup JSON** → §6.2                                                                                                                                                                                     |
+| CSP sin CDNs externos                   | **ADAPTAR**    | Cero CDNs: fuentes self-hosted, sin librerías externas. **Falta declarar la CSP** (meta o cabecera)                                                                                                                                                                            |
+| sanitización de texto libre e imports   | **ADAPTAR**    | Angular escapa por interpolación y no hay `innerHTML`. Falta saneo explícito de strings importados                                                                                                                                                                             |
+| respuesta IA validada con límites duros | **FALTA** ⚠️   | → §6.3                                                                                                                                                                                                                                                                         |
+| error boundary + log local              | **ADAPTAR**    | `GlobalErrorHandler` + `ErrorService` + toast. **Sin log persistido**                                                                                                                                                                                                          |
+| virtualización y downsampling           | **FALTA**      | `buildChart()` dibuja todos los puntos; sin agregación >200 (RF-PRO-04)                                                                                                                                                                                                        |
+| bundle < 300 KB gzip                    | **CUMPLE**     | ~138 KB gzip de carga inicial                                                                                                                                                                                                                                                  |
+| backoff y timeout en IA                 | **CUMPLE**     | 12 s, `retry-after` respetado, 1 reintento, cap de espera 8 s                                                                                                                                                                                                                  |
+| tests del motor de reglas y migraciones | **CUMPLE**     | 98 tests verdes en 5 archivos, con fixtures de migración v1→v6                                                                                                                                                                                                                 |
+| abstracción `AIProvider`                | **CUMPLE**     | Interfaz real; la UI nunca llama a un proveedor                                                                                                                                                                                                                                |
+| disclaimer + política de privacidad     | **CUMPLE**     | `legal-gate` + `privacy.html` + `terms.html`                                                                                                                                                                                                                                   |
+| licencia del catálogo                   | **FALTA**      | No aplica hoy (no hay catálogo de terceros); será obligatorio al incorporarlo en T-500                                                                                                                                                                                         |
 
 ### 3.3 §15.4 — Checklist de navegación y vistas
 
-| Ítem | Estado | Evidencia / brecha |
-|---|---|---|
-| tab bar de 5 pestañas con stacks independientes | **ADAPTAR** | 3 tabs, sin stacks (cada tab es una ruta plana) |
-| onboarding omitible en cada paso | **ADAPTAR** | 4 slides navegables, pero **la elección de días al final es obligatoria** |
-| O5 permite omitir la key sin fricción | **FALTA** | La vista no existe. Funcionalmente la app ya no bloquea nada sin key (el espíritu se cumple), pero el paso no está |
-| H1 con estados: sin rutina / descanso / sesión interrumpida | **ADAPTAR** | Estado vacío guiado ✓. **Sin estado "día de descanso"**; interrumpida solo como cambio de texto del CTA |
-| H2 sin scroll para registrar serie | **CUMPLE** | Vista enfocada: 1 serie, steppers 48 px, un tap. Es el punto más fuerte de la app |
-| temporizador G1 persistente y minimizable | **ADAPTAR** | Persistente y global ✓. **No minimizable**: ocupa la pantalla hasta saltarlo |
-| sheets en vez de pantallas para acciones secundarias | **CUMPLE** | 7 bottom sheets + stack de overlays integrado con el botón atrás de Android |
-| R7 con confirmación de costo y edición antes de guardar | **FALTA** | — |
-| C2 deshabilitado sin key con explicación | **FALTA** | No hay chat |
-| 4 estados definidos en cada vista | **ADAPTAR** | "Con datos" y "vacío" cubiertos en las vistas principales; "cargando" solo en la IA; "error" solo global |
-| F7 recuperación de sesión | **ADAPTAR** | Ver arriba |
-| F8 offline sin bloqueo | **CUMPLE** | Todo el flujo estrella funciona sin red; la IA degrada al motor local con la razón anotada |
+| Ítem                                                        | Estado      | Evidencia / brecha                                                                                                 |
+| ----------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------ |
+| tab bar de 5 pestañas con stacks independientes             | **ADAPTAR** | 3 tabs, sin stacks (cada tab es una ruta plana)                                                                    |
+| onboarding omitible en cada paso                            | **ADAPTAR** | 4 slides navegables, pero **la elección de días al final es obligatoria**                                          |
+| O5 permite omitir la key sin fricción                       | **FALTA**   | La vista no existe. Funcionalmente la app ya no bloquea nada sin key (el espíritu se cumple), pero el paso no está |
+| H1 con estados: sin rutina / descanso / sesión interrumpida | **ADAPTAR** | Estado vacío guiado ✓. **Sin estado "día de descanso"**; interrumpida solo como cambio de texto del CTA            |
+| H2 sin scroll para registrar serie                          | **CUMPLE**  | Vista enfocada: 1 serie, steppers 48 px, un tap. Es el punto más fuerte de la app                                  |
+| temporizador G1 persistente y minimizable                   | **ADAPTAR** | Persistente y global ✓. **No minimizable**: ocupa la pantalla hasta saltarlo                                       |
+| sheets en vez de pantallas para acciones secundarias        | **CUMPLE**  | 7 bottom sheets + stack de overlays integrado con el botón atrás de Android                                        |
+| R7 con confirmación de costo y edición antes de guardar     | **FALTA**   | —                                                                                                                  |
+| C2 deshabilitado sin key con explicación                    | **FALTA**   | No hay chat                                                                                                        |
+| 4 estados definidos en cada vista                           | **ADAPTAR** | "Con datos" y "vacío" cubiertos en las vistas principales; "cargando" solo en la IA; "error" solo global           |
+| F7 recuperación de sesión                                   | **ADAPTAR** | Ver arriba                                                                                                         |
+| F8 offline sin bloqueo                                      | **CUMPLE**  | Todo el flujo estrella funciona sin red; la IA degrada al motor local con la razón anotada                         |
 
 ### 3.4 Nada que ELIMINAR (y por qué)
 

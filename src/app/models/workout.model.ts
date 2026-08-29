@@ -1,4 +1,4 @@
-export type ExerciseUnit = 'kg' | 'kg por mano' | 'kg por brazo' | 'tiempo' | 'peso corporal';
+export type ExerciseUnit = 'KG' | 'KG_PER_HAND' | 'KG_PER_ARM' | 'TIME' | 'BODYWEIGHT';
 
 export interface Exercise {
   id: string;

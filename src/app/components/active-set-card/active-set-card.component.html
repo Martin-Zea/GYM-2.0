@@ -48,7 +48,7 @@
       @if (needsWeight()) {
         <div class="asc-stepper">
           <p class="asc-stepper-label">
-            {{ exercise().unit === 'tiempo' ? T().col_seconds : T().col_weight }}
+            {{ exercise().unit === 'TIME' ? T().col_seconds : T().col_weight }}
           </p>
           <div class="asc-stepper-row">
             <button
@@ -58,7 +58,7 @@
             >
               −
             </button>
-            @if (exercise().unit === 'kg') {
+            @if (exercise().unit === 'KG') {
               <button
                 class="asc-value mono"
                 [class.asc-value--empty]="displayWeight() === null"

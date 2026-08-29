@@ -276,7 +276,7 @@ export class HistoryComponent {
       .historyForExercise(s, ex.id)
       .filter((h) => h.topWeight > 0 && (!cutoff || h.dateISO >= cutoff));
     if (history.length < 2) return null;
-    const exMetric = ex.unit === 'tiempo' || ex.unit === 'peso corporal' ? 'top' : this.metric();
+    const exMetric = ex.unit === 'TIME' || ex.unit === 'BODYWEIGHT' ? 'top' : this.metric();
     const values = history.map((h) => metricValue(h, exMetric));
     const n = history.length;
     const weightDelta = Math.round((history[n - 1].topWeight - history[n - 2].topWeight) * 10) / 10;
@@ -332,7 +332,7 @@ export class HistoryComponent {
     const s = this.state.state();
     const rows: PrRow[] = [];
     for (const ex of s.exercises) {
-      if (ex.unit === 'tiempo' || ex.unit === 'peso corporal') continue;
+      if (ex.unit === 'TIME' || ex.unit === 'BODYWEIGHT') continue;
       const history = this.storage.historyForExercise(s, ex.id);
       let best: HistoryEntry | null = null;
       for (const entry of history) {

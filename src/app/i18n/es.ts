@@ -118,6 +118,41 @@ export const es: Translations = {
     'No se pudo guardar: almacenamiento lleno. Exportá tus datos y limpiá el historial.',
   save_error_generic: 'No se pudo guardar el estado de la app.',
 
+  settings_storage_title: 'Espacio usado',
+  settings_storage_app: 'Tus datos: {size}',
+  settings_storage_origin: 'navegador: {used} de {quota} ({percent}%)',
+  settings_purge_label: 'Antigüedad a purgar',
+  settings_purge_months: 'Más de {n} meses',
+  settings_purge_btn: 'Purgar historial',
+  settings_purge_confirm:
+    'Se van a borrar {n} sesiones anteriores al {date}. No van a la papelera y no se puede deshacer. ¿Seguir?',
+  settings_purge_done: 'Se borraron {n} sesiones antiguas.',
+  settings_purge_nothing: 'No hay sesiones tan antiguas para borrar.',
+
+  settings_import_merge: 'Importar y fusionar',
+  settings_import_replace: 'Importar y reemplazar',
+  settings_export_credentials: 'Incluir claves de IA en la copia',
+  settings_export_credentials_desc:
+    'Apagado por defecto: el archivo se comparte y las claves viajarían en texto plano.',
+  import_merge_report:
+    'Fusionado: {sessions} sesiones nuevas, {skipped} ya estaban, {exercises} ejercicios y {days} días agregados.',
+  import_replace_report: 'Datos reemplazados por los del backup.',
+  import_remapped: 'Se renombraron {n} identificadores que chocaban con los tuyos.',
+  import_credentials_warning:
+    'Ese backup traía tus claves de IA en texto plano: conviene rotarlas.',
+
+  quarantine_title: 'No pudimos leer tus datos',
+  quarantine_msg:
+    'Tus datos guardados no se pudieron leer, así que los apartamos sin tocarlos. Nada se sobrescribe hasta que decidas. Descargá una copia por si se pueden recuperar.',
+  quarantine_download: 'Descargar copia',
+  quarantine_discard: 'Empezar de cero',
+  quarantine_discard_confirm:
+    '¿Descartar los datos que no se pudieron leer y empezar de cero? Esto no se puede deshacer.',
+
+  tab_conflict_msg:
+    'Tenés la app abierta en otra pestaña y esa es la que guarda. Acá no se guardan los cambios: recargá para seguir en esta.',
+  tab_conflict_reload: 'Recargar',
+
   app_error_generic: 'Algo salió mal. Tus datos están a salvo.',
 
   update_available: '¡Nueva versión disponible!',
