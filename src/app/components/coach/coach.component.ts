@@ -143,6 +143,25 @@ export class CoachComponent {
 
   // ── C2 · chat ──
 
+  protected readonly proposalSaved = signal(false);
+
+  protected acceptProposal(): void {
+    this.chat.acceptProposal();
+    this.proposalSaved.set(true);
+    setTimeout(() => this.proposalSaved.set(false), 3000);
+  }
+
+  /** Etiqueta legible de objetivo y nivel: el modelo los manda como enum. */
+  protected goalLabel(goal: string): string {
+    const t = this.T() as unknown as Partial<Record<string, string>>;
+    return t[`settings_goal_${goal}`] ?? goal;
+  }
+
+  protected levelLabel(level: string): string {
+    const t = this.T() as unknown as Partial<Record<string, string>>;
+    return t[`profile_level_${level}`] ?? level;
+  }
+
   protected async send(): Promise<void> {
     const text = this.draft().trim();
     if (!text) return;

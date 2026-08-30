@@ -197,12 +197,70 @@ describe('injuryBlocksIncrease()', () => {
 
 describe('allowedCeiling()', () => {
   it('es el 110% de la última marca', () => {
-    const ec = ctx().exercises[0];
-    expect(allowedCeiling(ec, '')).toBeCloseTo(110, 5);
+    const c = ctx();
+    expect(allowedCeiling(c.exercises[0], '', c.todayISO)).toBeCloseTo(110, 5);
   });
 
   it('sin referencia no hay tope', () => {
-    const ec = { ...ctx().exercises[0], history: [], lastSets: null };
-    expect(allowedCeiling(ec, '')).toBeNull();
+    const c = ctx();
+    const ec = { ...c.exercises[0], history: [], lastSets: null };
+    expect(allowedCeiling(ec, '', c.todayISO)).toBeNull();
+  });
+});
+
+describe('Tope tras un parón (T-810)', () => {
+  function withGap(lastSessionDate: string, todayISO: string): AiSessionContext {
+    const base = ctx();
+    return {
+      ...base,
+      todayISO,
+      exercises: base.exercises.map((ec) => ({
+        ...ec,
+        lastSessionDate,
+        lastSets: [{ exerciseId: ec.exercise.id, setIndex: 0, weight: 100, reps: 5 }],
+      })),
+    };
+  }
+
+  it('sin parón el techo sigue siendo +10% sobre la última marca', () => {
+    const c = withGap('2026-08-28', '2026-08-30');
+    expect(allowedCeiling(c.exercises[0], undefined, c.todayISO)).toBeCloseTo(110, 5);
+  });
+
+  it('pasados 14 días el techo BAJA de la última marca, no sube', () => {
+    const c = withGap('2026-08-10', '2026-08-30');
+    expect(allowedCeiling(c.exercises[0], undefined, c.todayISO)).toBeCloseTo(90, 5);
+  });
+
+  it('tras dos meses parado recorta al 85%: volver no es continuar', () => {
+    const c = withGap('2026-06-30', '2026-08-30');
+    expect(allowedCeiling(c.exercises[0], undefined, c.todayISO)).toBeCloseTo(85, 5);
+  });
+
+  it('la respuesta de la IA se acota de verdad, no solo se avisa', () => {
+    const c = withGap('2026-06-30', '2026-08-30');
+    const id = c.exercises[0].exercise.id;
+    // El modelo propone MÁS que la marca previa al parón: el caso peligroso.
+    const raw = { r: [{ e: 1, sets: [{ w: 105, r: 5 }], why: 'seguimos subiendo' }] };
+
+    const out = validateSessionResponse(raw, c, 'groq');
+
+    expect(out.byExercise[id].sets[0].weight).toBeLessThanOrEqual(85);
+    expect(out.corrections.find((x) => x.exerciseId === id)?.reasons.length).toBeGreaterThan(0);
+  });
+
+  it('un ejercicio sin historial no se toca: no hay referencia que recortar', () => {
+    const base = ctx();
+    const c: AiSessionContext = {
+      ...base,
+      todayISO: '2026-08-30',
+      exercises: base.exercises.map((ec) => ({
+        ...ec,
+        lastSessionDate: '2026-06-30',
+        lastSets: [],
+        history: [],
+      })),
+    };
+    expect(allowedCeiling(c.exercises[0], undefined, c.todayISO)).toBeNull();
   });
 });

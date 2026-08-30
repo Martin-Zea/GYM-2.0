@@ -165,3 +165,31 @@ export function failureDropWeight(topWeight: number, brick: number, failDrop: nu
   const dropped = rounded >= topWeight ? topWeight - step : rounded;
   return Math.max(step, Math.round(dropped * 100) / 100);
 }
+
+/** Días sin entrenar UN ejercicio a partir de los cuales se recorta la referencia. */
+export const LAYOFF_MODERATE_DAYS = 14;
+export const LAYOFF_LONG_DAYS = 28;
+const LAYOFF_MODERATE_FACTOR = 0.9;
+const LAYOFF_LONG_FACTOR = 0.85;
+
+/**
+ * Cuánto se recorta la última marca según el tiempo parado.
+ *
+ * Vive aquí, con el resto de reglas puras, porque la aplican DOS motores: el local al
+ * proponer y el validador al acotar lo que responde la IA. Cuando cada uno tenía la suya,
+ * volver tras tres meses daba 95 kg por un lado y 85 kg por el otro para la misma marca de
+ * 100 kg — y el usuario veía uno u otro según hubiera red.
+ *
+ * Es proporcional a propósito: un recorte fijo de dos incrementos da el mismo peso tras un
+ * mes que tras tres años, que es justo cuando más se equivoca.
+ */
+export function layoffFactor(lastSessionDate: string | null, todayISO: string): number {
+  if (!lastSessionDate) return 1;
+  const days = Math.round(
+    (Date.parse(todayISO) - Date.parse(lastSessionDate)) / (1000 * 60 * 60 * 24),
+  );
+  if (!Number.isFinite(days)) return 1;
+  if (days > LAYOFF_LONG_DAYS) return LAYOFF_LONG_FACTOR;
+  if (days > LAYOFF_MODERATE_DAYS) return LAYOFF_MODERATE_FACTOR;
+  return 1;
+}

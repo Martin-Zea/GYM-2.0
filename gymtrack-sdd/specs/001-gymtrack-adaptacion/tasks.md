@@ -233,6 +233,43 @@ el Coach con chat (que exige relajar el Art. 5 de forma acotada, ver T-804).
 > - P2, P4 y P5 (detalle de ejercicio, cuerpo, récords) siguen donde estaban —hoja de progresión, perfil—
 >   en vez de mudarse a subpantallas de Progreso: son alcanzables y moverlas es reorganización, no diseño.
 
+## F9 · Contexto vivo (parón y cambios que cuenta el atleta)
+
+- **T-808** ✅ El modelo de IA se elige de la lista real que devuelve la key (Groq/Cohere), no de una
+  constante quemada; `model_not_found` se distingue del resto de errores y se explica dónde arreglarlo.
+  - Contexto: Groq retiró `llama-3.3-70b-versatile` el 2026-08-16 y las cuentas nuevas ya no lo tienen.
+  - `GROQ_MODEL` pasa a `openai/gpt-oss-120b`, y `reasoningOverridesFor()` aplica los ajustes de los
+    modelos que razonan en las TRES rutas (sesión, generador, chat), no solo en la vieja por ejercicio:
+    sin eso agotan el presupuesto de tokens pensando y Groq devuelve 400.
+- **T-809** ✅ Las keys viajan en el backup EN CLARO y por defecto (decisión del usuario, 2026-08-30).
+  - El `apiKeySealed` no se exporta nunca: está cifrado con una clave no extraíble atada al dispositivo,
+    así que copiarlo daba un backup indescifrable justo donde hace falta (teléfono nuevo, o el mismo tras
+    borrar los datos del sitio).
+  - Al importar se vuelve a cifrar con el vault local; si el backup no trae keys, se re-sella la que ya
+    había — antes un `replace` sin credenciales borraba la key configurada.
+- **T-810** ✅ El tope por parón se aplica en el VALIDADOR de sesión (`allowedCeiling`), no solo en la
+  ruta por ejercicio.
+  - Era una regresión de F4: `applyLongRestAdjustment()` quedó en la ruta vieja, así que una respuesta de
+    la IA tras dos meses parado solo se acotaba con el +10% sobre la marca previa al parón — podía sugerir
+    más peso del que se levantaba antes. El motor local sí protegía; la IA no.
+  - > 14 días recorta al 90 % de la referencia, >28 días al 85 %. Un ejercicio sin historial no se toca.
+- **T-811** ✅ El chat PROPONE cambios de contexto (notas, objetivo, nivel) y el atleta confirma.
+  - AC: el modelo nunca escribe en el estado. Emite un bloque `<<GT_CONTEXT>>…<<END>>` que se separa de la
+    respuesta, se valida campo a campo y se descarta lo que no se reconoce; pesos, series y rutinas no
+    forman parte del contrato y se ignoran aunque el modelo los mande.
+  - AC: el bloque se quita SIEMPRE del texto mostrado, incluso si el JSON está roto.
+  - AC: aceptar cambia `contextHash` → las sugerencias precalculadas dejan de valer solas (RF-IA-06). Un
+    test lo verifica: si no invalidara, la propuesta sería decorativa.
+  - AC: las notas se recortan a 200 caracteres, que es lo que el serializador manda al modelo. Aceptar más
+    sería enseñar un texto que la IA no lee entero.
+
+> **Resultado F9:** el caso "vuelvo tras dos meses" ya no depende de que el atleta lo cuente —está en las
+> fechas— y ahora está ACOTADO también cuando responde la IA, no solo con el motor local. El caso "empecé
+> otro deporte", que la app no puede deducir, entra por el chat como propuesta confirmada que se propaga
+> sola al prompt, a la caché y al validador duro.
+> **Decisión consciente:** el chat NO edita rutinas ni días, aunque el mockup C2 lo dibuje. Es la escritura
+> de más riesgo, choca con el determinismo de las sugerencias y editar una rutina a mano ya funciona (R3).
+
 ## Convergencia (antes de dar por terminado)
 
 - **T-900** Recorrer EA-1…EA-6 y casos borde §6 de la spec en dispositivo real.

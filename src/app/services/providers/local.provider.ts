@@ -11,6 +11,7 @@ import { HistoryEntry } from '../storage.service';
 import { AiProvider, AiProviderContext, AiSessionProvider } from './ai-provider';
 import { AiSessionContext, SessionRecommendation } from './session-context';
 import { goalRepTarget, roundToBrick } from './prompt-helpers';
+import { LAYOFF_LONG_DAYS, LAYOFF_MODERATE_DAYS, layoffFactor } from './progression-rules';
 import {
   completionRatio,
   confirmedAtWeight,
@@ -20,9 +21,6 @@ import {
   levelParams,
   progressStreak,
 } from './progression-rules';
-
-const SPACING_MODERATE_DAYS = 14;
-const SPACING_LONG_DAYS = 28;
 
 function daysBetween(isoA: string, isoB: string): number {
   return Math.round((new Date(isoB).getTime() - new Date(isoA).getTime()) / (1000 * 60 * 60 * 24));
@@ -82,13 +80,13 @@ function buildReasons(lang: 'es' | 'en') {
 
     spacingLong: (topWeight: number, reducedWeight: number) =>
       es
-        ? `Más de ${SPACING_LONG_DAYS} días sin entrenar este ejercicio. Arrancá conservador con ${reducedWeight}kg.`
-        : `Over ${SPACING_LONG_DAYS} days since last session. Start conservative with ${reducedWeight}kg.`,
+        ? `Más de ${LAYOFF_LONG_DAYS} días sin entrenar este ejercicio. Arrancá conservador con ${reducedWeight}kg.`
+        : `Over ${LAYOFF_LONG_DAYS} days since last session. Start conservative with ${reducedWeight}kg.`,
 
     spacingModerate: (topWeight: number, reducedWeight: number) =>
       es
-        ? `Más de ${SPACING_MODERATE_DAYS} días sin entrenar. Bajamos un ladrillo a ${reducedWeight}kg por precaución.`
-        : `Over ${SPACING_MODERATE_DAYS} days since last session. Dropping one increment to ${reducedWeight}kg.`,
+        ? `Más de ${LAYOFF_MODERATE_DAYS} días sin entrenar. Bajamos un ladrillo a ${reducedWeight}kg por precaución.`
+        : `Over ${LAYOFF_MODERATE_DAYS} days since last session. Dropping one increment to ${reducedWeight}kg.`,
 
     goalMet: (topWeight: number, newWeight: number) =>
       es
@@ -313,22 +311,21 @@ export class LocalProvider implements AiProvider, AiSessionProvider {
     const topWeight = Math.max(...baseSets.map((s) => s.weight || 0));
 
     // --- Sesión espaciada ---
+    // El recorte es PROPORCIONAL y lo decide `layoffFactor`, la misma regla que acota lo que
+    // responde la IA. Antes aquí se restaban dos incrementos fijos: tras un mes y tras tres
+    // años daba el mismo peso, y no coincidía con el tope del validador.
     if (lastSessionDate) {
       const today = new Date().toISOString().slice(0, 10);
       const gap = daysBetween(lastSessionDate, today);
-      if (gap > SPACING_LONG_DAYS) {
-        const reduced = Math.max(brick, roundToBrick(topWeight - brick * 2, brick));
+      const factor = layoffFactor(lastSessionDate, today);
+      if (factor < 1) {
+        const reduced = Math.max(brick, roundToBrick(topWeight * factor, brick));
         return {
           sets: Array.from({ length: setsTarget }, () => ({ weight: reduced, reps: repTarget })),
-          reason: r.spacingLong(topWeight, reduced),
-          source: 'local',
-        };
-      }
-      if (gap > SPACING_MODERATE_DAYS) {
-        const reduced = Math.max(brick, roundToBrick(topWeight - brick, brick));
-        return {
-          sets: Array.from({ length: setsTarget }, () => ({ weight: reduced, reps: repTarget })),
-          reason: r.spacingModerate(topWeight, reduced),
+          reason:
+            gap > LAYOFF_LONG_DAYS
+              ? r.spacingLong(topWeight, reduced)
+              : r.spacingModerate(topWeight, reduced),
           source: 'local',
         };
       }

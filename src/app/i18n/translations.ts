@@ -763,6 +763,16 @@ export interface Translations {
   settings_models_none: string;
   settings_models_default: string;
   settings_test_model: string;
+
+  // Propuestas de contexto del coach (T-811)
+  coach_proposal_title: string;
+  coach_proposal_intro: string;
+  coach_proposal_notes: string;
+  coach_proposal_goal: string;
+  coach_proposal_level: string;
+  coach_proposal_accept: string;
+  coach_proposal_dismiss: string;
+  coach_proposal_saved: string;
 }
 
 export { es } from './es';

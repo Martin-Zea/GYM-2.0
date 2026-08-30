@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { CoachChatService } from './coach-chat.service';
 import { StateService } from './state.service';
+import { ProgressionService } from './progression.service';
 import { TabLockService } from './tab-lock.service';
 import { AppSettings } from '../models/workout.model';
 import { STORAGE_KEYS } from './storage-keys';
@@ -63,6 +64,53 @@ describe('CoachChatService — límites del chat (C2, RF-IA-10)', () => {
     it('un mensaje vacío no cuenta', async () => {
       await chat.send('   ', settings({ apiKey: 'gsk_x' }), 'es');
       expect(chat.messages()).toHaveLength(0);
+    });
+  });
+
+  describe('propuestas de contexto (T-811)', () => {
+    it('sin propuesta pendiente, aceptar no hace nada', () => {
+      const before = TestBed.inject(StateService).settings().userProfile;
+      chat.acceptProposal();
+      expect(TestBed.inject(StateService).settings().userProfile).toEqual(before);
+    });
+
+    it('aceptar escribe en el perfil, que es lo que lee la capa IA', () => {
+      chat.proposal.set({ notes: 'Empezó boxeo 2x semana', goal: 'strength' });
+      chat.acceptProposal();
+
+      const profile = TestBed.inject(StateService).settings().userProfile;
+      expect(profile.aiNotes).toBe('Empezó boxeo 2x semana');
+      expect(profile.goal).toBe('strength');
+      expect(chat.proposal()).toBeNull();
+    });
+
+    it('cambiar el contexto INVALIDA las sugerencias precalculadas', () => {
+      // Si el hash no cambiara, aceptar "empecé boxeo" no movería ni un número y la
+      // propuesta sería decorativa.
+      const state = TestBed.inject(StateService);
+      const progression = TestBed.inject(ProgressionService);
+      const day = state.currentDay()!;
+
+      const before = progression.contextHash(
+        progression.buildSessionContext(day, state.settings(), 'es'),
+      );
+
+      chat.proposal.set({ notes: 'Vuelve de una lesión de hombro' });
+      chat.acceptProposal();
+
+      const after = progression.contextHash(
+        progression.buildSessionContext(day, state.settings(), 'es'),
+      );
+      expect(after).not.toBe(before);
+    });
+
+    it('descartar no toca el perfil', () => {
+      const before = TestBed.inject(StateService).settings().userProfile.aiNotes;
+      chat.proposal.set({ notes: 'no quiero esto' });
+      chat.dismissProposal();
+
+      expect(chat.proposal()).toBeNull();
+      expect(TestBed.inject(StateService).settings().userProfile.aiNotes).toBe(before);
     });
   });
 

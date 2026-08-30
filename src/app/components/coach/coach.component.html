@@ -113,6 +113,44 @@
         </p>
       }
 
+      <!-- El chat PROPONE; aplicar es decisión del atleta (T-811, Art. 6) -->
+      @if (chat.proposal(); as proposal) {
+        <div class="card card--warn coach-proposal">
+          <p class="k">{{ T().coach_proposal_title }}</p>
+          @if (proposal.notes) {
+            <p class="coach-proposal-row">
+              <span class="coach-proposal-field">{{ T().coach_proposal_notes }}</span>
+              {{ proposal.notes }}
+            </p>
+          }
+          @if (proposal.goal) {
+            <p class="coach-proposal-row">
+              <span class="coach-proposal-field">{{ T().coach_proposal_goal }}</span>
+              {{ goalLabel(proposal.goal) }}
+            </p>
+          }
+          @if (proposal.level) {
+            <p class="coach-proposal-row">
+              <span class="coach-proposal-field">{{ T().coach_proposal_level }}</span>
+              {{ levelLabel(proposal.level) }}
+            </p>
+          }
+          <p class="note">{{ T().coach_proposal_intro }}</p>
+          <div class="coach-sug-actions">
+            <button class="btn btn-sm coach-accept" type="button" (click)="acceptProposal()">
+              {{ T().coach_proposal_accept }}
+            </button>
+            <button class="btn btn-ghost btn-sm" type="button" (click)="chat.dismissProposal()">
+              {{ T().coach_proposal_dismiss }}
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (proposalSaved()) {
+        <p class="note coach-proposal-saved" role="status">{{ T().coach_proposal_saved }}</p>
+      }
+
       <form class="coach-compose" (submit)="onEnter($event)">
         <input
           class="input coach-input"

@@ -19,6 +19,7 @@ import {
   reasons,
 } from './providers/groq.provider';
 import { COHERE_MODEL } from './providers/cohere.provider';
+import { CoachProposal, parseCoachReply } from './coach-proposal';
 
 export type ChatRole = 'user' | 'assistant';
 
@@ -90,6 +91,8 @@ export class CoachChatService {
 
   readonly messages = signal<ChatMessage[]>(this.read());
   readonly sending = signal(false);
+  /** Cambio de contexto que el coach propone y el atleta todavía no confirmó (T-811). */
+  readonly proposal = signal<CoachProposal | null>(null);
   readonly error = signal<string | null>(null);
 
   readonly usage = signal(usageForMonth());
@@ -116,8 +119,11 @@ export class CoachChatService {
     this.sending.set(true);
 
     try {
-      const reply = await this.ask(settings, lang);
+      const { text: reply, proposal } = parseCoachReply(await this.ask(settings, lang));
       this.push({ role: 'assistant', text: reply });
+      // La propuesta NO se aplica: queda esperando confirmación. Que el chat cambie tus
+      // números sin que lo veas es justo lo que hace desconfiar de la sugerencia.
+      this.proposal.set(proposal);
     } catch (e) {
       if (e instanceof AuthError) this.error.set('auth');
       else if (e instanceof ModelError) this.error.set('model');
@@ -130,7 +136,35 @@ export class CoachChatService {
 
   clear(): void {
     this.messages.set([]);
+    this.proposal.set(null);
     this.write([]);
+  }
+
+  dismissProposal(): void {
+    this.proposal.set(null);
+  }
+
+  /**
+   * Aplica la propuesta al perfil.
+   *
+   * No hace falta invalidar nada a mano: `aiNotes`, objetivo y nivel entran en el contexto
+   * serializado, así que cambiarlos cambia el `contextHash` y las sugerencias precalculadas
+   * dejan de valer solas (RF-IA-06).
+   */
+  acceptProposal(): void {
+    const proposal = this.proposal();
+    if (!proposal) return;
+    const settings = this.state.settings();
+    this.state.saveSettings({
+      ...settings,
+      userProfile: {
+        ...settings.userProfile,
+        ...(proposal.notes !== undefined && { aiNotes: proposal.notes }),
+        ...(proposal.goal !== undefined && { goal: proposal.goal }),
+        ...(proposal.level !== undefined && { level: proposal.level }),
+      },
+    });
+    this.proposal.set(null);
   }
 
   // ── Llamada ──
@@ -214,8 +248,30 @@ export class CoachChatService {
 
     const rules =
       lang === 'en'
-        ? 'You are a strength coach inside a training app. Answer briefly (max 4 sentences), in English. Never give medical advice; if the user mentions pain, tell them to see a professional. You cannot modify the app: if they ask for a change, explain where to do it.'
-        : 'Sos un entrenador de fuerza dentro de una app de entrenamiento. Respondé breve (máximo 4 frases), en español. Nunca des consejo médico; si mencionan dolor, decí que consulten a un profesional. No podés modificar la app: si piden un cambio, explicá dónde hacerlo.';
+        ? [
+            'You are a strength coach inside a training app. Answer briefly (max 4 sentences),',
+            'in English. Never give medical advice; if the user mentions pain, tell them to see',
+            'a professional. You cannot change weights, sets or routines.',
+            '',
+            'If the athlete states something DURABLE about their context (a new sport, an injury,',
+            'a layoff, a change of goal or level), append this exact block at the END of your',
+            'reply, with the FULL updated notes text (not just the new part):',
+            '<<GT_CONTEXT>>{"notes":"...","goal":"strength|hypertrophy|endurance","level":"beginner|intermediate|advanced"}<<END>>',
+            'Include only the fields that change. Max 200 characters in notes.',
+            'No block if you merely answered a question: that is not a context change.',
+          ].join(' ')
+        : [
+            'Sos un entrenador de fuerza dentro de una app de entrenamiento. Respondé breve',
+            '(máximo 4 frases), en español. Nunca des consejo médico; si mencionan dolor, decí',
+            'que consulten a un profesional. No podés cambiar pesos, series ni rutinas.',
+            '',
+            'Si el atleta cuenta algo DURADERO sobre su contexto (un deporte nuevo, una lesión,',
+            'un parón, un cambio de objetivo o de nivel), añadí al FINAL de tu respuesta este',
+            'bloque exacto, con el texto de notas COMPLETO ya actualizado (no solo lo nuevo):',
+            '<<GT_CONTEXT>>{"notes":"...","goal":"strength|hypertrophy|endurance","level":"beginner|intermediate|advanced"}<<END>>',
+            'Incluí solo los campos que cambian. Máximo 200 caracteres en notes.',
+            'Nada de bloque si solo respondiste una duda: no es un cambio de contexto.',
+          ].join(' ');
 
     return `${rules}\n\nDatos del atleta: ${facts.join(' · ')}`;
   }

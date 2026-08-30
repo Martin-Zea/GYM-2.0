@@ -241,3 +241,48 @@ describe('Motor de progresión local — escenarios', () => {
     });
   });
 });
+
+describe('Volver tras un parón — el motor local coincide con el validador (T-812)', () => {
+  const engine = new LocalProvider();
+
+  /** 100 kg cumpliendo el objetivo, y la última sesión hace `daysAgo` días. */
+  function afterLayoff(daysAgo: number) {
+    const last = new Date();
+    last.setDate(last.getDate() - daysAgo);
+    const iso = last.toISOString().slice(0, 10);
+    const hist: HistoryEntry[] = [
+      {
+        dateISO: iso,
+        sets: setsAt(100, REPS),
+        topWeight: 100,
+        topReps: REPS,
+        totalReps: REPS * SETS,
+        volume: 100 * REPS * SETS,
+      },
+    ];
+    return engine.compute(exercise(), [], hist[0].sets, hist, profile(null), iso, 'es', {});
+  }
+
+  it('tres meses parado tras levantar 100 kg propone 85, no 95', () => {
+    // El recorte fijo de dos incrementos daba 95 kg: demasiado para tres meses sin entrenar,
+    // y además no era lo que el validador permitía si contestaba la IA.
+    expect(afterLayoff(90).sets[0].weight).toBe(85);
+  });
+
+  it('tres semanas paradas recortan menos que tres meses', () => {
+    const tresSemanas = afterLayoff(21).sets[0].weight;
+    const tresMeses = afterLayoff(90).sets[0].weight;
+    expect(tresSemanas).toBe(90);
+    expect(tresMeses).toBeLessThan(tresSemanas);
+  });
+
+  it('entrenando con normalidad no se recorta nada por espaciado', () => {
+    expect(afterLayoff(3).sets[0].weight).toBeGreaterThanOrEqual(100);
+  });
+
+  it('explica el motivo: el atleta tiene que entender por qué baja', () => {
+    const { reason } = afterLayoff(90);
+    expect(reason).toContain('85'); // el peso que se propone
+    expect(reason).toMatch(/sin entrenar/i); // y por qué es más bajo
+  });
+});

@@ -148,3 +148,24 @@
   width: 100%;
   margin-top: var(--sp-4);
 }
+
+/* ── Propuesta de contexto (T-811) ── */
+.coach-proposal {
+  margin-bottom: var(--sp-3);
+}
+.coach-proposal-row {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+}
+.coach-proposal-field {
+  font-weight: 600;
+  color: var(--text-2);
+  margin-right: var(--sp-1);
+}
+.coach-proposal .coach-sug-actions {
+  margin-top: var(--sp-3);
+}
+.coach-proposal-saved {
+  color: var(--success);
+}

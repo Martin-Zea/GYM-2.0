@@ -1,6 +1,7 @@
 import { AiRecommendation, SetRecommendation } from '../../models/workout.model';
 import { normalizeExerciseName } from '../storage.service';
 import { roundToBrick } from './prompt-helpers';
+import { layoffFactor } from './progression-rules';
 import { AiSessionContext, ExerciseContext } from './session-context';
 
 /** Tope duro de incremento sobre la referencia (RF-IA-04, Art. 6). */
@@ -52,9 +53,18 @@ export function injuryBlocksIncrease(exerciseName: string, notes: string | undef
 }
 
 /** Tope permitido para este ejercicio, o `null` si no hay referencia con la que acotar. */
-export function allowedCeiling(ec: ExerciseContext, aiNotes: string | undefined): number | null {
+export function allowedCeiling(
+  ec: ExerciseContext,
+  aiNotes: string | undefined,
+  todayISO: string,
+): number | null {
   const reference = referenceWeight(ec);
   if (reference === null) return null;
+
+  const factor = layoffFactor(ec.lastSessionDate, todayISO);
+  // Tras un parón el techo es la marca RECORTADA, nunca la vieja: volver no es continuar.
+  if (factor < 1) return reference * factor;
+
   // Molestia declarada o última sesión marcada como dura: se permite mantener, no subir.
   if (ec.lastFeel === 'hard' || injuryBlocksIncrease(ec.exercise.name, aiNotes)) return reference;
   return reference * (1 + MAX_INCREASE);
@@ -117,7 +127,7 @@ export function validateSessionResponse(
     const setsTarget = exercise.defaultSets || 3;
     const repTarget = exercise.defaultRepTarget || 10;
     const brick = exercise.brick || 2.5;
-    const ceiling = allowedCeiling(ec, ctx.userProfile.aiNotes);
+    const ceiling = allowedCeiling(ec, ctx.userProfile.aiNotes, ctx.todayISO);
     const reasons: string[] = [];
 
     const rawSets = Array.isArray(entry?.sets) ? (entry.sets as RawSet[]) : [];

@@ -7,6 +7,7 @@ import {
   consecutiveFailures,
   failureDropWeight,
   isStagnant,
+  layoffFactor,
   levelParams,
   metTarget,
   progressStreak,
@@ -227,5 +228,39 @@ describe('metTarget()', () => {
   it('distingue cumplir de quedarse corto', () => {
     expect(metTarget(entry('d', 50, 10), REPS, SETS)).toBe(true);
     expect(metTarget(entry('d', 50, 9), REPS, SETS)).toBe(false);
+  });
+});
+
+describe('layoffFactor() — una sola regla para los dos motores (T-812)', () => {
+  const today = '2026-08-30';
+
+  it('entrenando con normalidad no recorta nada', () => {
+    expect(layoffFactor('2026-08-28', today)).toBe(1);
+    expect(layoffFactor('2026-08-16', today)).toBe(1); // 14 días justos: todavía no
+  });
+
+  it('pasadas dos semanas recorta al 90%', () => {
+    expect(layoffFactor('2026-08-10', today)).toBe(0.9);
+  });
+
+  it('pasado el mes recorta al 85%', () => {
+    expect(layoffFactor('2026-06-30', today)).toBe(0.85);
+  });
+
+  it('es PROPORCIONAL: tres años no puede dar lo mismo que un mes', () => {
+    // Un recorte fijo de dos incrementos daba 95 kg en los dos casos.
+    const dosMeses = layoffFactor('2026-06-30', today);
+    const tresAnios = layoffFactor('2023-08-30', today);
+    expect(dosMeses).toBe(tresAnios);
+    // Ambos recortan de verdad sobre la marca, no un ladrillo simbólico
+    expect(100 * dosMeses).toBe(85);
+  });
+
+  it('sin fecha previa no hay nada que recortar', () => {
+    expect(layoffFactor(null, today)).toBe(1);
+  });
+
+  it('una fecha ilegible no altera el peso', () => {
+    expect(layoffFactor('no-es-una-fecha', today)).toBe(1);
   });
 });

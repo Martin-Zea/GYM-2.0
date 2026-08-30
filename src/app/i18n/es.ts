@@ -762,4 +762,15 @@ export const es: Translations = {
   settings_models_none: 'No se pudo obtener la lista. Podés escribir el ID a mano.',
   settings_models_default: 'Por defecto del proveedor',
   settings_test_model: 'Ese modelo no está disponible con tu key. Elegí otro de la lista.',
+
+  // Propuestas de contexto del coach (T-811)
+  coach_proposal_title: 'El coach quiere anotar esto',
+  coach_proposal_intro:
+    'Si lo aceptás, entra en el contexto y las próximas sugerencias se recalculan.',
+  coach_proposal_notes: 'Notas',
+  coach_proposal_goal: 'Objetivo',
+  coach_proposal_level: 'Nivel',
+  coach_proposal_accept: 'Anotar',
+  coach_proposal_dismiss: 'Ahora no',
+  coach_proposal_saved: 'Anotado. Se aplicará a la próxima sesión.',
 };

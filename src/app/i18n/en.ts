@@ -758,4 +758,15 @@ export const en: Translations = {
   settings_models_none: 'Could not fetch the list. You can type the ID manually.',
   settings_models_default: 'Provider default',
   settings_test_model: 'That model is not available with your key. Pick another from the list.',
+
+  // Propuestas de contexto del coach (T-811)
+  coach_proposal_title: 'The coach wants to note this',
+  coach_proposal_intro:
+    'If you accept, it enters the context and the next suggestions are recomputed.',
+  coach_proposal_notes: 'Notes',
+  coach_proposal_goal: 'Goal',
+  coach_proposal_level: 'Level',
+  coach_proposal_accept: 'Save it',
+  coach_proposal_dismiss: 'Not now',
+  coach_proposal_saved: 'Noted. It applies to your next session.',
 };
