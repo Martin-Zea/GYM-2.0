@@ -219,6 +219,7 @@ el Coach con chat (que exige relajar el Art. 5 de forma acotada, ver T-804).
 > techo mensual que la progresión. Quitar la gestión de rutinas de Inicio eliminó 376 líneas de código
 > muerto y bajó el chunk de home.
 > **Desviaciones conscientes del diseño:**
+>
 > - No se añade el apodo del atleta (O2) ni el saludo "Hola, {nombre}" de H1: el modelo no tiene ese
 >   campo y añadirlo obliga a una migración de esquema para un saludo. La cabecera se queda sin nombre.
 > - R1 no rotula "creada con IA": el estado no guarda el origen de una rutina y etiquetarlo a ojo sería inventarlo.
