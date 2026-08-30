@@ -53,6 +53,27 @@
 
       <!-- LEFT/MAIN column: today card + onboarding -->
       <div class="dash-main">
+        <!-- Sesión interrumpida: el usuario decide, la app no adivina (RF-SES-07, EA-4) -->
+        @if (unfinished(); as pending) {
+          <div class="resume-card" role="alert">
+            <div class="resume-card-text">
+              <strong>{{ T().resume_title }}</strong>
+              <span>{{ tr.tp('resume_msg', { day: pending.day.name }) }}</span>
+            </div>
+            <div class="resume-actions">
+              <button class="btn btn-primary btn-sm" (click)="resumeUnfinished()">
+                {{ T().resume_continue }}
+              </button>
+              <button class="btn btn-ghost btn-sm" (click)="finishUnfinished()">
+                {{ T().resume_finish }}
+              </button>
+              <button class="btn btn-ghost btn-sm" (click)="discardUnfinished()">
+                {{ T().resume_discard }}
+              </button>
+            </div>
+          </div>
+        }
+
         <!-- HOY TE TOCA: una sola decisión -->
         <div class="today-card">
           <div class="today-card-top">
@@ -73,10 +94,23 @@
             }
           </div>
 
-          <button class="btn btn-primary today-cta" (click)="startTraining()">
-            <app-icon name="dumbbell" [size]="16" />
-            {{ currentDayProgress().done > 0 ? T().continue_training : T().start_training }}
-          </button>
+          @if (restingToday() && !restOverridden() && !unfinished()) {
+            <!-- Ya entrenó hoy: el estado por defecto es descansar, no volver a entrenar -->
+            <div class="rest-state">
+              <p class="rest-state-msg">
+                <app-icon name="check" [size]="14" />
+                {{ tr.tp('home_rest_done', { day: restingToday()!.dayName }) }}
+              </p>
+              <button class="today-action-btn" (click)="restOverridden.set(true)">
+                {{ T().home_rest_train_anyway }}
+              </button>
+            </div>
+          } @else {
+            <button class="btn btn-primary today-cta" (click)="startTraining()">
+              <app-icon name="dumbbell" [size]="16" />
+              {{ currentDayProgress().done > 0 ? T().continue_training : T().start_training }}
+            </button>
+          }
 
           @if (currentDayProgress().done > 0) {
             <app-progress-bar
@@ -362,4 +396,11 @@
       </div>
     }
   </div>
+}
+
+<!-- H3 · Resumen de la sesión recién terminada (RF-SES-08) -->
+@if (summarySession(); as finished) {
+  @if (summaryDay(); as day) {
+    <app-session-summary [session]="finished" [day]="day" (closed)="closeSummary()" />
+  }
 }

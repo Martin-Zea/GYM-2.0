@@ -175,6 +175,14 @@ export interface Translations {
 
   // PR celebration toast
   pr_celebration: string;
+  pr_celebration_reps_at_weight: string;
+  pr_celebration_e1rm: string;
+  pr_celebration_reps: string;
+  pr_celebration_time: string;
+  pr_share_unit_e1rm: string;
+  pr_share_unit_reps: string;
+  pr_share_unit_seconds: string;
+  pr_share_unit_reps_at: string;
 
   // Nav guard
   nav_guard_confirm: string;
@@ -387,6 +395,41 @@ export interface Translations {
   asc_substitute: string;
   asc_substitute_hint: string;
   asc_substitute_pick: string;
+  asc_remove_set: string;
+  asc_remove_exercise: string;
+  asc_remove_exercise_confirm: string;
+  asc_add_exercise: string;
+  asc_add_exercise_hint: string;
+  asc_add_exercise_pick: string;
+  asc_set_note_placeholder: string;
+  summary_title: string;
+  summary_tonnage: string;
+  summary_sets: string;
+  summary_exercises: string;
+  summary_duration: string;
+  summary_vs_prev: string;
+  summary_vs_tonnage: string;
+  summary_vs_same: string;
+  summary_vs_duration: string;
+  summary_no_prev_duration: string;
+  summary_first_session: string;
+  summary_prs: string;
+  summary_pr_weight: string;
+  summary_pr_reps_at_weight: string;
+  summary_pr_e1rm: string;
+  summary_pr_reps: string;
+  summary_pr_time: string;
+  summary_note: string;
+  summary_note_placeholder: string;
+  summary_close: string;
+  resume_title: string;
+  resume_msg: string;
+  resume_continue: string;
+  resume_finish: string;
+  resume_discard: string;
+  resume_discard_confirm: string;
+  home_rest_done: string;
+  home_rest_train_anyway: string;
   feel_question: string;
   feel_easy: string;
   feel_ok: string;

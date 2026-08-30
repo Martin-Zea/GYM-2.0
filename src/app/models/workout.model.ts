@@ -40,6 +40,8 @@ export interface SetRecord {
   target?: string;
   repTarget?: number;
   isWarmup?: boolean;
+  /** Nota de esta serie concreta, p. ej. "última con ayuda" (RF-SES-05). */
+  note?: string;
 }
 
 /** Sensación subjetiva de un ejercicio al completarlo (RPE simplificado → prompt de IA). */
@@ -55,6 +57,17 @@ export interface Session {
   feelings?: Record<string, TrainingFeel>;
   /** Nota rápida por ejercicio (exerciseId → texto), p. ej. "me molestó el hombro". */
   notes?: Record<string, string>;
+  /**
+   * Inicio y fin reales de la sesión (ISO datetime completo, no solo la fecha).
+   *
+   * Ambos son OPCIONALES a propósito: ninguna sesión anterior a v7 los tiene, así que la UI
+   * debe **omitir** la duración cuando falten en vez de mostrar "0 min" (RF-SES-08b, RF-PRO-05).
+   * `endedAt` ausente en una sesión de HOY es además la señal de "sesión interrumpida" (RF-SES-07).
+   */
+  startedAt?: string;
+  endedAt?: string;
+  /** Nota de la sesión entera (distinta de `notes`, que es por ejercicio). */
+  sessionNote?: string;
 }
 
 export interface TodaySetProgress {
@@ -63,6 +76,7 @@ export interface TodaySetProgress {
   done: boolean;
   isWarmup?: boolean;
   aiPrefilled?: boolean;
+  note?: string;
 }
 
 export interface TodayDayProgress {
@@ -70,6 +84,17 @@ export interface TodayDayProgress {
   sets: Record<string, TodaySetProgress[]>;
   /** Sustituciones "solo por hoy": exerciseId original → exerciseId del catálogo que lo reemplaza. */
   overrides?: Record<string, string>;
+  /** Momento en que se pulsó "Entrenar"; se copia a `Session.startedAt` al registrar la 1ª serie. */
+  startedAt?: string;
+  /**
+   * Cuántas series tiene hoy cada ejercicio, SI el usuario añadió o quitó alguna sobre la
+   * marcha. Sin entrada aquí manda la rutina; nunca se toca `Exercise.defaultSets`, porque
+   * hacer una serie de menos un martes no redefine la rutina (RF-SES-05).
+   */
+  setCounts?: Record<string, number>;
+  /** Ejercicios añadidos y quitados SOLO por hoy; la rutina guardada queda intacta. */
+  addedExerciseIds?: string[];
+  hiddenExerciseIds?: string[];
 }
 
 export interface WeightLogEntry {

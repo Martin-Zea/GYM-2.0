@@ -138,9 +138,7 @@
   @if (uiState.prCelebration(); as pr) {
     <div class="app-toast pr-toast" role="status">
       <app-icon name="sparkle" [size]="16" />
-      <span class="app-toast-msg">{{
-        tr.tp('pr_celebration', { exercise: pr.exerciseName, weight: pr.weight })
-      }}</span>
+      <span class="app-toast-msg">{{ prMessage(pr) }}</span>
       <button class="app-toast-btn" (click)="sharePrFromToast()">
         {{ T().profile_pr_share }}
       </button>

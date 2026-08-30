@@ -41,3 +41,23 @@ export function formatSetLine(weight: number, reps: number, unit: ExerciseUnit |
   if (unit === 'TIME') return `${reps} seg`;
   return `${weight}${unitSuffix(unit)} × ${reps}`;
 }
+
+/**
+ * Línea compacta de las series de la sesión anterior: `60×8 / 60×8 / 55×6`.
+ *
+ * Es lo que el usuario necesita ver antes de decidir el peso de hoy (RF-SES-02); por eso
+ * aparece tanto en la vista tabla como en la enfocada, con el mismo formato en las dos.
+ */
+export function formatPrevSets(
+  unit: ExerciseUnit | string,
+  sets: readonly WeightReps[] | undefined,
+): string {
+  if (!sets?.length) return '';
+  return sets
+    .map((s) => {
+      if (unit === 'BODYWEIGHT') return `${s.reps}r`;
+      if (unit === 'TIME') return `${s.reps}s`;
+      return `${s.weight}×${s.reps}`;
+    })
+    .join(' / ');
+}

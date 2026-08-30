@@ -13,13 +13,15 @@ import { ExerciseCardComponent } from '../exercise-card/exercise-card.component'
 import { ActiveSetCardComponent } from '../active-set-card/active-set-card.component';
 import { HowItWorksComponent } from '../how-it-works/how-it-works.component';
 import { ProgressBarComponent } from '../progress-bar/progress-bar.component';
+import { SessionSummaryComponent } from '../session-summary/session-summary.component';
 import { StateService } from '../../services/state.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { StorageService } from '../../services/storage.service';
+import { SetLoggingService } from '../../services/set-logging.service';
 import { ProgressionService } from '../../services/progression.service';
 import { TranslationService } from '../../services/translation.service';
 import { STORAGE_KEYS } from '../../services/storage-keys';
-import { AiRecommendation, Exercise, WorkoutDay } from '../../models/workout.model';
+import { AiRecommendation, Exercise, Session, WorkoutDay } from '../../models/workout.model';
 import { daysBetweenISO } from '../../utils/date';
 
 type SessionView = 'focused' | 'list';
@@ -41,6 +43,7 @@ interface SessionQueueItem {
     ActiveSetCardComponent,
     HowItWorksComponent,
     ProgressBarComponent,
+    SessionSummaryComponent,
     RouterLink,
   ],
   templateUrl: './home.component.html',
@@ -52,6 +55,7 @@ export class HomeComponent {
   protected readonly uiState = inject(UIStateService);
   private readonly storage = inject(StorageService);
   private readonly progression = inject(ProgressionService);
+  private readonly setLogging = inject(SetLoggingService);
   protected readonly tr = inject(TranslationService);
   protected readonly T = this.tr.T;
 
@@ -91,15 +95,21 @@ export class HomeComponent {
     if (!day) return null;
     const tp = this.state.getTodayProgress(day.id);
     const overrides = tp.overrides ?? {};
-    if (!Object.keys(overrides).length) return day;
+    const hidden = new Set(tp.hiddenExerciseIds ?? []);
+    const added = tp.addedExerciseIds ?? [];
+    if (!Object.keys(overrides).length && !hidden.size && !added.length) return day;
     const catalog = new Map(this.state.exercises().map((e) => [e.id, e]));
-    return {
-      ...day,
-      exercises: day.exercises.map((ex) => {
+    const base = day.exercises
+      .filter((ex) => !hidden.has(ex.id))
+      .map((ex) => {
         const subId = overrides[ex.id];
         return subId ? (catalog.get(subId) ?? ex) : ex;
-      }),
-    };
+      });
+    // Los añadidos van al final: se agregan sobre la marcha, cuando el resto ya está en curso
+    const extras = added
+      .map((id) => catalog.get(id))
+      .filter((ex): ex is Exercise => ex !== undefined && !base.some((b) => b.id === ex.id));
+    return { ...day, exercises: [...base, ...extras] };
   });
 
   private setCounts(day: WorkoutDay, ex: Exercise): { done: number; total: number } {
@@ -107,7 +117,7 @@ export class HomeComponent {
     const saved = tp.sets[ex.id] ?? [];
     return {
       done: saved.filter((s) => s?.done).length,
-      total: Math.max(ex.defaultSets, saved.length),
+      total: this.setLogging.setCountFor(day, ex),
     };
   }
 
@@ -307,7 +317,10 @@ export class HomeComponent {
           this.uiState.pendingTrainingStart.set(false);
           this.mode.set('training');
           const day = this.state.activeDay();
-          if (day) this.initActiveExercise(day.id);
+          if (day) {
+            this.state.startSession(day.id);
+            this.initActiveExercise(day.id);
+          }
         });
       }
     });
@@ -341,6 +354,7 @@ export class HomeComponent {
     const idx = days.findIndex((d) => d.id === currentDay.id);
     if (idx >= 0) this.state.setActiveDay(idx);
     this.confirmSkip.set(false);
+    this.state.startSession(currentDay.id);
     this.mode.set('training');
     this.initActiveExercise(currentDay.id);
   }
@@ -355,11 +369,103 @@ export class HomeComponent {
     this.mode.set('today');
   }
 
+  /** Sesión cerrada que se está resumiendo en H3; `null` cuando no hay resumen abierto. */
+  protected readonly summarySession = signal<Session | null>(null);
+  protected readonly summaryDay = signal<WorkoutDay | null>(null);
+
   protected finishTraining(): void {
-    this.state.advanceRoutine(this.state.activeDayIndex());
+    const day = this.state.activeDay();
+    const sessionDay = this.sessionDay();
+    const finished = day ? this.state.finishSession(day.id, this.state.activeDayIndex()) : null;
+    if (!day) this.state.advanceRoutine(this.state.activeDayIndex());
+
     this.showFinishModal.set(false);
     this.activeExerciseId.set(null);
     this.mode.set('today');
+
+    // Sin series registradas no hay nada que resumir: se vuelve a Inicio sin más.
+    if (finished && sessionDay) {
+      this.summarySession.set(finished);
+      this.summaryDay.set(sessionDay);
+      this.precomputeNextSuggestions(sessionDay, finished.dateISO);
+    }
+  }
+
+  // ── H1: sesión interrumpida y día ya entrenado (RF-SES-01/07) ──
+
+  /**
+   * Sesión de hoy empezada y no cerrada (EA-4). Se ofrece reanudar, finalizar o descartar en
+   * vez de decidir por el usuario: la app no sabe si dejó el gimnasio o solo cambió de app.
+   */
+  protected readonly unfinished = computed(() => {
+    const session = this.state.unfinishedSession();
+    if (!session) return null;
+    const day = this.state.days().find((d) => d.id === session.dayId);
+    return day ? { session, day } : null;
+  });
+
+  /** Ya entrenó hoy y cerró la sesión: hoy toca descansar, no volver a empezar. */
+  protected readonly restingToday = computed(() => {
+    const today = this.state.todayKey;
+    const done = this.state
+      .sessions()
+      .find((s) => s.dateISO === today && !s.skipped && s.endedAt && s.sets.length > 0);
+    if (!done) return null;
+    const day = this.state.days().find((d) => d.id === done.dayId);
+    return { session: done, dayName: day?.name ?? '' };
+  });
+
+  /** El usuario decide entrenar igual pese a haber entrenado ya hoy. */
+  protected readonly restOverridden = signal(false);
+
+  protected resumeUnfinished(): void {
+    const pending = this.unfinished();
+    if (!pending) return;
+    const idx = this.state.days().findIndex((d) => d.id === pending.day.id);
+    if (idx >= 0) this.state.setActiveDay(idx);
+    this.mode.set('training');
+    this.initActiveExercise(pending.day.id);
+  }
+
+  /** Cierra la sesión interrumpida tal como quedó y muestra su resumen. */
+  protected finishUnfinished(): void {
+    const pending = this.unfinished();
+    if (!pending) return;
+    const idx = this.state.days().findIndex((d) => d.id === pending.day.id);
+    const finished = this.state.finishSession(pending.day.id, idx >= 0 ? idx : undefined);
+    if (finished) {
+      this.summarySession.set(finished);
+      this.summaryDay.set(pending.day);
+      this.precomputeNextSuggestions(pending.day, finished.dateISO);
+    }
+  }
+
+  protected discardUnfinished(): void {
+    const pending = this.unfinished();
+    if (!pending) return;
+    if (!window.confirm(this.T().resume_discard_confirm)) return;
+    this.state.discardSession(pending.day.id);
+  }
+
+  protected closeSummary(): void {
+    this.summarySession.set(null);
+    this.summaryDay.set(null);
+  }
+
+  /**
+   * Hook de fin de sesión (RF-IA-06b): deja calculadas las sugerencias de la PRÓXIMA sesión.
+   *
+   * Sin `await` a propósito. El usuario está leyendo su resumen y la app ya cumplió su parte;
+   * que la red tarde no puede bloquearle nada. Si falla, la próxima sesión calcula en directo
+   * como hasta ahora.
+   */
+  private precomputeNextSuggestions(day: WorkoutDay, sessionISO: string): void {
+    void this.progression.precomputeNextSession(
+      this.state.settings(),
+      day.exercises,
+      sessionISO,
+      this.tr.lang(),
+    );
   }
 
   protected onExerciseCompleted(completedExercise: Exercise): void {

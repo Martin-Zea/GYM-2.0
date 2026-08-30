@@ -57,12 +57,14 @@ export class RestTimerComponent implements OnInit, OnDestroy {
     this.total.set(t.seconds);
     this.endsAt = Date.now() + t.seconds * 1000;
     this.timerId = setInterval(() => this.tick(), 500);
+    this.uiState.persistRest(this.endsAt);
     document.addEventListener('visibilitychange', this.onVisibilityChange);
     this.requestNotificationPermissionOnce();
     void this.requestWakeLock();
   }
 
   ngOnDestroy(): void {
+    this.uiState.clearPersistedRest();
     this.stopTimer();
     document.removeEventListener('visibilitychange', this.onVisibilityChange);
     this.releaseWakeLock();
@@ -88,6 +90,7 @@ export class RestTimerComponent implements OnInit, OnDestroy {
   }
 
   private onDone(): void {
+    this.uiState.clearPersistedRest();
     if (this.state.settings().sounds) this.sound.playRestBeep();
     void this.triggerAlert();
     this.releaseWakeLock();
@@ -105,6 +108,7 @@ export class RestTimerComponent implements OnInit, OnDestroy {
   }
 
   protected skip(): void {
+    this.uiState.clearPersistedRest();
     this.stopTimer();
     this.releaseWakeLock();
     this.uiState.restTimer.set(null);
@@ -113,6 +117,7 @@ export class RestTimerComponent implements OnInit, OnDestroy {
   protected adjust(delta: number): void {
     if (this.finished) return;
     this.endsAt += delta * 1000;
+    this.uiState.persistRest(this.endsAt);
     const newVal = Math.max(0, Math.ceil((this.endsAt - Date.now()) / 1000));
     this.remaining.set(newVal);
     this.total.update((t) => Math.max(t + delta, newVal));

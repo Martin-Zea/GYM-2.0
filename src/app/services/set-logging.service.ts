@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { StateService } from './state.service';
 import { StorageService } from './storage.service';
+import { detectPr } from '../utils/pr';
 import { UIStateService } from './ui-state.service';
 import { SoundService } from './sound.service';
 import { TranslationService } from './translation.service';
@@ -31,7 +32,7 @@ export class SetLoggingService {
     const tp = this.state.getTodayProgress(day.id);
     const saved = tp.sets[ex.id] ?? [];
     const last = this.storage.lastSetsForExercise(this.state.state(), ex.id, this.state.todayKey);
-    const length = Math.max(ex.defaultSets, saved.length);
+    const length = this.setCountFor(day, ex);
     return Array.from({ length }, (_, i) => {
       if (saved[i]) return saved[i];
       const prev = last?.[i];
@@ -46,11 +47,31 @@ export class SetLoggingService {
     });
   }
 
+  /**
+   * Cuántas series muestra HOY este ejercicio: el número que fijó el usuario al añadir o
+   * quitar series, y si no, el de la rutina. Regla única — la usan la sesión, el progreso
+   * del día y el prefill, y si divergen el usuario ve "2/3" con el ejercicio terminado.
+   *
+   * Nunca por debajo de la última serie ya registrada: quitar series no puede esconder
+   * trabajo hecho.
+   */
+  setCountFor(day: WorkoutDay, ex: Exercise): number {
+    const tp = this.state.getTodayProgress(day.id);
+    const saved = tp.sets[ex.id] ?? [];
+    const override = tp.setCounts?.[ex.id];
+    const base = override ?? Math.max(ex.defaultSets, saved.length);
+    let lastDone = 0;
+    saved.forEach((s, i) => {
+      if (s?.done) lastDone = i + 1;
+    });
+    return Math.max(1, base, lastDone);
+  }
+
   /** Vuelca una recomendación de IA en las series de HOY (solo las no tocadas/no hechas). */
   applyRecPrefill(day: WorkoutDay, ex: Exercise, rec: AiRecommendation): void {
     if (!rec || rec.loading || !rec.sets?.length) return;
     const tp = this.state.getTodayProgress(day.id);
-    const total = Math.max(ex.defaultSets, tp.sets[ex.id]?.length ?? 0);
+    const total = this.setCountFor(day, ex);
     for (let i = 0; i < total; i++) {
       const existing = tp.sets[ex.id]?.[i];
       if (existing?.done) continue;
@@ -64,12 +85,20 @@ export class SetLoggingService {
   /** Añade una serie extra solo por hoy (no toca defaultSets de la rutina). */
   addExtraSet(day: WorkoutDay, ex: Exercise): void {
     const arr = this.buildSetsArray(day, ex);
+    this.state.setTodaySetCount(day.id, ex.id, arr.length + 1);
     // Persiste las series visibles no guardadas para que el índice nuevo quede al final
     this.state.updateSet(day.id, ex.id, arr.length, {
       weight: '' as unknown as number,
       reps: '' as unknown as number,
       done: false,
     });
+  }
+
+  /** Quita una serie de hoy (RF-SES-05). Nunca deja el ejercicio sin ninguna. */
+  removeSet(day: WorkoutDay, ex: Exercise, setIndex: number): void {
+    const arr = this.buildSetsArray(day, ex);
+    if (arr.length <= 1) return;
+    this.state.removeTodaySet(day.id, ex.id, setIndex, arr.length);
   }
 
   /** Etiqueta de la próxima serie para el descanso: "Serie 3 · 22,5 kg × 8". */
@@ -121,28 +150,40 @@ export class SetLoggingService {
     return arr.length > 0 && arr.every((s) => s.done);
   }
 
+  /**
+   * Récord en vivo (RF-SES-06). No solo peso: subir una repetición al mismo peso, o mejorar
+   * el 1RM estimado, también es progreso y es lo que el usuario ve casi todas las semanas.
+   * En ejercicios corporales o por tiempo el récord son las repeticiones/segundos.
+   */
   private maybeCelebratePr(day: WorkoutDay, ex: Exercise, setIndex: number): void {
-    // Weight isn't the progress metric for time/bodyweight exercises
-    if (ex.unit === 'TIME' || ex.unit === 'BODYWEIGHT') return;
-
     const key = `${ex.id}:${setIndex}`;
     if (this.celebratedPrSets.has(key)) return;
 
     const set = this.state.getTodayProgress(day.id).sets[ex.id]?.[setIndex];
-    const weight = Number(set?.weight) || 0;
-    if (weight <= 0) return;
+    if (!set || set.isWarmup) return;
+    const candidate = { weight: Number(set.weight) || 0, reps: Number(set.reps) || 0 };
+    if (candidate.reps <= 0) return;
 
-    // toggleSetDone already committed today's session — exclude it from the historic max
-    const history = this.storage
+    // toggleSetDone ya commiteó la sesión de HOY: hay que excluirla de la referencia
+    const previous = this.storage
       .historyForExercise(this.state.state(), ex.id)
-      .filter((h) => h.dateISO < this.state.todayKey);
-    if (!history.length) return;
+      .filter((h) => h.dateISO < this.state.todayKey)
+      .flatMap((h) => h.sets)
+      .filter((s) => !s.isWarmup);
 
-    const maxWeight = Math.max(...history.map((h) => h.topWeight));
-    if (weight <= maxWeight) return;
+    const pr = detectPr(ex.unit, previous, candidate);
+    if (!pr) return;
 
     this.celebratedPrSets.add(key);
     if (this.state.settings().sounds) this.sound.playPrBeep();
-    this.uiState.celebratePr(ex.name, weight, ex.unit);
+    this.uiState.celebratePr({
+      exerciseName: ex.name,
+      unit: ex.unit,
+      kind: pr.kind,
+      value: pr.value,
+      previous: pr.previous,
+      weight: candidate.weight,
+      reps: candidate.reps,
+    });
   }
 }

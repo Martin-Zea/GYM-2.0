@@ -1,0 +1,103 @@
+<div class="sheet-backdrop" (click)="closed.emit()"></div>
+<div class="sheet">
+  <div class="sheet-panel summary-sheet" role="dialog" aria-modal="true" appFocusTrap>
+    <div class="sheet-handle"></div>
+
+    <div class="sheet-header summary-header">
+      <div>
+        <h3 class="sheet-title">{{ T().summary_title }}</h3>
+        <p class="summary-day">{{ day().name }}</p>
+      </div>
+      <app-icon name="check" [size]="22" class="summary-check" />
+    </div>
+
+    <div class="sheet-body summary-body">
+      <!-- Cifras de la sesión. La duración solo aparece si se registró (R-5). -->
+      <div class="summary-stats">
+        <div class="summary-stat">
+          <span class="summary-stat-value mono">{{ tonnage() }}</span>
+          <span class="summary-stat-label">{{ T().summary_tonnage }}</span>
+        </div>
+        <div class="summary-stat">
+          <span class="summary-stat-value mono">{{ setCount() }}</span>
+          <span class="summary-stat-label">{{ T().summary_sets }}</span>
+        </div>
+        <div class="summary-stat">
+          <span class="summary-stat-value mono">{{ exerciseCount() }}</span>
+          <span class="summary-stat-label">{{ T().summary_exercises }}</span>
+        </div>
+        @if (durationMin() !== null) {
+          <div class="summary-stat">
+            <span class="summary-stat-value mono">{{ durationMin() }}</span>
+            <span class="summary-stat-label">{{ T().summary_duration }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- vs. sesión anterior -->
+      @if (hasPrevious()) {
+        <div class="summary-vs">
+          <p class="summary-section-title">{{ T().summary_vs_prev }}</p>
+          @if (tonnageDelta(); as delta) {
+            <p class="summary-vs-line" [class.summary-vs-line--up]="delta > 0">
+              <app-icon [name]="delta > 0 ? 'trend_up' : 'trend_down'" [size]="14" />
+              <span>
+                {{
+                  tr.tp('summary_vs_tonnage', {
+                    delta: delta > 0 ? '+' + delta : delta,
+                    percent: tonnagePercent() ?? 0,
+                  })
+                }}
+              </span>
+            </p>
+          } @else {
+            <p class="summary-vs-line summary-vs-line--flat">{{ T().summary_vs_same }}</p>
+          }
+          @if (durationMin() !== null && prevDurationMin() !== null) {
+            <p class="summary-vs-line summary-vs-line--muted">
+              {{ tr.tp('summary_vs_duration', { minutes: prevDurationMin() ?? 0 }) }}
+            </p>
+          } @else if (durationMin() !== null) {
+            <!-- El historial anterior a la migración no tiene duración: se omite, no se
+                 compara contra cero (R-5, RF-PRO-05). -->
+            <p class="summary-vs-line summary-vs-line--muted">{{ T().summary_no_prev_duration }}</p>
+          }
+        </div>
+      } @else {
+        <p class="summary-first">{{ T().summary_first_session }}</p>
+      }
+
+      <!-- Récords -->
+      @if (prs().length) {
+        <div class="summary-prs">
+          <p class="summary-section-title">{{ T().summary_prs }}</p>
+          @for (pr of prs(); track pr.exerciseName) {
+            <p class="summary-pr">
+              <app-icon name="sparkle" [size]="14" />
+              <span class="summary-pr-name">{{ pr.exerciseName }}</span>
+              <span class="summary-pr-detail mono">{{ prLabel(pr) }}</span>
+            </p>
+          }
+        </div>
+      }
+
+      <!-- Nota de la sesión (RF-SES-05) -->
+      <label class="summary-note-label" for="summary-note">{{ T().summary_note }}</label>
+      <textarea
+        id="summary-note"
+        class="input summary-note"
+        rows="2"
+        maxlength="500"
+        [placeholder]="T().summary_note_placeholder"
+        [value]="note()"
+        (change)="saveNote($event)"
+      ></textarea>
+    </div>
+
+    <div class="sheet-footer">
+      <button class="btn btn-primary summary-close" (click)="closed.emit()">
+        {{ T().summary_close }}
+      </button>
+    </div>
+  </div>
+</div>

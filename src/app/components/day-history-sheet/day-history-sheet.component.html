@@ -28,6 +28,10 @@
                 }
               </div>
               <div class="history-header-right">
+                <!-- La duración solo se muestra si la sesión la registró (R-5, RF-PRO-05) -->
+                @if (sv.durationMin !== null) {
+                  <span class="history-vol">{{ sv.durationMin }} min</span>
+                }
                 @if (sv.totalVolume > 0) {
                   <span class="history-vol">{{ formatVolume(sv.totalVolume) }} kg vol.</span>
                 }
@@ -86,6 +90,9 @@
               </div>
             }
 
+            @if (sv.session.sessionNote) {
+              <p class="history-session-note">{{ sv.session.sessionNote }}</p>
+            }
             @if (sv.session.skipped) {
               <span class="history-skipped">{{ T().history_skipped }}</span>
             } @else if (editingId() === sv.session.id) {

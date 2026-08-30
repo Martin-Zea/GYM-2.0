@@ -212,10 +212,18 @@
             </button>
           </div>
         }
-        <button class="add-set-btn" (click)="$event.stopPropagation(); addExtraSet()">
-          <app-icon name="plus" [size]="12" />
-          {{ T().asc_extra_set }}
-        </button>
+        <div class="set-actions">
+          <button class="add-set-btn" (click)="$event.stopPropagation(); addExtraSet()">
+            <app-icon name="plus" [size]="12" />
+            {{ T().asc_extra_set }}
+          </button>
+          @if (setsArray().length > 1) {
+            <button class="add-set-btn" (click)="$event.stopPropagation(); removeLastSet()">
+              <app-icon name="minus" [size]="12" />
+              {{ T().asc_remove_set }}
+            </button>
+          }
+        </div>
       </div>
     </div>
   }

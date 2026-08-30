@@ -134,9 +134,23 @@ await page.locator('.session-finish-btn').click();
 await page.waitForTimeout(400);
 check('terminar: sheet visible', (await page.locator('.finish-sheet').count()) === 1);
 await page.screenshot({ path: `${OUT}/07-finish.png` });
-await page.locator('.sheet-footer .btn-primary').click();
+await page.locator('.finish-sheet .sheet-footer .btn-primary').click();
 await page.waitForTimeout(600);
+
+// ── H3: resumen de la sesión (RF-SES-08) ──
+check('resumen: sheet visible', (await page.locator('.summary-sheet').count()) === 1);
+check('resumen: cifras de la sesión', (await page.locator('.summary-stat').count()) >= 3);
+await page.screenshot({ path: `${OUT}/07b-summary.png` });
+await page.locator('.summary-close').click();
+await page.waitForTimeout(400);
+check('resumen: se cierra', (await page.locator('.summary-sheet').count()) === 0);
+
 check('terminar: vuelve al dashboard', (await page.locator('.today-card').count()) === 1);
+// La sesión quedó cerrada: no debe ofrecerse reanudarla (RF-SES-07)
+check(
+  'terminar: sin aviso de sesión interrumpida',
+  (await page.locator('.resume-card').count()) === 0,
+);
 
 // ── Historial ──
 await page.goto(`${BASE}/history`, { waitUntil: 'networkidle' });

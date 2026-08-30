@@ -26,6 +26,21 @@ interface AiCacheEntry {
   profileSig: string;
 }
 
+const NEXT_KEY = STORAGE_KEYS.nextSuggestions;
+
+/**
+ * Sugerencia calculada al CERRAR una sesión, para la siguiente (RF-IA-06b).
+ *
+ * `afterSessionISO` es la fecha de la sesión que la originó: mientras el ejercicio no vuelva
+ * a entrenarse, la sugerencia sigue siendo la buena. En cuanto hay una sesión más nueva, deja
+ * de valer sola, sin necesidad de borrarla.
+ */
+interface NextSuggestionEntry {
+  rec: AiRecommendation;
+  afterSessionISO: string;
+  profileSig: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ProgressionService {
   private readonly storage = inject(StorageService);
@@ -81,6 +96,84 @@ export class ProgressionService {
       profileSig: this.profileSig(profile),
     };
     localStorage.setItem(AI_CACHE_KEY, JSON.stringify(cache));
+  }
+
+  private readNextStore(): Partial<Record<string, NextSuggestionEntry>> {
+    try {
+      const parsed: unknown = JSON.parse(localStorage.getItem(NEXT_KEY) ?? '{}');
+      return typeof parsed === 'object' && parsed !== null
+        ? (parsed as Partial<Record<string, NextSuggestionEntry>>)
+        : {};
+    } catch {
+      return {};
+    }
+  }
+
+  /**
+   * Sugerencia ya calculada para la próxima sesión de este ejercicio, si sigue vigente.
+   *
+   * Vigente = se calculó justo después de la última sesión registrada y con el mismo perfil.
+   * Así H2 nunca espera a la red: el trabajo se hizo al cerrar la sesión anterior.
+   */
+  private getPrecomputed(
+    exerciseId: string,
+    lastSessionISO: string | null,
+    profile: UserProfile,
+  ): AiRecommendation | null {
+    const entry = this.readNextStore()[exerciseId];
+    if (!entry || !entry.rec || !Array.isArray(entry.rec.sets)) return null;
+    if (!lastSessionISO || entry.afterSessionISO !== lastSessionISO) return null;
+    if (entry.profileSig !== this.profileSig(profile)) return null;
+    return entry.rec;
+  }
+
+  /**
+   * Calcula y guarda las sugerencias de la PRÓXIMA sesión de un día recién cerrado.
+   *
+   * Se lanza sin esperarla (`void`): el usuario está mirando su resumen, no puede quedarse
+   * bloqueado por la red (RF-IA-06b). Si falla, no pasa nada — la próxima vez se calcula
+   * en directo como hasta ahora.
+   *
+   * NOTA: hoy hace una llamada por ejercicio, igual que el flujo actual, pero fuera del
+   * camino crítico. T-400 las colapsa en UNA por sesión (Art. 5).
+   */
+  async precomputeNextSession(
+    settings: AppSettings,
+    exercises: readonly Exercise[],
+    afterSessionISO: string,
+    lang: 'es' | 'en' = 'es',
+  ): Promise<void> {
+    const store = this.readNextStore();
+    for (const exercise of exercises) {
+      try {
+        const state = this.storage.load();
+        const history = this.storage.historyForExercise(state, exercise.id);
+        const lastSets = this.storage.lastSetsForExercise(state, exercise.id);
+        const rec = await this.recommend(
+          settings,
+          exercise,
+          [],
+          lastSets,
+          history,
+          lang,
+          history.at(-1)?.dateISO ?? null,
+          { skipPrecomputed: true },
+        );
+        if (rec.loading) continue;
+        store[exercise.id] = {
+          rec,
+          afterSessionISO,
+          profileSig: this.profileSig(settings.userProfile),
+        };
+      } catch {
+        /* una sugerencia que no sale no rompe el cierre de la sesión */
+      }
+    }
+    try {
+      localStorage.setItem(NEXT_KEY, JSON.stringify(store));
+    } catch {
+      /* sin espacio: se calculará en directo */
+    }
   }
 
   private applyLongRestAdjustment(
@@ -159,6 +252,7 @@ export class ProgressionService {
     history: HistoryEntry[],
     lang: 'es' | 'en' = 'es',
     lastSessionDate: string | null = null,
+    opts: { skipPrecomputed?: boolean } = {},
   ): Promise<AiRecommendation> {
     const hasDoneOrHistory = lastSets?.length || todaySets.some((s) => s?.done);
     const providers = this.buildProviders(settings);
@@ -183,6 +277,14 @@ export class ProgressionService {
     const lastSessionISO = history.at(-1)?.dateISO ?? null;
     const cached = this.getCached(exercise.id, lastSessionISO, settings.userProfile);
     if (cached) return cached;
+
+    if (!opts.skipPrecomputed) {
+      const ready = this.getPrecomputed(exercise.id, lastSessionISO, settings.userProfile);
+      if (ready) {
+        this.setCached(exercise.id, lastSessionISO, ready, settings.userProfile);
+        return ready;
+      }
+    }
 
     if (!navigator.onLine) {
       return local(lang === 'en' ? ' (offline mode)' : ' (modo offline)');

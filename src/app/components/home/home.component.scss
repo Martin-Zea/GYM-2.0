@@ -750,3 +750,45 @@
 .mono {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
+
+/* Sesión interrumpida (RF-SES-07) y estado de descanso (H1) */
+.resume-card,
+.resume-card-text,
+.rest-state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.resume-card {
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--bg-2);
+}
+.resume-card-text {
+  gap: 2px;
+  font-size: var(--fs-xs);
+  color: var(--text-1);
+}
+.resume-card-text strong {
+  font-size: var(--fs-sm);
+  color: var(--text-0);
+}
+.resume-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.rest-state {
+  align-items: flex-start;
+}
+.rest-state-msg {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--success);
+}

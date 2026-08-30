@@ -22,7 +22,7 @@ import {
   TodaySetProgress,
   WorkoutDay,
 } from '../../models/workout.model';
-import { formatRecLabel } from '../../utils/rec-label';
+import { formatPrevSets, formatRecLabel } from '../../utils/rec-label';
 
 @Component({
   selector: 'app-exercise-card',
@@ -82,18 +82,9 @@ export class ExerciseCardComponent {
       ) ?? [],
   );
 
-  protected readonly prevSetsLine = computed(() => {
-    const sets = this.lastSets();
-    if (!sets.length) return '';
-    const unit = this.exercise().unit;
-    return sets
-      .map((s) => {
-        if (unit === 'BODYWEIGHT') return `${s.reps}r`;
-        if (unit === 'TIME') return `${s.reps}s`;
-        return `${s.weight}×${s.reps}`;
-      })
-      .join(' / ');
-  });
+  protected readonly prevSetsLine = computed(() =>
+    formatPrevSets(this.exercise().unit, this.lastSets()),
+  );
 
   protected readonly isDone = computed(() => {
     const arr = this.setsArray();
@@ -215,6 +206,11 @@ export class ExerciseCardComponent {
 
   protected addExtraSet(): void {
     this.setLogging.addExtraSet(this.day(), this.exercise());
+  }
+
+  /** Quita la última serie de hoy; en la vista tabla la última es la única sin ambigüedad. */
+  protected removeLastSet(): void {
+    this.setLogging.removeSet(this.day(), this.exercise(), this.setsArray().length - 1);
   }
 
   protected ytUrl(): string {

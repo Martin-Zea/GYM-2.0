@@ -16,4 +16,8 @@ export const STORAGE_KEYS = {
   aiShadowLog: 'gym_ai_shadow_log_v1',
   /** Dueño actual de la escritura (fallback de `TabLockService` sin Web Locks). */
   tabOwner: 'gt_tab_owner',
+  /** Descanso en curso: sobrevive a que el SO mate la PWA en segundo plano (RF-SES-04). */
+  restTimer: 'gt_rest_timer',
+  /** Sugerencias calculadas al cerrar una sesión, listas para la próxima (RF-IA-06b). */
+  nextSuggestions: 'gt_next_suggestions',
 } as const;

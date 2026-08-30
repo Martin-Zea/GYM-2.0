@@ -226,6 +226,12 @@ function checkSessionList(i: Issues, list: unknown, path: string): void {
     if ('skipped' in s && !isBool(s['skipped'])) {
       i.add(`${p}.skipped`, `se esperaba booleano, llegó ${describe(s['skipped'])}`);
     }
+    // Opcionales por diseño: el historial anterior a v7 no los tiene (RF-SES-08b, R-5).
+    for (const k of ['startedAt', 'endedAt'] as const) {
+      if (k in s && s[k] !== undefined && !isStr(s[k])) {
+        i.add(`${p}.${k}`, `se esperaba fecha ISO, llegó ${describe(s[k])}`);
+      }
+    }
     if (!Array.isArray(s['sets'])) {
       i.add(`${p}.sets`, `se esperaba array, llegó ${describe(s['sets'])}`);
       return;

@@ -155,3 +155,10 @@
   align-items: center;
   gap: 4px;
 }
+
+.history-session-note {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+  font-style: italic;
+}

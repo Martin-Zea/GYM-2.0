@@ -415,3 +415,9 @@
   color: var(--accent);
   border-color: var(--accent-border);
 }
+
+.set-actions {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}

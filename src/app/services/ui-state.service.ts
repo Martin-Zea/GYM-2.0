@@ -1,7 +1,22 @@
 import { Injectable, signal } from '@angular/core';
 import { Exercise, RestTimerState, WorkoutDay } from '../models/workout.model';
+import { STORAGE_KEYS } from './storage-keys';
+import { PrKind } from '../utils/pr';
 
 export type EditingDayState = WorkoutDay | 'new' | null;
+
+export interface PrCelebration {
+  exerciseName: string;
+  unit: string;
+  kind: PrKind;
+  /** Marca nueva (kg, reps/segundos o e1RM según `kind`). */
+  value: number;
+  /** Marca anterior superada. */
+  previous: number;
+  /** Serie que lo consiguió: hace falta para compartir "100 kg × 5". */
+  weight: number;
+  reps: number;
+}
 
 type OverlayName =
   | 'settings'
@@ -16,6 +31,59 @@ export class UIStateService {
   readonly showSettings = signal(false);
   readonly editingDay = signal<EditingDayState>(null);
   readonly restTimer = signal<RestTimerState | null>(null);
+
+  /**
+   * El descanso en curso se guarda con su hora de fin absoluta.
+   *
+   * Android mata las PWA en segundo plano sin avisar, que es justo lo que pasa cuando el
+   * usuario deja el móvil y espera: al volver, el descanso tiene que seguir donde estaba
+   * en vez de haber desaparecido (RF-SES-04).
+   */
+  persistRest(endsAt: number): void {
+    const timer = this.restTimer();
+    if (!timer) {
+      this.clearPersistedRest();
+      return;
+    }
+    try {
+      localStorage.setItem(STORAGE_KEYS.restTimer, JSON.stringify({ ...timer, endsAt }));
+    } catch {
+      /* sin espacio: el descanso es efímero, no vale la pena molestar al usuario */
+    }
+  }
+
+  clearPersistedRest(): void {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.restTimer);
+    } catch {
+      /* storage no disponible */
+    }
+  }
+
+  /** Reanuda el descanso al abrir la app. Uno ya vencido se descarta sin sonar tarde. */
+  restoreRest(): void {
+    let raw: string | null;
+    try {
+      raw = localStorage.getItem(STORAGE_KEYS.restTimer);
+    } catch {
+      return;
+    }
+    if (!raw) return;
+    this.clearPersistedRest();
+    try {
+      const data = JSON.parse(raw) as Partial<RestTimerState> & { endsAt?: number };
+      const remaining = Math.ceil(((data.endsAt ?? 0) - Date.now()) / 1000);
+      if (remaining <= 0 || typeof data.exerciseId !== 'string') return;
+      this.restTimer.set({
+        seconds: remaining,
+        exerciseId: data.exerciseId,
+        nextLabel: data.nextLabel ?? '',
+        nextSetIndex: data.nextSetIndex,
+      });
+    } catch {
+      /* entrada corrupta: se descartó arriba */
+    }
+  }
 
   // Day detail sheet: shows last session + option to train
   readonly dayDetail = signal<WorkoutDay | null>(null);
@@ -53,10 +121,8 @@ export class UIStateService {
   // Drives the "otra pestaña manda, recargá" banner — see TabLockService (RF-STO-09).
   readonly tabConflict = signal(false);
 
-  // Personal record celebration toast — auto-dismissed by celebratePr()
-  readonly prCelebration = signal<{ exerciseName: string; weight: number; unit: string } | null>(
-    null,
-  );
+  /** Récord celebrado en vivo (RF-SES-06); `celebratePr()` lo auto-descarta a los 2,5 s. */
+  readonly prCelebration = signal<PrCelebration | null>(null);
 
   private prTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -198,9 +264,9 @@ export class UIStateService {
     this._exitResolve = null;
   }
 
-  celebratePr(exerciseName: string, weight: number, unit: string): void {
+  celebratePr(pr: PrCelebration): void {
     if (this.prTimeout !== null) clearTimeout(this.prTimeout);
-    this.prCelebration.set({ exerciseName, weight, unit });
+    this.prCelebration.set(pr);
     this.prTimeout = setTimeout(() => this.prCelebration.set(null), 2500);
   }
 

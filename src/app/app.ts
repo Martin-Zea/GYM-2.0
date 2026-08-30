@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { RouterOutlet } from '@angular/router';
 import { StateService } from './services/state.service';
 import { FLAGS, StorageService } from './services/storage.service';
-import { UIStateService } from './services/ui-state.service';
+import { PrCelebration, UIStateService } from './services/ui-state.service';
 import { TranslationService } from './services/translation.service';
 import { AppUpdateService } from './services/app-update.service';
 import { ErrorService } from './services/error.service';
@@ -11,6 +11,7 @@ import { BackupService } from './services/backup.service';
 import { ThemeService } from './services/theme.service';
 import { WakeLockService } from './services/wake-lock.service';
 import { STORAGE_KEYS } from './services/storage-keys';
+import { ExerciseUnit } from './models/workout.model';
 import { IconComponent } from './components/icon/icon.component';
 import { RestTimerComponent } from './components/rest-timer/rest-timer.component';
 import { DayEditorComponent } from './components/day-editor/day-editor.component';
@@ -76,6 +77,8 @@ export class App {
 
   constructor() {
     this.checkBackupReminder();
+    // Un descanso que seguía corriendo cuando el SO mató la app se retoma donde estaba.
+    this.uiState.restoreRest();
     // Capture-phase popstate: intercept back button before Angular's router listener.
     // When an overlay is open, close it instead of navigating. The URL never changes
     // for overlay entries (pushState with empty string), so Angular's URL state stays
@@ -150,11 +153,47 @@ export class App {
     this.tr.setLang(this.tr.lang() === 'es' ? 'en' : 'es');
   }
 
+  /** Texto del toast según el tipo de récord: "más peso" y "una rep más" no se dicen igual. */
+  prMessage(pr: PrCelebration): string {
+    const params = {
+      exercise: pr.exerciseName,
+      value: String(pr.value),
+      weight: String(pr.weight),
+      previous: String(pr.previous),
+    };
+    switch (pr.kind) {
+      case 'weight':
+        return this.tr.tp('pr_celebration', { ...params, weight: String(pr.value) });
+      case 'reps_at_weight':
+        return this.tr.tp('pr_celebration_reps_at_weight', params);
+      case 'e1rm':
+        return this.tr.tp('pr_celebration_e1rm', params);
+      case 'reps':
+        return this.tr.tp(
+          pr.unit === 'TIME' ? 'pr_celebration_time' : 'pr_celebration_reps',
+          params,
+        );
+    }
+  }
+
   sharePrFromToast(): void {
     const pr = this.uiState.prCelebration();
     if (!pr) return;
     this.uiState.stopPrAutoDismiss();
-    void this.shareService.share(pr.exerciseName, pr.weight, pr.unit, this.storage.todayISO());
+    // La imagen compartida muestra un número grande y una unidad: cada tipo de récord tiene
+    // los suyos, o un PR de repeticiones saldría anunciando "0 kg".
+    const t = this.T();
+    const unit =
+      pr.kind === 'e1rm'
+        ? t.pr_share_unit_e1rm
+        : pr.kind === 'reps_at_weight'
+          ? this.tr.tp('pr_share_unit_reps_at', { weight: String(pr.weight) })
+          : pr.kind === 'reps'
+            ? pr.unit === 'TIME'
+              ? t.pr_share_unit_seconds
+              : t.pr_share_unit_reps
+            : this.tr.unitLabel(pr.unit as ExerciseUnit);
+    void this.shareService.share(pr.exerciseName, pr.value, unit, this.storage.todayISO());
   }
 
   completeOnboarding(days: 3 | 4 | 5): void {

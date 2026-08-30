@@ -9,50 +9,63 @@
 - **T-001** ✅ Con `audit.md`, actualizar los [ACLARAR] de `spec.md` y ajustar `plan.md` (stack definitivo, migración de datos actuales). Gate: sin esto no se implementa nada.
   - Resultado: stack **Angular 21 confirmado**; los 4 [ACLARAR] cerrados en `spec.md` §8; cookie eliminada del alcance; paleta del diseño adoptada conservando alto contraste; F1 reordenada por riesgos (plan §8.1).
 
-## F1 · Fundaciones de datos (RF-STO)
+## F1 · Fundaciones de datos (RF-STO) — ✅ COMPLETA
 
 > **Orden obligatorio (plan §8.1, `audit.md` §5):** `T-105 → T-101 → T-100 → T-102 → T-106`.
 > T-101 y T-105 **ya no son `[P]`**: migrar sin lock (R-9) o endurecer la validación sin cuarentena (R-2)
 > son las dos formas realistas de destruir el historial de un usuario que no tiene backend del que rehidratar.
 
-- **T-105** Detección multi-pestaña con evento `storage`/Web Locks (RF-STO-09). **Prerrequisito de T-102.**
+- **T-105** ✅ Detección multi-pestaña con evento `storage`/Web Locks (RF-STO-09). **Prerrequisito de T-102.**
   - AC (R-9): dos contextos abiertos no escriben a la vez; el que no tiene el lock muestra "actualizando datos, recargá" en vez de guardar en formato viejo encima del migrado.
-- **T-101** Esquemas + validación en lectura con cuarentena (RF-STO-04). **Prerrequisito de T-100/T-102.**
+- **T-101** ✅ Esquemas + validación en lectura con cuarentena (RF-STO-04). **Prerrequisito de T-100/T-102.**
   - AC (R-2, bloqueante): ante estado inválido, el original se mueve a `gt_quarantine_<timestamp>` y **no se persiste nada encima** hasta que el usuario decida. Prohibido el comportamiento actual (devolver estado inicial y dejar que el `effect` lo guarde sobre el original).
   - AC: la validación comprueba tipos internos, no solo que `days` sea un array.
-- **T-100** Implementar `storageAdapter` con escritura atómica y prefijo `gt_` (RF-STO-01/03).
+- **T-100** ✅ Implementar `storageAdapter` con escritura atómica y prefijo `gt_` (RF-STO-01/03).
   - AC (R-1): commit multi-clave con journal — escribir con sufijo temporal → validar el conjunto → intercambiar punteros en `gt_meta` → borrar temporales. `gt_meta` versiona el **conjunto**, no cada clave.
-- **T-102** `schemaVersion` + framework de migraciones + migración desde el formato actual (RF-STO-07, depende de T-000). Es un paso **v6 → v7** sobre el `migrate()` encadenado existente, no un framework nuevo.
+- **T-102** ✅ `schemaVersion` + framework de migraciones + migración desde el formato actual (RF-STO-07, depende de T-000). Es un paso **v6 → v7** sobre el `migrate()` encadenado existente, no un framework nuevo.
   - AC: **snapshot IDB obligatorio antes de migrar** (reutiliza `writeSnapshot()`); si el snapshot falla, la migración no arranca.
   - AC: toma el lock de T-105 durante toda la migración.
   - AC (R-3): los ejercicios del usuario **conservan su id**; el enlace al catálogo estático es un `catalogRef` por nombre normalizado (`normalizeExerciseName()`, ya probado en v4→v5). Los no mapeados se marcan para resolución manual — no se adivina.
   - AC (R-4): unidades a enum neutro (`KG`, `KG_PER_HAND`, `KG_PER_ARM`, `TIME`, `BODYWEIGHT`); lb solo en presentación, almacenamiento canónico en kg.
   - AC (R-7): la caché de IA se invalida por completo en la migración.
   - AC: los flags `gym_onboarding_done_v1` / `gym_legal_accepted_v1` se migran a `gt_meta` (la cookie queda fuera del alcance, `spec.md` §8).
-- **T-103** Export JSON con checksum + Web Share; import con verificación y fusionar/reemplazar (RF-STO-05). Va después de T-100; `[P]` con T-104.
+- **T-103** ✅ Export JSON con checksum + Web Share; import con verificación y fusionar/reemplazar (RF-STO-05). Va después de T-100; `[P]` con T-104.
   - AC (R-6): la fusión deduplica por **identidad semántica** (nombre normalizado; fecha + día para sesiones), nunca por id, y remapea los ids del backup entrante cuando colisionan con los locales.
   - AC (R-8, RF-STO-05b): el export **excluye las keys de IA** por defecto, con opción explícita "incluir credenciales" apagada.
-- **T-104** Snapshots internos rotativos + medidor de espacio + purga + borrar todo (RF-STO-08). Va después de T-100; `[P]` con T-103.
-- **T-106** Tests de la fundación (EA-5, Art. 9).
+- **T-104** ✅ Snapshots internos rotativos + medidor de espacio + purga + borrar todo (RF-STO-08). Va después de T-100; `[P]` con T-103.
+- **T-106** ✅ Tests de la fundación (EA-5, Art. 9).
   - AC: **corte a mitad de la migración multi-clave** deja el estado anterior intacto y recuperable (R-1) — escribir este test **antes** que la migración.
   - AC: **fusión de dos backups con ids coincidentes** no mezcla historiales de ejercicios distintos (R-6).
   - AC: **snapshot de esquema v6 restaurado en v7** pasa por `migrate()` antes de adoptarse (R-7).
   - AC: import corrupto → cuarentena, datos actuales intactos (EA-5).
   - AC: adapter atómico, validador y migraciones con fixtures.
 
-## F2 · Sesión activa — flujo estrella (RF-SES)
+> **Resultado F1:** `schemaVersion: 7` y almacenamiento particionado `gt_*` con commit por journal;
+> validación en dos niveles (tolerante antes de migrar, estricta después) con cuarentena; lock multi-pestaña;
+> backup con checksum y fusión por identidad semántica; medidor de espacio y purga. R-1…R-9 cerradas.
+> `catalogRef` (R-3) queda deliberadamente sin poblar hasta T-500, que aporta el catálogo y los sinónimos.
 
-- **T-200** Modelo de sesión con persistencia por serie y recuperación de interrumpida (RF-SES-02/07, EA-4).
+## F2 · Sesión activa — flujo estrella (RF-SES) — ✅ COMPLETA
+
+- **T-200** ✅ Modelo de sesión con persistencia por serie y recuperación de interrumpida (RF-SES-02/07, EA-4).
   - AC (R-5, RF-SES-08b): las sesiones nuevas registran `startedAt`/`endedAt`; ambos son **opcionales** en el modelo porque todo el historial previo a la migración no los tiene.
-- **T-201** Vista H2: filas de serie precargadas, steppers, ✓ ≤ 3 taps sin scroll (RF-SES-03, EA-1, Art. 8).
-- **T-202** Temporizador de descanso G1: overlay persistente, vibración/sonido, notificación en segundo plano (RF-SES-04) `[P]`.
-- **T-203** Acciones en vivo: añadir/quitar/sustituir/notas (RF-SES-05, RF-EJ-04).
-- **T-204** Detección de PR en vivo + celebración G2 (RF-SES-06) `[P]`.
-- **T-205** Resumen H3 (tonelaje, series, vs. anterior) + hook de fin de sesión (RF-SES-08).
+- **T-201** ✅ Vista H2: filas de serie precargadas, steppers, ✓ ≤ 3 taps sin scroll (RF-SES-03, EA-1, Art. 8).
+- **T-202** ✅ Temporizador de descanso G1: overlay persistente, vibración/sonido, notificación en segundo plano (RF-SES-04) `[P]`.
+- **T-203** ✅ Acciones en vivo: añadir/quitar/sustituir/notas (RF-SES-05, RF-EJ-04).
+- **T-204** ✅ Detección de PR en vivo + celebración G2 (RF-SES-06) `[P]`.
+- **T-205** ✅ Resumen H3 (tonelaje, series, vs. anterior) + hook de fin de sesión (RF-SES-08).
   - AC (R-5, RF-PRO-05): si la sesión comparada no tiene duración (historial previo), el resumen **omite** el dato en vez de mostrar "0 min".
   - AC (RF-IA-06b): el hook de fin de sesión dispara el cálculo de las sugerencias de la **próxima** sesión y las persiste; el usuario no espera por ellas.
-- **T-206** Vistas H1 (estados: hoy toca / sin rutina / descanso / reanudar) y H4 (RF-SES-01/07).
-- **T-207** Tests de cálculo de tonelaje/PR y prueba de cierre forzado (CE-3).
+- **T-206** ✅ Vistas H1 (estados: hoy toca / sin rutina / descanso / reanudar) y H4 (RF-SES-01/07).
+- **T-207** ✅ Tests de cálculo de tonelaje/PR y prueba de cierre forzado (CE-3).
+
+> **Resultado F2:** la sesión registra `startedAt`/`endedAt` (opcionales: el historial previo no los tiene)
+> y ofrece reanudar/finalizar/descartar si quedó abierta. Nueva vista H3 con tonelaje, series, PRs y
+> comparación con la vez anterior, que **omite** lo que la sesión no registró en vez de mostrar cero (R-5).
+> Récords de peso, reps al mismo peso y e1RM. Acciones en vivo: añadir/quitar series y ejercicios solo por
+> hoy, y notas por serie/ejercicio/sesión. El descanso sobrevive a que el SO mate la PWA.
+> El hook de fin de sesión ya deja calculadas las sugerencias de la próxima (RF-IA-06b); T-400 sustituye
+> el motor detrás por UNA llamada por sesión (Art. 5) sin tocar el punto de enganche.
 
 ## F3 · Motor de progresión local (RF-IA-01)
 

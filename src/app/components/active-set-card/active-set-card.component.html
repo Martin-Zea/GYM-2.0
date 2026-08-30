@@ -21,6 +21,17 @@
     }
   </div>
 
+  <!-- La última vez: referencia para decidir el peso de hoy (RF-SES-02) -->
+  @if (prevSetsLine()) {
+    <p class="asc-prev">
+      <span class="asc-prev-label">{{ T().prev_sets_label }}:</span>
+      <span class="mono">{{ prevSetsLine() }}</span>
+      @if (prevFeel(); as feel) {
+        <span class="asc-prev-feel" [class]="'asc-prev-feel--' + feel">{{ feelLabel(feel) }}</span>
+      }
+    </p>
+  }
+
   <!-- Recomendación con su porqué (una línea, clamp) -->
   @if (aiRec()?.loading) {
     <div class="asc-ai">
@@ -175,6 +186,9 @@
       <div class="asc-secondary">
         <button class="asc-link" (click)="undoLastSet()">{{ T().asc_undo_set }}</button>
         <button class="asc-link" (click)="addExtraSet()">{{ T().asc_extra_set }}</button>
+        @if (canRemoveSet()) {
+          <button class="asc-link" (click)="removeCurrentSet()">{{ T().asc_remove_set }}</button>
+        }
         <button class="asc-link" (click)="openChart()">{{ T().view_chart }}</button>
       </div>
     </div>
@@ -193,6 +207,12 @@
     @if (!isDone() && doneCount() > 0) {
       <button class="asc-link" (click)="undoLastSet()">{{ T().asc_undo_set }}</button>
     }
+    <button class="asc-link" (click)="showAddExercise.set(!showAddExercise())">
+      {{ T().asc_add_exercise }}
+    </button>
+    <button class="asc-link asc-link--danger" (click)="removeExerciseToday()">
+      {{ T().asc_remove_exercise }}
+    </button>
   </div>
 
   @if (showNote()) {
@@ -204,6 +224,28 @@
       [value]="todayNote()"
       (change)="saveNote($event)"
     ></textarea>
+    @if (!isDone()) {
+      <textarea
+        class="input asc-note-input"
+        rows="1"
+        maxlength="120"
+        [placeholder]="T().asc_set_note_placeholder"
+        [value]="currentSetNote()"
+        (change)="saveSetNote($event)"
+      ></textarea>
+    }
+  }
+
+  @if (showAddExercise()) {
+    <div class="asc-substitute">
+      <p class="asc-substitute-hint">{{ T().asc_add_exercise_hint }}</p>
+      <select class="select" (change)="addExerciseToday($event)">
+        <option value="">{{ T().asc_add_exercise_pick }}</option>
+        @for (opt of substituteOptions(); track opt.id) {
+          <option [value]="opt.id">{{ opt.name }}</option>
+        }
+      </select>
+    </div>
   }
 
   @if (showSubstitute()) {

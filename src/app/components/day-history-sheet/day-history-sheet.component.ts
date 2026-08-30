@@ -5,6 +5,7 @@ import { StateService } from '../../services/state.service';
 import { StorageService } from '../../services/storage.service';
 import { TranslationService } from '../../services/translation.service';
 import { UIStateService } from '../../services/ui-state.service';
+import { sessionDurationMinutes } from '../../utils/session';
 import { Session } from '../../models/workout.model';
 import { daysBetweenISO } from '../../utils/date';
 import { formatSetLine } from '../../utils/rec-label';
@@ -23,6 +24,8 @@ interface SessionView {
   totalVolume: number;
   isIncomplete: boolean;
   volumeDelta: number | null; // % change vs previous session; null if no prior
+  /** Duración en minutos, o `null` si la sesión no la registró (R-5): nunca "0 min". */
+  durationMin: number | null;
 }
 
 @Component({
@@ -91,6 +94,7 @@ export class DayHistorySheetComponent {
         totalVolume,
         isIncomplete,
         volumeDelta: null as number | null,
+        durationMin: sessionDurationMinutes(session),
       };
     });
 
