@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { AppSettings } from '../models/workout.model';
+import { AppSettings, UserProfile } from '../models/workout.model';
 import { StorageService } from './storage.service';
 import { StateService } from './state.service';
 import { ApiKeyService } from './api-key.service';
@@ -22,6 +22,8 @@ import { COHERE_MODEL } from './providers/cohere.provider';
 import {
   CoachProposal,
   ResolvedWeight,
+  diffSuggestions,
+  layoffSinceFrom,
   parseCoachReply,
   resolveWeightProposal,
 } from './coach-proposal';
@@ -46,6 +48,18 @@ async function modelAwareError(provider: string, resp: Response): Promise<Error>
     return new ModelError(error?.message ?? 'model_not_found');
   }
   return new Error(`${provider} ${resp.status}`);
+}
+
+/** El peso tope y las reps de cada sugerencia: el "antes" contra el que se compara. */
+function topsOf(
+  byExercise: Partial<Record<string, AiRecommendation>>,
+): Partial<Record<string, { weight: number; reps: number }>> {
+  const out: Partial<Record<string, { weight: number; reps: number }>> = {};
+  for (const [id, rec] of Object.entries(byExercise)) {
+    if (!rec?.sets.length) continue;
+    out[id] = { weight: Math.max(...rec.sets.map((s) => s.weight)), reps: rec.sets[0].reps };
+  }
+  return out;
 }
 
 export interface ChatMessage {
@@ -106,6 +120,17 @@ export class CoachChatService {
   readonly proposedWeights = signal<ResolvedWeight[]>([]);
   readonly error = signal<string | null>(null);
 
+  /**
+   * Las sugerencias completas que se guardarán si acepta, tal como se enseñaron.
+   *
+   * No es una señal porque nadie la pinta: es el compromiso entre lo que se previsualizó y
+   * lo que se escribe. Se calcula al recibir la propuesta y se descarta si la rechaza.
+   */
+  private pendingApply: {
+    dayId: string;
+    byExercise: Partial<Record<string, AiRecommendation>>;
+  } | null = null;
+
   readonly usage = signal(usageForMonth());
 
   readonly budget = computed(() => this.state.settings().aiTokenBudget ?? DEFAULT_TOKEN_BUDGET);
@@ -134,10 +159,7 @@ export class CoachChatService {
       this.push({ role: 'assistant', text: reply });
       // La propuesta NO se aplica: queda esperando confirmación. Que el chat cambie tus
       // números sin que lo veas es justo lo que hace desconfiar de la sugerencia.
-      this.proposal.set(proposal);
-      this.proposedWeights.set(
-        proposal?.weights?.length ? this.resolveWeights(proposal.weights) : [],
-      );
+      await this.previewProposal(proposal, settings);
     } catch (e) {
       if (e instanceof AuthError) this.error.set('auth');
       else if (e instanceof ModelError) this.error.set('model');
@@ -150,79 +172,118 @@ export class CoachChatService {
 
   clear(): void {
     this.messages.set([]);
-    this.proposal.set(null);
-    this.proposedWeights.set([]);
+    this.dismissProposal();
     this.write([]);
   }
 
   dismissProposal(): void {
+    this.pendingApply = null;
     this.proposal.set(null);
     this.proposedWeights.set([]);
   }
 
   /**
-   * Aplica la propuesta al perfil.
+   * Deja una propuesta lista para enseñar, sin aplicar nada.
    *
-   * No hace falta invalidar nada a mano: `aiNotes`, objetivo y nivel entran en el contexto
-   * serializado, así que cambiarlos cambia el `contextHash` y las sugerencias precalculadas
-   * dejan de valer solas (RF-IA-06).
+   * Es el paso que `send()` da con lo que devuelve el modelo. Está expuesto aparte porque es
+   * el punto en el que se decide QUÉ se va a guardar: poder ejercitarlo sin red es lo que
+   * permite comprobar que lo aceptado y lo previsualizado son el mismo número.
+   */
+  async previewProposal(proposal: CoachProposal | null, settings: AppSettings): Promise<void> {
+    this.proposal.set(proposal);
+    this.proposedWeights.set(proposal ? await this.previewChanges(proposal, settings) : []);
+  }
+
+  /**
+   * Aplica la propuesta: guarda el contexto y fija las sugerencias que ya se enseñaron.
+   *
+   * Se guarda EXACTAMENTE lo previsualizado. Recalcular aquí daría un número más "fresco",
+   * pero aceptarías 32,5 y te quedaría 30: lo que confirmás tiene que ser lo que te queda.
    */
   async acceptProposal(): Promise<void> {
     const proposal = this.proposal();
     if (!proposal) return;
     const settings = this.state.settings();
-    this.state.saveSettings({
-      ...settings,
-      userProfile: {
-        ...settings.userProfile,
-        ...(proposal.notes !== undefined && { aiNotes: proposal.notes }),
-        ...(proposal.goal !== undefined && { goal: proposal.goal }),
-        ...(proposal.level !== undefined && { level: proposal.level }),
-      },
-    });
-    // El contexto va PRIMERO: cambia el hash, y los pesos deben guardarse contra el nuevo.
-    await this.applyWeights();
+    const pending = this.pendingApply;
+
+    this.state.saveSettings({ ...settings, userProfile: this.profileWith(proposal, settings) });
+
+    // El perfil va PRIMERO: cambia el hash, y las sugerencias van contra el nuevo.
+    const ctx = pending ? this.sessionContext() : null;
+    if (pending && ctx && ctx.dayId === pending.dayId) {
+      this.progression.storeSuggestions(
+        pending.dayId,
+        this.progression.contextHash(ctx),
+        pending.byExercise,
+        'local',
+      );
+    }
+
+    this.pendingApply = null;
     this.proposal.set(null);
     this.proposedWeights.set([]);
   }
 
-  /** Contexto de la sesión que viene: lo que el chat necesita para hablar de pesos. */
-  private sessionContext(): AiSessionContext | null {
-    const day = this.state.currentDay();
-    if (!day) return null;
-    return this.progression.buildSessionContext(day, this.state.settings(), 'es', {
-      beforeISO: this.storage.todayISO(),
-    });
-  }
-
-  private resolveWeights(weights: NonNullable<CoachProposal['weights']>): ResolvedWeight[] {
-    const ctx = this.sessionContext();
-    return ctx ? resolveWeightProposal(weights, ctx) : [];
+  /** El perfil con la propuesta aplicada. No se guarda: sirve para previsualizar. */
+  private profileWith(proposal: CoachProposal, settings: AppSettings): UserProfile {
+    return {
+      ...settings.userProfile,
+      ...(proposal.notes !== undefined && { aiNotes: proposal.notes }),
+      ...(proposal.goal !== undefined && { goal: proposal.goal }),
+      ...(proposal.level !== undefined && { level: proposal.level }),
+      ...(proposal.layoffDays !== undefined && {
+        layoffSinceISO: layoffSinceFrom(this.storage.todayISO(), proposal.layoffDays),
+      }),
+    };
   }
 
   /**
-   * Escribe los pesos aceptados donde el panel de Sugerencias y el prefill ya leen.
+   * Qué cambiaría si aceptás, calculado ANTES de aceptar nada.
    *
-   * Se parte de lo que YA había para el día y se pisan solo los ejercicios tocados: aceptar
-   * un cambio en press de banca no puede borrar la sugerencia del resto de la sesión.
+   * El contexto propuesto se aplica a un perfil de mentira, se le pide al motor la sesión con
+   * ese perfil y se compara con la que hay. De ahí sale la tarjeta: "Press de Hombros,
+   * 45 → 32,5. ¿Aceptás?". **El modelo aporta el DATO —dos meses parado—, el motor pone el
+   * NÚMERO.** Por eso la propuesta aparece siempre que el contexto mueva algo, y no solo
+   * cuando el modelo se acuerda de mandar pesos.
+   *
+   * Si además propuso pesos concretos, esos mandan sobre el motor para su ejercicio, pero
+   * solo tras pasar por `resolveWeightProposal`, que los acota igual que a la IA.
    */
-  private async applyWeights(): Promise<void> {
-    const resolved = this.proposedWeights();
-    if (!resolved.length) return;
+  private async previewChanges(
+    proposal: CoachProposal,
+    settings: AppSettings,
+  ): Promise<ResolvedWeight[]> {
+    this.pendingApply = null;
     const day = this.state.currentDay();
-    const ctx = this.sessionContext();
-    if (!day || !ctx) return;
+    if (!day) return [];
 
-    // Se parte de las sugerencias EFECTIVAS (las precalculadas si valen, si no las del motor
-    // local), no solo de lo guardado: si se partiera del store vacío, aceptar un cambio en un
-    // ejercicio dejaría al resto de la sesión sin ninguna sugerencia.
-    const base = await this.progression.suggestionsForToday(day, this.state.settings(), 'es');
-    const hash = this.progression.contextHash(ctx);
-    const byExercise: Partial<Record<string, AiRecommendation>> = { ...base.byExercise };
+    const proposed: AppSettings = {
+      ...settings,
+      userProfile: this.profileWith(proposal, settings),
+    };
+    const live = this.state.state();
+    const current = await this.progression.suggestionsForToday(day, settings, 'es', {
+      state: live,
+    });
+    const ctx = this.progression.buildSessionContext(day, proposed, 'es', {
+      beforeISO: this.storage.todayISO(),
+      state: live,
+    });
+    const next = await this.progression.localSessionSuggestions(ctx);
 
-    for (const w of resolved) {
-      const ec = ctx.exercises.find((e) => e.exercise.id === w.exerciseId);
-      const setCount = ec?.exercise.defaultSets || 3;
+    const byExercise: Partial<Record<string, AiRecommendation>> = { ...next.byExercise };
+    const rows = new Map<string, ResolvedWeight>();
+    for (const row of diffSuggestions(current.byExercise, next.byExercise, day.exercises)) {
+      rows.set(row.exerciseId, row);
+    }
+
+    for (const w of resolveWeightProposal(
+      proposal.weights ?? [],
+      ctx,
+      topsOf(current.byExercise),
+    )) {
+      rows.set(w.exerciseId, w);
+      const setCount = day.exercises.find((e) => e.id === w.exerciseId)?.defaultSets || 3;
       byExercise[w.exerciseId] = {
         sets: Array.from({ length: setCount }, () => ({ weight: w.to, reps: w.reps })),
         reason: this.reasonFor(w),
@@ -230,7 +291,25 @@ export class CoachChatService {
       };
     }
 
-    this.progression.storeSuggestions(day.id, hash, byExercise, 'local');
+    const resolved = [...rows.values()];
+    if (resolved.length) this.pendingApply = { dayId: day.id, byExercise };
+    return resolved;
+  }
+
+  /**
+   * Contexto de la sesión que viene: lo que el chat necesita para hablar de pesos.
+   *
+   * Se le pasa el estado VIVO. `buildSessionContext` lo relee del almacenamiento si no se lo
+   * dan, y eso deja al chat trabajando sobre lo último persistido en vez de sobre lo que el
+   * atleta acaba de hacer.
+   */
+  private sessionContext(settings = this.state.settings()): AiSessionContext | null {
+    const day = this.state.currentDay();
+    if (!day) return null;
+    return this.progression.buildSessionContext(day, settings, 'es', {
+      beforeISO: this.storage.todayISO(),
+      state: this.state.state(),
+    });
   }
 
   /** El motivo deja claro de dónde salió el número: lo pediste vos en el chat. */
@@ -344,8 +423,10 @@ export class CoachChatService {
             'If the athlete states something DURABLE about their context (a new sport, an injury,',
             'a layoff, a change of goal or level), append this exact block at the END of your',
             'reply, with the FULL updated notes text (not just the new part):',
-            '<<GT_CONTEXT>>{"notes":"...","goal":"strength|hypertrophy|endurance","level":"beginner|intermediate|advanced"}<<END>>',
+            '<<GT_CONTEXT>>{"notes":"...","goal":"strength|hypertrophy|endurance","level":"beginner|intermediate|advanced","layoffDays":60}<<END>>',
             'Include only the fields that change. Max 200 characters in notes.',
+            'ALWAYS include "layoffDays" when they mention time away from training, as a',
+            'number of days (2 months = 60). The app recalculates the loads from it.',
             '',
             'If asked to adjust loads, add a "weights" field in that same block with the',
             'exercises from the next session to change, using their exact name:',
@@ -362,8 +443,10 @@ export class CoachChatService {
             'Si el atleta cuenta algo DURADERO sobre su contexto (un deporte nuevo, una lesión,',
             'un parón, un cambio de objetivo o de nivel), añadí al FINAL de tu respuesta este',
             'bloque exacto, con el texto de notas COMPLETO ya actualizado (no solo lo nuevo):',
-            '<<GT_CONTEXT>>{"notes":"...","goal":"strength|hypertrophy|endurance","level":"beginner|intermediate|advanced"}<<END>>',
+            '<<GT_CONTEXT>>{"notes":"...","goal":"strength|hypertrophy|endurance","level":"beginner|intermediate|advanced","layoffDays":60}<<END>>',
             'Incluí solo los campos que cambian. Máximo 200 caracteres en notes.',
+            'Poné SIEMPRE "layoffDays" si menciona tiempo sin entrenar, en número de días',
+            '(2 meses = 60). La app recalcula las cargas a partir de ese dato.',
             '',
             'Si te piden ajustar las cargas, añadí en ese mismo bloque un campo "weights" con',
             'los ejercicios de la próxima sesión que haya que cambiar, usando su nombre exacto:',

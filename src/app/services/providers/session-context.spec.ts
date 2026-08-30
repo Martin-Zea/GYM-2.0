@@ -165,3 +165,42 @@ describe('fitToBudget() — CE-4', () => {
     expect(text.split('\n').filter((l) => l.startsWith('X|')).length).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe('Fechas estables para el hash (T-815)', () => {
+  it('el prompt lleva los DÍAS transcurridos: el modelo no hace aritmética de fechas', () => {
+    const text = serializeSessionContext(ctx(1, 1, { todayISO: '2026-08-29' }));
+    const x = text.split('\n').find((l) => l.startsWith('X|'))!;
+    expect(x.split('|').at(-1)).toMatch(/^\d+$/);
+  });
+
+  it('el hash lleva la fecha ABSOLUTA', () => {
+    const text = serializeSessionContext(ctx(1, 1), { stableDates: true });
+    const x = text.split('\n').find((l) => l.startsWith('X|'))!;
+    expect(x.split('|').at(-1)).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('pasar de medianoche NO cambia la serialización estable', () => {
+    // Este era el fallo: con los días transcurridos, el hash cambiaba cada noche. Como las
+    // sugerencias se calculan al cerrar una sesión y se usan en la SIGUIENTE —siempre otro
+    // día— no volvían a coincidir nunca y el precálculo no se llegaba a usar.
+    const hoy = serializeSessionContext(ctx(2, 3, { todayISO: '2026-08-29' }), {
+      stableDates: true,
+    });
+    const manana = serializeSessionContext(ctx(2, 3, { todayISO: '2026-09-05' }), {
+      stableDates: true,
+    });
+    expect(manana).toBe(hoy);
+  });
+
+  it('pero entrenar SÍ la cambia: lo que caduca la sugerencia son los datos nuevos', () => {
+    const antes = serializeSessionContext(ctx(1, 2), { stableDates: true });
+    const despues = serializeSessionContext(ctx(1, 3), { stableDates: true });
+    expect(despues).not.toBe(antes);
+  });
+
+  it('sin la opción, el mismo contexto en dos días distintos se serializa distinto', () => {
+    const a = serializeSessionContext(ctx(1, 2, { todayISO: '2026-08-29' }));
+    const b = serializeSessionContext(ctx(1, 2, { todayISO: '2026-08-30' }));
+    expect(b).not.toBe(a);
+  });
+});

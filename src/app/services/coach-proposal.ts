@@ -1,4 +1,4 @@
-import { TrainingGoal, TrainingLevel } from '../models/workout.model';
+import { AiRecommendation, TrainingGoal, TrainingLevel } from '../models/workout.model';
 import { normalizeExerciseName } from './storage.service';
 import { AiSessionContext } from './providers/session-context';
 import { allowedCeiling } from './providers/session-response';
@@ -17,6 +17,13 @@ export interface CoachProposal {
   notes?: string;
   goal?: TrainingGoal;
   level?: TrainingLevel;
+  /**
+   * Días que el atleta lleva sin entrenar, según lo que acaba de contar (T-817).
+   *
+   * Es el campo que convierte "hace dos meses que no piso el gimnasio" en algo que el motor
+   * puede usar. Sin él, esa frase solo cambiaba un texto libre que nadie leía al calcular.
+   */
+  layoffDays?: number;
   /** Pesos propuestos para la PRÓXIMA sesión. Se acotan antes de mostrarse (ver abajo). */
   weights?: WeightProposal[];
 }
@@ -63,6 +70,9 @@ export const MAX_NOTES = 200;
 const MAX_WEIGHTS = 12;
 const MAX_REPS = 100;
 
+/** Diez años. Más que eso no es un parón declarado, es un modelo alucinando un número. */
+export const MAX_LAYOFF_DAYS = 3650;
+
 const GOALS: readonly string[] = ['strength', 'hypertrophy', 'endurance'];
 const LEVELS: readonly string[] = ['beginner', 'intermediate', 'advanced'];
 
@@ -108,7 +118,13 @@ function safeParse(body: string): unknown {
  */
 export function validateProposal(raw: unknown): CoachProposal | null {
   if (typeof raw !== 'object' || raw === null) return null;
-  const r = raw as { notes?: unknown; goal?: unknown; level?: unknown; weights?: unknown };
+  const r = raw as {
+    notes?: unknown;
+    goal?: unknown;
+    level?: unknown;
+    layoffDays?: unknown;
+    weights?: unknown;
+  };
   const out: CoachProposal = {};
 
   if (typeof r.notes === 'string') {
@@ -117,6 +133,11 @@ export function validateProposal(raw: unknown): CoachProposal | null {
   }
   if (typeof r.goal === 'string' && GOALS.includes(r.goal)) out.goal = r.goal as TrainingGoal;
   if (typeof r.level === 'string' && LEVELS.includes(r.level)) out.level = r.level as TrainingLevel;
+
+  const layoff = Number(r.layoffDays);
+  if (Number.isFinite(layoff) && layoff >= 1 && layoff <= MAX_LAYOFF_DAYS) {
+    out.layoffDays = Math.round(layoff);
+  }
 
   const weights = validateWeights(r.weights);
   if (weights.length) out.weights = weights;
@@ -192,6 +213,44 @@ export function resolveWeightProposal(
 
     seen.add(ec.exercise.id);
     out.push({ exerciseId: ec.exercise.id, name: ec.exercise.name, from, to, reps, clamped });
+  }
+  return out;
+}
+
+/** La fecha desde la que no entrena, a partir de los días que declaró. */
+export function layoffSinceFrom(todayISO: string, days: number): string | null {
+  const today = Date.parse(todayISO);
+  if (!Number.isFinite(today)) return null;
+  return new Date(today - days * 86400000).toISOString().slice(0, 10);
+}
+
+/**
+ * Qué cambia entre las sugerencias de ahora y las que saldrían con el contexto propuesto.
+ *
+ * Este es el corazón de "¿cambio esta sugerencia por esta otra?": los números NO los pone el
+ * modelo, los pone el motor con el contexto nuevo. El chat solo aporta el dato que el motor
+ * no podía saber. Así la propuesta aparece siempre que el contexto cambie algo —no cuando el
+ * modelo se acuerda de mandar un bloque— y el número que se enseña es el mismo que se guarda.
+ *
+ * Un ejercicio que antes no tenía sugerencia no es un cambio: no hay "antes" que enseñar.
+ */
+export function diffSuggestions(
+  before: Partial<Record<string, AiRecommendation>>,
+  after: Partial<Record<string, AiRecommendation>>,
+  exercises: readonly { id: string; name: string }[],
+): ResolvedWeight[] {
+  const out: ResolvedWeight[] = [];
+  for (const ex of exercises) {
+    const next = after[ex.id];
+    const prev = before[ex.id];
+    if (!next?.sets.length || !prev?.sets.length) continue;
+
+    const to = Math.max(...next.sets.map((s) => s.weight));
+    const from = Math.max(...prev.sets.map((s) => s.weight));
+    const reps = next.sets[0].reps;
+    if (to === from && reps === prev.sets[0].reps) continue;
+
+    out.push({ exerciseId: ex.id, name: ex.name, from, to, reps, clamped: false });
   }
   return out;
 }

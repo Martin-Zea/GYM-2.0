@@ -770,6 +770,9 @@ export interface Translations {
   coach_proposal_notes: string;
   coach_proposal_goal: string;
   coach_proposal_level: string;
+  coach_proposal_layoff: string;
+  coach_proposal_layoff_days: string;
+  coach_weights_head: string;
   coach_proposal_accept: string;
   coach_proposal_dismiss: string;
   coach_proposal_saved: string;

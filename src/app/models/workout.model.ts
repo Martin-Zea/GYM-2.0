@@ -169,6 +169,16 @@ export interface UserProfile {
   equipment: string[] | null;
   /** Días por semana que puede entrenar (RF-PER-01). */
   daysPerWeek: number | null;
+  /**
+   * Parón DECLARADO por el atleta: fecha desde la que no entrena de verdad (T-817).
+   *
+   * Existe porque el registro no lo sabe todo. Si volvés después de dos meses, tu historial
+   * sigue diciendo que entrenaste la semana pasada —los datos de arranque, una sesión que
+   * quedó abierta, un mes usando otra app— y el motor te propone subir. Esta fecha es tu
+   * palabra, y le gana al log: `buildSessionContext` la usa como última sesión cuando es
+   * más antigua. Se borra sola al cerrar la primera sesión de vuelta.
+   */
+  layoffSinceISO?: string | null;
   aiNotes: string;
 }
 

@@ -12,6 +12,7 @@ import { AiProvider, AiProviderContext, AiSessionProvider } from './ai-provider'
 import { AiSessionContext, SessionRecommendation } from './session-context';
 import { floorToBrick, goalRepTarget, roundToBrick } from './prompt-helpers';
 import { LAYOFF_LONG_DAYS, LAYOFF_MODERATE_DAYS, layoffFactor } from './progression-rules';
+import { injuryBlocksIncrease } from './session-response';
 import {
   completionRatio,
   confirmedAtWeight,
@@ -62,6 +63,11 @@ function buildReasons(lang: 'es' | 'en') {
       es
         ? `Cumpliste el objetivo, pero marcaste la última como pesada. Consolidá ${topWeight}kg antes de subir.`
         : `You hit the target, but marked the last one as hard. Consolidate ${topWeight}kg before adding weight.`,
+
+    injuryHold: (topWeight: number) =>
+      es
+        ? `Anotaste una molestia en este ejercicio. Sostenemos ${topWeight}kg hasta que pase.`
+        : `You logged discomfort on this exercise. Holding at ${topWeight}kg until it settles.`,
 
     consecutiveFailures: (sessions: number, newWeight: number) =>
       es
@@ -197,6 +203,59 @@ function detectSuperCompletion(sets: SetRecord[], repTarget: number): boolean {
   return sets.some((s) => (s.reps || 0) >= repTarget * 1.5);
 }
 
+const DEFAULT_PROFILE: UserProfile = {
+  weightKg: null,
+  heightCm: null,
+  age: null,
+  sex: null,
+  weightLog: [],
+  goal: null,
+  level: null,
+  equipment: null,
+  daysPerWeek: null,
+  aiNotes: '',
+};
+
+/** Peso de referencia: lo de hoy si ya hay series hechas, si no lo de la última sesión. */
+function referenceTop(todaySets: TodaySetProgress[], lastSets: SetRecord[] | null): number {
+  const done = todaySets
+    .filter((s) => s?.done && !s.isWarmup)
+    .map((s) => (typeof s.weight === 'number' ? s.weight : 0));
+  const base = done.length
+    ? done
+    : (lastSets ?? []).filter((s) => !s.isWarmup).map((s) => s.weight || 0);
+  return base.length ? Math.max(...base) : 0;
+}
+
+/**
+ * Prohíbe subir en un ejercicio sobre el que el atleta declaró una molestia (RF-IA-04).
+ *
+ * Solo pone un techo: no baja el peso ni desaconseja entrenar. Una molestia no es un
+ * diagnóstico y la app no lo hace; lo único que sí puede hacer sin equivocarse es dejar de
+ * empujarte hacia arriba mientras dure. Es la misma regla que ya acotaba a la IA
+ * (`injuryBlocksIncrease`), aplicada ahora también al motor local.
+ */
+function capForInjury(
+  rec: AiRecommendation,
+  exercise: Exercise,
+  todaySets: TodaySetProgress[],
+  lastSets: SetRecord[] | null,
+  userProfile: UserProfile,
+  lang: 'es' | 'en',
+): AiRecommendation {
+  if (exercise.unit === 'TIME' || exercise.unit === 'BODYWEIGHT') return rec;
+  if (!injuryBlocksIncrease(exercise.name, userProfile.aiNotes)) return rec;
+
+  const ceiling = referenceTop(todaySets, lastSets);
+  if (ceiling <= 0 || !rec.sets.some((s) => s.weight > ceiling)) return rec;
+
+  return {
+    sets: rec.sets.map((s) => ({ ...s, weight: Math.min(s.weight, ceiling) })),
+    reason: buildReasons(lang).injuryHold(ceiling),
+    source: 'local',
+  };
+}
+
 export class LocalProvider implements AiProvider, AiSessionProvider {
   readonly name = 'local' as const;
 
@@ -240,26 +299,46 @@ export class LocalProvider implements AiProvider, AiSessionProvider {
     );
   }
 
+  /**
+   * Recomendación del motor de reglas, ya acotada por lo que el atleta declaró.
+   *
+   * El motor razona sobre lo que MIDE (series, reps, fechas). Lo que el atleta CUENTA —una
+   * molestia en un ejercicio concreto— no aparece en ninguna de esas señales, así que se
+   * aplica aquí, encima del resultado. Sin este paso, contarle una lesión al coach no movía
+   * ni un gramo mientras las sugerencias no las calculara la IA (T-816).
+   */
   compute(
     exercise: Exercise,
     todaySets: TodaySetProgress[],
     lastSets: SetRecord[] | null,
     history: HistoryEntry[] = [],
-    userProfile: UserProfile = {
-      weightKg: null,
-      heightCm: null,
-      age: null,
-      sex: null,
-      weightLog: [],
-      goal: null,
-      level: null,
-      equipment: null,
-      daysPerWeek: null,
-      aiNotes: '',
-    },
+    userProfile: UserProfile = DEFAULT_PROFILE,
     lastSessionDate: string | null = null,
     lang: 'es' | 'en' = 'es',
     opts: { lastFeel?: TrainingFeel | null } = {},
+  ): AiRecommendation {
+    const rec = this.computeInner(
+      exercise,
+      todaySets,
+      lastSets,
+      history,
+      userProfile,
+      lastSessionDate,
+      lang,
+      opts,
+    );
+    return capForInjury(rec, exercise, todaySets, lastSets, userProfile, lang);
+  }
+
+  private computeInner(
+    exercise: Exercise,
+    todaySets: TodaySetProgress[],
+    lastSets: SetRecord[] | null,
+    history: HistoryEntry[],
+    userProfile: UserProfile,
+    lastSessionDate: string | null,
+    lang: 'es' | 'en',
+    opts: { lastFeel?: TrainingFeel | null },
   ): AiRecommendation {
     const brick = exercise.brick || 2.5;
     const repTarget = goalRepTarget(

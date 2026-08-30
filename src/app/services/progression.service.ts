@@ -27,6 +27,7 @@ import {
 import { DEFAULT_TOKEN_BUDGET, isOverBudget } from './providers/ai-usage';
 import { checksumOf } from './backup-format';
 import { AuthError, RateLimitError, roundToBrick } from './providers/prompt-helpers';
+import { layoffFactor } from './providers/progression-rules';
 import { STORAGE_KEYS } from './storage-keys';
 
 const AI_CACHE_KEY = STORAGE_KEYS.aiCache;
@@ -39,6 +40,23 @@ interface AiCacheEntry {
 }
 
 const NEXT_KEY = STORAGE_KEYS.nextSuggestions;
+
+/**
+ * Última sesión que cuenta de verdad para este ejercicio (T-817).
+ *
+ * Entre lo que dice el registro y lo que dice el atleta, gana la fecha MÁS ANTIGUA. Si
+ * declaró que lleva dos meses parado, da igual que el log muestre una sesión de la semana
+ * pasada: esa sesión no lo entrenó. Y al revés, declarar un parón no puede volver reciente
+ * un ejercicio que hace medio año que no tocás. Equivocarse hacia el peso menor es la única
+ * dirección segura.
+ */
+export function effectiveLastSession(
+  logged: string | null,
+  declaredLayoffSince: string | null,
+): string | null {
+  if (!logged || !declaredLayoffSince) return logged;
+  return declaredLayoffSince < logged ? declaredLayoffSince : logged;
+}
 
 /**
  * Sugerencias de una sesión completa, calculadas al CERRAR la anterior (RF-IA-06b).
@@ -133,6 +151,10 @@ export class ProgressionService {
   suggestionsForDay(dayId: string, contextHash: string): SessionSuggestionEntry | null {
     const entry = this.readNextStore()[dayId];
     if (!entry || entry.contextHash !== contextHash) return null;
+    // El hash es estable en el tiempo (T-815), así que hay que vigilar aparte lo único que
+    // cambia SOLO con el calendario: el parón. Una sugerencia calculada hace dos meses ya no
+    // contempla el desentrenamiento, y servirla tal cual sería mandarte al peso de antes.
+    if (layoffFactor(entry.atISO.slice(0, 10), this.storage.todayISO()) < 1) return null;
     return entry;
   }
 
@@ -159,9 +181,29 @@ export class ProgressionService {
     }
   }
 
-  /** Hash del contexto serializado: la clave de caché de RF-IA-06. */
+  /**
+   * Hash del contexto: la clave de caché de RF-IA-06.
+   *
+   * Se calcula sobre la variante de FECHAS ABSOLUTAS. Con los días transcurridos, el hash
+   * cambiaba a cada medianoche: como las sugerencias se calculan al cerrar una sesión y se
+   * consumen en la siguiente —siempre otro día—, no volvían a coincidir nunca y el panel
+   * caía siempre al motor local. El precálculo llevaba existiendo sin llegar a usarse
+   * (T-815).
+   */
   contextHash(ctx: AiSessionContext): string {
-    return checksumOf(serializeSessionContext(ctx));
+    return checksumOf(serializeSessionContext(ctx, { stableDates: true }));
+  }
+
+  /**
+   * Sugerencias del motor local para un contexto dado: sin red, sin caché, sin coste.
+   *
+   * La usa el chat para PREVISUALIZAR qué pasaría con el contexto que propone antes de que
+   * el atleta acepte nada. Tiene que ser el motor local y no la IA: lo que se enseña en la
+   * tarjeta es exactamente lo que se guarda al aceptar, y una segunda llamada podría
+   * devolver otro número (T-819).
+   */
+  localSessionSuggestions(ctx: AiSessionContext): Promise<SessionRecommendation> {
+    return this.local.recommendSession(ctx);
   }
 
   /**
@@ -169,6 +211,12 @@ export class ProgressionService {
    *
    * Vive aquí y no en el componente para que el hash de caché lo produzca siempre el mismo
    * código: dos formas de construir el contexto son dos claves distintas para el mismo dato.
+   *
+   * `opts.state` es lo que deberían pasar TODOS los llamadores: el estado vivo. Releerlo del
+   * almacenamiento es el último recurso —queda para los tests y para llamadas sueltas— y
+   * tiene un riesgo real: si el efecto de persistencia aún no escribió, quien lee del disco y
+   * quien lee de memoria construyen contextos distintos, calculan hashes distintos y la
+   * sugerencia guardada por uno deja de existir para el otro.
    */
   buildSessionContext(
     day: { id: string; name: string; exercises: readonly Exercise[] },
@@ -178,6 +226,7 @@ export class ProgressionService {
   ): AiSessionContext {
     const state = opts.state ?? this.storage.load();
     const before = opts.beforeISO;
+    const declaredLayoff = settings.userProfile.layoffSinceISO ?? null;
     return {
       dayId: day.id,
       dayName: day.name,
@@ -192,7 +241,7 @@ export class ProgressionService {
           exercise,
           history,
           lastSets: this.storage.lastSetsForExercise(state, exercise.id, before),
-          lastSessionDate: lastSession?.dateISO ?? null,
+          lastSessionDate: effectiveLastSession(lastSession?.dateISO ?? null, declaredLayoff),
           lastFeel: lastSession?.feelings?.[exercise.id] ?? null,
           lastNote: lastSession?.notes?.[exercise.id] ?? null,
           // El feedback pasado entra en el prompt: si el atleta rechazó subir dos veces,
@@ -219,9 +268,11 @@ export class ProgressionService {
     day: { id: string; name: string; exercises: readonly Exercise[] },
     settings: AppSettings,
     lang: 'es' | 'en',
+    opts: { state?: AppState } = {},
   ): Promise<SessionRecommendation> {
     const ctx = this.buildSessionContext(day, settings, lang, {
       beforeISO: this.storage.todayISO(),
+      state: opts.state,
     });
     const stored = this.suggestionsForDay(day.id, this.contextHash(ctx));
     if (stored) {
@@ -341,12 +392,13 @@ export class ProgressionService {
     settings: AppSettings,
     day: { id: string; name: string; exercises: readonly Exercise[] },
     lang: 'es' | 'en' = 'es',
+    opts: { state?: AppState } = {},
   ): Promise<void> {
     if (this.inFlight.has(day.id)) return this.inFlight.get(day.id);
 
     const run = (async () => {
       try {
-        const ctx = this.buildSessionContext(day, settings, lang);
+        const ctx = this.buildSessionContext(day, settings, lang, { state: opts.state });
         const hash = this.contextHash(ctx);
         if (this.suggestionsForDay(day.id, hash)) return;
 

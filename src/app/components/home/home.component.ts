@@ -473,7 +473,9 @@ export class HomeComponent {
    */
   private precomputeNextSuggestions(day: WorkoutDay, sessionISO: string): void {
     void sessionISO;
-    void this.progression.precomputeNextSession(this.state.settings(), day, this.tr.lang());
+    void this.progression.precomputeNextSession(this.state.settings(), day, this.tr.lang(), {
+      state: this.state.state(),
+    });
   }
 
   protected onExerciseCompleted(completedExercise: Exercise): void {
@@ -569,6 +571,7 @@ export class HomeComponent {
       day,
       this.state.settings(),
       this.tr.lang(),
+      { state: this.state.state() },
     );
     this.aiCache.set({ ...result.byExercise });
   }

@@ -170,6 +170,11 @@
   color: var(--success);
 }
 
+/* Separa los números de las líneas de contexto dentro de la misma tarjeta. */
+.coach-weights-head {
+  margin-top: var(--sp-3);
+}
+
 .coach-weight-row {
   display: flex;
   align-items: center;

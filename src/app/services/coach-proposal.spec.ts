@@ -1,11 +1,13 @@
 import {
   MAX_NOTES,
+  diffSuggestions,
+  layoffSinceFrom,
   parseCoachReply,
   resolveWeightProposal,
   validateProposal,
 } from './coach-proposal';
 import { AiSessionContext } from './providers/session-context';
-import { Exercise, SetRecord, UserProfile } from '../models/workout.model';
+import { AiRecommendation, Exercise, SetRecord, UserProfile } from '../models/workout.model';
 
 describe('parseCoachReply() — separar la charla de la propuesta (T-811)', () => {
   it('una respuesta normal no propone nada', () => {
@@ -222,5 +224,86 @@ describe('validateProposal() con pesos', () => {
     const out = validateProposal({ weights: [{ exercise: 'A', weight: 50, reps: 9999 }] });
     expect(out?.weights?.[0].reps).toBeUndefined();
     expect(out?.weights?.[0].weight).toBe(50);
+  });
+});
+
+// ── Parón declarado y diferencia de sugerencias (T-817, T-819) ──
+
+describe('validateProposal() con parón declarado', () => {
+  it('acepta los días que declaró el atleta', () => {
+    expect(validateProposal({ layoffDays: 60 })).toEqual({ layoffDays: 60 });
+  });
+
+  it('redondea a días enteros: "mes y medio" no son 45,5 días', () => {
+    expect(validateProposal({ layoffDays: 45.4 })?.layoffDays).toBe(45);
+  });
+
+  it('descarta lo que no es un parón: cero, negativo o una década', () => {
+    expect(validateProposal({ layoffDays: 0 })).toBeNull();
+    expect(validateProposal({ layoffDays: -30 })).toBeNull();
+    expect(validateProposal({ layoffDays: 99999 })).toBeNull();
+    expect(validateProposal({ layoffDays: 'dos meses' })).toBeNull();
+  });
+
+  it('convive con el resto del contexto en una sola propuesta', () => {
+    const out = validateProposal({ notes: 'Vuelve tras un parón', layoffDays: 60 });
+    expect(out).toEqual({ notes: 'Vuelve tras un parón', layoffDays: 60 });
+  });
+});
+
+describe('layoffSinceFrom()', () => {
+  it('convierte los días declarados en la fecha desde la que no entrena', () => {
+    expect(layoffSinceFrom('2026-08-30', 60)).toBe('2026-07-01');
+  });
+
+  it('una fecha ilegible no inventa un parón', () => {
+    expect(layoffSinceFrom('ayer', 60)).toBeNull();
+  });
+});
+
+describe('diffSuggestions() — la tarjeta la escribe el motor, no el modelo (T-819)', () => {
+  function rec(...weights: number[]): AiRecommendation {
+    return {
+      sets: weights.map((weight) => ({ weight, reps: 10 })),
+      reason: '',
+      source: 'local',
+    };
+  }
+  const exercises = [
+    { id: 'a', name: 'Press de Banca' },
+    { id: 'b', name: 'Remo' },
+  ];
+
+  it('enseña el antes y el después del peso tope', () => {
+    const out = diffSuggestions({ a: rec(100) }, { a: rec(85) }, exercises);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ exerciseId: 'a', from: 100, to: 85, clamped: false });
+  });
+
+  it('compara el TOPE, no la primera serie', () => {
+    // El motor sube solo las últimas series: [35,45,45] contra [35,35,35] es un cambio.
+    const out = diffSuggestions({ a: rec(35, 35, 35) }, { a: rec(35, 45, 45) }, exercises);
+    expect(out[0].to).toBe(45);
+  });
+
+  it('lo que no cambia no se ofrece: una tarjeta sin cambios es ruido', () => {
+    expect(diffSuggestions({ a: rec(100) }, { a: rec(100) }, exercises)).toEqual([]);
+  });
+
+  it('un cambio solo de reps también cuenta', () => {
+    const before = { a: rec(100) };
+    const after = {
+      a: { sets: [{ weight: 100, reps: 12 }], reason: '', source: 'local' as const },
+    };
+    expect(diffSuggestions(before, after, exercises)).toHaveLength(1);
+  });
+
+  it('un ejercicio sin sugerencia previa no es un cambio: no hay "antes" que enseñar', () => {
+    expect(diffSuggestions({}, { a: rec(85) }, exercises)).toEqual([]);
+  });
+
+  it('solo recorre los ejercicios del día, no lo que traiga el mapa', () => {
+    const out = diffSuggestions({ z: rec(100) }, { z: rec(50) }, exercises);
+    expect(out).toEqual([]);
   });
 });

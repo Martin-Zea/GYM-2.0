@@ -73,10 +73,13 @@ export class CoachComponent {
   }
 
   private async loadSuggestions(day: WorkoutDay): Promise<void> {
+    // El estado VIVO, igual que el resto de llamadores: quien lo relee del disco puede
+    // construir otro contexto, otro hash, y no encontrar la sugerencia que se acaba de guardar.
     const result = await this.progression.suggestionsForToday(
       day,
       this.state.settings(),
       this.tr.lang(),
+      { state: this.state.state() },
     );
     this.suggestions.set(result.byExercise);
     this.source.set(result.source);
@@ -179,29 +182,29 @@ export class CoachComponent {
 
   // ── C2 · chat ──
 
-  /**
-   * La parte de CONTEXTO de la propuesta, si la hay.
-   *
-   * Separada de los pesos porque son dos tarjetas distintas: una anota lo que la app sabe de
-   * vos, la otra cambia números. Mezclarlas obligaría a aceptar las dos cosas a la vez.
-   */
-  protected readonly contextProposal = computed(() => {
-    const p = this.chat.proposal();
-    if (!p) return null;
-    const hasContext = p.notes !== undefined || p.goal !== undefined || p.level !== undefined;
-    return hasContext ? p : null;
-  });
+  /** Con cambios de peso el texto habla de la sesión; sin ellos, solo del contexto. */
+  protected readonly proposalIntro = computed(() =>
+    this.chat.proposedWeights().length
+      ? this.T().coach_weights_intro
+      : this.T().coach_proposal_intro,
+  );
+
+  protected readonly acceptLabel = computed(() =>
+    this.chat.proposedWeights().length
+      ? this.T().coach_weights_accept
+      : this.T().coach_proposal_accept,
+  );
 
   protected readonly proposalSaved = signal(false);
 
   protected async acceptProposal(): Promise<void> {
-    const hadWeights = this.chat.proposedWeights().length > 0;
     await this.chat.acceptProposal();
     this.proposalSaved.set(true);
     setTimeout(() => this.proposalSaved.set(false), 3000);
-    // El panel lee de lo guardado, no de una señal: sin recargar, aceptar no se vería.
+    // El panel lee de lo GUARDADO, no de una señal: sin recargar, aceptar no se vería.
+    // Se recarga siempre, no solo con pesos: cambiar el contexto también mueve los números.
     const day = this.day();
-    if (hadWeights && day) void this.loadSuggestions(day);
+    if (day) void this.loadSuggestions(day);
   }
 
   /** Etiqueta legible de objetivo y nivel: el modelo los manda como enum. */

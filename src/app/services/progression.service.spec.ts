@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { ProgressionService } from './progression.service';
+import { ProgressionService, effectiveLastSession } from './progression.service';
 import { AppSettings, Exercise, SetRecord, TodaySetProgress } from '../models/workout.model';
 import { StorageService } from './storage.service';
 import { AiShadowLogService, SHADOW_MODELS } from './ai-shadow-log.service';
@@ -423,6 +423,68 @@ describe('ProgressionService', () => {
       await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), history2);
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // ── Sugerencias precalculadas: caducar por datos, no por calendario (T-815, T-817) ──
+
+  describe('effectiveLastSession()', () => {
+    it('sin parón declarado manda el registro', () => {
+      expect(effectiveLastSession('2026-08-23', null)).toBe('2026-08-23');
+    });
+
+    it('el parón declarado gana cuando es MÁS antiguo que el registro', () => {
+      // El caso real: el log dice que entrenaste la semana pasada porque quedó una sesión
+      // suelta, y vos sabés que no pisás el gimnasio desde junio.
+      expect(effectiveLastSession('2026-08-23', '2026-06-30')).toBe('2026-06-30');
+    });
+
+    it('declarar un parón no vuelve reciente un ejercicio abandonado hace un año', () => {
+      expect(effectiveLastSession('2025-08-30', '2026-06-30')).toBe('2025-08-30');
+    });
+
+    it('sin registro no hay nada que recortar', () => {
+      expect(effectiveLastSession(null, '2026-06-30')).toBeNull();
+    });
+  });
+
+  describe('suggestionsForDay() — vigencia', () => {
+    const byExercise = {
+      ex1: { sets: [{ weight: 100, reps: 5 }], reason: '', source: 'local' as const },
+    };
+
+    it('con el mismo hash, la sugerencia guardada se sirve', () => {
+      service.storeSuggestions('d1', 'hash-a', byExercise, 'groq');
+      expect(service.suggestionsForDay('d1', 'hash-a')?.source).toBe('groq');
+    });
+
+    it('otro hash no la sirve: el contexto que la originó ya no es el actual', () => {
+      service.storeSuggestions('d1', 'hash-a', byExercise, 'groq');
+      expect(service.suggestionsForDay('d1', 'hash-b')).toBeNull();
+    });
+
+    it('una sugerencia de hace dos meses no vale aunque el hash coincida', () => {
+      // El hash es estable en el tiempo a propósito (T-815). Lo único que cambia solo con
+      // el calendario es el parón, y eso sí invalida: el peso guardado no lo contempla.
+      const store = {
+        d1: {
+          contextHash: 'hash-a',
+          byExercise,
+          source: 'groq' as const,
+          atISO: '2026-01-01T10:00:00.000Z',
+        },
+      };
+      localStorage.setItem(STORAGE_KEYS.nextSuggestions, JSON.stringify(store));
+      expect(service.suggestionsForDay('d1', 'hash-a')).toBeNull();
+    });
+
+    it('una de anteayer sigue valiendo: no caduca por pasar de medianoche', () => {
+      const anteayer = new Date(Date.now() - 2 * 86400000).toISOString();
+      const store = {
+        d1: { contextHash: 'hash-a', byExercise, source: 'groq' as const, atISO: anteayer },
+      };
+      localStorage.setItem(STORAGE_KEYS.nextSuggestions, JSON.stringify(store));
+      expect(service.suggestionsForDay('d1', 'hash-a')).toBeTruthy();
     });
   });
 

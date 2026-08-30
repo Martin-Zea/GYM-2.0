@@ -529,7 +529,26 @@ export class StateService {
       }));
     }
     this.advanceRoutine(fromDayIndex);
+    this.clearDeclaredLayoff();
     return finished;
+  }
+
+  /**
+   * Un parón declarado deja de valer en cuanto volvés a entrenar (T-817).
+   *
+   * Si no se borrara, la sesión de vuelta seguiría contando como "dos meses parado" para
+   * siempre: el techo por desentrenamiento se aplicaría en cada sesión y no volverías a
+   * progresar nunca. La declaración sirve para volver, no para quedarse.
+   */
+  private clearDeclaredLayoff(): void {
+    if (!this.state().settings.userProfile.layoffSinceISO) return;
+    this.state.update((s) => ({
+      ...s,
+      settings: {
+        ...s.settings,
+        userProfile: { ...s.settings.userProfile, layoffSinceISO: null },
+      },
+    }));
   }
 
   /**

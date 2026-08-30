@@ -286,3 +286,63 @@ describe('Volver tras un parón — el motor local coincide con el validador (T-
     expect(reason).toMatch(/sin entrenar/i); // y por qué es más bajo
   });
 });
+
+describe('Molestia declarada — el motor local también escucha (T-816)', () => {
+  const local = new LocalProvider();
+
+  function withNote(aiNotes: string): UserProfile {
+    return { ...profile(null), aiNotes };
+  }
+
+  it('sin molestia declarada, cumplir el objetivo sube el peso', () => {
+    const rec = local.compute(exercise(), [], setsAt(50, REPS), [], withNote(''));
+    expect(Math.max(...rec.sets.map((s) => s.weight))).toBeGreaterThan(50);
+  });
+
+  it('una molestia en ESE ejercicio impide subir, aunque las reps salgan', () => {
+    // Antes esto solo lo respetaba la IA: el motor local no leía las notas y te mandaba
+    // subir el mismo día que le contabas al coach que te dolía.
+    const rec = local.compute(
+      exercise(),
+      [],
+      setsAt(50, REPS),
+      [],
+      withNote('me molesta el hombro en press banca'),
+    );
+    expect(Math.max(...rec.sets.map((s) => s.weight))).toBe(50);
+    expect(rec.reason).toMatch(/molestia/i);
+  });
+
+  it('pone un TECHO, no baja el peso: una molestia no es motivo para descargar', () => {
+    const rec = local.compute(
+      exercise(),
+      [],
+      setsAt(50, REPS),
+      [],
+      withNote('cuidado con press banca'),
+    );
+    expect(rec.sets.every((s) => s.weight === 50)).toBe(true);
+  });
+
+  it('una molestia en otro ejercicio no lo toca', () => {
+    const rec = local.compute(
+      exercise(),
+      [],
+      setsAt(50, REPS),
+      [],
+      withNote('me molesta la rodilla en sentadilla'),
+    );
+    expect(Math.max(...rec.sets.map((s) => s.weight))).toBeGreaterThan(50);
+  });
+
+  it('en peso corporal no aplica: ahí el techo sería un 0 kg sin sentido', () => {
+    const bw = exercise({ unit: 'BODYWEIGHT' });
+    const rec = local.compute(bw, [], setsAt(0, REPS), [], withNote('press banca me molesta'));
+    expect(rec.sets[0].reps).toBeGreaterThan(REPS);
+  });
+
+  it('sin referencia previa no hay techo que poner', () => {
+    const rec = local.compute(exercise(), [], null, [], withNote('press banca me molesta'));
+    expect(rec.sets[0].weight).toBeGreaterThan(0);
+  });
+});

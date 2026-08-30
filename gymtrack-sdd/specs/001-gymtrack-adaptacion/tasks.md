@@ -296,6 +296,56 @@ el Coach con chat (que exige relajar el Art. 5 de forma acotada, ver T-804).
 > **Consecuencia asumida:** las sugerencias dejan de ser puramente deterministas; ahora dependen también
 > de lo conversado. Se acepta porque cada cambio se confirma a mano y queda en el historial del Coach.
 
+### F9b · Que lo conversado llegue a los números
+
+> Reportado desde uso real: el coach respondía "después de un parón de 2 meses conviene reducir la carga"
+> mientras el panel de al lado proponía subir dos ladrillos. Cinco causas encadenadas, no un despiste.
+
+- **T-815** ✅ El `contextHash` deja de caducar cada día.
+  - El hash se calculaba sobre la serialización del prompt, que lleva los DÍAS transcurridos desde la
+    última sesión. Ese número cambia a cada medianoche. Como las sugerencias se precalculan al cerrar una
+    sesión y se consumen en la SIGUIENTE —siempre otro día— el hash no volvía a coincidir nunca: **el
+    precálculo llevaba existiendo sin llegar a usarse una sola vez**, y el panel caía siempre al motor
+    local. Es la causa de que la app dijera "Motor local" con una key de IA funcionando.
+  - `serializeSessionContext(ctx, { stableDates: true })` emite la fecha absoluta; el prompt sigue
+    llevando los días, que es lo que el modelo sabe leer.
+  - AC: dos días distintos con los mismos datos producen el mismo hash; entrenar lo cambia.
+  - AC: una sugerencia guardada hace más de 14 días se descarta igual — lo único que cambia solo con el
+    calendario es el parón, y el peso guardado no lo contempla.
+- **T-816** ✅ El motor local también lee lo que el atleta declara.
+  - `LocalProvider` razonaba solo sobre lo que MIDE (series, reps, fechas). Una molestia declarada no
+    aparece en ninguna de esas señales, así que contarle una lesión al coach no movía ni un gramo salvo
+    que la sugerencia la calculara la IA — y tras un cambio de contexto la calcula siempre el local.
+  - AC: pone un TECHO, no baja el peso: una molestia no es motivo para descargar, y la app no diagnostica.
+  - AC: es la misma función que ya acotaba a la IA (`injuryBlocksIncrease`), no una segunda regla.
+- **T-817** ✅ Un parón se puede DECLARAR (`UserProfile.layoffSinceISO`).
+  - El recorte por desentrenamiento salía de `lastSessionDate`, o sea del registro. Si el log dice que
+    entrenaste hace una semana —datos de arranque, una sesión suelta, meses usando otra app— los dos
+    meses reales no existían para el motor. Ahora la palabra del atleta gana cuando es más antigua.
+  - AC: declarar un parón no vuelve reciente un ejercicio abandonado hace un año (se toma la fecha MÁS
+    antigua: equivocarse hacia el peso menor es la única dirección segura).
+  - AC: se borra sola al cerrar la primera sesión de vuelta. Si no, la vuelta contaría como "dos meses
+    parado" para siempre y no volverías a progresar nunca.
+- **T-818** ✅ Los llamadores pasan el estado VIVO al construir el contexto.
+  - `buildSessionContext` lo releía del almacenamiento. Quien lee del disco y quien lee de memoria
+    construyen contextos distintos, calculan hashes distintos, y la sugerencia que guarda uno no existe
+    para el otro. Detectado por un test nuevo, no en producción.
+- **T-819** ✅ La propuesta la escribe el MOTOR; el chat solo aporta el dato.
+  - Antes los pesos los proponía el modelo y solo aparecían si se acordaba de emitir el bloque. Ahora se
+    aplica el contexto propuesto a un perfil hipotético, se le pide la sesión al motor y se muestra la
+    diferencia: "Press de Hombros, 45 → 32,5. ¿Aceptás?". La tarjeta sale siempre que el contexto mueva
+    algo. Si el modelo además propone pesos, mandan sobre el motor para ese ejercicio, pero solo tras
+    pasar por `resolveWeightProposal`.
+  - AC: lo que se guarda es EXACTAMENTE lo previsualizado — recalcular al aceptar te dejaría confirmando
+    un número y quedándote con otro. Por eso el preview usa el motor local: instantáneo, gratis y estable.
+  - AC: una sola tarjeta con un solo "Aceptar". Antes eran dos, y cada botón aplicaba las dos cosas.
+
+> **Resultado F9b:** el bucle se cierra. Contarle algo al coach cambia los números de la sesión que viene,
+> con confirmación explícita y sin una llamada de red extra. **Nota sobre el Art. 5:** se evaluó recalcular
+> con IA al aceptar y se descartó — habría gastado tokens para acabar mostrando un número distinto del
+> confirmado. La IA sigue corriendo una vez por sesión, al cerrarla; y a partir de T-815, por primera vez,
+> lo que calcula se llega a usar.
+
 ## Convergencia (antes de dar por terminado)
 
 - **T-900** Recorrer EA-1…EA-6 y casos borde §6 de la spec en dispositivo real.

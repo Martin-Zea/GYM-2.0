@@ -117,40 +117,13 @@
         </p>
       }
 
-      <!-- Pesos propuestos: ya resueltos contra la sesión y acotados (T-813) -->
-      @if (chat.proposedWeights().length) {
+      <!--
+        UNA tarjeta, una decisión (T-819). Antes había dos —contexto y pesos— con un botón
+        cada una, pero las dos aplicaban todo: aceptar los pesos te cambiaba el perfil sin
+        avisarte. Lo que se propone junto se acepta junto.
+      -->
+      @if (chat.proposal(); as proposal) {
         <div class="card card--hi coach-proposal">
-          <p class="k">{{ T().coach_weights_title }}</p>
-          @for (w of chat.proposedWeights(); track w.exerciseId) {
-            <p class="coach-weight-row">
-              <span class="coach-weight-name">{{ w.name }}</span>
-              <span class="coach-weight-change tabular">
-                @if (w.from === w.to) {
-                  {{ w.to }}
-                } @else {
-                  {{ w.from }} <span class="coach-weight-arrow">→</span> {{ w.to }}
-                }
-              </span>
-              @if (w.clamped) {
-                <span class="chip chip--warn">{{ T().coach_weights_clamped }}</span>
-              }
-            </p>
-          }
-          <p class="note">{{ T().coach_weights_intro }}</p>
-          <div class="coach-sug-actions">
-            <button class="btn btn-sm coach-accept" type="button" (click)="acceptProposal()">
-              {{ T().coach_weights_accept }}
-            </button>
-            <button class="btn btn-ghost btn-sm" type="button" (click)="chat.dismissProposal()">
-              {{ T().coach_proposal_dismiss }}
-            </button>
-          </div>
-        </div>
-      }
-
-      <!-- El chat PROPONE; aplicar es decisión del atleta (T-811, Art. 6) -->
-      @if (contextProposal(); as proposal) {
-        <div class="card card--warn coach-proposal">
           <p class="k">{{ T().coach_proposal_title }}</p>
           @if (proposal.notes) {
             <p class="coach-proposal-row">
@@ -170,10 +143,36 @@
               {{ levelLabel(proposal.level) }}
             </p>
           }
-          <p class="note">{{ T().coach_proposal_intro }}</p>
+          @if (proposal.layoffDays) {
+            <p class="coach-proposal-row">
+              <span class="coach-proposal-field">{{ T().coach_proposal_layoff }}</span>
+              {{ tr.tp('coach_proposal_layoff_days', { n: proposal.layoffDays }) }}
+            </p>
+          }
+
+          @if (chat.proposedWeights().length) {
+            <p class="k coach-weights-head">{{ T().coach_weights_head }}</p>
+            @for (w of chat.proposedWeights(); track w.exerciseId) {
+              <p class="coach-weight-row">
+                <span class="coach-weight-name">{{ w.name }}</span>
+                <span class="coach-weight-change tabular">
+                  @if (w.from === w.to) {
+                    {{ w.to }}
+                  } @else {
+                    {{ w.from }} <span class="coach-weight-arrow">→</span> {{ w.to }}
+                  }
+                </span>
+                @if (w.clamped) {
+                  <span class="chip chip--warn">{{ T().coach_weights_clamped }}</span>
+                }
+              </p>
+            }
+          }
+
+          <p class="note">{{ proposalIntro() }}</p>
           <div class="coach-sug-actions">
             <button class="btn btn-sm coach-accept" type="button" (click)="acceptProposal()">
-              {{ T().coach_proposal_accept }}
+              {{ acceptLabel() }}
             </button>
             <button class="btn btn-ghost btn-sm" type="button" (click)="chat.dismissProposal()">
               {{ T().coach_proposal_dismiss }}

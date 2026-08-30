@@ -104,7 +104,10 @@ function clean(text: string, max: number): string {
  * instrucción de salida para el campo `reason` (`spec.md` §8, [ACLARAR 3]). Así el mismo
  * contexto produce el mismo prompt en ES y en EN, y la caché por hash no se parte por idioma.
  */
-export function serializeSessionContext(ctx: AiSessionContext): string {
+export function serializeSessionContext(
+  ctx: AiSessionContext,
+  opts: { stableDates?: boolean } = {},
+): string {
   const p = ctx.userProfile;
   const lines: string[] = [
     `${CONTEXT_FORMAT}|${clean(ctx.dayName, 40)}`,
@@ -114,9 +117,16 @@ export function serializeSessionContext(ctx: AiSessionContext): string {
   ctx.exercises.forEach((ec, idx) => {
     const e = ec.exercise;
     const i = idx + 1;
+    // Para el prompt van los DÍAS transcurridos (el modelo no hace bien aritmética de
+    // fechas); para el hash va la fecha ABSOLUTA. Si el hash llevara los días, cambiaría
+    // solo con que pase la medianoche y las sugerencias precalculadas caducarían cada día
+    // sin que nada del entrenamiento haya cambiado (T-815).
+    const when = opts.stableDates
+      ? (ec.lastSessionDate ?? '')
+      : daysSince(ec.lastSessionDate, ctx.todayISO);
     lines.push(
       `X|${i}|${clean(e.name, 40)}|${UNIT_CODE[e.unit] ?? e.unit}|` +
-        `${e.defaultSets}x${e.defaultRepTarget}|${e.brick}|${daysSince(ec.lastSessionDate, ctx.todayISO)}`,
+        `${e.defaultSets}x${e.defaultRepTarget}|${e.brick}|${when}`,
     );
 
     ec.history.slice(-MAX_CONTEXT_SESSIONS).forEach((h) => {
