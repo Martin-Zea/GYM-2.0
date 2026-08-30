@@ -773,4 +773,13 @@ export const es: Translations = {
   coach_proposal_accept: 'Anotar',
   coach_proposal_dismiss: 'Ahora no',
   coach_proposal_saved: 'Anotado. Se aplicará a la próxima sesión.',
+
+  // Propuesta de pesos desde el chat (T-813)
+  reps_short: 'reps',
+  coach_weights_title: 'El coach propone cambiar los pesos',
+  coach_weights_intro:
+    'Se aplica a la próxima sesión. Ya está acotado a lo que tu historial permite.',
+  coach_weights_clamped: 'Recortado al máximo seguro',
+  coach_weights_accept: 'Aplicar pesos',
+  coach_weights_saved: 'Pesos aplicados. Los ves en Sugerencias.',
 };

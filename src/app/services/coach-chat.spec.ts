@@ -68,15 +68,15 @@ describe('CoachChatService — límites del chat (C2, RF-IA-10)', () => {
   });
 
   describe('propuestas de contexto (T-811)', () => {
-    it('sin propuesta pendiente, aceptar no hace nada', () => {
+    it('sin propuesta pendiente, aceptar no hace nada', async () => {
       const before = TestBed.inject(StateService).settings().userProfile;
-      chat.acceptProposal();
+      await chat.acceptProposal();
       expect(TestBed.inject(StateService).settings().userProfile).toEqual(before);
     });
 
-    it('aceptar escribe en el perfil, que es lo que lee la capa IA', () => {
+    it('aceptar escribe en el perfil, que es lo que lee la capa IA', async () => {
       chat.proposal.set({ notes: 'Empezó boxeo 2x semana', goal: 'strength' });
-      chat.acceptProposal();
+      await chat.acceptProposal();
 
       const profile = TestBed.inject(StateService).settings().userProfile;
       expect(profile.aiNotes).toBe('Empezó boxeo 2x semana');
@@ -84,7 +84,7 @@ describe('CoachChatService — límites del chat (C2, RF-IA-10)', () => {
       expect(chat.proposal()).toBeNull();
     });
 
-    it('cambiar el contexto INVALIDA las sugerencias precalculadas', () => {
+    it('cambiar el contexto INVALIDA las sugerencias precalculadas', async () => {
       // Si el hash no cambiara, aceptar "empecé boxeo" no movería ni un número y la
       // propuesta sería decorativa.
       const state = TestBed.inject(StateService);
@@ -96,7 +96,7 @@ describe('CoachChatService — límites del chat (C2, RF-IA-10)', () => {
       );
 
       chat.proposal.set({ notes: 'Vuelve de una lesión de hombro' });
-      chat.acceptProposal();
+      await chat.acceptProposal();
 
       const after = progression.contextHash(
         progression.buildSessionContext(day, state.settings(), 'es'),
@@ -111,6 +111,67 @@ describe('CoachChatService — límites del chat (C2, RF-IA-10)', () => {
 
       expect(chat.proposal()).toBeNull();
       expect(TestBed.inject(StateService).settings().userProfile.aiNotes).toBe(before);
+    });
+  });
+
+  describe('pesos aceptados llegan a las sugerencias (T-813)', () => {
+    it('aceptar escribe la sugerencia que el panel y el prefill leen', async () => {
+      const state = TestBed.inject(StateService);
+      const progression = TestBed.inject(ProgressionService);
+      const day = state.currentDay()!;
+      const target = day.exercises[0];
+
+      chat.proposal.set({ weights: [{ exercise: target.name, weight: 12.5 }] });
+      chat.proposedWeights.set([
+        {
+          exerciseId: target.id,
+          name: target.name,
+          from: 20,
+          to: 12.5,
+          reps: 10,
+          clamped: false,
+        },
+      ]);
+      await chat.acceptProposal();
+
+      const result = await progression.suggestionsForToday(day, state.settings(), 'es');
+      expect(result.byExercise[target.id]?.sets[0].weight).toBe(12.5);
+    });
+
+    it('no pisa la sugerencia de los ejercicios que no se tocaron', async () => {
+      const state = TestBed.inject(StateService);
+      const progression = TestBed.inject(ProgressionService);
+      const day = state.currentDay()!;
+      const [first, second] = day.exercises;
+
+      chat.proposedWeights.set([
+        { exerciseId: first.id, name: first.name, from: 20, to: 15, reps: 10, clamped: false },
+      ]);
+      chat.proposal.set({ weights: [] });
+      await chat.acceptProposal();
+
+      const result = await progression.suggestionsForToday(day, state.settings(), 'es');
+      expect(result.byExercise[first.id]?.sets[0].weight).toBe(15);
+      // El resto de la sesión sigue teniendo sugerencia, no queda vacío
+      expect(result.byExercise[second.id]).toBeTruthy();
+    });
+
+    it('descartar no escribe nada', async () => {
+      const state = TestBed.inject(StateService);
+      const progression = TestBed.inject(ProgressionService);
+      const day = state.currentDay()!;
+      const target = day.exercises[0];
+      const before = await progression.suggestionsForToday(day, state.settings(), 'es');
+
+      chat.proposedWeights.set([
+        { exerciseId: target.id, name: target.name, from: 20, to: 5, reps: 10, clamped: false },
+      ]);
+      chat.dismissProposal();
+
+      const after = await progression.suggestionsForToday(day, state.settings(), 'es');
+      expect(after.byExercise[target.id]?.sets[0].weight).toBe(
+        before.byExercise[target.id]?.sets[0].weight,
+      );
     });
   });
 

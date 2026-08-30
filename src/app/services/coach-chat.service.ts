@@ -19,7 +19,15 @@ import {
   reasons,
 } from './providers/groq.provider';
 import { COHERE_MODEL } from './providers/cohere.provider';
-import { CoachProposal, parseCoachReply } from './coach-proposal';
+import {
+  CoachProposal,
+  ResolvedWeight,
+  parseCoachReply,
+  resolveWeightProposal,
+} from './coach-proposal';
+import { ProgressionService } from './progression.service';
+import { AiSessionContext } from './providers/session-context';
+import { AiRecommendation } from '../models/workout.model';
 
 export type ChatRole = 'user' | 'assistant';
 
@@ -88,11 +96,14 @@ export class CoachChatService {
   private readonly storage = inject(StorageService);
   private readonly state = inject(StateService);
   private readonly keys = inject(ApiKeyService);
+  private readonly progression = inject(ProgressionService);
 
   readonly messages = signal<ChatMessage[]>(this.read());
   readonly sending = signal(false);
   /** Cambio de contexto que el coach propone y el atleta todavía no confirmó (T-811). */
   readonly proposal = signal<CoachProposal | null>(null);
+  /** Los pesos de la propuesta ya resueltos contra la sesión y acotados (T-813). */
+  readonly proposedWeights = signal<ResolvedWeight[]>([]);
   readonly error = signal<string | null>(null);
 
   readonly usage = signal(usageForMonth());
@@ -124,6 +135,9 @@ export class CoachChatService {
       // La propuesta NO se aplica: queda esperando confirmación. Que el chat cambie tus
       // números sin que lo veas es justo lo que hace desconfiar de la sugerencia.
       this.proposal.set(proposal);
+      this.proposedWeights.set(
+        proposal?.weights?.length ? this.resolveWeights(proposal.weights) : [],
+      );
     } catch (e) {
       if (e instanceof AuthError) this.error.set('auth');
       else if (e instanceof ModelError) this.error.set('model');
@@ -137,11 +151,13 @@ export class CoachChatService {
   clear(): void {
     this.messages.set([]);
     this.proposal.set(null);
+    this.proposedWeights.set([]);
     this.write([]);
   }
 
   dismissProposal(): void {
     this.proposal.set(null);
+    this.proposedWeights.set([]);
   }
 
   /**
@@ -151,7 +167,7 @@ export class CoachChatService {
    * serializado, así que cambiarlos cambia el `contextHash` y las sugerencias precalculadas
    * dejan de valer solas (RF-IA-06).
    */
-  acceptProposal(): void {
+  async acceptProposal(): Promise<void> {
     const proposal = this.proposal();
     if (!proposal) return;
     const settings = this.state.settings();
@@ -164,7 +180,63 @@ export class CoachChatService {
         ...(proposal.level !== undefined && { level: proposal.level }),
       },
     });
+    // El contexto va PRIMERO: cambia el hash, y los pesos deben guardarse contra el nuevo.
+    await this.applyWeights();
     this.proposal.set(null);
+    this.proposedWeights.set([]);
+  }
+
+  /** Contexto de la sesión que viene: lo que el chat necesita para hablar de pesos. */
+  private sessionContext(): AiSessionContext | null {
+    const day = this.state.currentDay();
+    if (!day) return null;
+    return this.progression.buildSessionContext(day, this.state.settings(), 'es', {
+      beforeISO: this.storage.todayISO(),
+    });
+  }
+
+  private resolveWeights(weights: NonNullable<CoachProposal['weights']>): ResolvedWeight[] {
+    const ctx = this.sessionContext();
+    return ctx ? resolveWeightProposal(weights, ctx) : [];
+  }
+
+  /**
+   * Escribe los pesos aceptados donde el panel de Sugerencias y el prefill ya leen.
+   *
+   * Se parte de lo que YA había para el día y se pisan solo los ejercicios tocados: aceptar
+   * un cambio en press de banca no puede borrar la sugerencia del resto de la sesión.
+   */
+  private async applyWeights(): Promise<void> {
+    const resolved = this.proposedWeights();
+    if (!resolved.length) return;
+    const day = this.state.currentDay();
+    const ctx = this.sessionContext();
+    if (!day || !ctx) return;
+
+    // Se parte de las sugerencias EFECTIVAS (las precalculadas si valen, si no las del motor
+    // local), no solo de lo guardado: si se partiera del store vacío, aceptar un cambio en un
+    // ejercicio dejaría al resto de la sesión sin ninguna sugerencia.
+    const base = await this.progression.suggestionsForToday(day, this.state.settings(), 'es');
+    const hash = this.progression.contextHash(ctx);
+    const byExercise: Partial<Record<string, AiRecommendation>> = { ...base.byExercise };
+
+    for (const w of resolved) {
+      const ec = ctx.exercises.find((e) => e.exercise.id === w.exerciseId);
+      const setCount = ec?.exercise.defaultSets || 3;
+      byExercise[w.exerciseId] = {
+        sets: Array.from({ length: setCount }, () => ({ weight: w.to, reps: w.reps })),
+        reason: this.reasonFor(w),
+        source: 'local',
+      };
+    }
+
+    this.progression.storeSuggestions(day.id, hash, byExercise, 'local');
+  }
+
+  /** El motivo deja claro de dónde salió el número: lo pediste vos en el chat. */
+  private reasonFor(w: ResolvedWeight): string {
+    const base = `Ajustado desde el chat: ${w.from} → ${w.to} kg.`;
+    return w.clamped ? `${base} Se recortó al máximo seguro para tu historial.` : base;
   }
 
   // ── Llamada ──
@@ -246,34 +318,67 @@ export class CoachChatService {
       recent.length ? `ultimas_sesiones=${recent.map((x) => x.dateISO).join(',')}` : null,
     ].filter(Boolean);
 
+    // La próxima sesión con lo que se levantó por última vez en cada ejercicio. Sin esto el
+    // coach no puede hablar de pesos: no sabe qué toca ni desde dónde.
+    const ctx = this.sessionContext();
+    const session = ctx
+      ? ctx.exercises
+          .map((ec) => {
+            const sets = ec.lastSets?.filter((x) => !x.isWarmup) ?? [];
+            const top = sets.length ? Math.max(...sets.map((x) => x.weight || 0)) : 0;
+            const days = ec.lastSessionDate
+              ? Math.round((Date.parse(ctx.todayISO) - Date.parse(ec.lastSessionDate)) / 86400000)
+              : null;
+            return `${ec.exercise.name}: ${top || '-'}kg${days === null ? '' : ` (hace ${days}d)`}`;
+          })
+          .join(' · ')
+      : '';
+
     const rules =
       lang === 'en'
         ? [
             'You are a strength coach inside a training app. Answer briefly (max 4 sentences),',
             'in English. Never give medical advice; if the user mentions pain, tell them to see',
-            'a professional. You cannot change weights, sets or routines.',
+            'a professional. You cannot create or delete routine days.',
             '',
             'If the athlete states something DURABLE about their context (a new sport, an injury,',
             'a layoff, a change of goal or level), append this exact block at the END of your',
             'reply, with the FULL updated notes text (not just the new part):',
             '<<GT_CONTEXT>>{"notes":"...","goal":"strength|hypertrophy|endurance","level":"beginner|intermediate|advanced"}<<END>>',
             'Include only the fields that change. Max 200 characters in notes.',
+            '',
+            'If asked to adjust loads, add a "weights" field in that same block with the',
+            'exercises from the next session to change, using their exact name:',
+            '"weights":[{"exercise":"Shoulder Press (Machine)","weight":35,"reps":8}]',
+            'Only exercises from the list below. Weights are clamped against history',
+            'afterwards, so propose what you believe is right and do not inflate.',
             'No block if you merely answered a question: that is not a context change.',
           ].join(' ')
         : [
             'Sos un entrenador de fuerza dentro de una app de entrenamiento. Respondé breve',
             '(máximo 4 frases), en español. Nunca des consejo médico; si mencionan dolor, decí',
-            'que consulten a un profesional. No podés cambiar pesos, series ni rutinas.',
+            'que consulten a un profesional. No podés crear ni borrar días de rutina.',
             '',
             'Si el atleta cuenta algo DURADERO sobre su contexto (un deporte nuevo, una lesión,',
             'un parón, un cambio de objetivo o de nivel), añadí al FINAL de tu respuesta este',
             'bloque exacto, con el texto de notas COMPLETO ya actualizado (no solo lo nuevo):',
             '<<GT_CONTEXT>>{"notes":"...","goal":"strength|hypertrophy|endurance","level":"beginner|intermediate|advanced"}<<END>>',
             'Incluí solo los campos que cambian. Máximo 200 caracteres en notes.',
+            '',
+            'Si te piden ajustar las cargas, añadí en ese mismo bloque un campo "weights" con',
+            'los ejercicios de la próxima sesión que haya que cambiar, usando su nombre exacto:',
+            '"weights":[{"exercise":"Press de Hombros (Máquina)","weight":35,"reps":8}]',
+            'Solo ejercicios de la lista de abajo. El peso se acota luego contra el historial,',
+            'así que proponé lo que creas correcto y no infles por si acaso.',
             'Nada de bloque si solo respondiste una duda: no es un cambio de contexto.',
           ].join(' ');
 
-    return `${rules}\n\nDatos del atleta: ${facts.join(' · ')}`;
+    const sessionLine = session
+      ? `
+
+Próxima sesión: ${session}`
+      : '';
+    return `${rules}\n\nDatos del atleta: ${facts.join(' · ')}${sessionLine}`;
   }
 
   private resolveKey(settings: AppSettings): { provider: 'groq' | 'cohere'; value: string } | null {

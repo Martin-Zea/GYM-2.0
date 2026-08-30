@@ -769,4 +769,12 @@ export const en: Translations = {
   coach_proposal_accept: 'Save it',
   coach_proposal_dismiss: 'Not now',
   coach_proposal_saved: 'Noted. It applies to your next session.',
+
+  // Propuesta de pesos desde el chat (T-813)
+  reps_short: 'reps',
+  coach_weights_title: 'The coach suggests changing the weights',
+  coach_weights_intro: 'Applies to your next session. Already capped to what your history allows.',
+  coach_weights_clamped: 'Capped to the safe maximum',
+  coach_weights_accept: 'Apply weights',
+  coach_weights_saved: 'Weights applied. You can see them in Suggestions.',
 };

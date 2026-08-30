@@ -10,7 +10,7 @@ import {
 import { HistoryEntry } from '../storage.service';
 import { AiProvider, AiProviderContext, AiSessionProvider } from './ai-provider';
 import { AiSessionContext, SessionRecommendation } from './session-context';
-import { goalRepTarget, roundToBrick } from './prompt-helpers';
+import { floorToBrick, goalRepTarget, roundToBrick } from './prompt-helpers';
 import { LAYOFF_LONG_DAYS, LAYOFF_MODERATE_DAYS, layoffFactor } from './progression-rules';
 import {
   completionRatio,
@@ -319,7 +319,9 @@ export class LocalProvider implements AiProvider, AiSessionProvider {
       const gap = daysBetween(lastSessionDate, today);
       const factor = layoffFactor(lastSessionDate, today);
       if (factor < 1) {
-        const reduced = Math.max(brick, roundToBrick(topWeight * factor, brick));
+        // Hacia abajo, igual que el techo del validador: si no, el motor propondría
+        // un peso que la propia validación consideraría excesivo.
+        const reduced = floorToBrick(topWeight * factor, brick);
         return {
           sets: Array.from({ length: setsTarget }, () => ({ weight: reduced, reps: repTarget })),
           reason:

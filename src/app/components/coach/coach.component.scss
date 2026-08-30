@@ -169,3 +169,25 @@
 .coach-proposal-saved {
   color: var(--success);
 }
+
+.coach-weight-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-xs);
+}
+.coach-weight-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+.coach-weight-change {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+}
+.coach-weight-arrow {
+  color: var(--text-2);
+  margin: 0 2px;
+}

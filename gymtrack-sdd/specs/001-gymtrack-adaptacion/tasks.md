@@ -90,12 +90,12 @@
   - AC (RF-IA-06b): el disparo ocurre **al finalizar la sesión**, calculando la próxima; nunca con el usuario esperando en H2. Sin sugerencia persistida, H2 precarga con la última sesión + motor local y sigue funcionando.
   - AC (RF-IA-06c): se **conserva la estabilidad determinista** actual — registrar series durante el día no recalcula la sugerencia. Solo la invalidan datos nuevos reales o el feedback explícito.
   - AC: la cascada Groq → Cohere → local existente se preserva tal cual (ya cumple EA-2).
-- **T-401** 🟡 Spike: verificar CORS y formato real de Groq y Cohere desde navegador con una key de prueba (riesgo §6 del plan). Gate de la fase.
+- **T-401** ✅ Spike: verificar CORS y formato real de Groq y Cohere desde navegador con una key de prueba (riesgo §6 del plan). Gate de la fase.
   - **CORS: verificado y NO bloquea.** Con una key real, el navegador llegó a `api.groq.com` y recibió una
     respuesta de error estructurada (`model_not_found`), lo que solo puede pasar si la petición completó.
   - **Formato de error: verificado.** Groq devuelve `{ error: { message, type, code } }`; ya se parsea.
-  - Pendiente: verificar el formato de una respuesta EXITOSA de chat y del JSON de sesión con un modelo
-    al que la key tenga acceso.
+  - **Respuesta exitosa: verificada** (2026-08-30) con `openai/gpt-oss-120b` y una key real: el chat
+    respondió y el contador de tokens registró el consumo. La fase queda cerrada.
 - **T-402** ✅ `GroqProvider` y `CohereProvider` con timeout 15 s, backoff, manejo 401/429 (RF-IA-02) `[P tras T-401]`.
 - **T-403** ✅ Serializador de contexto compacto versionado + diccionario de abreviaturas (RF-IA-03, CE-4).
   - AC (Art. 5): reemplaza el `JSON.stringify(summary, null, 2)` actual por el formato CSV-like abreviado. El contexto se arma **por sesión** (T-400), no por ejercicio.
@@ -124,9 +124,8 @@
 > Contexto CSV-like neutro de idioma con presupuesto de 1.200 tokens verificado, caché por hash de contexto,
 > candado anti doble-tap, contador de consumo con corte por presupuesto, prueba de conexión, selección de
 > modelo, y panel C1 (aceptar/cambiar/rechazar) con el feedback reinyectado en el contexto + historial C3.
-> **T-401 parcialmente cerrada**: con una key real se confirmó que CORS no bloquea desde el navegador y que
-> el formato de error de Groq es el esperado. Queda verificar una respuesta exitosa, que depende de que la
-> key tenga acceso a algún modelo de chat (ver T-808: el modelo se elige de la lista real de la key).
+> **T-401 cerrada**: con una key real se confirmó que CORS no bloquea desde el navegador, que el formato de
+> error de Groq es el esperado y que una respuesta exitosa llega bien con `openai/gpt-oss-120b`.
 
 ## F5 · Rutinas y generación (RF-RUT, RF-EJ, RF-PER) — ✅ COMPLETA
 
@@ -269,6 +268,33 @@ el Coach con chat (que exige relajar el Art. 5 de forma acotada, ver T-804).
 > sola al prompt, a la caché y al validador duro.
 > **Decisión consciente:** el chat NO edita rutinas ni días, aunque el mockup C2 lo dibuje. Es la escritura
 > de más riesgo, choca con el determinismo de las sugerencias y editar una rutina a mano ya funciona (R3).
+
+- **T-812** ✅ Una sola regla de parón para los dos motores (`layoffFactor` en `progression-rules.ts`).
+  - El motor local restaba dos incrementos FIJOS: 100 kg daba 95 tanto tras un mes como tras tres años, y
+    no coincidía con el 85 % que aplicaba el validador. El atleta veía un peso u otro según tuviera red.
+  - `floorToBrick()`: donde el número es un TECHO se redondea hacia abajo. Con `roundToBrick` un tope de
+    34 kg y ladrillo 2,5 acababa en 35, deshaciendo el propio tope.
+- **T-813** ✅ El chat propone PESOS para la próxima sesión y el atleta confirma.
+  - AC: el contexto del chat incluye la próxima sesión con la última marca y los días desde entonces. Sin
+    eso el coach no podía hablar de pesos aunque se le permitiera — respondía "no puedo ajustar los pesos".
+  - AC: cada peso pasa por `allowedCeiling`, el MISMO validador que la respuesta de sesión. Bajar siempre
+    se permite; subir se recorta por parón, por lesión declarada y por el +10 %.
+  - AC: un recorte se MUESTRA aunque deje el peso igual. Callarlo dejaba al atleta creyendo que su pedido
+    se perdió.
+  - AC: se parte de las sugerencias efectivas, no del store: aceptar un cambio en un ejercicio no puede
+    dejar al resto de la sesión sin sugerencia.
+  - AC: el chat no añade ejercicios ni crea días; un nombre que no está en la sesión se descarta.
+- **T-814** ✅ Las tarjetas de sugerencia dejan de contradecir su propio motivo.
+  - Mostraban `sets[0]`, pero el motor sube solo las últimas series la primera vez que se cumple el
+    objetivo: la tarjeta decía "35 × 6" mientras el motivo explicaba "saltamos 2 ladrillos a 45kg". Ahora
+    se muestra el rango real (`35 → 45`).
+  - Un ejercicio sin carga mostraba "0 × 17"; ahora muestra solo las reps.
+
+> **Resultado F9 (ampliado):** el chat pasa de asesor a copiloto: propone contexto Y pesos, y el atleta
+> confirma. Lo que lo hace seguro no es que el modelo se porte bien, sino que sus números pasan por el
+> mismo validador que ya acotaba a la IA de la sesión — el chat gana una capacidad, no una excepción.
+> **Consecuencia asumida:** las sugerencias dejan de ser puramente deterministas; ahora dependen también
+> de lo conversado. Se acepta porque cada cambio se confirma a mano y queda en el historial del Coach.
 
 ## Convergencia (antes de dar por terminado)
 

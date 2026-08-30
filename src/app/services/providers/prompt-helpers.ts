@@ -29,6 +29,18 @@ export function roundToBrick(weight: number, brick: number): number {
   return Math.round(weight / brick) * brick;
 }
 
+/**
+ * Redondea al ladrillo SIN pasarse del valor dado.
+ *
+ * Se usa donde el número es un techo: tras un parón, o al acotar lo que propone la IA. Con
+ * `roundToBrick` un tope de 34 kg y ladrillo de 2,5 acaba en 35, que es justo lo que el tope
+ * quería impedir. Un límite que el redondeo deshace no es un límite.
+ */
+export function floorToBrick(weight: number, brick: number): number {
+  const step = brick > 0 ? brick : 2.5;
+  return Math.max(step, Math.floor(weight / step) * step);
+}
+
 export async function fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);

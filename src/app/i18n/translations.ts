@@ -773,6 +773,14 @@ export interface Translations {
   coach_proposal_accept: string;
   coach_proposal_dismiss: string;
   coach_proposal_saved: string;
+
+  // Propuesta de pesos desde el chat (T-813)
+  reps_short: string;
+  coach_weights_title: string;
+  coach_weights_intro: string;
+  coach_weights_clamped: string;
+  coach_weights_accept: string;
+  coach_weights_saved: string;
 }
 
 export { es } from './es';

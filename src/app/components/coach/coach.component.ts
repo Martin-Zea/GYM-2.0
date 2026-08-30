@@ -11,7 +11,12 @@ import { StateService } from '../../services/state.service';
 import { TranslationService } from '../../services/translation.service';
 import { ProgressionService } from '../../services/progression.service';
 import { CoachChatService } from '../../services/coach-chat.service';
-import { AiFeedbackEntry, AiRecommendation, Exercise } from '../../models/workout.model';
+import {
+  AiFeedbackEntry,
+  AiRecommendation,
+  Exercise,
+  WorkoutDay,
+} from '../../models/workout.model';
 import { DEFAULT_TOKEN_BUDGET } from '../../services/providers/ai-usage';
 
 type Tab = 'panel' | 'chat' | 'history';
@@ -63,14 +68,18 @@ export class CoachComponent {
   constructor() {
     effect(() => {
       const day = this.day();
-      if (!day) return;
-      void this.progression
-        .suggestionsForToday(day, this.state.settings(), this.tr.lang())
-        .then((result) => {
-          this.suggestions.set(result.byExercise);
-          this.source.set(result.source);
-        });
+      if (day) void this.loadSuggestions(day);
     });
+  }
+
+  private async loadSuggestions(day: WorkoutDay): Promise<void> {
+    const result = await this.progression.suggestionsForToday(
+      day,
+      this.state.settings(),
+      this.tr.lang(),
+    );
+    this.suggestions.set(result.byExercise);
+    this.source.set(result.source);
   }
 
   protected readonly rows = computed((): SuggestionRow[] => {
@@ -93,6 +102,33 @@ export class CoachComponent {
 
   protected firstSet(rec: AiRecommendation) {
     return rec.sets[0] ?? null;
+  }
+
+  /**
+   * Cómo se lee el peso de una recomendación.
+   *
+   * El motor sube SOLO las últimas series la primera vez que cumplís el objetivo, así que
+   * `sets` puede venir `[35, 45, 45]`. Enseñar `sets[0]` mostraba 35 mientras el motivo
+   * hablaba de 45: la tarjeta contradecía su propia explicación.
+   *
+   * `null` cuando el ejercicio no lleva carga (peso corporal, tiempo): ahí un "0 kg" no
+   * significa nada y se muestran solo las reps.
+   */
+  protected weightLabel(row: SuggestionRow): string | null {
+    if (row.exercise.unit === 'BODYWEIGHT' || row.exercise.unit === 'TIME') return null;
+    const weights = row.rec.sets.map((s) => s.weight).filter((w) => w > 0);
+    if (!weights.length) return null;
+    const min = Math.min(...weights);
+    const max = Math.max(...weights);
+    return min === max ? `${max}` : `${min} → ${max}`;
+  }
+
+  /** Reps objetivo: si varían entre series se muestra el rango. */
+  protected repsLabel(row: SuggestionRow): string {
+    const reps = row.rec.sets.map((s) => s.reps);
+    const min = Math.min(...reps);
+    const max = Math.max(...reps);
+    return min === max ? `${max}` : `${min}–${max}`;
   }
 
   // ── C1 · aceptar / cambiar / rechazar ──
@@ -143,12 +179,29 @@ export class CoachComponent {
 
   // ── C2 · chat ──
 
+  /**
+   * La parte de CONTEXTO de la propuesta, si la hay.
+   *
+   * Separada de los pesos porque son dos tarjetas distintas: una anota lo que la app sabe de
+   * vos, la otra cambia números. Mezclarlas obligaría a aceptar las dos cosas a la vez.
+   */
+  protected readonly contextProposal = computed(() => {
+    const p = this.chat.proposal();
+    if (!p) return null;
+    const hasContext = p.notes !== undefined || p.goal !== undefined || p.level !== undefined;
+    return hasContext ? p : null;
+  });
+
   protected readonly proposalSaved = signal(false);
 
-  protected acceptProposal(): void {
-    this.chat.acceptProposal();
+  protected async acceptProposal(): Promise<void> {
+    const hadWeights = this.chat.proposedWeights().length > 0;
+    await this.chat.acceptProposal();
     this.proposalSaved.set(true);
     setTimeout(() => this.proposalSaved.set(false), 3000);
+    // El panel lee de lo guardado, no de una señal: sin recargar, aceptar no se vería.
+    const day = this.day();
+    if (hadWeights && day) void this.loadSuggestions(day);
   }
 
   /** Etiqueta legible de objetivo y nivel: el modelo los manda como enum. */

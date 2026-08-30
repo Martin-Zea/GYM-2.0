@@ -136,6 +136,29 @@ export class ProgressionService {
     return entry;
   }
 
+  /**
+   * Fija las sugerencias de un día, pisando lo precalculado (T-813).
+   *
+   * Lo usa el chat cuando el atleta ACEPTA un cambio de pesos. Se guarda con el hash del
+   * contexto actual para que siga valiendo lo mismo que el resto: si después entrena o
+   * cambia el perfil, el hash deja de coincidir y estas sugerencias caducan solas, igual que
+   * las que calcula la IA. No hay una vía paralela que sobreviva a sus datos.
+   */
+  storeSuggestions(
+    dayId: string,
+    contextHash: string,
+    byExercise: Partial<Record<string, AiRecommendation>>,
+    source: 'groq' | 'cohere' | 'local',
+  ): void {
+    try {
+      const store = this.readNextStore();
+      store[dayId] = { contextHash, byExercise, source, atISO: new Date().toISOString() };
+      localStorage.setItem(NEXT_KEY, JSON.stringify(store));
+    } catch {
+      /* sin espacio: la sugerencia se recalcula, no vale una alerta */
+    }
+  }
+
   /** Hash del contexto serializado: la clave de caché de RF-IA-06. */
   contextHash(ctx: AiSessionContext): string {
     return checksumOf(serializeSessionContext(ctx));
