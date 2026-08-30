@@ -3,6 +3,7 @@
     <div class="slides-viewport">
       <div
         class="slides-track"
+        [style.--slide-count]="slideCount"
         [style.transform]="'translateX(calc(-' + current() + ' * 100% / ' + slideCount + '))'"
       >
         <div class="slide">

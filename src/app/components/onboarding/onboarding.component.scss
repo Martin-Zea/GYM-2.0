@@ -26,13 +26,14 @@
 }
 
 .slides-track {
+  --slide-count: 8; // fallback; el valor real lo inyecta el componente
   display: flex;
-  width: 300%; // slideCount * 100%
+  width: calc(var(--slide-count) * 100%);
   transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .slide {
-  flex: 0 0 calc(100% / 3); // 1 / slideCount
+  flex: 0 0 calc(100% / var(--slide-count));
   display: flex;
   flex-direction: column;
   align-items: center;
