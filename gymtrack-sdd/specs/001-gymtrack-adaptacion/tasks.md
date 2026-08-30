@@ -346,6 +346,111 @@ el Coach con chat (que exige relajar el Art. 5 de forma acotada, ver T-804).
 > confirmado. La IA sigue corriendo una vez por sesión, al cerrarla; y a partir de T-815, por primera vez,
 > lo que calcula se llega a usar.
 
+- **T-820** ✅ El contrato del chat pasa a ser un objeto JSON.
+  - Reportado con captura: el coach contestó _"Sí, al haber estado 60 días sin entrenar ajustaremos las
+    cargas en la próxima sesión"_ y no apareció ninguna tarjeta. T-819 hizo que el NÚMERO lo pusiera el
+    motor, pero seguía necesitando que el modelo emitiera el bloque `<<GT_CONTEXT>>` para arrancar — y el
+    modelo no lo emitía. Se había movido la dependencia, no eliminado.
+  - Ahora se pide `response_format: json_object` (el mismo que ya usan la sesión y el generador con este
+    modelo) y la respuesta ENTERA es el objeto: `{"reply": "...", "layoffDays": 60}`. Los campos de
+    contexto son parte de lo que el modelo tiene que devolver, no un añadido que se puede olvidar.
+  - AC: se sigue entendiendo el formato anterior — una conversación en curso no se rompe.
+  - AC: nunca se enseña JSON crudo en el globo del chat, ni siquiera si falta `reply`.
+  - **Red de seguridad** (`layoffFromText`): si el modelo se salta el dato, se lee del mensaje del propio
+    atleta. Exige a la vez una duración y una señal de no estar entrenando: _"hace 2 meses subí 5kg"_ no
+    dispara nada. No cambia ningún peso por su cuenta — alimenta la misma tarjeta que se confirma a mano.
+
+> **Lección:** dos rondas seguidas dieron por bueno un camino que dependía de que el modelo se acordara de
+> un formato opcional. Lo que no es obligatorio en la respuesta, no llega.
+
+- **T-821** ✅ El parón manda sobre la forma de las series.
+  - El chequeo de parón vivía a mitad de `compute()` y TRES ramas retornaban antes: pirámide
+    (series asimétricas), tiempo y peso corporal. Las series asimétricas las fabrica la propia doble
+    progresión ("subí solo las últimas 2"), así que un usuario real caía en la rama de pirámide casi
+    siempre — y a quien volvía de dos meses le proponía "saltamos 2 ladrillos a 45kg" (reportado con
+    captura: Anterior 25×6/25×6/30×6/35×10). La fecha se evalúa ahora ANTES que la unidad y la forma.
+  - La vuelta de un parón es a peso UNIFORME aunque el historial fuera pirámide; tiempo y peso
+    corporal recortan su objetivo (17 reps → 14 tras 2 meses).
+  - AC: mismas series asimétricas SIN parón siguen siendo pirámide.
+- **T-822** ✅ Una pestaña que no guarda no acepta keys.
+  - Con varias pestañas abiertas solo la primaria escribe (RF-STO-09); pegar la key en una
+    secundaria la dejaba en memoria y el F5 se la llevaba. La sección de IA ahora avisa y deshabilita
+    los inputs cuando `TabLockService.canWrite()` es falso.
+- **T-823** ✅ El arranque no destruye la key cuando el sellado falla.
+  - `init()` borraba el texto en claro si `vault.available` era true — que dice que el navegador
+    tiene WebCrypto+IDB, no que sellar FUNCIONÓ. Un vault roto en runtime (IDB bloqueado) borraba la
+    key creyendo que ya estaba sellada. Ahora el claro de cada proveedor se borra solo si SU sellado
+    devolvió un blob.
+
+> **Nota de entorno (no es código):** las keys "que se borran con F5" del reporte eran, sobre todo,
+> almacenes fragmentados: dos dev servers a la vez (4200 y 51064), pestañas mezclando `localhost` y
+> `127.0.0.1` — cada host+puerto es un origen con su propio localStorage/IndexedDB — y pestañas
+> secundarias que no escriben. Regla de operación: UN servidor, UNA pestaña, SIEMPRE
+> `localhost:4200`. T-822/T-823 endurecen lo que el código sí puede endurecer.
+
+- **T-824** ✅ El vault verifica que su clave SOBREVIVA, no solo que exista.
+  - El reporte definitivo del "F5 borra las keys": `KeyVault.getKey()` generaba la clave AES,
+    la mandaba a IndexedDB **ignorando el booleano de `idbPut`** y sellaba igual. Con una IDB
+    bloqueada (escudos del navegador, almacenamiento restringido) la clave solo existía en
+    memoria: la key funcionaba TODA la sesión —el claro está en memoria— y el blob quedaba
+    indescifrable para siempre en la primera recarga. Sin ningún error visible, porque todos
+    los fallos de IDB se tragan por diseño.
+  - Ahora la clave se escribe Y se relee; si cualquiera de las dos falla, no hay vault:
+    `seal()` devuelve null y los llamadores (T-823, `set()`) conservan el texto en claro,
+    que por lo menos sobrevive en localStorage y es honesto.
+  - `KeyVault.healthy` (señal): el resultado de la prueba REAL. El aviso de Ajustes pasa de
+    `available` (las piezas existen) a `available && healthy` (las piezas funcionan).
+  - `KeyVault` consume `IdbService` inyectable en vez de las funciones sueltas — el wrapper
+    de vitest de Angular no permite `vi.mock` relativo, y el servicio existía justo para esto.
+
+- **T-825** ✅ `buildState()` deja de reconstruir settings con lista blanca.
+  - **El bug real detrás de todos los reportes de "el F5 me borra las keys."** `buildState()`
+    rearmaba `settings` (y `userProfile`) campo por campo con una lista escrita a mano.
+    `apiKeySealed`/`cohereApiKeySealed` no estaban en la lista: la key se sellaba bien, se
+    guardaba bien, y **se descartaba en la reconstrucción de CADA carga**. También morían ahí
+    el modelo elegido de Groq/Cohere, `aiTokenBudget`, `units` y `layoffSinceISO` — todo campo
+    añadido después de que se escribió la lista.
+  - Determinista e independiente del entorno: las pestañas/orígenes/IDB de T-822/T-824 eran
+    problemas reales pero secundarios. Este se encontró REPRODUCIENDO el flujo en un Edge real
+    con Playwright (pegar key → F5 → PERDIDA), no leyendo código: tres rondas de inspección lo
+    habían pasado por alto.
+  - Fix: spread de lo migrado PRIMERO, defaults de lo obligatorio después. Un campo nuevo de
+    `AppSettings` ya no necesita permiso de una lista para sobrevivir a la recarga.
+  - AC (verificado en navegador real): pegar key → F5 → sobrevive; exportar → importar en
+    contexto limpio → F5 → sobrevive. Round-trip `save() → load()` en tests con sealed,
+    modelo, presupuesto y layoff.
+
+- **T-826** ✅ El panel del Coach puede pedirle a la IA — una llamada por contexto.
+  - La IA solo corría al CERRAR una sesión; quien recién configuraba su key —o cambiaba el
+    contexto por chat— veía "Motor local" para siempre, sin entender qué compró con la key.
+  - `suggestionsForToday(..., { allowNetwork: true })`, SOLO desde C1: si no hay sugerencia
+    guardada válida, una llamada, resultado guardado bajo el hash → reabrir el tab no repite.
+    Candado anti-doble-disparo (`panelInFlight`). Lo local NO se guarda: no le tapa el paso a
+    una key futura. Sin key / sin red / sin presupuesto → motor local, como siempre.
+  - **Enmienda al Art. 5/8:** H2 (la sesión) sigue sin tocar la red JAMÁS — no pasa
+    `allowNetwork` y hay test que lo fija ("SIN allowNetwork jamás toca la red, con key y
+    todo"). La llamada del panel es por contexto y va al mismo presupuesto.
+  - Verificado "como humano" (Edge + Playwright, Groq interceptado): key por UI → panel dice
+    "Groq activo" con 1 llamada y el validador acota los 200 kg del mock a 32,5 → chat "hace
+    2 meses que no hago ejercicios" → tarjeta con 60 días y cambios → aceptar → 25×6 con
+    razón de parón → F5 → key y sugerencias sobreviven. 13/13.
+
+- **T-827** ✅ El parón alcanza a TODA la rutina, no solo al próximo día.
+  - Reportado tras probar T-826: "veo que solo cambia el día siguiente". Causa: la
+    declaración se BORRABA al cerrar la primera sesión de vuelta (regla de T-817), así que
+    entrenar hombros el lunes "reacondicionaba" también a la espalda del martes y el resto
+    de la rutina volvía a los pesos de antes del parón.
+  - Nuevo modelo: el parón es una VENTANA histórica `[layoffSinceISO, layoffDeclaredISO]`
+    que no se borra nunca y se neutraliza ejercicio por ejercicio en `effectiveLastSession`:
+    un registro DENTRO de la ventana miente y pierde; una sesión POSTERIOR a la declaración
+    es vuelta real y gana. Cada día arranca recortado exactamente UNA vez, la primera que le
+    toca. (Nota: los pesos GUARDADOS de la rutina no se tocan — la rutina no almacena pesos;
+    lo que se adapta son las sugerencias de cada día.)
+  - La tarjeta del chat lo avisa: "Aplica a TODA la rutina: cada día arranca recortado la
+    primera vez que lo entrenes de vuelta."
+  - AC (test): declarar 60 días → aceptar → cerrar el día 1 → el día 3 sigue con razón de
+    parón en todos sus ejercicios con carga.
+
 ## Convergencia (antes de dar por terminado)
 
 - **T-900** Recorrer EA-1…EA-6 y casos borde §6 de la spec en dispositivo real.

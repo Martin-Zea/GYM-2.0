@@ -160,6 +160,16 @@ function buildReasons(lang: 'es' | 'en') {
         ? `Demasiado volumen. Volvé a ${prevReps} reps con buena técnica.`
         : `Too much volume. Return to ${prevReps} reps with good technique.`,
 
+    spacingTime: (secs: number) =>
+      es
+        ? `Mucho tiempo sin entrenar este ejercicio. Volvé con ${secs}s y subí desde ahí.`
+        : `Long time since this exercise. Come back at ${secs}s and build from there.`,
+
+    spacingBw: (reps: number) =>
+      es
+        ? `Mucho tiempo sin entrenar este ejercicio. Volvé con ${reps} reps y subí desde ahí.`
+        : `Long time since this exercise. Come back at ${reps} reps and build from there.`,
+
     pyramid: (topWeight: number) =>
       es
         ? `Pirámide detectada. Mantené el esquema con peso tope ${topWeight}kg.`
@@ -364,12 +374,21 @@ export class LocalProvider implements AiProvider, AiSessionProvider {
 
     const baseSets: SetRecord[] = doneSets.length > 0 ? doneSets : (lastSets ?? []);
 
+    // --- Parón: se evalúa ANTES que la unidad y que la forma de las series (T-821) ---
+    // Este chequeo vivía después de la rama de pirámide, y esa rama RETORNA: unas últimas
+    // series con pesos distintos —exactamente lo que produce la propia doble progresión al
+    // subir "solo las últimas 2"— esquivaban el recorte, y el motor proponía saltar dos
+    // ladrillos a quien llevaba dos meses parado. La fecha manda sobre la forma.
+    const todayISO = new Date().toISOString().slice(0, 10);
+    const layoff = lastSessionDate ? layoffFactor(lastSessionDate, todayISO) : 1;
+    const gap = lastSessionDate ? daysBetween(lastSessionDate, todayISO) : 0;
+
     // --- Ramas por unidad ---
     if (exercise.unit === 'TIME') {
-      return this.computeTime(baseSets, exercise, setsTarget, repTarget, r);
+      return this.computeTime(baseSets, exercise, setsTarget, repTarget, r, layoff);
     }
     if (exercise.unit === 'BODYWEIGHT') {
-      return this.computeBodyweight(baseSets, exercise, setsTarget, repTarget, r);
+      return this.computeBodyweight(baseSets, exercise, setsTarget, repTarget, r, layoff);
     }
 
     // --- Sin historial: primera sesión ---
@@ -382,35 +401,31 @@ export class LocalProvider implements AiProvider, AiSessionProvider {
       };
     }
 
+    // --- Sesión espaciada ---
+    // El recorte es PROPORCIONAL y lo decide `layoffFactor`, la misma regla que acota lo que
+    // responde la IA. La vuelta es a peso UNIFORME aunque el historial fuera una pirámide:
+    // "arrancá conservador" y sostener la punta de una pirámide no son compatibles.
+    if (layoff < 1) {
+      const topWeight = Math.max(...baseSets.map((s) => s.weight || 0));
+      // Hacia abajo, igual que el techo del validador: si no, el motor propondría
+      // un peso que la propia validación consideraría excesivo.
+      const reduced = floorToBrick(topWeight * layoff, brick);
+      return {
+        sets: Array.from({ length: setsTarget }, () => ({ weight: reduced, reps: repTarget })),
+        reason:
+          gap > LAYOFF_LONG_DAYS
+            ? r.spacingLong(topWeight, reduced)
+            : r.spacingModerate(topWeight, reduced),
+        source: 'local',
+      };
+    }
+
     // --- Pirámide / sets asimétricos ---
     if (isAsymmetric(baseSets)) {
       return this.computePyramid(baseSets, exercise, setsTarget, repTarget, brick, r);
     }
 
     const topWeight = Math.max(...baseSets.map((s) => s.weight || 0));
-
-    // --- Sesión espaciada ---
-    // El recorte es PROPORCIONAL y lo decide `layoffFactor`, la misma regla que acota lo que
-    // responde la IA. Antes aquí se restaban dos incrementos fijos: tras un mes y tras tres
-    // años daba el mismo peso, y no coincidía con el tope del validador.
-    if (lastSessionDate) {
-      const today = new Date().toISOString().slice(0, 10);
-      const gap = daysBetween(lastSessionDate, today);
-      const factor = layoffFactor(lastSessionDate, today);
-      if (factor < 1) {
-        // Hacia abajo, igual que el techo del validador: si no, el motor propondría
-        // un peso que la propia validación consideraría excesivo.
-        const reduced = floorToBrick(topWeight * factor, brick);
-        return {
-          sets: Array.from({ length: setsTarget }, () => ({ weight: reduced, reps: repTarget })),
-          reason:
-            gap > LAYOFF_LONG_DAYS
-              ? r.spacingLong(topWeight, reduced)
-              : r.spacingModerate(topWeight, reduced),
-          source: 'local',
-        };
-      }
-    }
 
     // El estancamiento de §4.5 es no avanzar A PESAR de intentarlo. Quien cumple el objetivo
     // cada sesión no está estancado aunque el peso no suba: le toca subirlo, no descargar.
@@ -552,6 +567,7 @@ export class LocalProvider implements AiProvider, AiSessionProvider {
     setsTarget: number,
     timeTarget: number,
     r: ReturnType<typeof buildReasons>,
+    layoff = 1,
   ): AiRecommendation {
     const timeBrick = exercise.brick || 5;
 
@@ -560,6 +576,16 @@ export class LocalProvider implements AiProvider, AiSessionProvider {
       return {
         sets: Array.from({ length: setsTarget }, () => ({ weight: 0, reps: startSecs })),
         reason: r.firstSessionTime(startSecs),
+        source: 'local',
+      };
+    }
+
+    // Un parón también desentrena la resistencia: el objetivo vuelve recortado (T-821).
+    if (layoff < 1) {
+      const reduced = Math.max(5, Math.round(timeTarget * layoff));
+      return {
+        sets: Array.from({ length: setsTarget }, () => ({ weight: 0, reps: reduced })),
+        reason: r.spacingTime(reduced),
         source: 'local',
       };
     }
@@ -599,11 +625,22 @@ export class LocalProvider implements AiProvider, AiSessionProvider {
     setsTarget: number,
     repTarget: number,
     r: ReturnType<typeof buildReasons>,
+    layoff = 1,
   ): AiRecommendation {
     if (baseSets.length === 0) {
       return {
         sets: Array.from({ length: setsTarget }, () => ({ weight: 0, reps: repTarget })),
         reason: r.firstSessionBw(repTarget),
+        source: 'local',
+      };
+    }
+
+    // Un parón también desentrena el volumen a peso corporal (T-821).
+    if (layoff < 1) {
+      const reduced = Math.max(1, Math.round(repTarget * layoff));
+      return {
+        sets: Array.from({ length: setsTarget }, () => ({ weight: 0, reps: reduced })),
+        reason: r.spacingBw(reduced),
         source: 'local',
       };
     }

@@ -75,11 +75,14 @@ export class CoachComponent {
   private async loadSuggestions(day: WorkoutDay): Promise<void> {
     // El estado VIVO, igual que el resto de llamadores: quien lo relee del disco puede
     // construir otro contexto, otro hash, y no encontrar la sugerencia que se acaba de guardar.
+    // `allowNetwork`: el panel es el ÚNICO lugar que puede disparar la llamada de IA fuera
+    // del cierre de sesión — una por contexto, cacheada por hash (T-826). La sesión (H2)
+    // sigue leyendo sin red.
     const result = await this.progression.suggestionsForToday(
       day,
       this.state.settings(),
       this.tr.lang(),
-      { state: this.state.state() },
+      { state: this.state.state(), allowNetwork: true },
     );
     this.suggestions.set(result.byExercise);
     this.source.set(result.source);

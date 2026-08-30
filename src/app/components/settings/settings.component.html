@@ -149,6 +149,9 @@
       @if (shows('ai')) {
         <div class="settings-section">
           <p class="settings-section-title">{{ T().settings_ai_section }}</p>
+          @if (readOnlyTab()) {
+            <div class="card card--warn" role="alert">{{ T().settings_tab_readonly }}</div>
+          }
           <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 8px">
             <div class="settings-row-label">{{ T().settings_api_key_label }}</div>
             <div class="settings-row-desc">
@@ -169,6 +172,7 @@
                 placeholder="gsk_..."
                 style="flex: 1"
                 [value]="keyValue('groq')"
+                [disabled]="readOnlyTab()"
                 (change)="saveKey('groq', $event)"
               />
               <button class="btn btn-ghost btn-sm" (click)="showApiKey.update((v) => !v)">
@@ -235,6 +239,7 @@
                 placeholder="..."
                 style="flex: 1"
                 [value]="keyValue('cohere')"
+                [disabled]="readOnlyTab()"
                 (change)="saveKey('cohere', $event)"
               />
               <button class="btn btn-ghost btn-sm" (click)="showCohereKey.update((v) => !v)">
@@ -281,7 +286,7 @@
             </div>
           </div>
 
-          @if (!vaultAvailable) {
+          @if (vaultBroken()) {
             <p class="settings-row-desc settings-key-warning">
               {{ T().settings_key_plain_warning }}
             </p>

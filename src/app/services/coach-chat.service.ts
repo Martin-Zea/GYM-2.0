@@ -23,6 +23,7 @@ import {
   CoachProposal,
   ResolvedWeight,
   diffSuggestions,
+  layoffFromText,
   layoffSinceFrom,
   parseCoachReply,
   resolveWeightProposal,
@@ -60,6 +61,28 @@ function topsOf(
     out[id] = { weight: Math.max(...rec.sets.map((s) => s.weight)), reps: rec.sets[0].reps };
   }
   return out;
+}
+
+/** Si el JSON llega sin `reply`, algo hay que enseñar: un globo vacío parece un fallo. */
+function fallbackReply(lang: 'es' | 'en'): string {
+  return lang === 'en' ? 'Noted.' : 'Anotado.';
+}
+
+/**
+ * Recoge el parón del mensaje del atleta cuando el modelo no lo recogió.
+ *
+ * El modelo va primero: entiende la frase y nosotros no. Pero cuando se lo salta, el atleta
+ * lee "ajustaremos las cargas" y no pasa nada — que es exactamente lo que hace desconfiar de
+ * la app. Prometer un cambio y no hacerlo es peor que no ofrecerlo.
+ */
+function withLayoffFallback(
+  proposal: CoachProposal | null,
+  userText: string,
+): CoachProposal | null {
+  if (proposal?.layoffDays !== undefined) return proposal;
+  const days = layoffFromText(userText);
+  if (days === null) return proposal;
+  return { ...(proposal ?? {}), layoffDays: days };
 }
 
 export interface ChatMessage {
@@ -156,10 +179,10 @@ export class CoachChatService {
 
     try {
       const { text: reply, proposal } = parseCoachReply(await this.ask(settings, lang));
-      this.push({ role: 'assistant', text: reply });
+      this.push({ role: 'assistant', text: reply || fallbackReply(lang) });
       // La propuesta NO se aplica: queda esperando confirmación. Que el chat cambie tus
       // números sin que lo veas es justo lo que hace desconfiar de la sugerencia.
-      await this.previewProposal(proposal, settings);
+      await this.previewProposal(withLayoffFallback(proposal, clean), settings);
     } catch (e) {
       if (e instanceof AuthError) this.error.set('auth');
       else if (e instanceof ModelError) this.error.set('model');
@@ -231,8 +254,11 @@ export class CoachChatService {
       ...(proposal.notes !== undefined && { aiNotes: proposal.notes }),
       ...(proposal.goal !== undefined && { goal: proposal.goal }),
       ...(proposal.level !== undefined && { level: proposal.level }),
+      // La ventana completa: desde cuándo no entrena Y cuándo lo contó. La segunda fecha es
+      // la que deja que una sesión real posterior le gane a la declaración (T-827).
       ...(proposal.layoffDays !== undefined && {
         layoffSinceISO: layoffSinceFrom(this.storage.todayISO(), proposal.layoffDays),
+        layoffDeclaredISO: this.storage.todayISO(),
       }),
     };
   }
@@ -341,6 +367,7 @@ export class CoachChatService {
           max_tokens: reasons(model) ? Math.max(REASONING_MIN_TOKENS, MAX_TOKENS) : MAX_TOKENS,
           messages: [{ role: 'system', content: system }, ...history],
           temperature: 0.3,
+          response_format: { type: 'json_object' },
           ...reasoningOverridesFor(model),
         }),
       });
@@ -359,6 +386,7 @@ export class CoachChatService {
         messages: [{ role: 'system', content: system }, ...history],
         temperature: 0.3,
         max_tokens: MAX_TOKENS,
+        response_format: { type: 'json_object' },
       }),
     });
     if (resp.status === 401 || resp.status === 403) throw new AuthError('Cohere', 'auth');
@@ -413,47 +441,49 @@ export class CoachChatService {
           .join(' · ')
       : '';
 
+    // El contrato es un OBJETO JSON, no texto con un bloque pegado al final. La versión
+    // anterior pedía un bloque `<<GT_CONTEXT>>` y el modelo se lo saltaba: contestaba
+    // "ajustaremos las cargas" sin mandar un solo dato, y la app no tenía nada que aplicar.
+    // Como campo obligatorio de un JSON obligatorio, el dato llega.
     const rules =
       lang === 'en'
         ? [
-            'You are a strength coach inside a training app. Answer briefly (max 4 sentences),',
-            'in English. Never give medical advice; if the user mentions pain, tell them to see',
-            'a professional. You cannot create or delete routine days.',
+            'You are a strength coach inside a training app.',
+            'ALWAYS answer with a single JSON object, nothing else:',
+            '{"reply":"your answer, max 4 sentences, in English"}',
+            'Never give medical advice; if they mention pain, tell them to see a professional.',
+            'You cannot create or delete routine days.',
             '',
-            'If the athlete states something DURABLE about their context (a new sport, an injury,',
-            'a layoff, a change of goal or level), append this exact block at the END of your',
-            'reply, with the FULL updated notes text (not just the new part):',
-            '<<GT_CONTEXT>>{"notes":"...","goal":"strength|hypertrophy|endurance","level":"beginner|intermediate|advanced","layoffDays":60}<<END>>',
-            'Include only the fields that change. Max 200 characters in notes.',
-            'ALWAYS include "layoffDays" when they mention time away from training, as a',
-            'number of days (2 months = 60). The app recalculates the loads from it.',
+            'Add these fields ONLY when the athlete states something DURABLE:',
+            '"layoffDays": days without training, as a number (2 months = 60).',
+            '  Include it WHENEVER they mention time away — the app recalculates loads from it.',
+            '"notes": their full updated context, max 200 chars (not just the new part).',
+            '"goal": "strength" | "hypertrophy" | "endurance".',
+            '"level": "beginner" | "intermediate" | "advanced".',
+            '"weights": [{"exercise":"Shoulder Press (Machine)","weight":35,"reps":8}]',
+            '  only if asked to adjust loads, using exact names from the list below.',
+            '  Loads are clamped against their history afterwards: do not inflate.',
             '',
-            'If asked to adjust loads, add a "weights" field in that same block with the',
-            'exercises from the next session to change, using their exact name:',
-            '"weights":[{"exercise":"Shoulder Press (Machine)","weight":35,"reps":8}]',
-            'Only exercises from the list below. Weights are clamped against history',
-            'afterwards, so propose what you believe is right and do not inflate.',
-            'No block if you merely answered a question: that is not a context change.',
+            'Answering a question is not a context change: send only "reply".',
           ].join(' ')
         : [
-            'Sos un entrenador de fuerza dentro de una app de entrenamiento. Respondé breve',
-            '(máximo 4 frases), en español. Nunca des consejo médico; si mencionan dolor, decí',
-            'que consulten a un profesional. No podés crear ni borrar días de rutina.',
+            'Sos un entrenador de fuerza dentro de una app de entrenamiento.',
+            'Respondé SIEMPRE con un único objeto JSON, nada más:',
+            '{"reply":"tu respuesta, máximo 4 frases, en español"}',
+            'Nunca des consejo médico; si mencionan dolor, decí que consulten a un profesional.',
+            'No podés crear ni borrar días de rutina.',
             '',
-            'Si el atleta cuenta algo DURADERO sobre su contexto (un deporte nuevo, una lesión,',
-            'un parón, un cambio de objetivo o de nivel), añadí al FINAL de tu respuesta este',
-            'bloque exacto, con el texto de notas COMPLETO ya actualizado (no solo lo nuevo):',
-            '<<GT_CONTEXT>>{"notes":"...","goal":"strength|hypertrophy|endurance","level":"beginner|intermediate|advanced","layoffDays":60}<<END>>',
-            'Incluí solo los campos que cambian. Máximo 200 caracteres en notes.',
-            'Poné SIEMPRE "layoffDays" si menciona tiempo sin entrenar, en número de días',
-            '(2 meses = 60). La app recalcula las cargas a partir de ese dato.',
+            'Añadí estos campos SOLO si el atleta cuenta algo DURADERO:',
+            '"layoffDays": días sin entrenar, en número (2 meses = 60).',
+            '  Ponelo SIEMPRE que mencione tiempo parado — la app recalcula las cargas con eso.',
+            '"notes": su contexto completo ya actualizado, máx 200 caracteres (no solo lo nuevo).',
+            '"goal": "strength" | "hypertrophy" | "endurance".',
+            '"level": "beginner" | "intermediate" | "advanced".',
+            '"weights": [{"exercise":"Press de Hombros (Máquina)","weight":35,"reps":8}]',
+            '  solo si te piden ajustar cargas, con los nombres exactos de la lista de abajo.',
+            '  El peso se acota luego contra su historial: no infles por si acaso.',
             '',
-            'Si te piden ajustar las cargas, añadí en ese mismo bloque un campo "weights" con',
-            'los ejercicios de la próxima sesión que haya que cambiar, usando su nombre exacto:',
-            '"weights":[{"exercise":"Press de Hombros (Máquina)","weight":35,"reps":8}]',
-            'Solo ejercicios de la lista de abajo. El peso se acota luego contra el historial,',
-            'así que proponé lo que creas correcto y no infles por si acaso.',
-            'Nada de bloque si solo respondiste una duda: no es un cambio de contexto.',
+            'Responder una duda no es un cambio de contexto: mandá solo "reply".',
           ].join(' ');
 
     const sessionLine = session

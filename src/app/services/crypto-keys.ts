@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { IDB_STATE_STORE, idbGet, idbPut } from './idb';
+import { Injectable, inject, signal } from '@angular/core';
+import { IDB_STATE_STORE, IdbService } from './idb';
 
 /** Valor cifrado tal como se guarda en el estado. */
 export interface SealedValue {
@@ -42,7 +42,18 @@ export function isSealed(value: unknown): value is SealedValue {
  */
 @Injectable({ providedIn: 'root' })
 export class KeyVault {
+  // A través del servicio y no de las funciones sueltas: es lo que permite sustituir el
+  // almacenamiento en los tests y probar el vault contra una IDB que miente (T-824).
+  private readonly idb = inject(IdbService);
+
   private keyPromise: Promise<CryptoKey | null> | null = null;
+
+  /**
+   * Resultado de la prueba REAL del vault: `null` hasta el primer uso, después dice si la
+   * clave sobrevive en IndexedDB. `available` solo dice que las piezas existen; esto dice
+   * que funcionan. La UI avisa con esto, no con la capacidad teórica.
+   */
+  readonly healthy = signal<boolean | null>(null);
 
   /** `true` si el navegador tiene WebCrypto e IndexedDB para sostener el vault. */
   get available(): boolean {
@@ -50,19 +61,33 @@ export class KeyVault {
   }
 
   private async getKey(): Promise<CryptoKey | null> {
-    if (!this.available) return null;
+    if (!this.available) {
+      this.healthy.set(false);
+      return null;
+    }
     this.keyPromise ??= (async () => {
       try {
-        const existing = await idbGet<CryptoKey>(IDB_STATE_STORE, IDB_KEY);
-        if (existing) return existing;
+        const existing = await this.idb.get<CryptoKey>(IDB_STATE_STORE, IDB_KEY);
+        if (existing) {
+          this.healthy.set(true);
+          return existing;
+        }
         // `extractable: false`: ni siquiera nosotros podemos exportarla después
         const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, [
           'encrypt',
           'decrypt',
         ]);
-        await idbPut(IDB_STATE_STORE, IDB_KEY, key);
-        return key;
+        // La clave solo sirve si SOBREVIVE a la recarga. Sellar con una clave que IndexedDB
+        // no guardó fabrica blobs indescifrables mañana: la key "funciona" toda la sesión
+        // —el claro está en memoria— y desaparece en el primer F5, sin ningún error visible
+        // (T-824). Se escribe Y se relee; si cualquiera de las dos falla, no hay vault y el
+        // llamador guarda en claro, que por lo menos es honesto.
+        const stored = await this.idb.put(IDB_STATE_STORE, IDB_KEY, key);
+        const readBack = stored ? await this.idb.get<CryptoKey>(IDB_STATE_STORE, IDB_KEY) : null;
+        this.healthy.set(readBack !== null);
+        return readBack;
       } catch {
+        this.healthy.set(false);
         return null;
       }
     })();

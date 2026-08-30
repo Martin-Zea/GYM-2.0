@@ -16,6 +16,7 @@ import { TranslationService } from '../../services/translation.service';
 import { BackupService, ImportMode, ImportOutcome } from '../../services/backup.service';
 import { AiProviderName, ApiKeyService } from '../../services/api-key.service';
 import { KeyVault } from '../../services/crypto-keys';
+import { TabLockService } from '../../services/tab-lock.service';
 import {
   DEFAULT_TOKEN_BUDGET,
   totalTokens,
@@ -42,6 +43,7 @@ export class SettingsComponent implements OnInit {
   protected readonly backup = inject(BackupService);
   private readonly apiKeys = inject(ApiKeyService);
   protected readonly shadowLog = inject(AiShadowLogService);
+  private readonly tabLock = inject(TabLockService);
   protected readonly T = this.tr.T;
 
   protected readonly appVersion = APP_VERSION;
@@ -50,6 +52,15 @@ export class SettingsComponent implements OnInit {
     const active = this.uiState.settingsSection();
     return active === null || active === section;
   }
+
+  /**
+   * `true` cuando ESTA pestaña no puede escribir el estado (hay otra pestaña primaria).
+   *
+   * Sin este aviso, pegar una key aquí "funcionaba" —quedaba en memoria— y el F5 se la
+   * llevaba: la pestaña secundaria nunca persiste. Aceptar en silencio un dato condenado
+   * es peor que rechazarlo con una explicación (T-822).
+   */
+  protected readonly readOnlyTab = computed(() => !this.tabLock.canWrite());
 
   protected readonly showApiKey = signal(false);
   protected readonly showCohereKey = signal(false);
@@ -220,7 +231,17 @@ export class SettingsComponent implements OnInit {
 
   // ── Keys, modelos y presupuesto (A3, RF-IA-07/08/09) ──
 
-  protected readonly vaultAvailable = inject(KeyVault).available;
+  private readonly vault = inject(KeyVault);
+  /**
+   * El vault se da por roto cuando faltan las piezas O cuando la prueba real falló.
+   * `available` dice que WebCrypto e IndexedDB existen; `healthy` dice que la clave
+   * sobrevivió a escribirse y releerse. Un IDB bloqueado (escudos del navegador) pasa la
+   * primera y falla la segunda — y era invisible: la key se sellaba con una clave efímera
+   * y moría en el primer F5 (T-824).
+   */
+  protected readonly vaultBroken = computed(
+    () => !this.vault.available || this.vault.healthy() === false,
+  );
   protected readonly testResult = signal<Partial<Record<AiProviderName, string>>>({});
 
   protected keyValue(provider: AiProviderName): string {
@@ -228,6 +249,9 @@ export class SettingsComponent implements OnInit {
   }
 
   protected saveKey(provider: AiProviderName, event: Event): void {
+    // Una pestaña que no escribe no acepta keys: se guardaría solo en memoria y el
+    // próximo F5 la perdería. El input está deshabilitado; esto cubre el resto de rutas.
+    if (this.readOnlyTab()) return;
     void this.apiKeys.set(provider, (event.target as HTMLInputElement).value);
     this.testResult.update((r) => ({ ...r, [provider]: undefined }));
   }

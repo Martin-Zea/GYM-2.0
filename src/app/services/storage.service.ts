@@ -337,16 +337,21 @@ export class StorageService {
         ? migrated.routines
         : [{ id: DEFAULT_ROUTINE_ID, name: '', dayIds: (migrated.days ?? []).map((d) => d.id) }],
       activeRoutineId: migrated.activeRoutineId ?? DEFAULT_ROUTINE_ID,
+      // PRIMERO el spread, DESPUÉS los defaults de lo obligatorio. Esto era una lista
+      // blanca escrita a mano, y una lista blanca aquí es una trampa: cada campo nuevo de
+      // AppSettings que nadie recordara añadir moría EN CADA CARGA. Así se perdieron
+      // `apiKeySealed`/`cohereApiKeySealed` —la key "desaparecía" con cada F5, T-825—,
+      // el modelo elegido de Groq/Cohere y todo optativo posterior a la lista.
       settings: {
+        ...migrated.settings,
         apiKey: migrated.settings?.apiKey ?? '',
         cohereApiKey: migrated.settings?.cohereApiKey ?? '',
         defaultRest: migrated.settings?.defaultRest ?? 60,
         sounds: migrated.settings?.sounds ?? true,
         haptics: migrated.settings?.haptics ?? true,
         theme: migrated.settings?.theme ?? 'dark',
-        barWeightKg: migrated.settings?.barWeightKg,
-        platesKg: migrated.settings?.platesKg,
         userProfile: {
+          ...profile,
           weightKg: profile?.weightKg ?? null,
           heightCm: profile?.heightCm ?? null,
           age: profile?.age ?? null,

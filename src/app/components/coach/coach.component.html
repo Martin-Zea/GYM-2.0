@@ -148,6 +148,7 @@
               <span class="coach-proposal-field">{{ T().coach_proposal_layoff }}</span>
               {{ tr.tp('coach_proposal_layoff_days', { n: proposal.layoffDays }) }}
             </p>
+            <p class="note">{{ T().coach_proposal_layoff_note }}</p>
           }
 
           @if (chat.proposedWeights().length) {

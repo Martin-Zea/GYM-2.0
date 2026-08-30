@@ -523,6 +523,39 @@ describe('StorageService', () => {
     });
   });
 
+  describe('los campos de settings sobreviven al ciclo save → load (T-825)', () => {
+    it('apiKeySealed, el modelo elegido y el parón declarado vuelven intactos', () => {
+      // El bug real detrás de "el F5 me borra las keys": buildState() reconstruía settings
+      // con una lista blanca escrita a mano, y todo campo posterior a la lista —el sellado
+      // de las keys, el modelo de Groq elegido, el layoff declarado— moría EN CADA CARGA.
+      const sealed = { v: 1 as const, iv: 'aXY=', ct: 'Y3Q=' };
+      const state = baseState();
+      state.settings.apiKeySealed = sealed;
+      state.settings.cohereApiKeySealed = sealed;
+      state.settings.groqModel = 'openai/gpt-oss-120b';
+      state.settings.aiTokenBudget = 12345;
+      state.settings.userProfile.layoffSinceISO = '2026-07-01';
+
+      expect(service.save(state)).toEqual({ ok: true });
+      const back = service.load();
+
+      expect(back.settings.apiKeySealed).toEqual(sealed);
+      expect(back.settings.cohereApiKeySealed).toEqual(sealed);
+      expect(back.settings.groqModel).toBe('openai/gpt-oss-120b');
+      expect(back.settings.aiTokenBudget).toBe(12345);
+      expect(back.settings.userProfile.layoffSinceISO).toBe('2026-07-01');
+    });
+
+    it('un import con la key en claro la conserva: es el flujo del backup', () => {
+      const state = baseState();
+      state.settings.apiKey = 'gsk_del_backup';
+
+      const imported = service.validateImport(JSON.parse(JSON.stringify(state)));
+
+      expect(imported.settings.apiKey).toBe('gsk_del_backup');
+    });
+  });
+
   describe('weeklyStats()', () => {
     it('corta la semana en lunes: una sesión del domingo anterior queda fuera', () => {
       // 2026-06-10 es miércoles → la semana empieza el lunes 2026-06-08

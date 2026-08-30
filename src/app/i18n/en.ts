@@ -768,7 +768,11 @@ export const en: Translations = {
   coach_proposal_level: 'Level',
   coach_proposal_layoff: 'Time off',
   coach_proposal_layoff_days: '{n} days',
+  coach_proposal_layoff_note:
+    'Applies to your WHOLE routine: each day starts reduced the first time you train it again.',
   coach_weights_head: 'Changes to your suggestions',
+  settings_tab_readonly:
+    'This tab does not save changes: another app tab is open. Close the others and reload to edit your keys.',
   coach_proposal_accept: 'Save it',
   coach_proposal_dismiss: 'Not now',
   coach_proposal_saved: 'Noted. It applies to your next session.',

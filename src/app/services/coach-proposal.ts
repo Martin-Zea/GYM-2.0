@@ -90,6 +90,22 @@ export interface ParsedReply {
  * a medias sería peor que perder la propuesta.
  */
 export function parseCoachReply(raw: string): ParsedReply {
+  // Camino principal: la respuesta ENTERA es un objeto JSON (`response_format: json_object`).
+  // El bloque con marcadores dependía de que el modelo se acordara de añadirlo al final —y no
+  // se acordaba—, así que la propuesta no llegaba nunca. Pedir JSON obliga a la estructura:
+  // los campos de contexto son parte del objeto que el modelo TIENE que devolver, no un
+  // añadido opcional que se puede olvidar.
+  const direct = safeParse(unfence(raw));
+  if (direct !== null && typeof direct === 'object' && !Array.isArray(direct)) {
+    const reply = (direct as { reply?: unknown }).reply;
+    return {
+      text: typeof reply === 'string' ? reply.trim() : '',
+      proposal: validateProposal(direct),
+    };
+  }
+
+  // Camino heredado: texto normal, con o sin bloque marcado. Se conserva para los modelos
+  // que ignoran `response_format` y para no romper una conversación en curso.
   const start = raw.indexOf(OPEN);
   if (start === -1) return { text: raw.trim(), proposal: null };
 
@@ -99,6 +115,16 @@ export function parseCoachReply(raw: string): ParsedReply {
 
   const body = raw.slice(start + OPEN.length, end).trim();
   return { text, proposal: validateProposal(safeParse(body)) };
+}
+
+/** Algunos modelos envuelven el JSON en un bloque de código aunque se les pida crudo. */
+function unfence(raw: string): string {
+  const text = raw.trim();
+  if (!text.startsWith('```')) return text;
+  return text
+    .replace(/^```[a-z]*\s*/i, '')
+    .replace(/```$/, '')
+    .trim();
 }
 
 function safeParse(body: string): unknown {
@@ -215,6 +241,73 @@ export function resolveWeightProposal(
     out.push({ exerciseId: ec.exercise.id, name: ec.exercise.name, from, to, reps, clamped });
   }
   return out;
+}
+
+const WORD_NUMBERS: Record<string, number> = {
+  un: 1,
+  una: 1,
+  dos: 2,
+  tres: 3,
+  cuatro: 4,
+  cinco: 5,
+  seis: 6,
+  siete: 7,
+  ocho: 8,
+  nueve: 9,
+  diez: 10,
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+  seven: 7,
+  eight: 8,
+  nine: 9,
+  ten: 10,
+};
+
+const UNIT_DAYS: [RegExp, number][] = [
+  [/^(d[ií]as?|days?)$/i, 1],
+  [/^(semanas?|weeks?)$/i, 7],
+  [/^(meses|mes|months?)$/i, 30],
+  [/^(años?|anios?|years?)$/i, 365],
+];
+
+/** "no entreno", "sin entrenar", "parado"… la señal de que se habla de un parón. */
+const LAYOFF_CUE =
+  /(sin entrenar|sin ir al gim|sin pisar|no entren|no hago ejercicio|no hice ejercicio|no voy al gim|par[oó]n|parad[oa]|inactiv|without training|not training|haven'?t trained|off the gym|away from the gym)/i;
+
+/** "2 meses", "tres semanas", "60 días". */
+const DURATION =
+  /(\d{1,4}|[a-záéíóú]+)\s*(d[ií]as?|days?|semanas?|weeks?|meses|mes|months?|años?|anios?|years?)/i;
+
+/**
+ * Cuántos días lleva parado, leídos del mensaje del propio atleta (T-820).
+ *
+ * Es una RED DE SEGURIDAD, no el camino principal: el dato debería venir del modelo, que
+ * entiende la frase. Existe porque el modelo se lo saltaba en silencio y el atleta se
+ * quedaba mirando una respuesta que decía "ajustaremos las cargas" mientras el panel seguía
+ * proponiendo subir. Prometer un cambio y no hacerlo es peor que no ofrecerlo.
+ *
+ * Deliberadamente estricta: exige a la vez una DURACIÓN y una señal explícita de no estar
+ * entrenando. "Hace dos meses subí 5kg" no dispara nada. Y aunque acertara de más, no
+ * cambia ningún peso por su cuenta: alimenta la misma tarjeta que el atleta confirma.
+ */
+export function layoffFromText(text: string): number | null {
+  if (!LAYOFF_CUE.test(text)) return null;
+  const match = DURATION.exec(text);
+  if (!match) return null;
+
+  const raw = match[1].toLowerCase();
+  const amount = WORD_NUMBERS[raw] ?? Number(raw);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+
+  const unit = UNIT_DAYS.find(([re]) => re.test(match[2]));
+  if (!unit) return null;
+
+  const days = Math.round(amount * unit[1]);
+  return days >= 1 && days <= MAX_LAYOFF_DAYS ? days : null;
 }
 
 /** La fecha desde la que no entrena, a partir de los días que declaró. */

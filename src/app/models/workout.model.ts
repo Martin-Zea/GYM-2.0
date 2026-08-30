@@ -170,15 +170,19 @@ export interface UserProfile {
   /** Días por semana que puede entrenar (RF-PER-01). */
   daysPerWeek: number | null;
   /**
-   * Parón DECLARADO por el atleta: fecha desde la que no entrena de verdad (T-817).
+   * Parón DECLARADO por el atleta: la VENTANA en la que no entrenó de verdad (T-817, T-827).
    *
-   * Existe porque el registro no lo sabe todo. Si volvés después de dos meses, tu historial
-   * sigue diciendo que entrenaste la semana pasada —los datos de arranque, una sesión que
-   * quedó abierta, un mes usando otra app— y el motor te propone subir. Esta fecha es tu
-   * palabra, y le gana al log: `buildSessionContext` la usa como última sesión cuando es
-   * más antigua. Se borra sola al cerrar la primera sesión de vuelta.
+   * Existe porque el registro no lo sabe todo: datos de prueba, una sesión que quedó
+   * abierta, un mes usando otra app. La ventana va de `layoffSinceISO` (desde cuándo no
+   * entrena) a `layoffDeclaredISO` (cuándo lo contó), y es un hecho HISTÓRICO que no hay
+   * que borrar nunca: un registro dentro de la ventana miente y pierde contra la
+   * declaración; una sesión POSTERIOR a la declaración es entrenamiento real de vuelta y
+   * gana. Así cada ejercicio de la rutina arranca recortado exactamente UNA vez —la
+   * primera que le toca tras el parón— en vez de que la primera sesión de hombros
+   * "reacondicione" también al pecho (que era lo que pasaba borrando la bandera global).
    */
   layoffSinceISO?: string | null;
+  layoffDeclaredISO?: string | null;
   aiNotes: string;
 }
 

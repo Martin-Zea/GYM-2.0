@@ -346,3 +346,61 @@ describe('Molestia declarada — el motor local también escucha (T-816)', () =>
     expect(rec.sets[0].weight).toBeGreaterThan(0);
   });
 });
+
+describe('El parón manda sobre la forma de las series (T-821)', () => {
+  const local = new LocalProvider();
+  const HACE_60_DIAS = new Date(Date.now() - 60 * 86400000).toISOString().slice(0, 10);
+  const HACE_3_DIAS = new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10);
+
+  /** Las últimas series EXACTAS del reporte: 25×6 / 25×6 / 30×6 / 35×10. */
+  function setsDelReporte(): SetRecord[] {
+    return [
+      { exerciseId: 'ex1', setIndex: 0, weight: 25, reps: 6 },
+      { exerciseId: 'ex1', setIndex: 1, weight: 25, reps: 6 },
+      { exerciseId: 'ex1', setIndex: 2, weight: 30, reps: 6 },
+      { exerciseId: 'ex1', setIndex: 3, weight: 35, reps: 10 },
+    ];
+  }
+
+  it('series asimétricas + 60 días parado = peso reducido, NO "saltamos 2 ladrillos"', () => {
+    // El bug del reporte: la rama de pirámide retornaba antes de mirar la fecha, y a quien
+    // volvía de dos meses le proponía subir a 45kg. La fecha se evalúa primero.
+    const rec = local.compute(exercise(), [], setsDelReporte(), [], profile(null), HACE_60_DIAS);
+
+    const top = Math.max(...rec.sets.map((s) => s.weight));
+    expect(top).toBeLessThan(35); // 85% de 35 = 29.75 → al ladrillo hacia abajo
+    expect(rec.sets.every((s) => s.weight === top)).toBe(true); // vuelta a peso uniforme
+    expect(rec.reason).not.toMatch(/ladrillos/);
+  });
+
+  it('sin parón, las mismas series asimétricas siguen siendo una pirámide', () => {
+    const rec = local.compute(exercise(), [], setsDelReporte(), [], profile(null), HACE_3_DIAS);
+    expect(new Set(rec.sets.map((s) => s.weight)).size).toBeGreaterThan(1);
+  });
+
+  it('el resultado coincide con el techo del validador: los dos motores dicen lo mismo', () => {
+    const rec = local.compute(exercise(), [], setsDelReporte(), [], profile(null), HACE_60_DIAS);
+    expect(Math.max(...rec.sets.map((s) => s.weight))).toBeLessThanOrEqual(35 * 0.85);
+  });
+
+  it('en TIEMPO el parón recorta el objetivo de segundos', () => {
+    const plancha = exercise({ unit: 'TIME', defaultRepTarget: 60, brick: 5 });
+    const hechas = [{ exerciseId: 'ex1', setIndex: 0, weight: 0, reps: 60 }];
+    const rec = local.compute(plancha, [], hechas, [], profile(null), HACE_60_DIAS);
+    expect(rec.sets[0].reps).toBeLessThan(60);
+  });
+
+  it('en PESO CORPORAL el parón recorta el objetivo de reps', () => {
+    const dominadas = exercise({ unit: 'BODYWEIGHT', defaultRepTarget: 17 });
+    const hechas = [{ exerciseId: 'ex1', setIndex: 0, weight: 0, reps: 17 }];
+    const rec = local.compute(dominadas, [], hechas, [], profile(null), HACE_60_DIAS);
+    expect(rec.sets[0].reps).toBeLessThan(17); // 17 × 0.85 ≈ 14
+    expect(rec.sets[0].reps).toBeGreaterThan(0);
+  });
+
+  it('la primera sesión de un ejercicio nuevo no se recorta: no hay marca que proteger', () => {
+    const rec = local.compute(exercise(), [], null, [], profile(null), HACE_60_DIAS);
+    expect(rec.sets[0].weight).toBeGreaterThan(0);
+    expect(rec.reason).toMatch(/Primera/);
+  });
+});

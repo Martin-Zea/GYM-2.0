@@ -772,7 +772,11 @@ export const es: Translations = {
   coach_proposal_level: 'Nivel',
   coach_proposal_layoff: 'Sin entrenar',
   coach_proposal_layoff_days: '{n} días',
+  coach_proposal_layoff_note:
+    'Aplica a TODA la rutina: cada día arranca recortado la primera vez que lo entrenes de vuelta.',
   coach_weights_head: 'Cambios en tus sugerencias',
+  settings_tab_readonly:
+    'Esta pestaña no guarda cambios: hay otra pestaña de la app abierta. Cerrá las demás y recargá para editar las keys.',
   coach_proposal_accept: 'Anotar',
   coach_proposal_dismiss: 'Ahora no',
   coach_proposal_saved: 'Anotado. Se aplicará a la próxima sesión.',

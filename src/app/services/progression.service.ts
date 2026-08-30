@@ -42,20 +42,28 @@ interface AiCacheEntry {
 const NEXT_KEY = STORAGE_KEYS.nextSuggestions;
 
 /**
- * Última sesión que cuenta de verdad para este ejercicio (T-817).
+ * Última sesión que cuenta de verdad para este ejercicio (T-817, T-827).
  *
- * Entre lo que dice el registro y lo que dice el atleta, gana la fecha MÁS ANTIGUA. Si
- * declaró que lleva dos meses parado, da igual que el log muestre una sesión de la semana
- * pasada: esa sesión no lo entrenó. Y al revés, declarar un parón no puede volver reciente
- * un ejercicio que hace medio año que no tocás. Equivocarse hacia el peso menor es la única
- * dirección segura.
+ * El parón declarado es una VENTANA cerrada — "entre `declaredSince` y `declaredAt` no
+ * entrené" — y se aplica ejercicio por ejercicio:
+ *
+ * - registro DENTRO de la ventana → miente (datos de prueba, otra app): gana la declaración;
+ * - registro POSTERIOR a la declaración → entrenamiento real de vuelta: gana el registro;
+ * - registro ANTERIOR a la ventana → más viejo aún que el parón: gana el registro.
+ *
+ * Así cada ejercicio de la rutina arranca recortado exactamente UNA vez, la primera que le
+ * toca tras el parón. La versión anterior borraba la declaración al cerrar la primera
+ * sesión: entrenar hombros el lunes "reacondicionaba" también a la espalda del martes, y el
+ * resto de la rutina volvía a los pesos de antes del parón.
  */
 export function effectiveLastSession(
   logged: string | null,
-  declaredLayoffSince: string | null,
+  declaredSince: string | null,
+  declaredAt: string | null = null,
 ): string | null {
-  if (!logged || !declaredLayoffSince) return logged;
-  return declaredLayoffSince < logged ? declaredLayoffSince : logged;
+  if (!logged || !declaredSince) return logged;
+  if (declaredAt && logged >= declaredAt) return logged;
+  return declaredSince < logged ? declaredSince : logged;
 }
 
 /**
@@ -227,6 +235,7 @@ export class ProgressionService {
     const state = opts.state ?? this.storage.load();
     const before = opts.beforeISO;
     const declaredLayoff = settings.userProfile.layoffSinceISO ?? null;
+    const declaredAt = settings.userProfile.layoffDeclaredISO ?? null;
     return {
       dayId: day.id,
       dayName: day.name,
@@ -241,7 +250,11 @@ export class ProgressionService {
           exercise,
           history,
           lastSets: this.storage.lastSetsForExercise(state, exercise.id, before),
-          lastSessionDate: effectiveLastSession(lastSession?.dateISO ?? null, declaredLayoff),
+          lastSessionDate: effectiveLastSession(
+            lastSession?.dateISO ?? null,
+            declaredLayoff,
+            declaredAt,
+          ),
           lastFeel: lastSession?.feelings?.[exercise.id] ?? null,
           lastNote: lastSession?.notes?.[exercise.id] ?? null,
           // El feedback pasado entra en el prompt: si el atleta rechazó subir dos veces,
@@ -268,21 +281,49 @@ export class ProgressionService {
     day: { id: string; name: string; exercises: readonly Exercise[] },
     settings: AppSettings,
     lang: 'es' | 'en',
-    opts: { state?: AppState } = {},
+    opts: { state?: AppState; allowNetwork?: boolean } = {},
   ): Promise<SessionRecommendation> {
     const ctx = this.buildSessionContext(day, settings, lang, {
       beforeISO: this.storage.todayISO(),
       state: opts.state,
     });
-    const stored = this.suggestionsForDay(day.id, this.contextHash(ctx));
+    const hash = this.contextHash(ctx);
+    const stored = this.suggestionsForDay(day.id, hash);
     if (stored) {
       return {
         byExercise: stored.byExercise as Record<string, AiRecommendation>,
         source: stored.source,
       };
     }
+
+    // Solo el panel del Coach (C1) pide a la red, y UNA vez por contexto (T-826): el
+    // resultado se guarda bajo el hash actual, así que reabrir el tab no vuelve a llamar.
+    // Sin esto la IA solo corría al cerrar una sesión, y quien configuraba su key recién
+    // llegado —o cambiaba el contexto por chat— veía "Motor local" para siempre sin
+    // entender qué compró con la key. H2 sigue sin tocar la red JAMÁS (Art. 8): la sesión
+    // no pasa `allowNetwork` y ninguna espera de red puede colarse entre serie y serie.
+    // recommendSession ya trae los cortes de siempre: sin key, sin red o sin presupuesto
+    // cae al motor local — y lo local NO se guarda, para no taparle el paso a la IA.
+    if (opts.allowNetwork) {
+      const running = this.panelInFlight.get(day.id);
+      if (running) return running;
+      const call = this.recommendSession(settings, ctx)
+        .then((result) => {
+          if (result.source !== 'local') {
+            this.storeSuggestions(day.id, hash, result.byExercise, result.source);
+          }
+          return result;
+        })
+        .finally(() => this.panelInFlight.delete(day.id));
+      this.panelInFlight.set(day.id, call);
+      return call;
+    }
+
     return this.local.recommendSession(ctx);
   }
+
+  /** Una sola llamada del panel por día aunque el effect dispare dos veces (T-826). */
+  private readonly panelInFlight = new Map<string, Promise<SessionRecommendation>>();
 
   /**
    * UNA llamada por sesión (Art. 5, RF-IA-06): cascada Groq → Cohere → local.

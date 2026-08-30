@@ -529,26 +529,12 @@ export class StateService {
       }));
     }
     this.advanceRoutine(fromDayIndex);
-    this.clearDeclaredLayoff();
+    // El parón declarado ya NO se borra aquí (T-827): es una ventana histórica
+    // [layoffSinceISO, layoffDeclaredISO] que se neutraliza sola ejercicio por ejercicio —
+    // una sesión POSTERIOR a la declaración le gana en `effectiveLastSession`. Borrarlo
+    // globalmente hacía que entrenar hombros el lunes "reacondicionara" también a la
+    // espalda del martes, y el resto de la rutina volvía a los pesos de antes del parón.
     return finished;
-  }
-
-  /**
-   * Un parón declarado deja de valer en cuanto volvés a entrenar (T-817).
-   *
-   * Si no se borrara, la sesión de vuelta seguiría contando como "dos meses parado" para
-   * siempre: el techo por desentrenamiento se aplicaría en cada sesión y no volverías a
-   * progresar nunca. La declaración sirve para volver, no para quedarse.
-   */
-  private clearDeclaredLayoff(): void {
-    if (!this.state().settings.userProfile.layoffSinceISO) return;
-    this.state.update((s) => ({
-      ...s,
-      settings: {
-        ...s.settings,
-        userProfile: { ...s.settings.userProfile, layoffSinceISO: null },
-      },
-    }));
   }
 
   /**

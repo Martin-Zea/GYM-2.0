@@ -1,6 +1,7 @@
 import {
   MAX_NOTES,
   diffSuggestions,
+  layoffFromText,
   layoffSinceFrom,
   parseCoachReply,
   resolveWeightProposal,
@@ -305,5 +306,82 @@ describe('diffSuggestions() — la tarjeta la escribe el motor, no el modelo (T-
   it('solo recorre los ejercicios del día, no lo que traiga el mapa', () => {
     const out = diffSuggestions({ z: rec(100) }, { z: rec(50) }, exercises);
     expect(out).toEqual([]);
+  });
+});
+
+// ── El contrato pasa a ser un objeto JSON (T-820) ──
+
+describe('parseCoachReply() con respuesta JSON', () => {
+  it('separa la charla de los datos sin depender de ningún marcador', () => {
+    const out = parseCoachReply(
+      '{"reply":"Sí, después de 60 días conviene bajar la carga.","layoffDays":60}',
+    );
+    expect(out.text).toBe('Sí, después de 60 días conviene bajar la carga.');
+    expect(out.proposal).toEqual({ layoffDays: 60 });
+  });
+
+  it('una respuesta sin datos es solo conversación', () => {
+    const out = parseCoachReply('{"reply":"Depende de cómo te sientas."}');
+    expect(out.text).toBe('Depende de cómo te sientas.');
+    expect(out.proposal).toBeNull();
+  });
+
+  it('acepta el JSON envuelto en un bloque de código', () => {
+    const out = parseCoachReply('```json\n{"reply":"Ok.","layoffDays":30}\n```');
+    expect(out.text).toBe('Ok.');
+    expect(out.proposal).toEqual({ layoffDays: 30 });
+  });
+
+  it('NUNCA enseña el JSON crudo, aunque falte el campo reply', () => {
+    const out = parseCoachReply('{"layoffDays":60}');
+    expect(out.text).toBe('');
+    expect(out.proposal).toEqual({ layoffDays: 60 });
+  });
+
+  it('sigue entendiendo el formato viejo: una conversación en curso no se rompe', () => {
+    const out = parseCoachReply('Anotado.<<GT_CONTEXT>>{"notes":"Empezó boxeo"}<<END>>');
+    expect(out.text).toBe('Anotado.');
+    expect(out.proposal).toEqual({ notes: 'Empezó boxeo' });
+  });
+
+  it('y el texto plano de un modelo que ignora el formato', () => {
+    const out = parseCoachReply('Mejor bajá la carga esta semana.');
+    expect(out.text).toBe('Mejor bajá la carga esta semana.');
+    expect(out.proposal).toBeNull();
+  });
+});
+
+describe('layoffFromText() — red de seguridad cuando el modelo no recoge el dato (T-820)', () => {
+  it('lee el caso que falló de verdad', () => {
+    expect(layoffFromText('Hace 2 meses que no hago ejercicios')).toBe(60);
+  });
+
+  it('entiende las unidades habituales', () => {
+    expect(layoffFromText('llevo 10 días sin entrenar')).toBe(10);
+    expect(layoffFromText('3 semanas sin entrenar')).toBe(21);
+    expect(layoffFromText('un año sin pisar el gimnasio')).toBe(365);
+  });
+
+  it('entiende los números escritos con letra', () => {
+    expect(layoffFromText('tres meses sin entrenar')).toBe(90);
+  });
+
+  it('en inglés también', () => {
+    expect(layoffFromText("I haven't trained in 2 months")).toBe(60);
+  });
+
+  it('EXIGE las dos señales: una duración sola no es un parón', () => {
+    // "Hace dos meses subí 5kg" no puede declararte dos meses parado.
+    expect(layoffFromText('hace 2 meses subí 5kg en press banca')).toBeNull();
+    expect(layoffFromText('mañana entreno pierna')).toBeNull();
+  });
+
+  it('sin duración tampoco: "llevo un tiempo sin entrenar" no es un número', () => {
+    expect(layoffFromText('llevo un tiempo sin entrenar')).toBeNull();
+  });
+
+  it('descarta lo absurdo en vez de declarar un parón imposible', () => {
+    expect(layoffFromText('llevo 500 años sin entrenar')).toBeNull();
+    expect(layoffFromText('0 días sin entrenar')).toBeNull();
   });
 });

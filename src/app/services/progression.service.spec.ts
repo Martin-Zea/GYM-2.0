@@ -446,6 +446,19 @@ describe('ProgressionService', () => {
     it('sin registro no hay nada que recortar', () => {
       expect(effectiveLastSession(null, '2026-06-30')).toBeNull();
     });
+
+    it('una sesión POSTERIOR a la declaración le gana: es entrenamiento real de vuelta (T-827)', () => {
+      // Declaró el 30/08; entrenó (de verdad) el 31/08 → ese ejercicio progresa normal.
+      expect(effectiveLastSession('2026-08-31', '2026-07-01', '2026-08-30')).toBe('2026-08-31');
+      // El mismo día de la declaración también cuenta como vuelta real.
+      expect(effectiveLastSession('2026-08-30', '2026-07-01', '2026-08-30')).toBe('2026-08-30');
+    });
+
+    it('un registro DENTRO de la ventana sigue perdiendo: ese log miente', () => {
+      // Y por eso la primera sesión de vuelta NO reacondiciona al resto de la rutina:
+      // los demás ejercicios siguen con su log viejo dentro de la ventana → recorte.
+      expect(effectiveLastSession('2026-08-23', '2026-07-01', '2026-08-30')).toBe('2026-07-01');
+    });
   });
 
   describe('suggestionsForDay() — vigencia', () => {
@@ -485,6 +498,71 @@ describe('ProgressionService', () => {
       };
       localStorage.setItem(STORAGE_KEYS.nextSuggestions, JSON.stringify(store));
       expect(service.suggestionsForDay('d1', 'hash-a')).toBeTruthy();
+    });
+  });
+
+  describe('suggestionsForToday() con red (T-826)', () => {
+    const day = { id: 'd1', name: 'Pecho', exercises: [makeExercise()] };
+    const sessionJson = JSON.stringify({ r: [{ e: 1, sets: [{ w: 12.5, r: 10 }], why: 'ok' }] });
+
+    it('con key y allowNetwork, la IA calcula UNA vez y queda guardada por hash', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(groqResponse(sessionJson));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const first = await service.suggestionsForToday(day, makeSettings({ apiKey: 'k' }), 'es', {
+        allowNetwork: true,
+      });
+      expect(first.source).toBe('groq');
+      expect(first.byExercise['ex1'].sets[0].weight).toBe(12.5);
+
+      // Reabrir el tab NO vuelve a llamar: el hash coincide y se sirve lo guardado.
+      const second = await service.suggestionsForToday(day, makeSettings({ apiKey: 'k' }), 'es', {
+        allowNetwork: true,
+      });
+      expect(second.source).toBe('groq');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('SIN allowNetwork jamás toca la red, con key y todo: es la garantía de H2', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(groqResponse(sessionJson));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const out = await service.suggestionsForToday(day, makeSettings({ apiKey: 'k' }), 'es');
+
+      expect(out.source).toBe('local');
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('sin key cae al motor local y NO lo guarda: no le tapa el paso a una key futura', async () => {
+      const out = await service.suggestionsForToday(day, makeSettings(), 'es', {
+        allowNetwork: true,
+      });
+      expect(out.source).toBe('local');
+      expect(localStorage.getItem(STORAGE_KEYS.nextSuggestions)).toBeNull();
+    });
+
+    it('dos aperturas simultáneas comparten UNA llamada', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(groqResponse(sessionJson));
+      vi.stubGlobal('fetch', fetchMock);
+      const settings = makeSettings({ apiKey: 'k' });
+
+      const [a, b] = await Promise.all([
+        service.suggestionsForToday(day, settings, 'es', { allowNetwork: true }),
+        service.suggestionsForToday(day, settings, 'es', { allowNetwork: true }),
+      ]);
+
+      expect(a.source).toBe('groq');
+      expect(b.source).toBe('groq');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('si la IA falla, la sesión igual tiene sugerencias (motor local)', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('sin red')));
+      const out = await service.suggestionsForToday(day, makeSettings({ apiKey: 'k' }), 'es', {
+        allowNetwork: true,
+      });
+      expect(out.source).toBe('local');
+      expect(Object.keys(out.byExercise)).toContain('ex1');
     });
   });
 

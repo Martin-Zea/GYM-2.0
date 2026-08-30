@@ -256,9 +256,10 @@ describe('CoachChatService — límites del chat (C2, RF-IA-10)', () => {
       expect(state.settings().userProfile.layoffSinceISO).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
 
-    it('y deja de valer en cuanto volvés a entrenar', async () => {
-      // Si no se borrara, la sesión de vuelta seguiría contando como "dos meses parado"
-      // para siempre y no volverías a progresar nunca.
+    it('la declaración SOBREVIVE a la primera sesión: el resto de la rutina también estuvo parado', async () => {
+      // Antes se borraba al cerrar la primera sesión de vuelta, y entrenar hombros el lunes
+      // "reacondicionaba" también a la espalda del martes: solo el primer día se recortaba.
+      // Ahora es una ventana histórica que cada ejercicio neutraliza al entrenarse (T-827).
       const state = TestBed.inject(StateService);
       const day = state.currentDay()!;
       await chat.previewProposal({ layoffDays: 60 }, state.settings());
@@ -266,7 +267,35 @@ describe('CoachChatService — límites del chat (C2, RF-IA-10)', () => {
 
       state.finishSession(day.id);
 
-      expect(state.settings().userProfile.layoffSinceISO).toBeNull();
+      expect(state.settings().userProfile.layoffSinceISO).toBeTruthy();
+      expect(state.settings().userProfile.layoffDeclaredISO).toBeTruthy();
+    });
+
+    it('el parón alcanza a TODA la rutina, no solo al próximo día (T-827)', async () => {
+      // El reporte: "veo que solo cambia el día siguiente". Declarás 60 días, entrenás
+      // hombros… y espalda tiene que seguir recortada cuando le toque: una sesión de
+      // hombros no te reacondiciona la espalda.
+      const state = TestBed.inject(StateService);
+      const progression = TestBed.inject(ProgressionService);
+      const days = state.days();
+      expect(days.length).toBeGreaterThan(2);
+
+      await chat.previewProposal({ layoffDays: 60 }, state.settings());
+      await chat.acceptProposal();
+
+      // Se entrena y cierra el día actual: antes esto BORRABA la declaración global.
+      state.finishSession(days[0].id);
+
+      // Un día que aún no se entrenó desde la vuelta sigue con el recorte.
+      const other = days[2];
+      const out = await progression.suggestionsForToday(other, state.settings(), 'es', {
+        state: state.state(),
+      });
+      const weighted = other.exercises.filter((e) => e.unit !== 'BODYWEIGHT' && e.unit !== 'TIME');
+      expect(weighted.length).toBeGreaterThan(0);
+      for (const ex of weighted) {
+        expect(out.byExercise[ex.id]?.reason).toMatch(/sin entrenar/i);
+      }
     });
 
     it('descartar la propuesta no declara ningún parón', async () => {
@@ -275,6 +304,80 @@ describe('CoachChatService — límites del chat (C2, RF-IA-10)', () => {
       chat.dismissProposal();
 
       expect(state.settings().userProfile.layoffSinceISO).toBeFalsy();
+    });
+  });
+
+  describe('send() de punta a punta: el caso reportado (T-820)', () => {
+    /** Respuesta con la forma real de Groq. */
+    function groqReply(content: string) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ choices: [{ message: { content } }], usage: { total_tokens: 120 } }),
+      };
+    }
+
+    /** Los ajustes REALES con una key: el perfil tiene que ser el de verdad. */
+    function withKey(): AppSettings {
+      return { ...TestBed.inject(StateService).settings(), apiKey: 'gsk_test' };
+    }
+
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('el modelo contesta en JSON con el parón y sale la tarjeta', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () =>
+          groqReply('{"reply":"Sí, tras 60 días bajamos las cargas.","layoffDays":60}'),
+        ),
+      );
+
+      await chat.send('Hace 2 meses que no hago ejercicios', withKey(), 'es');
+
+      expect(chat.messages().at(-1)?.text).toBe('Sí, tras 60 días bajamos las cargas.');
+      expect(chat.proposal()?.layoffDays).toBe(60);
+      expect(chat.proposedWeights().length).toBeGreaterThan(0);
+    });
+
+    it('y SIGUE saliendo aunque el modelo se olvide del dato', async () => {
+      // Esto es literalmente lo que pasaba: "ajustaremos las cargas en la próxima sesión"
+      // y ni un solo campo. La respuesta prometía un cambio que no llegaba nunca.
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () =>
+          groqReply('{"reply":"Sí, al haber estado 60 días sin entrenar ajustaremos las cargas."}'),
+        ),
+      );
+
+      await chat.send('Hace 2 meses que no hago ejercicios', withKey(), 'es');
+
+      expect(chat.proposal()?.layoffDays).toBe(60);
+      expect(chat.proposedWeights().some((r) => r.to < r.from)).toBe(true);
+    });
+
+    it('una pregunta normal no inventa ningún parón', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => groqReply('{"reply":"Depende de cómo te sientas."}')),
+      );
+
+      await chat.send('¿Cuánto descanso entre series?', withKey(), 'es');
+
+      expect(chat.proposal()).toBeNull();
+      expect(chat.proposedWeights()).toEqual([]);
+    });
+
+    it('nunca se enseña JSON crudo en el globo del chat', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => groqReply('{"layoffDays":60}')),
+      );
+
+      await chat.send('Llevo 2 meses sin entrenar', withKey(), 'es');
+
+      const shown = chat.messages().at(-1)?.text ?? '';
+      expect(shown).not.toContain('{');
+      expect(shown.length).toBeGreaterThan(0);
     });
   });
 

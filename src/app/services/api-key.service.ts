@@ -46,19 +46,21 @@ export class ApiKeyService {
     this.plain.set(next);
     this.ready.set(true);
 
-    // Key en claro heredada: se sella y se limpia del estado en el mismo guardado
+    // Key en claro heredada: se sella y se limpia del estado en el mismo guardado.
+    //
+    // El texto plano de cada proveedor se borra SOLO si su sellado devolvió un blob de
+    // verdad. Antes bastaba `vault.available` — que dice que el navegador tiene las piezas
+    // (WebCrypto + IndexedDB), no que el sellado funcionó — y un vault roto en runtime
+    // (IDB bloqueado, clave no persistida) borraba la key creyendo que ya estaba sellada:
+    // la protección destruía justo lo que protegía (T-823).
     if (settings.apiKey || settings.cohereApiKey) {
       const sealedGroq = next.groq ? await this.vault.seal(next.groq) : null;
       const sealedCohere = next.cohere ? await this.vault.seal(next.cohere) : null;
-      // Sin vault disponible no se borra el texto plano: perder la key del usuario para
-      // "protegerla" sería peor que dejarla como estaba.
-      if (!this.vault.available) return;
+      if (!sealedGroq && !sealedCohere) return;
       this.state.saveSettings({
         ...this.state.settings(),
-        apiKey: '',
-        cohereApiKey: '',
-        apiKeySealed: sealedGroq ?? undefined,
-        cohereApiKeySealed: sealedCohere ?? undefined,
+        ...(sealedGroq && { apiKey: '', apiKeySealed: sealedGroq }),
+        ...(sealedCohere && { cohereApiKey: '', cohereApiKeySealed: sealedCohere }),
       });
     }
   }
