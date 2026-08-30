@@ -477,11 +477,14 @@ export class StateService {
     this.invalidateAiCache();
   }
 
-  /** El historial cambió: las recomendaciones cacheadas ya no valen */
+  /**
+   * El historial cambió: las sugerencias precalculadas ya no valen.
+   *
+   * Se dedujeron del historial que acaba de cambiar (RF-IA-06b). El `contextHash` también
+   * las descartaría solo, pero borrarlas aquí evita servir una sugerencia de un contexto
+   * que el usuario ya sabe que tocó.
+   */
   private invalidateAiCache(): void {
-    localStorage.removeItem(STORAGE_KEYS.aiCache);
-    // También las precalculadas para la próxima sesión: se dedujeron del historial que
-    // acaba de cambiar (RF-IA-06b).
     localStorage.removeItem(STORAGE_KEYS.nextSuggestions);
   }
 

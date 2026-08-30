@@ -8,7 +8,7 @@ import {
   UserProfile,
 } from '../../models/workout.model';
 import { HistoryEntry } from '../storage.service';
-import { AiProvider, AiProviderContext, AiSessionProvider } from './ai-provider';
+import { AiSessionProvider } from './ai-provider';
 import { AiSessionContext, SessionRecommendation } from './session-context';
 import { floorToBrick, goalRepTarget, roundToBrick } from './prompt-helpers';
 import { LAYOFF_LONG_DAYS, LAYOFF_MODERATE_DAYS, layoffFactor } from './progression-rules';
@@ -266,7 +266,7 @@ function capForInjury(
   };
 }
 
-export class LocalProvider implements AiProvider, AiSessionProvider {
+export class LocalProvider implements AiSessionProvider {
   readonly name = 'local' as const;
 
   /**
@@ -290,23 +290,6 @@ export class LocalProvider implements AiProvider, AiSessionProvider {
       );
     }
     return Promise.resolve({ byExercise, source: 'local' });
-  }
-
-  recommend({
-    exercise,
-    todaySets,
-    lastSets,
-    history,
-    userProfile,
-    lastSessionDate,
-    lang,
-    lastFeel,
-  }: AiProviderContext): Promise<AiRecommendation> {
-    return Promise.resolve(
-      this.compute(exercise, todaySets, lastSets, history, userProfile, lastSessionDate, lang, {
-        lastFeel,
-      }),
-    );
   }
 
   /**

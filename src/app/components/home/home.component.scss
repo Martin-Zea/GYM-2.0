@@ -78,17 +78,6 @@
   padding: 13px 16px;
   font-size: 15px;
 }
-/* ── Routine section ── */
-.routine-section-header .section-title {
-  margin: 0;
-}
-.routine-day-card.current {
-  border-color: var(--accent-border);
-  background: var(--accent-bg);
-}
-.routine-day-card.current .routine-day-num {
-  color: var(--accent);
-}
 /* ── Layout de sesión (móvil: una columna; desktop: sidebar) ── */
 .session-layout {
   display: block;

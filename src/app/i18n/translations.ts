@@ -32,7 +32,6 @@ export interface Translations {
   continue_training: string;
   sets_progress: string; // {done}/{total}
   view_last_session: string;
-  today_last_prefix: string;
   edit_routine: string;
   skip_day: string;
   skip_confirm_q: string;
@@ -60,16 +59,8 @@ export interface Translations {
   ctrl_rep_down: string;
   ctrl_rep_up: string;
 
-  // Week stats
-  days_streak_one: string;
-  days_streak_many: string; // {n}
-  this_week: string;
-  first_week_prompt: string;
-
   // Routine section
-  routine_section_title: string;
   today_label: string;
-  next_label: string;
   first_time_label: string;
   days_ago_one: string;
   days_ago_many: string; // {n}
@@ -125,7 +116,6 @@ export interface Translations {
   confirm: string;
 
   // Save error toast
-  save_error_title: string;
   save_error_dismiss: string;
   save_error_quota: string;
   save_error_generic: string;
@@ -193,11 +183,7 @@ export interface Translations {
   prev_month: string;
   next_month: string;
   view_chart: string;
-  exercise_move_up: string;
-  exercise_move_down: string;
   exercise_remove: string;
-  exercise_expand: string;
-  exercise_collapse: string;
   rest_adjust_minus: string;
   rest_adjust_plus: string;
   rest_label: string;
@@ -210,9 +196,6 @@ export interface Translations {
 
   // Bottom nav / topbar navigation
   nav_main: string;
-  nav_home: string;
-  nav_charts: string;
-  nav_calendar: string;
   nav_profile: string;
 
   // Exercise units (presentation only — stored values stay in Spanish)
@@ -234,15 +217,11 @@ export interface Translations {
   settings_profile: string;
   settings_profile_ai_note: string;
   settings_weight: string;
-  settings_weight_prev: string;
-  settings_weight_delta: string;
   weight_log_today: string;
   weight_log_delete: string;
   weight_log_deleted: string; // {weight}
   weight_log_undo: string;
   bodyweight_chart_title: string;
-  charts_label_metric: string;
-  charts_label_range: string;
   charts_metric_top: string;
   charts_metric_1rm: string;
   charts_range_3m: string;
@@ -277,7 +256,6 @@ export interface Translations {
   settings_api_key_label: string;
   settings_api_key_desc: string;
   settings_api_key_free: string;
-  settings_api_no_key: string;
   settings_cohere_key_label: string;
   settings_cohere_key_desc: string;
   settings_cohere_key_free: string;
@@ -331,25 +309,14 @@ export interface Translations {
   onboarding_slide3_desc: string;
   onboarding_next: string;
   onboarding_back: string;
-  onboarding_start: string;
 
   // Charts page
-  charts_view_title: string;
-  charts_view_sub: string;
-  charts_jump_label: string;
-  charts_vol_last: string;
   charts_vs_prev: string;
 
   // Calendar page
-  calendar_view_title: string;
-  calendar_view_sub: string;
   cal_trained: string;
-  cal_stat_total: string;
   cal_stat_sessions: string;
-  cal_stat_last30: string;
-  cal_stat_workouts: string;
   cal_stat_streak: string;
-  cal_stat_streak_sub: string;
   cal_routine_title: string;
   cal_no_sessions: string;
   yesterday: string;
@@ -376,9 +343,6 @@ export interface Translations {
 
   // Profile page
   profile_data_section: string;
-  profile_no_data: string;
-  profile_edit_settings: string;
-  profile_bodyweight_no_data: string;
   profile_bodyweight_change: string; // {delta} {days}
   profile_achievements_title: string;
   profile_achievements_empty: string;
@@ -391,9 +355,6 @@ export interface Translations {
   skip_done_toast: string;
   ai_badge_title_ai: string;
   ai_badge_title_local: string;
-  charts_filter_all: string;
-  charts_filter_day_label: string;
-  charts_section_exercises: string;
   charts_view_session: string;
   cal_stat_vs_prev: string; // {n}
 
@@ -477,17 +438,9 @@ export interface Translations {
   week_summary_body: string; // {n} {vol}
 
   // Rediseño: historial unificado
-  nav_history: string;
   history_view_sub: string;
   history_exercise_label: string;
   history_prs_all: string;
-
-  // Rediseño: wizard de rutina
-  onboarding_days_q: string;
-  onboarding_days_desc: string;
-  onboarding_days_3: string;
-  onboarding_days_4: string;
-  onboarding_days_5: string;
 
   // Rediseño: editor
   day_editor_duplicate: string;
@@ -541,38 +494,7 @@ export interface Translations {
   set_style_normal: string;
   set_style_dropset: string;
   set_style_amrap: string;
-  routine_default_name: string;
-  routine_new: string;
-  routine_new_prompt: string;
-  routine_duplicate: string;
-  routine_duplicate_prompt: string;
-  routine_copy_name: string;
-  routine_rename: string;
-  routine_rename_prompt: string;
-  routine_delete: string;
-  routine_delete_confirm: string;
-  routine_delete_last: string;
-  routine_from_template: string;
-  routine_generate: string;
   gen_days_label: string;
-  gen_notes_label: string;
-  gen_notes_placeholder: string;
-  gen_cost_estimate: string;
-  gen_run: string;
-  gen_loading: string;
-  gen_review_title: string;
-  gen_save: string;
-  gen_discard: string;
-  gen_regenerate: string;
-  gen_error_budget: string;
-  gen_error_offline: string;
-  gen_error_other: string;
-  gen_no_key: string;
-  routine_template_desc: string;
-  routine_template_days: string;
-  routine_template_use: string;
-  routine_template_all: string;
-  routine_template_filtered: string;
   settings_exercises_title: string;
   settings_exercises_desc: string;
   settings_archive: string;
@@ -609,8 +531,6 @@ export interface Translations {
   measure_arm: string;
   measure_thigh: string;
   measure_hip: string;
-  adherence_title: string;
-  adherence_none: string;
   avg_duration: string;
   tools_title: string;
   tools_1rm: string;
@@ -678,7 +598,6 @@ export interface Translations {
   templates_confirm_import: string;
   templates_imported: string;
   generator_title: string;
-  generator_step: string;
   generator_no_key: string;
   generator_cost: string;
   generator_run: string;
@@ -687,7 +606,6 @@ export interface Translations {
   generator_review: string;
   generator_save: string;
   generator_discard: string;
-  generator_tokens_used: string;
   generator_days_week: string;
   generator_minutes: string;
   generator_saved: string;
@@ -750,12 +668,10 @@ export interface Translations {
   home_pr_line: string;
 
   // P1 según el diseño (T-807)
-  progress_sessions: string;
   progress_adherence: string;
   progress_avg_duration: string;
   progress_no_plan: string;
   progress_no_duration: string;
-  progress_minutes: string;
 
   // Selector de modelo desde la propia key (T-808)
   settings_models_load: string;

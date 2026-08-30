@@ -1,10 +1,20 @@
 import { TestBed } from '@angular/core/testing';
 import { ProgressionService, effectiveLastSession } from './progression.service';
 import { AppSettings, Exercise, SetRecord, TodaySetProgress } from '../models/workout.model';
-import { StorageService } from './storage.service';
 import { AiShadowLogService, SHADOW_MODELS } from './ai-shadow-log.service';
-import { GROQ_MODEL } from './providers/groq.provider';
+import { GROQ_MODEL, fetchGroqRecommendation } from './providers/groq.provider';
+import { LocalProvider } from './providers/local.provider';
+import { AiProviderContext } from './providers/ai-provider';
 import { STORAGE_KEYS } from './storage-keys';
+
+/**
+ * El motor de reglas, probado donde vive.
+ *
+ * Antes se llegaba a él por `ProgressionService.localRecommendation()`, un paso directo a
+ * `compute()` que colgaba de la ruta por ejercicio (retirada: la progresión va por sesión,
+ * Art. 5). Los casos son los mismos; solo cambia la puerta.
+ */
+const engine = new LocalProvider();
 
 function makeExercise(overrides: Partial<Exercise> = {}): Exercise {
   return {
@@ -82,9 +92,9 @@ describe('ProgressionService', () => {
     vi.restoreAllMocks();
   });
 
-  describe('localRecommendation()', () => {
+  describe('motor local (LocalProvider.compute)', () => {
     it('sin historial sugiere un peso estimado (no cero con perfil) o cero sin perfil', () => {
-      const rec = service.localRecommendation(makeExercise(), [], null);
+      const rec = engine.compute(makeExercise(), [], null);
       expect(rec.source).toBe('local');
       // Sin userProfile.weightKg devuelve brick*4 = 10
       expect(rec.sets.length).toBe(3);
@@ -92,7 +102,7 @@ describe('ProgressionService', () => {
     });
 
     it('objetivo cumplido (primera vez): sube 1 brick solo en las últimas 2 series', () => {
-      const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(20, 10));
+      const rec = engine.compute(makeExercise(), [], lastSetsAt(20, 10));
       expect(rec.sets).toEqual([
         { weight: 20, reps: 10 },
         { weight: 22.5, reps: 10 },
@@ -102,7 +112,7 @@ describe('ProgressionService', () => {
 
     it('el peso recomendado queda redondeado al brick', () => {
       // top 21kg + brick 2.5 = 23.5 → redondea a 22.5 (múltiplo de 2.5)
-      const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(21, 10));
+      const rec = engine.compute(makeExercise(), [], lastSetsAt(21, 10));
       for (const s of rec.sets.slice(1)) {
         expect(s.weight % 2.5).toBe(0);
       }
@@ -111,14 +121,14 @@ describe('ProgressionService', () => {
 
     it('completion < 50%: baja 1 brick y sube reps ~30%', () => {
       // 3 reps de 30 posibles → ratio 0.1
-      const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(20, 1));
+      const rec = engine.compute(makeExercise(), [], lastSetsAt(20, 1));
       expect(rec.sets.every((s) => s.weight === 17.5)).toBe(true);
       expect(rec.sets.every((s) => s.reps === 13)).toBe(true); // round(10 * 1.3)
     });
 
     it('completion 80-99%: repite el mismo peso con el rep target', () => {
       // 24 reps de 30 posibles → ratio 0.8
-      const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(20, 8));
+      const rec = engine.compute(makeExercise(), [], lastSetsAt(20, 8));
       expect(rec.sets.every((s) => s.weight === 20 && s.reps === 10)).toBe(true);
     });
 
@@ -141,7 +151,7 @@ describe('ProgressionService', () => {
           volume: 600,
         },
       ];
-      const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(20, 10), history);
+      const rec = engine.compute(makeExercise(), [], lastSetsAt(20, 10), history);
       expect(rec.sets.every((s) => s.weight === 22.5)).toBe(true);
     });
 
@@ -160,7 +170,7 @@ describe('ProgressionService', () => {
       });
       const top = history[history.length - 1].topWeight;
 
-      const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(top, 10), history);
+      const rec = engine.compute(makeExercise(), [], lastSetsAt(top, 10), history);
 
       expect(rec.reason).toContain('descarga');
       expect(rec.sets[0].weight).toBeLessThan(top);
@@ -172,7 +182,7 @@ describe('ProgressionService', () => {
         { exerciseId: 'ex1', setIndex: 1, weight: 25, reps: 10 },
         { exerciseId: 'ex1', setIndex: 2, weight: 25, reps: 18 }, // 180% del target (10)
       ];
-      const rec = service.localRecommendation(makeExercise(), [], lastSets);
+      const rec = engine.compute(makeExercise(), [], lastSets);
       expect(rec.sets[0].weight).toBe(30); // +2 ladrillos (25 + 2×2.5)
       expect(rec.sets.every((s) => s.weight === 30)).toBe(true);
       expect(rec.reason).toMatch(/liviano|light/i);
@@ -182,7 +192,7 @@ describe('ProgressionService', () => {
       const lastDate = new Date();
       lastDate.setDate(lastDate.getDate() - 20);
       const lastSessionDate = lastDate.toISOString().slice(0, 10);
-      const rec = service.localRecommendation(
+      const rec = engine.compute(
         makeExercise(),
         [],
         lastSetsAt(20, 10),
@@ -195,8 +205,30 @@ describe('ProgressionService', () => {
     });
   });
 
-  describe('normalización de la respuesta IA (via recommend con fetch mockeado)', () => {
-    const settings = makeSettings({ apiKey: 'test-key' });
+  /**
+   * Normalización de la respuesta de Groq para UN ejercicio.
+   *
+   * Se prueba contra `fetchGroqRecommendation()`, que es donde vive el prompt y el parseo.
+   * Antes se llegaba por `ProgressionService.recommend()`, la cascada por ejercicio que se
+   * retiró (la progresión va por sesión, Art. 5); esta función sigue viva porque el shadow
+   * log compara modelos candidatos ejercicio a ejercicio.
+   *
+   * Los dos casos degenerados ya no "caen al motor local" aquí: la función LANZA y quien la
+   * llama decide. El fallback al motor local se prueba en `suggestionsForToday()`.
+   */
+  describe('normalización de la respuesta de Groq (fetchGroqRecommendation)', () => {
+    function makeCtx(overrides: Partial<AiProviderContext> = {}): AiProviderContext {
+      return {
+        exercise: makeExercise(),
+        todaySets: [],
+        lastSets: lastSetsAt(20, 10),
+        history: [],
+        userProfile: makeSettings().userProfile,
+        lang: 'es',
+        lastSessionDate: null,
+        ...overrides,
+      };
+    }
 
     it('ajusta la cantidad de sets al objetivo y redondea pesos al brick', async () => {
       // La IA devuelve 2 sets para un objetivo de 3, con un peso fuera de brick
@@ -215,7 +247,7 @@ describe('ProgressionService', () => {
         ),
       );
 
-      const rec = await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), []);
+      const rec = await fetchGroqRecommendation(makeCtx(), 'test-key', GROQ_MODEL);
       expect(rec.source).toBe('groq');
       expect(rec.sets.length).toBe(3);
       expect(rec.sets[1].weight).toBe(22.5); // 22.6 redondeado al brick
@@ -239,7 +271,7 @@ describe('ProgressionService', () => {
         ),
       );
 
-      const rec = await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), []);
+      const rec = await fetchGroqRecommendation(makeCtx(), 'test-key', GROQ_MODEL);
       expect(rec.source).toBe('groq');
       expect(rec.sets).toEqual([
         { weight: 25, reps: 8 },
@@ -248,17 +280,15 @@ describe('ProgressionService', () => {
       ]);
     });
 
-    it('ante JSON inválido cae al fallback local en modo offline', async () => {
-      vi.spyOn(console, 'info').mockImplementation(() => {});
+    it('ante JSON inválido lanza en vez de inventar una recomendación', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(groqResponse('esto no es JSON')));
 
-      const rec = await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), []);
-      expect(rec.source).toBe('local');
-      expect(rec.reason).toContain('modo offline');
+      await expect(fetchGroqRecommendation(makeCtx(), 'test-key', GROQ_MODEL)).rejects.toThrow(
+        'Respuesta IA no válida',
+      );
     });
 
-    it('ante respuesta sin ningún set válido cae al fallback local', async () => {
-      vi.spyOn(console, 'info').mockImplementation(() => {});
+    it('ante respuesta sin ningún set válido lanza', async () => {
       vi.stubGlobal(
         'fetch',
         vi
@@ -270,159 +300,42 @@ describe('ProgressionService', () => {
           ),
       );
 
-      const rec = await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), []);
-      expect(rec.source).toBe('local');
-      expect(rec.reason).toContain('modo offline');
-    });
-
-    it('con navigator.onLine=false no llama a fetch y retorna local inmediatamente', async () => {
-      vi.stubGlobal('navigator', { onLine: false });
-      const fetchMock = vi.fn();
-      vi.stubGlobal('fetch', fetchMock);
-
-      const rec = await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), []);
-      expect(rec.source).toBe('local');
-      expect(rec.reason).toContain('modo offline');
-      expect(fetchMock).not.toHaveBeenCalled();
-    });
-
-    it('sin API keys no llama a fetch y usa la recomendación local', async () => {
-      const fetchMock = vi.fn();
-      vi.stubGlobal('fetch', fetchMock);
-
-      const rec = await service.recommend(
-        makeSettings(),
-        makeExercise(),
-        [],
-        lastSetsAt(20, 10),
-        [],
+      await expect(fetchGroqRecommendation(makeCtx(), 'test-key', GROQ_MODEL)).rejects.toThrow(
+        'Sets sin valores numéricos',
       );
-      expect(rec.source).toBe('local');
-      expect(fetchMock).not.toHaveBeenCalled();
     });
   });
 
-  describe('localRecommendation() — casos de ratio 50-79%', () => {
+  describe('motor local — casos de ratio 50-79%', () => {
     it('50-79%: repite el mismo peso con el rep target y mensaje de consolidación', () => {
       // 3 sets × 5 reps = 15 / (3 × 10) = 0.5 → rama consolidar
-      const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(20, 5));
+      const rec = engine.compute(makeExercise(), [], lastSetsAt(20, 5));
       expect(rec.sets.every((s) => s.weight === 20 && s.reps === 10)).toBe(true);
       expect(rec.reason).toContain('consolidando');
     });
 
     it('70%: también cae en la rama 50-79% (no baja peso)', () => {
       // 3 sets × 7 reps = 21 / 30 = 0.7
-      const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(20, 7));
+      const rec = engine.compute(makeExercise(), [], lastSetsAt(20, 7));
       expect(rec.sets.every((s) => s.weight === 20)).toBe(true);
       expect(rec.sets.every((s) => s.reps === 10)).toBe(true);
     });
   });
 
-  describe('localRecommendation() — prioridad todaySets sobre lastSets', () => {
+  describe('motor local — prioridad todaySets sobre lastSets', () => {
     it('si todaySets tiene sets hechos, los usa en lugar de lastSets', () => {
       // todaySets: completó 3 series a 30kg (100% objetivo)
       const todaySets = [makeDoneSet(30, 10), makeDoneSet(30, 10), makeDoneSet(30, 10)];
       // lastSets: sesión previa a 20kg (no debe usarse como base)
-      const rec = service.localRecommendation(makeExercise(), todaySets, lastSetsAt(20, 10));
+      const rec = engine.compute(makeExercise(), todaySets, lastSetsAt(20, 10));
       // La base es 30kg → sube brick (sin doble progresión confirmada, últimas 2 series)
       expect(rec.sets[rec.sets.length - 1].weight).toBe(32.5);
     });
 
     it('si todaySets está vacío, cae en lastSets normalmente', () => {
-      const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(20, 10));
+      const rec = engine.compute(makeExercise(), [], lastSetsAt(20, 10));
       // Completó al 100% → sube las últimas 2 series a 22.5
       expect(rec.sets[rec.sets.length - 1].weight).toBe(22.5);
-    });
-  });
-
-  describe('caché de IA (via recommend())', () => {
-    const settings = makeSettings({ apiKey: 'test-key' });
-    const history = [
-      { dateISO: '2026-06-01', sets: [], topWeight: 20, topReps: 10, totalReps: 30, volume: 200 },
-    ];
-
-    it('segundo recommend() con mismos parámetros no llama a fetch (cache hit)', async () => {
-      const fetchMock = vi.fn().mockResolvedValue(
-        groqResponse(
-          JSON.stringify({
-            sets: [
-              { weight: 22.5, reps: 10 },
-              { weight: 22.5, reps: 10 },
-              { weight: 22.5, reps: 10 },
-            ],
-            reason: 'ok',
-          }),
-        ),
-      );
-      vi.stubGlobal('fetch', fetchMock);
-
-      await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), history);
-      await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), history);
-
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-    });
-
-    it('cache miss si cambia la fecha (cachedForDate difiere)', async () => {
-      const storage = TestBed.inject(StorageService);
-      vi.spyOn(storage, 'todayISO').mockReturnValue('2026-06-10');
-
-      const fetchMock = vi.fn().mockResolvedValue(
-        groqResponse(
-          JSON.stringify({
-            sets: [
-              { weight: 22.5, reps: 10 },
-              { weight: 22.5, reps: 10 },
-              { weight: 22.5, reps: 10 },
-            ],
-            reason: 'ok',
-          }),
-        ),
-      );
-      vi.stubGlobal('fetch', fetchMock);
-
-      await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), history);
-
-      // Simulamos que el día cambió
-      vi.spyOn(storage, 'todayISO').mockReturnValue('2026-06-11');
-      await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), history);
-
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-    });
-
-    it('cache miss si cambia la última sesión del historial (lastSessionISO difiere)', async () => {
-      const fetchMock = vi.fn().mockResolvedValue(
-        groqResponse(
-          JSON.stringify({
-            sets: [
-              { weight: 22.5, reps: 10 },
-              { weight: 22.5, reps: 10 },
-              { weight: 22.5, reps: 10 },
-            ],
-            reason: 'ok',
-          }),
-        ),
-      );
-      vi.stubGlobal('fetch', fetchMock);
-
-      const history1 = [
-        { dateISO: '2026-06-01', sets: [], topWeight: 20, topReps: 10, totalReps: 30, volume: 200 },
-      ];
-      const history2 = [
-        ...history1,
-        {
-          dateISO: '2026-06-08',
-          sets: [],
-          topWeight: 22.5,
-          topReps: 10,
-          totalReps: 30,
-          volume: 225,
-        },
-      ];
-
-      await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), history1);
-      await service.recommend(settings, makeExercise(), [], lastSetsAt(20, 10), history2);
-
-      expect(fetchMock).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -566,9 +479,29 @@ describe('ProgressionService', () => {
     });
   });
 
+  /**
+   * Shadow logging (ver specs/ai-shadow-log.md).
+   *
+   * Se dispara desde la ruta viva —`suggestionsForToday(..., allowNetwork)` →
+   * `recommendSession()` → `sampleShadowLog()`—, no desde la cascada por ejercicio, que ya
+   * no existe. Cada día es un contexto distinto, así que dos días seguidos son dos llamadas
+   * reales: la segunda cae en el muestreo (SAMPLE_RATE = 2).
+   *
+   * El fetch se reparte por modelo: el de producción contesta en formato de SESIÓN y los
+   * candidatos del shadow en formato por EJERCICIO, que es como los pide
+   * `fetchGroqRecommendation()`.
+   */
   describe('shadow logging (ver specs/ai-shadow-log.md)', () => {
     const settings = makeSettings({ apiKey: 'test-key' });
+    const day1 = { id: 'd1', name: 'Pecho', exercises: [makeExercise({ id: 'ex1' })] };
+    const day2 = { id: 'd2', name: 'Espalda', exercises: [makeExercise({ id: 'ex2' })] };
 
+    /** Respuesta de SESIÓN: la que devuelve el modelo de producción. */
+    const sessionJson = JSON.stringify({
+      r: [{ e: 1, sets: [{ w: 20, r: 10 }], why: 'ok' }],
+    });
+
+    /** Respuesta por EJERCICIO: la que consumen los candidatos del shadow log. */
     const groqSets = (weight = 20) =>
       JSON.stringify({
         sets: [
@@ -590,9 +523,14 @@ describe('ProgressionService', () => {
       return vi.fn().mockImplementation((_url: string, opts: RequestInit) => {
         const model = (JSON.parse(opts.body as string) as { model: string }).model;
         const handler = handlers[model];
-        return handler ? handler() : Promise.resolve(groqResponse(groqSets()));
+        if (handler) return handler();
+        // Producción responde en formato de sesión; cualquier otro modelo es un candidato.
+        return Promise.resolve(groqResponse(model === GROQ_MODEL ? sessionJson : groqSets()));
       });
     }
+
+    const ask = (day: typeof day1, s = settings) =>
+      service.suggestionsForToday(day, s, 'es', { allowNetwork: true });
 
     it('no bloquea la respuesta real aunque el candidato tarde o nunca resuelva', async () => {
       // Solo cuelga el CANDIDATO. El modelo de producción responde: si también colgara, no se
@@ -603,17 +541,11 @@ describe('ProgressionService', () => {
       vi.stubGlobal('fetch', fetchMock);
 
       // 1ra llamada: counter=1, no muestreada. 2da: counter=2, muestreada (dispara shadow).
-      await service.recommend(settings, makeExercise({ id: 'ex1' }), [], lastSetsAt(20, 10), []);
-      const rec = await service.recommend(
-        settings,
-        makeExercise({ id: 'ex2' }),
-        [],
-        lastSetsAt(20, 10),
-        [],
-      );
+      await ask(day1);
+      const out = await ask(day2);
 
-      expect(rec.source).toBe('groq');
-      expect(rec.sets[0].weight).toBe(20);
+      expect(out.source).toBe('groq');
+      expect(out.byExercise['ex2'].sets[0].weight).toBe(20);
     });
 
     it('un candidato que falla no llega al usuario, pero sí queda en el log', async () => {
@@ -623,17 +555,11 @@ describe('ProgressionService', () => {
       });
       vi.stubGlobal('fetch', fetchMock);
 
-      await service.recommend(settings, makeExercise({ id: 'ex1' }), [], lastSetsAt(20, 10), []);
-      const rec = await service.recommend(
-        settings,
-        makeExercise({ id: 'ex2' }),
-        [],
-        lastSetsAt(20, 10),
-        [],
-      );
+      await ask(day1);
+      const out = await ask(day2);
       // Medir un candidato no puede degradar lo que ve quien entrena.
-      expect(rec.source).toBe('groq');
-      expect(rec.sets[0].weight).toBe(20);
+      expect(out.source).toBe('groq');
+      expect(out.byExercise['ex2'].sets[0].weight).toBe(20);
 
       await vi.waitFor(() => {
         const log = JSON.parse(localStorage.getItem(STORAGE_KEYS.aiShadowLog) ?? '[]');
@@ -658,20 +584,14 @@ describe('ProgressionService', () => {
       const cohereOnly = makeSettings({ cohereApiKey: 'cohere-key' });
       const fetchMock = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ message: { content: [{ text: groqSets() }] } }),
+        json: async () => ({ message: { content: [{ text: sessionJson }] } }),
       });
       vi.stubGlobal('fetch', fetchMock);
 
-      await service.recommend(cohereOnly, makeExercise({ id: 'ex1' }), [], lastSetsAt(20, 10), []);
-      const rec = await service.recommend(
-        cohereOnly,
-        makeExercise({ id: 'ex2' }),
-        [],
-        lastSetsAt(20, 10),
-        [],
-      );
+      await ask(day1, cohereOnly);
+      const out = await ask(day2, cohereOnly);
 
-      expect(rec.source).toBe('cohere');
+      expect(out.source).toBe('cohere');
       // Solo las 2 llamadas reales a Cohere — ninguna extra por shadow
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(localStorage.getItem(STORAGE_KEYS.aiShadowLog)).toBeNull();
@@ -690,11 +610,10 @@ describe('ProgressionService', () => {
       }));
       localStorage.setItem(STORAGE_KEYS.aiShadowLog, JSON.stringify(seeded));
 
-      const fetchMock = vi.fn().mockResolvedValue(groqResponse(groqSets()));
-      vi.stubGlobal('fetch', fetchMock);
+      vi.stubGlobal('fetch', fetchModelAware({}));
 
-      await service.recommend(settings, makeExercise({ id: 'ex1' }), [], lastSetsAt(20, 10), []);
-      await service.recommend(settings, makeExercise({ id: 'ex2' }), [], lastSetsAt(20, 10), []);
+      await ask(day1);
+      await ask(day2);
 
       // Espera la condición real (que el append async haya ocurrido), no solo length===150
       // — eso ya era true con la data sembrada, antes de que el append asincrónico corra.

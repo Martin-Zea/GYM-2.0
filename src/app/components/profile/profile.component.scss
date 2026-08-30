@@ -6,13 +6,6 @@
   margin-bottom: 12px;
 }
 
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
 .section-title {
   font-size: 11px;
   font-weight: 600;
@@ -20,10 +13,6 @@
   text-transform: uppercase;
   color: var(--text-2);
   margin: 0 0 14px;
-
-  .section-header & {
-    margin-bottom: 0;
-  }
 }
 
 .weight-trend {

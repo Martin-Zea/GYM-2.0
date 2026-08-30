@@ -1,13 +1,14 @@
-import {
-  AiRecommendation,
-  Exercise,
-  SetRecord,
-  TodaySetProgress,
-  UserProfile,
-} from '../../models/workout.model';
+import { Exercise, SetRecord, TodaySetProgress, UserProfile } from '../../models/workout.model';
 import { HistoryEntry } from '../storage.service';
 import { AiSessionContext, SessionRecommendation } from './session-context';
 
+/**
+ * Contexto de UN ejercicio.
+ *
+ * La progresión va por sesión (Art. 5), así que esto ya no describe una llamada de la app:
+ * lo usa el shadow log, que compara modelos candidatos ejercicio a ejercicio contra la
+ * recomendación real (ver `specs/ai-shadow-log.md`).
+ */
 export interface AiProviderContext {
   exercise: Exercise;
   todaySets: TodaySetProgress[];
@@ -20,10 +21,6 @@ export interface AiProviderContext {
   lastFeel?: 'easy' | 'ok' | 'hard' | null;
   /** Nota rápida del atleta en la última sesión de este ejercicio. */
   lastNote?: string | null;
-}
-
-export interface AiProvider {
-  recommend(ctx: AiProviderContext): Promise<AiRecommendation>;
 }
 
 /**

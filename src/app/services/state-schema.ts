@@ -1,4 +1,4 @@
-import { AppState, ExerciseUnit } from '../models/workout.model';
+import { ExerciseUnit } from '../models/workout.model';
 
 /**
  * Validación de esquema del estado (RF-STO-04, `audit.md` §3.2 y R-2).
@@ -294,9 +294,4 @@ function checkSettings(i: Issues, settings: unknown, strict: boolean): void {
 /** Resumen legible de los problemas, para el mensaje de cuarentena y los logs. */
 export function formatIssues(issues: ValidationIssue[]): string {
   return issues.map((v) => `${v.path}: ${v.message}`).join(' · ');
-}
-
-/** Azúcar para los tests y para el import: valida y devuelve el estado tipado. */
-export function isValidMigratedState(x: unknown): x is AppState {
-  return validateMigratedState(x).ok;
 }

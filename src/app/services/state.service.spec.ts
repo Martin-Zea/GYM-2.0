@@ -88,12 +88,12 @@ describe('StateService', () => {
       expect(service.sessions()).toEqual(before.filter((s) => s.id !== target.id));
     });
 
-    it('invalida el caché de IA', () => {
-      localStorage.setItem('gym_ai_cache_v2', '{}');
+    it('invalida las sugerencias precalculadas', () => {
+      localStorage.setItem('gt_next_suggestions', '{}');
 
       service.deleteSession(service.sessions()[0].id);
 
-      expect(localStorage.getItem('gym_ai_cache_v2')).toBeNull();
+      expect(localStorage.getItem('gt_next_suggestions')).toBeNull();
     });
   });
 
@@ -139,15 +139,15 @@ describe('StateService', () => {
       ).toEqual(otherSets);
     });
 
-    it('invalida el caché de IA', () => {
+    it('invalida las sugerencias precalculadas', () => {
       const session = service
         .sessions()
         .find((s) => s.dayId === day.id && s.sets.some((sr) => sr.exerciseId === exercise.id))!;
-      localStorage.setItem('gym_ai_cache_v2', '{}');
+      localStorage.setItem('gt_next_suggestions', '{}');
 
       service.updateSessionSet(session.id, exercise.id, 0, { weight: 10 });
 
-      expect(localStorage.getItem('gym_ai_cache_v2')).toBeNull();
+      expect(localStorage.getItem('gt_next_suggestions')).toBeNull();
     });
   });
 

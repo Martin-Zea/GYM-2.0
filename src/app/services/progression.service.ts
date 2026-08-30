@@ -1,20 +1,9 @@
 import { Injectable, inject, signal } from '@angular/core';
-import {
-  AiRecommendation,
-  AppSettings,
-  AppState,
-  Exercise,
-  Session,
-  SetRecord,
-  TodaySetProgress,
-  TrainingFeel,
-  UserProfile,
-} from '../models/workout.model';
+import { AiRecommendation, AppSettings, AppState, Exercise } from '../models/workout.model';
 
-import { HistoryEntry, StorageService, defaultUserProfile } from './storage.service';
+import { StorageService } from './storage.service';
 import { AiShadowLogService } from './ai-shadow-log.service';
 import { ApiKeyService } from './api-key.service';
-import { AiProvider, AiProviderContext } from './providers/ai-provider';
 import { CohereProvider } from './providers/cohere.provider';
 import { GroqProvider } from './providers/groq.provider';
 import { LocalProvider } from './providers/local.provider';
@@ -26,18 +15,9 @@ import {
 } from './providers/session-context';
 import { DEFAULT_TOKEN_BUDGET, isOverBudget } from './providers/ai-usage';
 import { checksumOf } from './backup-format';
-import { AuthError, RateLimitError, roundToBrick } from './providers/prompt-helpers';
+import { AuthError, RateLimitError } from './providers/prompt-helpers';
 import { layoffFactor } from './providers/progression-rules';
 import { STORAGE_KEYS } from './storage-keys';
-
-const AI_CACHE_KEY = STORAGE_KEYS.aiCache;
-
-interface AiCacheEntry {
-  rec: AiRecommendation;
-  lastSessionISO: string | null;
-  cachedForDate: string;
-  profileSig: string;
-}
 
 const NEXT_KEY = STORAGE_KEYS.nextSuggestions;
 
@@ -86,57 +66,6 @@ export class ProgressionService {
   private readonly shadowLog = inject(AiShadowLogService);
   private readonly keys = inject(ApiKeyService);
   private readonly local = new LocalProvider();
-
-  private readCache(): Partial<Record<string, AiCacheEntry>> {
-    try {
-      const parsed: unknown = JSON.parse(localStorage.getItem(AI_CACHE_KEY) ?? '{}');
-      return typeof parsed === 'object' && parsed !== null
-        ? (parsed as Partial<Record<string, AiCacheEntry>>)
-        : {};
-    } catch {
-      return {};
-    }
-  }
-
-  private profileSig(profile: UserProfile): string {
-    const noteHash = profile.aiNotes
-      ? String(profile.aiNotes.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0))
-      : '';
-    return `${profile.goal ?? ''}:${noteHash}`;
-  }
-
-  // La recomendación del día es ESTABLE: una vez emitida para (ejercicio, fecha, última
-  // sesión, perfil) no cambia aunque el usuario marque series — un número que baila sin
-  // datos nuevos destruye la confianza. La adaptación llega vía feedback explícito.
-  private getCached(
-    exerciseId: string,
-    lastSessionISO: string | null,
-    profile: UserProfile,
-  ): AiRecommendation | null {
-    const entry = this.readCache()[exerciseId];
-    // Descarta entradas corruptas (caché de una versión vieja o JSON manipulado)
-    if (!entry || !entry.rec || !Array.isArray(entry.rec.sets)) return null;
-    if (entry.cachedForDate !== this.storage.todayISO()) return null;
-    if (entry.lastSessionISO !== lastSessionISO) return null;
-    if (entry.profileSig !== this.profileSig(profile)) return null;
-    return entry.rec;
-  }
-
-  private setCached(
-    exerciseId: string,
-    lastSessionISO: string | null,
-    rec: AiRecommendation,
-    profile: UserProfile,
-  ): void {
-    const cache = this.readCache();
-    cache[exerciseId] = {
-      rec,
-      lastSessionISO,
-      cachedForDate: this.storage.todayISO(),
-      profileSig: this.profileSig(profile),
-    };
-    localStorage.setItem(AI_CACHE_KEY, JSON.stringify(cache));
-  }
 
   private readNextStore(): Partial<Record<string, SessionSuggestionEntry>> {
     try {
@@ -478,55 +407,6 @@ export class ProgressionService {
     return providers;
   }
 
-  private applyLongRestAdjustment(
-    rec: AiRecommendation,
-    exercise: Exercise,
-    lastSets: SetRecord[] | null,
-    lastSessionDate: string | null,
-    lang: 'es' | 'en',
-  ): AiRecommendation {
-    if (
-      !lastSessionDate ||
-      !lastSets?.length ||
-      exercise.unit === 'TIME' ||
-      exercise.unit === 'BODYWEIGHT'
-    ) {
-      return rec;
-    }
-    const days = Math.round(
-      (Date.now() - new Date(lastSessionDate).getTime()) / (1000 * 60 * 60 * 24),
-    );
-    let factor = 1;
-    if (days > 28) factor = 0.85;
-    else if (days > 14) factor = 0.9;
-    if (factor === 1) return rec;
-
-    const brick = exercise.brick || 2.5;
-    const topWeight = Math.max(...lastSets.map((s) => s.weight));
-    const maxWeight = roundToBrick(topWeight * factor, brick);
-
-    if (rec.sets.every((s) => s.weight <= maxWeight)) return rec;
-
-    const note =
-      lang === 'en'
-        ? ` (weight capped for ${days}-day break)`
-        : ` (peso limitado por ${days} días sin entrenar)`;
-
-    return {
-      ...rec,
-      sets: rec.sets.map((s) => ({ ...s, weight: Math.min(s.weight, maxWeight) })),
-      reason: rec.reason + note,
-    };
-  }
-
-  private buildProviders(settings: AppSettings): AiProvider[] {
-    const providers: AiProvider[] = [];
-    const { groq, cohere } = this.resolveKeys(settings);
-    if (groq) providers.push(new GroqProvider(groq, settings.groqModel));
-    if (cohere) providers.push(new CohereProvider(cohere, settings.cohereModel));
-    return providers;
-  }
-
   /**
    * Las keys, vengan de donde vengan.
    *
@@ -540,122 +420,5 @@ export class ProgressionService {
       groq: this.keys.get('groq') || settings.apiKey,
       cohere: this.keys.get('cohere') || settings.cohereApiKey,
     };
-  }
-
-  localRecommendation(
-    exercise: Exercise,
-    todaySets: TodaySetProgress[],
-    lastSets: SetRecord[] | null,
-    history: HistoryEntry[] = [],
-    userProfile: UserProfile = defaultUserProfile(),
-    lastSessionDate: string | null = null,
-    lang: 'es' | 'en' = 'es',
-    opts: { lastFeel?: TrainingFeel | null } = {},
-  ): AiRecommendation {
-    return this.local.compute(
-      exercise,
-      todaySets,
-      lastSets,
-      history,
-      userProfile,
-      lastSessionDate,
-      lang,
-      opts,
-    );
-  }
-
-  /**
-   * Recomendación de UN ejercicio.
-   *
-   * Ya no es el camino de la app —desde F4 la unidad es la sesión (Art. 5)—, pero se conserva
-   * porque el shadow log compara modelos candidatos ejercicio a ejercicio y porque es la
-   * forma más directa de probar la cascada.
-   */
-  async recommend(
-    settings: AppSettings,
-    exercise: Exercise,
-    todaySets: TodaySetProgress[],
-    lastSets: SetRecord[] | null,
-    history: HistoryEntry[],
-    lang: 'es' | 'en' = 'es',
-    lastSessionDate: string | null = null,
-  ): Promise<AiRecommendation> {
-    const hasDoneOrHistory = lastSets?.length || todaySets.some((s) => s?.done);
-    const providers = this.buildProviders(settings);
-
-    // La sensación de la última vez la usan tanto el motor local (bloquea la subida si costó)
-    // como el prompt. Se resuelve perezosamente: leer el estado entero no es gratis y la
-    // mayoría de las llamadas se resuelven antes de necesitarla.
-    let cachedLastSession: Session | null | undefined;
-    const lastSessionObj = (): Session | null => {
-      if (cachedLastSession === undefined) {
-        cachedLastSession = this.storage.lastSessionForExercise(this.storage.load(), exercise.id);
-      }
-      return cachedLastSession;
-    };
-    const lastFeel = (): TrainingFeel | null => lastSessionObj()?.feelings?.[exercise.id] ?? null;
-
-    // Fallback local con nota opcional — evita repetir la llamada de 7 argumentos.
-    const local = (note = ''): AiRecommendation => {
-      const rec = this.localRecommendation(
-        exercise,
-        todaySets,
-        lastSets,
-        history,
-        settings.userProfile,
-        lastSessionDate,
-        lang,
-        { lastFeel: lastFeel() },
-      );
-      if (note) rec.reason += note;
-      return rec;
-    };
-
-    if (!providers.length || !hasDoneOrHistory) return local();
-
-    const lastSessionISO = history.at(-1)?.dateISO ?? null;
-    const cached = this.getCached(exercise.id, lastSessionISO, settings.userProfile);
-    if (cached) return cached;
-
-    if (!navigator.onLine) {
-      return local(lang === 'en' ? ' (offline mode)' : ' (modo offline)');
-    }
-
-    const ctx: AiProviderContext = {
-      exercise,
-      todaySets,
-      lastSets,
-      history,
-      userProfile: settings.userProfile,
-      lang,
-      lastSessionDate,
-      lastFeel: lastFeel(),
-      lastNote: lastSessionObj()?.notes?.[exercise.id] ?? null,
-    };
-
-    for (const provider of providers) {
-      try {
-        const rec = await provider.recommend(ctx);
-        const adjusted = this.applyLongRestAdjustment(
-          rec,
-          exercise,
-          lastSets,
-          lastSessionDate,
-          lang,
-        );
-        this.setCached(exercise.id, lastSessionISO, adjusted, settings.userProfile);
-        if (adjusted.source === 'groq') {
-          this.shadowLog.maybeRecord(ctx, this.resolveKeys(settings).groq, adjusted);
-        }
-        return adjusted;
-      } catch (e) {
-        const label = e instanceof RateLimitError ? 'rate limit' : 'falló';
-        console.info(`${provider.constructor.name} ${label}:`, (e as Error).message);
-      }
-    }
-
-    return local(
-      lang === 'en' ? ' (API unavailable, offline mode)' : ' (API no disponible, modo offline)',
-    );
   }
 }

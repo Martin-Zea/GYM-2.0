@@ -1,5 +1,5 @@
 import { AiRecommendation } from '../../models/workout.model';
-import { AiProvider, AiProviderContext, AiSessionProvider } from './ai-provider';
+import { AiProviderContext, AiSessionProvider } from './ai-provider';
 import { AiSessionContext, SessionRecommendation } from './session-context';
 import { buildSessionPrompt, parseJsonLoose, sessionMaxTokens } from './session-prompt';
 import { validateSessionResponse } from './session-response';
@@ -190,17 +190,13 @@ export function reasons(model: string): boolean {
 /** Suelo de `max_tokens` para modelos que razonan (medido en el shadow log). */
 export const REASONING_MIN_TOKENS = 1000;
 
-export class GroqProvider implements AiProvider, AiSessionProvider {
+export class GroqProvider implements AiSessionProvider {
   readonly name = 'groq' as const;
 
   constructor(
     private readonly apiKey: string,
     private readonly model: string = GROQ_MODEL,
   ) {}
-
-  recommend(ctx: AiProviderContext): Promise<AiRecommendation> {
-    return fetchGroqRecommendation(ctx, this.apiKey, this.model);
-  }
 
   /** UNA llamada para toda la sesión (Art. 5). */
   async recommendSession(ctx: AiSessionContext): Promise<SessionRecommendation> {
