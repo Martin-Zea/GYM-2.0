@@ -59,8 +59,18 @@
     <app-day-editor />
   }
 
-  @if (uiState.showSettings()) {
-    <app-settings />
+  <!-- Herramientas: se descarga la primera vez que se abren, no en el arranque (CE-2) -->
+  @defer (when uiState.showTools()) {
+    @if (uiState.showTools()) {
+      <app-tools />
+    }
+  }
+
+  <!-- Ajustes: la hoja más pesada de la app y no forma parte del flujo de entrenar (CE-2) -->
+  @defer (when uiState.showSettings()) {
+    @if (uiState.showSettings()) {
+      <app-settings />
+    }
   }
 
   @if (uiState.dayDetail()) {

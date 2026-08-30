@@ -109,7 +109,7 @@ describe('Snapshots entre versiones de esquema (T-106, audit.md R-7)', () => {
 
     expect(restored).not.toBeNull();
     // Sin la migración, restaurar revertiría el esquema en silencio
-    expect(restored!.schemaVersion).toBe(7);
+    expect(restored!.schemaVersion).toBe(10);
     expect(restored!.exercises[0].unit).toBe('KG_PER_ARM');
     expect(restored!.sessions[0].sets[0].weight).toBe(30);
   });

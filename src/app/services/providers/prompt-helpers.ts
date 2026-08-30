@@ -1,4 +1,4 @@
-import { ExerciseUnit, TrainingGoal, UserProfile } from '../../models/workout.model';
+import { ExerciseUnit, TrainingGoal, TrainingLevel, UserProfile } from '../../models/workout.model';
 import { HistoryEntry } from '../storage.service';
 
 export const AI_TIMEOUT_MS = 12000;
@@ -42,6 +42,21 @@ export async function fetchWithTimeout(url: string, options: RequestInit): Promi
 // Tope de espera ante un 429: si el proveedor pide más que esto, no esperamos —
 // saltamos directo al siguiente provider (Cohere → local) para no congelar la UI.
 export const RATE_LIMIT_RETRY_CAP_MS = 8000;
+
+/**
+ * Key rechazada (401/403). Se distingue del resto de errores porque NO tiene sentido
+ * reintentar ni pasar al siguiente proveedor con la misma key: hay que avisar al usuario,
+ * que es el único que puede arreglarlo (RF-IA-02, EA-2).
+ */
+export class AuthError extends Error {
+  constructor(
+    readonly provider: string,
+    message?: string,
+  ) {
+    super(message ?? `${provider}: key rechazada`);
+    this.name = 'AuthError';
+  }
+}
 
 /** Error de rate limit (HTTP 429). Lo distingue de otros fallos para diagnóstico/decisión. */
 export class RateLimitError extends Error {
@@ -176,8 +191,19 @@ export function buildFeedbackNote(
 export function buildGoalNote(
   goal: TrainingGoal | null | undefined,
   aiNotes: string | undefined,
+  level?: TrainingLevel | null,
 ): string {
   const lines: string[] = [];
+  // El nivel manda en la agresividad de la progresión. Sin él, la IA puede proponer saltos
+  // que el motor local jamás haría, y el usuario ve dos criterios distintos según haya red.
+  if (level) {
+    const levelLabels: Record<TrainingLevel, string> = {
+      beginner: 'principiante (progresión lineal, puede subir casi cada sesión que cumple)',
+      intermediate: 'intermedio (doble progresión: consolidar reps antes de subir peso)',
+      advanced: 'avanzado (progresión lenta, descargas frecuentes, atención a la fatiga)',
+    };
+    lines.push(`- Nivel del atleta: ${levelLabels[level]}.`);
+  }
   if (goal) {
     const labels: Record<TrainingGoal, string> = {
       strength:

@@ -181,11 +181,20 @@ export function mergeStates(local: AppState, incoming: AppState): MergeResult {
   }
   weightLog.sort((a, b) => (a.dateISO < b.dateISO ? -1 : 1));
 
+  // Un día fusionado que no cuelgue de ninguna rutina sería invisible: `days()` resuelve
+  // solo la rutina activa. Se adoptan en la activa, que es donde el usuario los espera.
+  const claimed = new Set((local.routines ?? []).flatMap((r) => r.dayIds));
+  const orphans = days.map((d) => d.id).filter((id) => !claimed.has(id));
+  const routines = (local.routines ?? []).map((r) =>
+    r.id === local.activeRoutineId ? { ...r, dayIds: [...r.dayIds, ...orphans] } : r,
+  );
+
   return {
     state: {
       ...local,
       exercises,
       days,
+      routines,
       sessions: sessions.sort((a, b) => (a.dateISO < b.dateISO ? -1 : 1)),
       settings: {
         // Preferencias, keys y perfil: se conservan las locales. Fusionar ajustes no

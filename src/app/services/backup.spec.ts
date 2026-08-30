@@ -30,10 +30,12 @@ function session(id: string, dayId: string, dateISO: string, exerciseId: string)
 
 function state(overrides: Partial<AppState> = {}): AppState {
   return {
-    schemaVersion: 7,
+    schemaVersion: 10,
     exercises: [],
     days: [],
     sessions: [],
+    routines: [{ id: 'r1', name: '', dayIds: [] }],
+    activeRoutineId: 'r1',
     activeDayIndex: 0,
     routinePointer: 0,
     todayProgress: {},
@@ -52,6 +54,9 @@ function state(overrides: Partial<AppState> = {}): AppState {
         sex: null,
         weightLog: [],
         goal: null,
+        level: null,
+        equipment: null,
+        daysPerWeek: null,
         aiNotes: '',
       },
     },
@@ -115,7 +120,7 @@ describe('Formato de backup (RF-STO-05)', () => {
     const parsed = parseBackup(viejo);
 
     expect(parsed.legacy).toBe(true);
-    expect((parsed.state as AppState).schemaVersion).toBe(7);
+    expect((parsed.state as AppState).schemaVersion).toBe(10);
   });
 
   it('avisa cuando un backup viejo trae credenciales adentro (R-8)', () => {

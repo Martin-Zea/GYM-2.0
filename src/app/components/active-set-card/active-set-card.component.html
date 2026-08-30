@@ -4,7 +4,14 @@
     <div class="asc-head-info">
       <h2 class="asc-name">{{ exercise().name }}</h2>
       <p class="asc-meta">
-        {{ exercise().defaultSets }}×{{ exercise().defaultRepTarget }} ·
+        {{ exercise().defaultSets }}×{{ repRange() }}
+        @if (exercise().targetRpe; as rpe) {
+          · RPE {{ rpe }}
+        }
+        @if (exercise().supersetId) {
+          · {{ T().day_editor_superset }}
+        }
+        ·
         {{ tr.unitLabel(exercise().unit) }} · {{ T().rest_label.toLowerCase() }}
         {{ exercise().restSeconds || state.settings().defaultRest }}s
       </p>
@@ -51,6 +58,18 @@
       />
       <span class="asc-ai-text">{{ aiReason() }}</span>
     </div>
+    <!-- C1: qué hace el atleta con la sugerencia (RF-IA-05) -->
+    @if (canRateSuggestion()) {
+      <div class="asc-ai-actions">
+        @if (feedbackGiven(); as given) {
+          <span class="asc-ai-given">{{ feedbackLabel(given) }}</span>
+        } @else {
+          <button class="asc-link" (click)="acceptSuggestion()">{{ T().ai_accept }}</button>
+          <button class="asc-link" (click)="rejectSuggestion()">{{ T().ai_reject }}</button>
+          <span class="asc-ai-hint">{{ T().ai_change_hint }}</span>
+        }
+      </div>
+    }
   }
 
   @if (!isDone()) {
@@ -60,6 +79,9 @@
         <div class="asc-stepper">
           <p class="asc-stepper-label">
             {{ exercise().unit === 'TIME' ? T().col_seconds : T().col_weight }}
+            @if (exercise().unit !== 'TIME' && exercise().unit !== 'BODYWEIGHT') {
+              <span class="asc-unit-suffix">({{ unitSuffix() }})</span>
+            }
           </p>
           <div class="asc-stepper-row">
             <button
@@ -241,8 +263,8 @@
       <p class="asc-substitute-hint">{{ T().asc_add_exercise_hint }}</p>
       <select class="select" (change)="addExerciseToday($event)">
         <option value="">{{ T().asc_add_exercise_pick }}</option>
-        @for (opt of substituteOptions(); track opt.id) {
-          <option [value]="opt.id">{{ opt.name }}</option>
+        @for (opt of substituteOptions(); track opt.key) {
+          <option [value]="opt.key">{{ opt.suggested ? '★ ' : '' }}{{ opt.name }}</option>
         }
       </select>
     </div>
@@ -253,7 +275,7 @@
       <p class="asc-substitute-hint">{{ T().asc_substitute_hint }}</p>
       <select class="select" (change)="substitute($event)">
         <option value="">{{ T().asc_substitute_pick }}</option>
-        @for (opt of substituteOptions(); track opt.id) {
+        @for (opt of addableExercises(); track opt.id) {
           <option [value]="opt.id">{{ opt.name }}</option>
         }
       </select>

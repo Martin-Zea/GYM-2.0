@@ -168,3 +168,15 @@
   border-color: var(--accent-border);
   background: var(--accent-bg);
 }
+
+.slide--form {
+  justify-content: flex-start;
+  gap: var(--sp-2);
+  overflow-y: auto;
+}
+.onb-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  justify-content: center;
+}

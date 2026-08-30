@@ -41,6 +41,34 @@
           </div>
         }
 
+        <!-- H1 · racha y volumen del mes de un vistazo -->
+        @if (!weekStatsDisplay().isEmpty) {
+          <div class="stat-grid">
+            <div class="stat">
+              <div class="stat-label">{{ T().home_streak }}</div>
+              <div class="stat-value">
+                {{ weekStatsDisplay().streak }}<small> {{ T().home_streak_unit }}</small>
+              </div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">{{ T().home_month }}</div>
+              <div class="stat-value">
+                {{ monthSessionCount() }}<small> {{ T().home_month_unit }}</small>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- H1 · último récord: lo que motiva volver -->
+        @if (lastPr(); as pr) {
+          <div class="card card--ok home-pr">
+            <span class="chip chip--ok">{{ T().home_last_pr }}</span>
+            <span class="home-pr-text">{{
+              tr.tp('home_pr_line', { name: pr.name, weight: pr.weight })
+            }}</span>
+          </div>
+        }
+
         @if (lastWeekSummary(); as lw) {
           <div class="week-summary">
             <span class="week-summary-title">{{ T().week_summary_title }}</span>
@@ -144,45 +172,7 @@
         <app-how-it-works />
       </div>
 
-      <!-- ROUTINE section: colapsada por defecto -->
-      <div class="routine-section">
-        <button class="routine-section-header" (click)="routineExpanded.update((v) => !v)">
-          <h3 class="section-title">{{ T().routine_section_title }}</h3>
-          <app-icon
-            name="chevron"
-            [size]="14"
-            class="routine-chevron"
-            [class.routine-chevron--open]="routineExpanded()"
-          />
-        </button>
-        @if (routineExpanded()) {
-          @for (item of routineDays(); track item.day.id) {
-            <button
-              class="routine-day-card"
-              [class.current]="item.isCurrent"
-              (click)="openDayDetail(item.day)"
-            >
-              <div class="routine-day-left">
-                <span class="routine-day-num">{{ tr.tp('day_n', { n: item.index + 1 }) }}</span>
-                <span class="routine-day-name">{{ item.day.name }}</span>
-              </div>
-              <span class="routine-day-ago" [class.current-label]="item.isCurrent">
-                @if (item.isCurrent && item.trainedToday) {
-                  {{ T().today_label }}
-                } @else if (item.isCurrent) {
-                  {{ T().next_label }}
-                } @else {
-                  {{ item.lastLabel }}
-                }
-              </span>
-            </button>
-          }
-          <button class="routine-add-btn" (click)="uiState.openEditingDay('new')">
-            <app-icon name="plus" [size]="14" />
-            {{ T().new_day_btn }}
-          </button>
-        }
-      </div>
+      <!-- La gestión de rutinas vive en su propio tab (R1–R7): Inicio es UNA decisión. -->
     </div>
 
     <!-- Confirmación de "saltar día": diálogo propio, no dentro de un dropdown -->

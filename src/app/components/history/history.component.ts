@@ -23,6 +23,17 @@ import {
   rangeCutoff,
 } from '../../utils/chart';
 import { daysBetweenISO } from '../../utils/date';
+import { tonnageOf } from '../../utils/session';
+import {
+  AGGREGATION_THRESHOLD,
+  ImbalanceAlert,
+  adherence,
+  aggregateWeekly,
+  averageDurationMinutes,
+  volumeByGroup,
+  volumeImbalances,
+} from '../../utils/stats';
+import { CatalogService } from '../../services/catalog.service';
 
 interface CalDay {
   day: number | null;
@@ -30,6 +41,9 @@ interface CalDay {
   trained: boolean;
   skipped: boolean;
   isToday: boolean;
+  /** 0 = sin entrenar; 1–4 = intensidad relativa del tonelaje de ese día (RF-PRO-02). */
+  intensity?: number;
+  tonnage?: number;
 }
 
 interface RoutineDaySummary {
@@ -45,6 +59,10 @@ interface BigChart extends BuiltChart {
   trend: 'up' | 'down' | 'flat';
   history: HistoryEntry[];
   isBodyweight: boolean;
+  /** El trazo está agrupado por semanas (RF-PRO-04). */
+  aggregated: boolean;
+  /** Sesiones del rango que no registraron esta métrica y por eso NO se dibujan (R-5). */
+  missing: number;
 }
 
 interface PrRow {
@@ -130,19 +148,46 @@ export class HistoryComponent {
 
     const cells: CalDay[] = [];
     for (let i = 0; i < firstDow; i++) {
-      cells.push({ day: null, iso: null, trained: false, skipped: false, isToday: false });
+      cells.push({
+        day: null,
+        iso: null,
+        trained: false,
+        skipped: false,
+        isToday: false,
+        intensity: 0,
+      });
     }
+    const tonnage = this.tonnageByDate();
+    const peak = Math.max(1, ...tonnage.values());
     for (let n = 1; n <= daysInMonth; n++) {
       const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(n).padStart(2, '0')}`;
+      const dayTonnage = tonnage.get(iso) ?? 0;
       cells.push({
         day: n,
         iso,
         trained: trained.has(iso),
         skipped: !trained.has(iso) && skipped.has(iso),
         isToday: iso === today,
+        // Intensidad 1–4 para el heatmap: un día suave y uno de piernas no se ven igual
+        intensity: dayTonnage > 0 ? Math.min(4, Math.ceil((dayTonnage / peak) * 4)) : 0,
+        tonnage: Math.round(dayTonnage),
       });
     }
     return cells;
+  });
+
+  /** Tonelaje por fecha, base del heatmap de asistencia (RF-PRO-02). */
+  private readonly tonnageByDate = computed(() => {
+    const s = this.state.state();
+    const map = new Map<string, number>();
+    for (const session of s.sessions) {
+      if (session.skipped || !session.sets.length) continue;
+      map.set(
+        session.dateISO,
+        (map.get(session.dateISO) ?? 0) + tonnageOf(session.sets, s.exercises),
+      );
+    }
+    return map;
   });
 
   protected readonly stats = computed(() => {
@@ -176,6 +221,45 @@ export class HistoryComponent {
     return { total: trained.size, last30, delta30: last30 - prev30, streak };
   });
 
+  /**
+   * Adherencia: sesiones hechas contra las planificadas (P1 del diseño).
+   *
+   * El plan sale de cuántos días tiene la rutina activa. Sin rutina no hay plan y devuelve
+   * `null`: un porcentaje sobre un objetivo que nadie declaró es un número inventado (R-5).
+   */
+  protected readonly adherencePct = computed(() => {
+    const planned = this.state.days().length;
+    return adherence(this.state.sessions(), planned || null, this.storage.todayISO());
+  });
+
+  /** Duración media; `null` si ninguna sesión registró marcas de tiempo. */
+  protected readonly avgDuration = computed(() => averageDurationMinutes(this.state.sessions()));
+
+  // ── Equilibrio de volumen por grupo muscular (RF-PRO-01/03) ──
+
+  private readonly catalog = inject(CatalogService);
+
+  protected readonly imbalances = computed(() => {
+    const today = this.storage.todayISO();
+    const from = new Date(`${today}T00:00:00`);
+    from.setDate(from.getDate() - 7);
+    const volumes = volumeByGroup(
+      this.state.state(),
+      (ex) => this.catalog.byRef(ex.catalogRef)?.group ?? null,
+      from.toISOString().slice(0, 10),
+      today,
+    );
+    return volumeImbalances(volumes);
+  });
+
+  protected imbalanceText(alert: ImbalanceAlert): string {
+    const group = this.T()[`muscle_${alert.group}` as keyof ReturnType<typeof this.T>] as string;
+    return this.tr.tp(alert.kind === 'low' ? 'imbalance_low' : 'imbalance_high', {
+      group,
+      n: alert.sets,
+    });
+  }
+
   protected dayAria(cell: CalDay): string {
     if (!cell.iso) return '';
     const d = new Date(cell.iso + 'T12:00:00Z');
@@ -183,7 +267,8 @@ export class HistoryComponent {
       day: 'numeric',
       month: 'long',
     }).format(d);
-    return `${label} · ${this.T().cal_trained}`;
+    const tonnage = cell.tonnage ? ` · ${cell.tonnage} kg` : '';
+    return `${label} · ${this.T().cal_trained}${tonnage}`;
   }
 
   protected onDayClick(cell: CalDay): void {
@@ -265,6 +350,8 @@ export class HistoryComponent {
         trend: delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat',
         history,
         isBodyweight: true,
+        aggregated: false,
+        missing: 0,
         ...buildChart(history, values),
       };
     }
@@ -272,14 +359,47 @@ export class HistoryComponent {
     const s = this.state.state();
     const ex = this.selectedExercise();
     if (!ex) return null;
-    const history = this.storage
+    const inRange = this.storage
       .historyForExercise(s, ex.id)
-      .filter((h) => h.topWeight > 0 && (!cutoff || h.dateISO >= cutoff));
+      .filter((h) => !cutoff || h.dateISO >= cutoff);
+    // Sesiones que no registraron esta métrica: se EXCLUYEN del trazo, no se dibujan en 0,
+    // y se avisa de que faltan en vez de fingir una caída (RF-PRO-05, R-5).
+    const history = inRange.filter((h) => h.topWeight > 0);
+    const missing = inRange.length - history.length;
     if (history.length < 2) return null;
     const exMetric = ex.unit === 'TIME' || ex.unit === 'BODYWEIGHT' ? 'top' : this.metric();
+    // Con historiales largos se agrega por semanas antes de dibujar (RF-PRO-04): 800 puntos
+    // en un SVG no se leen y bloquean el hilo en un móvil de gama media.
+    const aggregated = history.length > AGGREGATION_THRESHOLD;
     const values = history.map((h) => metricValue(h, exMetric));
     const n = history.length;
     const weightDelta = Math.round((history[n - 1].topWeight - history[n - 2].topWeight) * 10) / 10;
+    if (aggregated) {
+      const weekly = aggregateWeekly(
+        history.map((h, i) => ({ dateISO: h.dateISO, value: values[i] })),
+      );
+      const weeklyHistory = weekly.map((w) => ({
+        dateISO: w.weekISO,
+        sets: [],
+        topWeight: w.value,
+        topReps: 0,
+        totalReps: 0,
+        volume: 0,
+      }));
+      const weeklyValues = weekly.map((w) => w.value);
+      return {
+        pr: Math.max(...values),
+        volLast: history[n - 1].volume,
+        weightDelta,
+        trend: weightDelta > 0 ? 'up' : weightDelta < 0 ? 'down' : 'flat',
+        history: weeklyHistory,
+        isBodyweight: false,
+        aggregated: true,
+        missing,
+        ...buildChart(weeklyHistory, weeklyValues),
+      };
+    }
+
     return {
       pr: Math.max(...values),
       volLast: history[n - 1].volume,
@@ -287,6 +407,8 @@ export class HistoryComponent {
       trend: weightDelta > 0 ? 'up' : weightDelta < 0 ? 'down' : 'flat',
       history,
       isBodyweight: false,
+      aggregated: false,
+      missing,
       ...buildChart(history, values),
     };
   });

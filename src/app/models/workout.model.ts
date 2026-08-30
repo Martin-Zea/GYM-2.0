@@ -1,3 +1,5 @@
+import { SealedValue } from '../services/crypto-keys';
+
 export type ExerciseUnit = 'KG' | 'KG_PER_HAND' | 'KG_PER_ARM' | 'TIME' | 'BODYWEIGHT';
 
 export interface Exercise {
@@ -9,6 +11,23 @@ export interface Exercise {
   restSeconds: number;
   unit: ExerciseUnit;
   notes: string;
+  /**
+   * Enlace al catálogo estático (`CatalogExercise.ref`), resuelto por nombre normalizado.
+   *
+   * El id del ejercicio NUNCA cambia por esto: el enlace es un dato añadido, no una
+   * identidad nueva, para no romper el historial (`audit.md` R-3).
+   */
+  catalogRef?: string;
+  /** Rango de repeticiones objetivo (RF-RUT-01). `defaultRepTarget` es el tope del rango. */
+  repMin?: number;
+  /** RPE objetivo del esquema, 1–10 (RF-RUT-01). */
+  targetRpe?: number;
+  /** Ejercicios encadenados sin descanso: mismo `supersetId` = superserie (RF-RUT-02). */
+  supersetId?: string;
+  /** Tipo de esquema de la última serie (RF-RUT-02). */
+  setStyle?: 'normal' | 'dropset' | 'amrap';
+  /** Archivado: sigue en el catálogo con su historial, pero no se ofrece al añadir. */
+  archived?: boolean;
 }
 
 /**
@@ -30,6 +49,20 @@ export interface StoredWorkoutDay {
   id: string;
   name: string;
   exerciseIds: string[];
+}
+
+/**
+ * Rutina: un conjunto ordenado de días (RF-RUT-01).
+ *
+ * Los días viven en `AppState.days` y la rutina los referencia por id, igual que los días
+ * referencian ejercicios del catálogo. Así un día puede archivarse con la rutina sin que su
+ * historial —que apunta al `dayId`— quede huérfano.
+ */
+export interface Routine {
+  id: string;
+  name: string;
+  dayIds: string[];
+  archived?: boolean;
 }
 
 export interface SetRecord {
@@ -102,7 +135,24 @@ export interface WeightLogEntry {
   weightKg: number;
 }
 
+/** Medidas corporales de un día (RF-PER-04, vista P4). Todas opcionales: se apunta lo que se mide. */
+export interface MeasureEntry {
+  dateISO: string;
+  waistCm?: number;
+  chestCm?: number;
+  armCm?: number;
+  thighCm?: number;
+  hipCm?: number;
+}
+
 export type TrainingGoal = 'strength' | 'hypertrophy' | 'endurance';
+
+/**
+ * Nivel de experiencia. Ajusta la agresividad de la progresión local (§3, RF-IA-01):
+ * un principiante progresa en lineal casi cada sesión, un avanzado necesita confirmar
+ * y descargar mucho antes.
+ */
+export type TrainingLevel = 'beginner' | 'intermediate' | 'advanced';
 
 export interface UserProfile {
   weightKg: number | null;
@@ -110,13 +160,27 @@ export interface UserProfile {
   age: number | null;
   sex: 'male' | 'female' | 'other' | null;
   weightLog: WeightLogEntry[];
+  /** Historial de medidas corporales (RF-PER-04). */
+  measures?: MeasureEntry[];
   goal: TrainingGoal | null;
+  /** `null` = sin declarar: el motor asume intermedio, el punto medio menos arriesgado. */
+  level: TrainingLevel | null;
+  /** Equipo disponible (RF-PER-01). Filtra plantillas y sustitutos. `null` = sin declarar. */
+  equipment: string[] | null;
+  /** Días por semana que puede entrenar (RF-PER-01). */
+  daysPerWeek: number | null;
   aiNotes: string;
 }
 
 export interface AppSettings {
+  /**
+   * Keys en claro. Desde F4 solo se usan como paso intermedio de migración: en régimen
+   * quedan vacías y el valor real vive cifrado en `*Sealed` (Art. 4, RF-IA-08).
+   */
   apiKey: string;
   cohereApiKey: string;
+  apiKeySealed?: SealedValue;
+  cohereApiKeySealed?: SealedValue;
   defaultRest: number;
   sounds: boolean;
   haptics: boolean;
@@ -126,6 +190,19 @@ export interface AppSettings {
   barWeightKg?: number;
   /** Calculadora de discos: discos disponibles por lado (kg). */
   platesKg?: number[];
+  /** Modelo elegido por proveedor (RF-IA-09). Sin valor, el por defecto de cada uno. */
+  groqModel?: string;
+  cohereModel?: string;
+  /**
+   * Presupuesto mensual de tokens de la capa IA (RF-IA-07, EA-6). Al agotarse, la app cae
+   * al motor local sola. `0` desactiva la IA sin tener que borrar la key.
+   */
+  aiTokenBudget?: number;
+  /**
+   * Unidad de PRESENTACIÓN del peso (RF-PWA-04). El almacenamiento es siempre kg: cambiar
+   * de unidad no debe reescribir el historial (edge case §6 de la spec).
+   */
+  units?: 'kg' | 'lb';
 }
 
 /** Sesión borrada: espera 30 días en la papelera antes de desaparecer de verdad. */
@@ -146,6 +223,27 @@ export interface AppState {
   settings: AppSettings;
   /** Papelera de sesiones (30 días). Opcional: estados viejos no la tienen. */
   trash?: TrashedSession[];
+  /** Feedback sobre las sugerencias (RF-IA-05). Se reinyecta en contextos futuros. */
+  aiFeedback?: AiFeedbackEntry[];
+  /** Rutinas del usuario (RF-RUT-01). Siempre hay al menos una. */
+  routines: Routine[];
+  /** Rutina en curso: de ella salen el día que toca y la rotación (RF-RUT-04). */
+  activeRoutineId: string;
+}
+
+/** Qué hizo el atleta con una sugerencia (RF-IA-05, vista C1). */
+export type AiFeedbackAction = 'accepted' | 'modified' | 'rejected';
+
+export interface AiFeedbackEntry {
+  id: string;
+  dateISO: string;
+  exerciseId: string;
+  exerciseName: string;
+  action: AiFeedbackAction;
+  /** Lo que la IA propuso y lo que el atleta acabó haciendo (si difiere). */
+  suggested: SetRecommendation | null;
+  applied: SetRecommendation | null;
+  source: 'groq' | 'cohere' | 'local';
 }
 
 export interface SetRecommendation {

@@ -134,13 +134,18 @@ function buildTemplate(daysCount: 3 | 4): {
   };
 }
 
+/** Id de la rutina única que se crea al arrancar y al migrar (RF-RUT-01). */
+export const DEFAULT_ROUTINE_ID = 'routine-1';
+
 export function createInitialState(daysCount: 3 | 4 | 5 = 5): AppState {
   if (daysCount !== 5) {
     const t = buildTemplate(daysCount);
     return {
-      schemaVersion: 7,
+      schemaVersion: 10,
       exercises: t.exercises,
       days: t.days,
+      routines: [{ id: DEFAULT_ROUTINE_ID, name: '', dayIds: t.days.map((d) => d.id) }],
+      activeRoutineId: DEFAULT_ROUTINE_ID,
       sessions: t.sessions,
       activeDayIndex: 0,
       routinePointer: 0,
@@ -159,6 +164,9 @@ export function createInitialState(daysCount: 3 | 4 | 5 = 5): AppState {
           sex: null,
           weightLog: [],
           goal: null,
+          level: null,
+          equipment: null,
+          daysPerWeek: null,
           aiNotes: '',
         },
       },
@@ -300,9 +308,11 @@ export function createInitialState(daysCount: 3 | 4 | 5 = 5): AppState {
   ];
 
   return {
-    schemaVersion: 7,
+    schemaVersion: 10,
     exercises,
     days,
+    routines: [{ id: DEFAULT_ROUTINE_ID, name: '', dayIds: days.map((d) => d.id) }],
+    activeRoutineId: DEFAULT_ROUTINE_ID,
     sessions,
     activeDayIndex: 0,
     routinePointer: 0,
@@ -321,6 +331,9 @@ export function createInitialState(daysCount: 3 | 4 | 5 = 5): AppState {
         sex: null,
         weightLog: [],
         goal: null,
+        level: null,
+        equipment: null,
+        daysPerWeek: null,
         aiNotes: '',
       },
     },

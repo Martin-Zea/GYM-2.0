@@ -51,7 +51,7 @@
 .cs-axis text {
   font-size: 10px;
   fill: var(--text-2);
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--font-display);
 }
 
 .cs-last-title {
@@ -96,5 +96,5 @@
 }
 
 .mono {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--font-display);
 }

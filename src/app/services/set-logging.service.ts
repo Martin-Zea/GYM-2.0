@@ -133,9 +133,14 @@ export class SetLoggingService {
     if (this.state.settings().haptics && navigator.vibrate) navigator.vibrate(40);
     this.maybeCelebratePr(day, ex, setIndex);
 
-    const restSecs = ex.restSeconds || this.state.settings().defaultRest;
     const arr = this.buildSetsArray(day, ex);
     const nextIdx = arr.findIndex((s, i) => i > setIndex && !s.done);
+
+    // Superserie: se encadena con el siguiente sin descanso. Meter el temporizador aquí
+    // convertiría la superserie en dos ejercicios normales (RF-RUT-02).
+    if (nextIdx < 0 && this.chainsToNext(day, ex)) return result;
+
+    const restSecs = ex.restSeconds || this.state.settings().defaultRest;
     this.uiState.restTimer.set({
       seconds: restSecs,
       exerciseId: ex.id,
@@ -143,6 +148,14 @@ export class SetLoggingService {
       nextSetIndex: nextIdx,
     });
     return result;
+  }
+
+  /** `true` si el ejercicio siguiente del día forma superserie con este. */
+  chainsToNext(day: WorkoutDay, ex: Exercise): boolean {
+    if (!ex.supersetId) return false;
+    const i = day.exercises.findIndex((e) => e.id === ex.id);
+    const next = i >= 0 ? day.exercises[i + 1] : undefined;
+    return !!next && next.supersetId === ex.supersetId;
   }
 
   isExerciseDone(day: WorkoutDay, ex: Exercise): boolean {

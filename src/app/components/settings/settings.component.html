@@ -11,378 +11,565 @@
 
     <div class="sheet-body">
       <!-- Idioma / Language -->
-      <div class="settings-section">
-        <p class="settings-section-title">{{ T().settings_language }}</p>
-        <div class="settings-row">
-          <div class="settings-row-main">
-            <div class="settings-row-label">{{ T().settings_language_desc }}</div>
-          </div>
-          <div style="display: flex; gap: 6px">
-            <button
-              class="btn btn-sm"
-              [class.btn-primary]="tr.lang() === 'es'"
-              (click)="tr.setLang('es')"
-            >
-              ES
-            </button>
-            <button
-              class="btn btn-sm"
-              [class.btn-primary]="tr.lang() === 'en'"
-              (click)="tr.setLang('en')"
-            >
-              EN
-            </button>
+      @if (shows('prefs')) {
+        <div class="settings-section">
+          <p class="settings-section-title">{{ T().settings_language }}</p>
+          <div class="settings-row">
+            <div class="settings-row-main">
+              <div class="settings-row-label">{{ T().settings_language_desc }}</div>
+            </div>
+            <div style="display: flex; gap: 6px">
+              <button
+                class="btn btn-sm"
+                [class.btn-primary]="tr.lang() === 'es'"
+                (click)="tr.setLang('es')"
+              >
+                ES
+              </button>
+              <button
+                class="btn btn-sm"
+                [class.btn-primary]="tr.lang() === 'en'"
+                (click)="tr.setLang('en')"
+              >
+                EN
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      }
 
       <!-- Apariencia -->
-      <div class="settings-section">
-        <p class="settings-section-title">{{ T().settings_appearance }}</p>
-        <div class="settings-row">
-          <div class="settings-row-main">
-            <div class="settings-row-label">{{ T().settings_dark_theme }}</div>
-          </div>
-          <div style="display: flex; gap: 6px">
-            <button
-              class="btn btn-sm"
-              [class.btn-primary]="settings().theme === 'dark'"
-              (click)="patch({ theme: 'dark' })"
-            >
-              {{ T().settings_theme_dark }}
-            </button>
-            <button
-              class="btn btn-sm"
-              [class.btn-primary]="settings().theme === 'light'"
-              (click)="patch({ theme: 'light' })"
-            >
-              {{ T().settings_theme_light }}
-            </button>
-            <button
-              class="btn btn-sm"
-              [class.btn-primary]="settings().theme === 'high-contrast'"
-              (click)="patch({ theme: 'high-contrast' })"
-            >
-              {{ T().settings_theme_hc }}
-            </button>
+      @if (shows('prefs')) {
+        <div class="settings-section">
+          <p class="settings-section-title">{{ T().settings_appearance }}</p>
+          <div class="settings-row">
+            <div class="settings-row-main">
+              <div class="settings-row-label">{{ T().settings_dark_theme }}</div>
+            </div>
+            <div style="display: flex; gap: 6px">
+              <button
+                class="btn btn-sm"
+                [class.btn-primary]="settings().theme === 'dark'"
+                (click)="patch({ theme: 'dark' })"
+              >
+                {{ T().settings_theme_dark }}
+              </button>
+              <button
+                class="btn btn-sm"
+                [class.btn-primary]="settings().theme === 'light'"
+                (click)="patch({ theme: 'light' })"
+              >
+                {{ T().settings_theme_light }}
+              </button>
+              <button
+                class="btn btn-sm"
+                [class.btn-primary]="settings().theme === 'high-contrast'"
+                (click)="patch({ theme: 'high-contrast' })"
+              >
+                {{ T().settings_theme_hc }}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      }
 
       <!-- Sesión -->
-      <div class="settings-section">
-        <p class="settings-section-title">{{ T().settings_session }}</p>
-        <div class="settings-row">
-          <div class="settings-row-main">
-            <div class="settings-row-label">{{ T().settings_default_rest }}</div>
-            <div class="settings-row-desc">{{ T().settings_rest_desc }}</div>
+      @if (shows('prefs')) {
+        <div class="settings-section">
+          <p class="settings-section-title">{{ T().settings_session }}</p>
+          <div class="settings-row">
+            <div class="settings-row-main">
+              <div class="settings-row-label">{{ T().settings_default_rest }}</div>
+              <div class="settings-row-desc">{{ T().settings_rest_desc }}</div>
+            </div>
+            <input
+              class="input"
+              type="number"
+              min="15"
+              step="15"
+              style="width: 70px; text-align: center"
+              [value]="settings().defaultRest"
+              (input)="patchDefaultRest($event)"
+            />
           </div>
-          <input
-            class="input"
-            type="number"
-            min="15"
-            step="15"
-            style="width: 70px; text-align: center"
-            [value]="settings().defaultRest"
-            (input)="patchDefaultRest($event)"
-          />
-        </div>
-        <div class="settings-row">
-          <div class="settings-row-main">
-            <div class="settings-row-label">{{ T().settings_sounds }}</div>
+          <div class="settings-row">
+            <div class="settings-row-main">
+              <div class="settings-row-label">{{ T().settings_sounds }}</div>
+            </div>
+            <button
+              class="toggle"
+              [class.on]="settings().sounds"
+              (click)="patch({ sounds: !settings().sounds })"
+            ></button>
           </div>
-          <button
-            class="toggle"
-            [class.on]="settings().sounds"
-            (click)="patch({ sounds: !settings().sounds })"
-          ></button>
-        </div>
-        <div class="settings-row">
-          <div class="settings-row-main">
-            <div class="settings-row-label">{{ T().settings_haptics }}</div>
+          <div class="settings-row">
+            <div class="settings-row-main">
+              <div class="settings-row-label">{{ T().settings_haptics }}</div>
+            </div>
+            <button
+              class="toggle"
+              [class.on]="settings().haptics"
+              (click)="patch({ haptics: !settings().haptics })"
+            ></button>
           </div>
-          <button
-            class="toggle"
-            [class.on]="settings().haptics"
-            (click)="patch({ haptics: !settings().haptics })"
-          ></button>
+          <div class="settings-row">
+            <label class="settings-row-main" for="bar-weight">
+              <div class="settings-row-label">{{ T().settings_bar_weight }}</div>
+            </label>
+            <input
+              id="bar-weight"
+              class="input"
+              type="number"
+              min="1"
+              step="0.5"
+              inputmode="decimal"
+              style="width: 75px; text-align: center"
+              [value]="barWeight()"
+              (change)="patchBarWeight($event)"
+            />
+          </div>
+          <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 6px">
+            <label class="settings-row-label" for="plates-csv">{{
+              T().settings_plates_label
+            }}</label>
+            <div class="settings-row-desc">{{ T().settings_plates_hint }}</div>
+            <input
+              id="plates-csv"
+              class="input"
+              type="text"
+              inputmode="decimal"
+              [value]="platesCsv()"
+              (change)="patchPlates($event)"
+            />
+          </div>
         </div>
-        <div class="settings-row">
-          <label class="settings-row-main" for="bar-weight">
-            <div class="settings-row-label">{{ T().settings_bar_weight }}</div>
-          </label>
-          <input
-            id="bar-weight"
-            class="input"
-            type="number"
-            min="1"
-            step="0.5"
-            inputmode="decimal"
-            style="width: 75px; text-align: center"
-            [value]="barWeight()"
-            (change)="patchBarWeight($event)"
-          />
-        </div>
-        <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 6px">
-          <label class="settings-row-label" for="plates-csv">{{ T().settings_plates_label }}</label>
-          <div class="settings-row-desc">{{ T().settings_plates_hint }}</div>
-          <input
-            id="plates-csv"
-            class="input"
-            type="text"
-            inputmode="decimal"
-            [value]="platesCsv()"
-            (change)="patchPlates($event)"
-          />
-        </div>
-      </div>
+      }
 
       <!-- IA -->
-      <div class="settings-section">
-        <p class="settings-section-title">{{ T().settings_ai_section }}</p>
-        <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 8px">
-          <div class="settings-row-label">{{ T().settings_api_key_label }}</div>
-          <div class="settings-row-desc">
-            {{ T().settings_api_key_free }}
-            <a
-              class="muted-link"
-              href="https://console.groq.com/keys"
-              target="_blank"
-              rel="noopener"
-              >console.groq.com</a
-            >.
-            {{ T().settings_api_key_desc }}
-          </div>
-          <div style="display: flex; gap: 8px">
-            <input
-              class="input"
-              [type]="showApiKey() ? 'text' : 'password'"
-              placeholder="gsk_..."
-              style="flex: 1"
-              [value]="settings().apiKey"
-              (input)="patchApiKey($event)"
-            />
-            <button class="btn btn-ghost btn-sm" (click)="showApiKey.update((v) => !v)">
-              {{ showApiKey() ? T().settings_hide : T().settings_show }}
-            </button>
-          </div>
-        </div>
-        <div
-          class="settings-row"
-          style="flex-direction: column; align-items: stretch; gap: 8px; margin-top: 12px"
-        >
-          <div class="settings-row-label">{{ T().settings_cohere_key_label }}</div>
-          <div class="settings-row-desc">
-            {{ T().settings_cohere_key_free }}
-            <a
-              class="muted-link"
-              href="https://dashboard.cohere.com/api-keys"
-              target="_blank"
-              rel="noopener"
-              >dashboard.cohere.com</a
-            >.
-            {{ T().settings_cohere_key_desc }}
-          </div>
-          <div style="display: flex; gap: 8px">
-            <input
-              class="input"
-              [type]="showCohereKey() ? 'text' : 'password'"
-              placeholder="..."
-              style="flex: 1"
-              [value]="settings().cohereApiKey"
-              (input)="patchCohereApiKey($event)"
-            />
-            <button class="btn btn-ghost btn-sm" (click)="showCohereKey.update((v) => !v)">
-              {{ showCohereKey() ? T().settings_hide : T().settings_show }}
-            </button>
-          </div>
-        </div>
-        <p class="settings-row-desc settings-ai-privacy" style="margin-top: 12px">
-          <app-icon
-            name="globe"
-            [size]="13"
-            style="vertical-align: middle; margin-right: 4px; opacity: 0.6"
-          />
-          {{ T().settings_ai_privacy_note }}
-        </p>
-      </div>
-
-      <!-- Datos -->
-      <div class="settings-section">
-        <p class="settings-section-title">{{ T().settings_data }}</p>
-        <div style="display: flex; flex-wrap: wrap; gap: 8px">
-          <button class="btn btn-sm" (click)="exportData()">
-            <app-icon name="arrow_right" [size]="13" />
-            {{ T().settings_export }}
-          </button>
-          <button class="btn btn-sm" (click)="importData('merge')">
-            <app-icon name="arrow_left" [size]="13" />
-            {{ T().settings_import_merge }}
-          </button>
-          <button class="btn btn-sm" (click)="importData('replace')">
-            <app-icon name="arrow_left" [size]="13" />
-            {{ T().settings_import_replace }}
-          </button>
-          @if (shadowLog.hasEntries()) {
-            <button class="btn btn-sm" (click)="shadowLog.exportLog()">
-              <app-icon name="arrow_right" [size]="13" />
-              {{ T().settings_export_shadow_log }}
-            </button>
-          }
-          @if (!resetConfirm()) {
-            <button class="btn btn-danger btn-sm" (click)="openResetConfirm()">
-              <app-icon name="refresh" [size]="13" />
-              {{ T().settings_reset }}
-            </button>
-          }
-        </div>
-        <label class="settings-row" style="margin-top: 8px">
-          <div>
-            <div class="settings-row-label">{{ T().settings_export_credentials }}</div>
-            <div class="settings-row-desc">{{ T().settings_export_credentials_desc }}</div>
-          </div>
-          <input
-            type="checkbox"
-            [checked]="includeCredentials()"
-            (change)="includeCredentials.set($any($event.target).checked)"
-          />
-        </label>
-        @if (importError()) {
-          <p style="color: var(--danger); font-size: 12px; margin-top: 8px">{{ importError() }}</p>
-        }
-        @if (importReport()) {
-          <p style="color: var(--success); font-size: 12px; margin-top: 8px" role="status">
-            {{ importReport() }}
-          </p>
-        }
-        <!-- Espacio usado y purga de historial (RF-STO-08) -->
-        <div class="settings-subsection">
-          <div class="settings-row-label" style="margin-bottom: 2px">
-            {{ T().settings_storage_title }}
-          </div>
-          @if (storageInfo(); as info) {
+      @if (shows('ai')) {
+        <div class="settings-section">
+          <p class="settings-section-title">{{ T().settings_ai_section }}</p>
+          <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 8px">
+            <div class="settings-row-label">{{ T().settings_api_key_label }}</div>
             <div class="settings-row-desc">
-              {{ tr.tp('settings_storage_app', { size: formatBytes(info.appBytes) }) }}
-              @if (info.usedBytes !== null && info.quotaBytes !== null && info.percent !== null) {
-                ·
-                {{
-                  tr.tp('settings_storage_origin', {
-                    used: formatBytes(info.usedBytes),
-                    quota: formatBytes(info.quotaBytes),
-                    percent: info.percent,
-                  })
-                }}
+              {{ T().settings_api_key_free }}
+              <a
+                class="muted-link"
+                href="https://console.groq.com/keys"
+                target="_blank"
+                rel="noopener"
+                >console.groq.com</a
+              >.
+              {{ T().settings_api_key_desc }}
+            </div>
+            <div style="display: flex; gap: 8px">
+              <input
+                class="input"
+                [type]="showApiKey() ? 'text' : 'password'"
+                placeholder="gsk_..."
+                style="flex: 1"
+                [value]="keyValue('groq')"
+                (change)="saveKey('groq', $event)"
+              />
+              <button class="btn btn-ghost btn-sm" (click)="showApiKey.update((v) => !v)">
+                {{ showApiKey() ? T().settings_hide : T().settings_show }}
+              </button>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center">
+              <button class="btn btn-ghost btn-sm" (click)="testConnection('groq')">
+                {{ T().settings_test_connection }}
+              </button>
+              @if (testResult().groq; as res) {
+                <span class="settings-row-desc" [class.settings-test-ok]="res === 'ok'">{{
+                  connectionLabel(res)
+                }}</span>
+              }
+            </div>
+            <input
+              class="input"
+              [placeholder]="T().settings_model_placeholder"
+              [value]="settings().groqModel ?? ''"
+              (change)="patchModel('groq', $event)"
+            />
+          </div>
+          <div
+            class="settings-row"
+            style="flex-direction: column; align-items: stretch; gap: 8px; margin-top: 12px"
+          >
+            <div class="settings-row-label">{{ T().settings_cohere_key_label }}</div>
+            <div class="settings-row-desc">
+              {{ T().settings_cohere_key_free }}
+              <a
+                class="muted-link"
+                href="https://dashboard.cohere.com/api-keys"
+                target="_blank"
+                rel="noopener"
+                >dashboard.cohere.com</a
+              >.
+              {{ T().settings_cohere_key_desc }}
+            </div>
+            <div style="display: flex; gap: 8px">
+              <input
+                class="input"
+                [type]="showCohereKey() ? 'text' : 'password'"
+                placeholder="..."
+                style="flex: 1"
+                [value]="keyValue('cohere')"
+                (change)="saveKey('cohere', $event)"
+              />
+              <button class="btn btn-ghost btn-sm" (click)="showCohereKey.update((v) => !v)">
+                {{ showCohereKey() ? T().settings_hide : T().settings_show }}
+              </button>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center">
+              <button class="btn btn-ghost btn-sm" (click)="testConnection('cohere')">
+                {{ T().settings_test_connection }}
+              </button>
+              @if (testResult().cohere; as res) {
+                <span class="settings-row-desc" [class.settings-test-ok]="res === 'ok'">{{
+                  connectionLabel(res)
+                }}</span>
+              }
+            </div>
+            <input
+              class="input"
+              [placeholder]="T().settings_model_placeholder"
+              [value]="settings().cohereModel ?? ''"
+              (change)="patchModel('cohere', $event)"
+            />
+          </div>
+          <!-- Presupuesto mensual y consumo (RF-IA-07, EA-6) -->
+          <div
+            class="settings-row"
+            style="flex-direction: column; align-items: stretch; gap: 8px; margin-top: 12px"
+          >
+            <div class="settings-row-label">{{ T().settings_budget_label }}</div>
+            <div class="settings-row-desc">{{ T().settings_budget_desc }}</div>
+            <input
+              class="input"
+              type="number"
+              min="0"
+              step="10000"
+              [value]="tokenBudget()"
+              (change)="patchBudget($event)"
+            />
+            <div class="settings-row-desc">
+              {{ tr.tp('settings_budget_used', { used: usedTokens(), budget: tokenBudget() }) }}
+              @if (overBudget()) {
+                <strong>{{ T().settings_budget_reached }}</strong>
+              }
+            </div>
+          </div>
+
+          @if (!vaultAvailable) {
+            <p class="settings-row-desc settings-key-warning">
+              {{ T().settings_key_plain_warning }}
+            </p>
+          }
+
+          <!-- C3: qué sugirió la IA y qué hiciste (RF-IA-05) -->
+          @if (aiHistory().length) {
+            <div
+              class="settings-row"
+              style="flex-direction: column; align-items: stretch; gap: 6px; margin-top: 12px"
+            >
+              <div class="settings-row-label">{{ T().settings_ai_history }}</div>
+              @for (entry of aiHistory(); track entry.id) {
+                <div class="settings-ai-row">
+                  <span class="settings-ai-ex">{{ entry.exerciseName }}</span>
+                  <span class="mono">{{ suggestionLabel(entry) }}</span>
+                  <span class="settings-row-desc">{{ feedbackLabel(entry.action) }}</span>
+                </div>
               }
             </div>
           }
-          <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px">
-            <select
-              class="input input-sm"
-              [value]="purgeMonths()"
-              (change)="purgeMonths.set(+$any($event.target).value)"
-              [attr.aria-label]="T().settings_purge_label"
-            >
-              <option [value]="6">{{ tr.tp('settings_purge_months', { n: 6 }) }}</option>
-              <option [value]="12">{{ tr.tp('settings_purge_months', { n: 12 }) }}</option>
-              <option [value]="24">{{ tr.tp('settings_purge_months', { n: 24 }) }}</option>
-            </select>
-            <button class="btn btn-sm" (click)="purgeHistory()">
-              <app-icon name="trash" [size]="13" />
-              {{ T().settings_purge_btn }}
+
+          <p class="settings-row-desc settings-ai-privacy" style="margin-top: 12px">
+            <app-icon
+              name="globe"
+              [size]="13"
+              style="vertical-align: middle; margin-right: 4px; opacity: 0.6"
+            />
+            {{ T().settings_ai_privacy_note }}
+          </p>
+        </div>
+      }
+
+      <!-- Datos -->
+      @if (shows('data')) {
+        <div class="settings-section">
+          <p class="settings-section-title">{{ T().settings_data }}</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px">
+            <button class="btn btn-sm" (click)="exportData()">
+              <app-icon name="arrow_right" [size]="13" />
+              {{ T().settings_export }}
             </button>
-          </div>
-          @if (purgeReport()) {
-            <p style="font-size: 12px; margin-top: 6px" role="status">{{ purgeReport() }}</p>
-          }
-        </div>
-
-        <!-- Copias automáticas (IndexedDB) -->
-        <div class="settings-subsection">
-          <div class="settings-row-label" style="margin-bottom: 2px">
-            {{ T().settings_snapshots_title }}
-          </div>
-          <div class="settings-row-desc">{{ T().settings_snapshots_desc }}</div>
-          @if (snapshots().length) {
-            @for (snap of snapshots(); track snap) {
-              <div class="snapshot-row">
-                <span class="snapshot-date mono">{{ snap }}</span>
-                <button class="btn btn-sm" (click)="restoreSnapshot(snap)">
-                  {{ T().settings_snapshot_restore }}
-                </button>
-              </div>
-            }
-          } @else {
-            <p class="settings-row-desc" style="margin-top: 6px">
-              {{ T().settings_snapshots_empty }}
-            </p>
-          }
-          @if (snapshotRestored()) {
-            <p class="settings-restored-msg">✓</p>
-          }
-        </div>
-
-        <!-- Papelera de sesiones (30 días) -->
-        <div class="settings-subsection">
-          <div class="settings-row-label" style="margin-bottom: 2px">
-            {{ T().settings_trash_title }}
-          </div>
-          <div class="settings-row-desc">{{ T().settings_trash_desc }}</div>
-          @if (trash().length) {
-            @for (item of trash(); track item.session.id) {
-              <div class="snapshot-row">
-                <span class="snapshot-date">
-                  <span class="mono">{{ trashLabel(item.session.dateISO) }}</span>
-                  · {{ dayNameFor(item.session.dayId) }}
-                  <span class="trash-meta">{{
-                    tr.tp('trash_deleted_on', { date: trashLabel(item.deletedISO) })
-                  }}</span>
-                </span>
-                <button class="btn btn-sm" (click)="state.restoreSession(item.session.id)">
-                  {{ T().settings_trash_restore }}
-                </button>
-              </div>
-            }
-            <button
-              class="btn btn-ghost btn-sm"
-              style="margin-top: 6px"
-              (click)="state.emptyTrash()"
-            >
-              {{ T().settings_trash_clear }}
+            <button class="btn btn-sm" (click)="importData('merge')">
+              <app-icon name="arrow_left" [size]="13" />
+              {{ T().settings_import_merge }}
             </button>
-          } @else {
-            <p class="settings-row-desc" style="margin-top: 6px">{{ T().settings_trash_empty }}</p>
-          }
-        </div>
-
-        @if (resetConfirm()) {
-          <div class="reset-confirm">
-            <p class="reset-confirm-label">
-              {{ T().settings_reset_warning }}<br />
-              {{ tr.tp('settings_reset_type', { word: T().settings_reset_word }) }}
-            </p>
-            <div class="reset-confirm-row">
-              <input
-                class="input reset-confirm-input"
-                type="text"
-                [placeholder]="T().settings_reset_word"
-                autocomplete="off"
-                [value]="resetInput()"
-                (input)="resetInput.set($any($event.target).value)"
-              />
-              <button
-                class="btn btn-danger btn-sm"
-                [attr.disabled]="resetInput() !== T().settings_reset_word ? true : null"
-                (click)="confirmReset()"
-              >
-                {{ T().settings_reset_do }}
+            <button class="btn btn-sm" (click)="importData('replace')">
+              <app-icon name="arrow_left" [size]="13" />
+              {{ T().settings_import_replace }}
+            </button>
+            @if (shadowLog.hasEntries()) {
+              <button class="btn btn-sm" (click)="shadowLog.exportLog()">
+                <app-icon name="arrow_right" [size]="13" />
+                {{ T().settings_export_shadow_log }}
               </button>
-              <button class="btn btn-ghost btn-sm" (click)="cancelReset()">
-                {{ T().cancel }}
+            }
+            @if (!resetConfirm()) {
+              <button class="btn btn-danger btn-sm" (click)="openResetConfirm()">
+                <app-icon name="refresh" [size]="13" />
+                {{ T().settings_reset }}
+              </button>
+            }
+          </div>
+          <label class="settings-row" style="margin-top: 8px">
+            <div>
+              <div class="settings-row-label">{{ T().settings_export_credentials }}</div>
+              <div class="settings-row-desc">{{ T().settings_export_credentials_desc }}</div>
+            </div>
+            <input
+              type="checkbox"
+              [checked]="includeCredentials()"
+              (change)="includeCredentials.set($any($event.target).checked)"
+            />
+          </label>
+          @if (importError()) {
+            <p style="color: var(--danger); font-size: 12px; margin-top: 8px">
+              {{ importError() }}
+            </p>
+          }
+          @if (importReport()) {
+            <p style="color: var(--success); font-size: 12px; margin-top: 8px" role="status">
+              {{ importReport() }}
+            </p>
+          }
+          <!-- Espacio usado y purga de historial (RF-STO-08) -->
+          <div class="settings-subsection">
+            <div class="settings-row-label" style="margin-bottom: 2px">
+              {{ T().settings_storage_title }}
+            </div>
+            @if (storageInfo(); as info) {
+              <div class="settings-row-desc">
+                {{ tr.tp('settings_storage_app', { size: formatBytes(info.appBytes) }) }}
+                @if (info.usedBytes !== null && info.quotaBytes !== null && info.percent !== null) {
+                  ·
+                  {{
+                    tr.tp('settings_storage_origin', {
+                      used: formatBytes(info.usedBytes),
+                      quota: formatBytes(info.quotaBytes),
+                      percent: info.percent,
+                    })
+                  }}
+                }
+              </div>
+            }
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px">
+              <select
+                class="input input-sm"
+                [value]="purgeMonths()"
+                (change)="purgeMonths.set(+$any($event.target).value)"
+                [attr.aria-label]="T().settings_purge_label"
+              >
+                <option [value]="6">{{ tr.tp('settings_purge_months', { n: 6 }) }}</option>
+                <option [value]="12">{{ tr.tp('settings_purge_months', { n: 12 }) }}</option>
+                <option [value]="24">{{ tr.tp('settings_purge_months', { n: 24 }) }}</option>
+              </select>
+              <button class="btn btn-sm" (click)="purgeHistory()">
+                <app-icon name="trash" [size]="13" />
+                {{ T().settings_purge_btn }}
+              </button>
+            </div>
+            @if (purgeReport()) {
+              <p style="font-size: 12px; margin-top: 6px" role="status">{{ purgeReport() }}</p>
+            }
+          </div>
+
+          <!-- Copias automáticas (IndexedDB) -->
+          <div class="settings-subsection">
+            <div class="settings-row-label" style="margin-bottom: 2px">
+              {{ T().settings_snapshots_title }}
+            </div>
+            <div class="settings-row-desc">{{ T().settings_snapshots_desc }}</div>
+            @if (snapshots().length) {
+              @for (snap of snapshots(); track snap) {
+                <div class="snapshot-row">
+                  <span class="snapshot-date mono">{{ snap }}</span>
+                  <button class="btn btn-sm" (click)="restoreSnapshot(snap)">
+                    {{ T().settings_snapshot_restore }}
+                  </button>
+                </div>
+              }
+            } @else {
+              <p class="settings-row-desc" style="margin-top: 6px">
+                {{ T().settings_snapshots_empty }}
+              </p>
+            }
+            @if (snapshotRestored()) {
+              <p class="settings-restored-msg">✓</p>
+            }
+          </div>
+
+          <!-- A5 · Unidades (RF-PWA-04) -->
+          <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 8px">
+            <div class="settings-row-label">{{ T().prefs_units }}</div>
+            <div class="settings-row-desc">{{ T().prefs_units_desc }}</div>
+            <div style="display: flex; gap: 8px">
+              <button
+                class="btn btn-sm"
+                [class.btn-primary]="(settings().units ?? 'kg') === 'kg'"
+                (click)="patchUnits('kg')"
+              >
+                kg
+              </button>
+              <button
+                class="btn btn-sm"
+                [class.btn-primary]="settings().units === 'lb'"
+                (click)="patchUnits('lb')"
+              >
+                lb
               </button>
             </div>
           </div>
-        }
-      </div>
+
+          <!-- A5 · Notificaciones (RF-PWA-03) -->
+          <div
+            class="settings-row"
+            style="flex-direction: column; align-items: stretch; gap: 8px; margin-top: 12px"
+          >
+            <div class="settings-row-label">{{ T().prefs_notifications }}</div>
+            <div class="settings-row-desc">{{ T().prefs_notifications_desc }}</div>
+            @switch (notificationState()) {
+              @case ('granted') {
+                <p class="settings-row-desc settings-test-ok">
+                  {{ T().prefs_notifications_granted }}
+                </p>
+              }
+              @case ('denied') {
+                <p class="settings-row-desc">{{ T().prefs_notifications_denied }}</p>
+              }
+              @case ('default') {
+                <button class="btn btn-sm" (click)="requestNotifications()">
+                  {{ T().prefs_notifications_enable }}
+                </button>
+              }
+            }
+          </div>
+
+          <!-- Catálogo de ejercicios: archivar sin perder historial (RF-EJ-03) -->
+          @if (catalogList().length) {
+            <div
+              class="settings-row"
+              style="flex-direction: column; align-items: stretch; gap: 6px"
+            >
+              <div class="settings-row-label">{{ T().settings_exercises_title }}</div>
+              <div class="settings-row-desc">{{ T().settings_exercises_desc }}</div>
+              <div class="settings-exercise-list">
+                @for (ex of catalogList(); track ex.id) {
+                  <div class="settings-ai-row">
+                    <span class="settings-ai-ex" [class.settings-archived]="ex.archived">{{
+                      ex.name
+                    }}</span>
+                    <button
+                      class="btn btn-ghost btn-sm"
+                      (click)="toggleArchived(ex.id, !ex.archived)"
+                    >
+                      {{ ex.archived ? T().settings_unarchive : T().settings_archive }}
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Papelera de sesiones (30 días) -->
+          <div class="settings-subsection">
+            <div class="settings-row-label" style="margin-bottom: 2px">
+              {{ T().settings_trash_title }}
+            </div>
+            <div class="settings-row-desc">{{ T().settings_trash_desc }}</div>
+            @if (trash().length) {
+              @for (item of trash(); track item.session.id) {
+                <div class="snapshot-row">
+                  <span class="snapshot-date">
+                    <span class="mono">{{ trashLabel(item.session.dateISO) }}</span>
+                    · {{ dayNameFor(item.session.dayId) }}
+                    <span class="trash-meta">{{
+                      tr.tp('trash_deleted_on', { date: trashLabel(item.deletedISO) })
+                    }}</span>
+                  </span>
+                  <button class="btn btn-sm" (click)="state.restoreSession(item.session.id)">
+                    {{ T().settings_trash_restore }}
+                  </button>
+                </div>
+              }
+              <button
+                class="btn btn-ghost btn-sm"
+                style="margin-top: 6px"
+                (click)="state.emptyTrash()"
+              >
+                {{ T().settings_trash_clear }}
+              </button>
+            } @else {
+              <p class="settings-row-desc" style="margin-top: 6px">
+                {{ T().settings_trash_empty }}
+              </p>
+            }
+          </div>
+
+          @if (resetConfirm()) {
+            <div class="reset-confirm">
+              <p class="reset-confirm-label">
+                {{ T().settings_reset_warning }}<br />
+                {{ tr.tp('settings_reset_type', { word: T().settings_reset_word }) }}
+              </p>
+              <div class="reset-confirm-row">
+                <input
+                  class="input reset-confirm-input"
+                  type="text"
+                  [placeholder]="T().settings_reset_word"
+                  autocomplete="off"
+                  [value]="resetInput()"
+                  (input)="resetInput.set($any($event.target).value)"
+                />
+                <button
+                  class="btn btn-danger btn-sm"
+                  [attr.disabled]="resetInput() !== T().settings_reset_word ? true : null"
+                  (click)="confirmReset()"
+                >
+                  {{ T().settings_reset_do }}
+                </button>
+                <button class="btn btn-ghost btn-sm" (click)="cancelReset()">
+                  {{ T().cancel }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      @if (shows('about')) {
+        <div class="settings-section">
+          <p class="settings-section-title">{{ T().about_title }}</p>
+          <!-- A6 · Herramientas (RF-HER-01) -->
+          <button class="btn" style="width: 100%; margin-top: 12px" (click)="openTools()">
+            <app-icon name="ruler" [size]="14" />
+            {{ T().tools_open }}
+          </button>
+          <!-- A7 · Acerca de: disclaimer y privacidad, no letra pequeña escondida -->
+          <div
+            class="settings-row"
+            style="flex-direction: column; align-items: stretch; gap: 6px; margin-top: 12px"
+          >
+            <div class="settings-row-label">{{ T().about_title }}</div>
+            <p class="settings-row-desc">{{ T().about_disclaimer }}</p>
+            <p class="settings-row-desc">{{ T().about_privacy }}</p>
+            <p class="settings-row-desc mono">{{ T().about_version }} {{ appVersionLabel }}</p>
+          </div>
+        </div>
+      }
       <p class="settings-version">{{ tr.tp('settings_version', { version: appVersion }) }}</p>
       <p class="settings-version">
         <a href="privacy.html" target="_blank" rel="noopener" class="muted-link">

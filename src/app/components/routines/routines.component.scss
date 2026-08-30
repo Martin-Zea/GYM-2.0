@@ -1,0 +1,106 @@
+:host {
+  display: block;
+}
+
+.rt-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.rt-header-body {
+  flex: 1;
+  min-width: 0;
+}
+.rt-add {
+  margin-left: auto;
+  color: var(--accent);
+}
+
+/* Las tarjetas de rutina son botones: toda la superficie abre el detalle. Un chevron
+   diminuto como única zona pulsable es el clásico target que se falla con el pulgar. */
+.rt-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-1);
+  width: 100%;
+  margin-bottom: var(--sp-2);
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-0);
+  font: inherit;
+}
+.rt-card--archived {
+  opacity: 0.6;
+}
+.rt-name {
+  font-size: var(--fs-xl);
+}
+.rt-name-sm {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.rt-meta {
+  font-size: var(--fs-2xs);
+  color: var(--text-2);
+}
+
+.rt-create-label {
+  margin: var(--sp-4) 0 var(--sp-2);
+}
+.rt-create {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.rt-create-btn {
+  min-height: 44px;
+  padding: 0 var(--sp-4);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+}
+
+.rt-day {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  min-height: 52px;
+  margin-bottom: var(--sp-2);
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-0);
+  font: inherit;
+}
+.rt-day-name {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.rt-day-count {
+  margin-left: auto;
+}
+
+.rt-activate,
+.rt-wide {
+  width: 100%;
+  margin-bottom: var(--sp-3);
+}
+
+.rt-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.rt-empty {
+  margin-bottom: var(--sp-3);
+}
+.rt-error {
+  color: var(--danger);
+}
+.rt-preview-day {
+  margin: var(--sp-1) 0 0;
+}

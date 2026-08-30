@@ -11,7 +11,9 @@ import {
   UserProfile,
   WeightLogEntry,
 } from '../models/workout.model';
-import { createInitialState } from '../data/initial-data';
+import { catalogRefForName } from './catalog.service';
+import { tonnageOf } from '../utils/session';
+import { DEFAULT_ROUTINE_ID, createInitialState } from '../data/initial-data';
 import { STORAGE_KEYS } from './storage-keys';
 import { IDB_SNAPSHOT_STORE, IDB_STATE_STORE, IdbService } from './idb';
 import { daysBetweenISO as daysBetween } from '../utils/date';
@@ -20,7 +22,7 @@ import { GT_KEYS, GtDataKey, StorageAdapter } from './storage-adapter';
 import { TabLockService } from './tab-lock.service';
 
 const STORAGE_KEY = STORAGE_KEYS.appState;
-const CURRENT_SCHEMA = 7;
+const CURRENT_SCHEMA = 10;
 
 /**
  * Unidades del esquema ≤ v6 → enum neutro de v7 (`audit.md` R-4).
@@ -134,6 +136,9 @@ function defaultUserProfile(): UserProfile {
     sex: null,
     weightLog: [],
     goal: null,
+    level: null,
+    equipment: null,
+    daysPerWeek: null,
     aiNotes: '',
   };
 }
@@ -216,6 +221,37 @@ export class StorageService {
         })),
       };
     }
+    // v7 → v8: nivel de experiencia en el perfil. Sin declarar (`null`) el motor asume
+    // intermedio, que es el punto medio menos arriesgado (RF-IA-01, §3).
+    if (version < 8 && m.settings?.userProfile) {
+      const profile = m.settings.userProfile;
+      m = {
+        ...m,
+        settings: { ...m.settings, userProfile: { ...profile, level: profile.level ?? null } },
+      };
+    }
+    // v8 → v9: enlaza cada ejercicio del usuario con el catálogo estático por nombre
+    // normalizado (`audit.md` R-3). El id NO cambia: el enlace es un dato añadido. Los que
+    // no mapean se quedan sin `catalogRef` y siguen funcionando igual — adivinar el enlace
+    // mezclaría historiales de ejercicios distintos.
+    if (version < 9) {
+      m = {
+        ...m,
+        exercises: (m.exercises ?? []).map((e) =>
+          e.catalogRef ? e : { ...e, catalogRef: catalogRefForName(e.name) ?? undefined },
+        ),
+      };
+    }
+    // v9 → v10: los días pasan a colgar de una rutina (RF-RUT-01). Lo que había se envuelve
+    // en una rutina única para no cambiar nada de lo que el usuario ve.
+    if (version < 10) {
+      const dayIds = (m.days ?? []).map((d) => d.id);
+      m = {
+        ...m,
+        routines: m.routines?.length ? m.routines : [{ id: 'routine-1', name: '', dayIds }],
+        activeRoutineId: m.activeRoutineId ?? m.routines?.[0]?.id ?? 'routine-1',
+      };
+    }
     return { ...m, schemaVersion: CURRENT_SCHEMA };
   }
 
@@ -296,6 +332,11 @@ export class StorageService {
       routinePointer: migrated.routinePointer ?? migrated.activeDayIndex ?? 0,
       todayProgress: migrated.todayProgress ?? {},
       trash: this.purgeTrash(migrated.trash ?? []),
+      aiFeedback: migrated.aiFeedback ?? [],
+      routines: migrated.routines?.length
+        ? migrated.routines
+        : [{ id: DEFAULT_ROUTINE_ID, name: '', dayIds: (migrated.days ?? []).map((d) => d.id) }],
+      activeRoutineId: migrated.activeRoutineId ?? DEFAULT_ROUTINE_ID,
       settings: {
         apiKey: migrated.settings?.apiKey ?? '',
         cohereApiKey: migrated.settings?.cohereApiKey ?? '',
@@ -312,6 +353,9 @@ export class StorageService {
           sex: profile?.sex ?? null,
           weightLog: profile?.weightLog ?? [],
           goal: profile?.goal ?? null,
+          level: profile?.level ?? null,
+          equipment: profile?.equipment ?? null,
+          daysPerWeek: profile?.daysPerWeek ?? null,
           aiNotes: profile?.aiNotes ?? '',
         },
       },
@@ -825,9 +869,10 @@ export class StorageService {
       if (session.skipped) continue;
       sessionDates.add(session.dateISO);
       if (session.dateISO >= mondayISO && session.dateISO <= todayISO) {
-        for (const set of session.sets) {
-          weeklyVolume += (set.weight || 0) * (set.reps || 0);
-        }
+        // Con el factor de unidad: una mancuerna de 20 kg por mano son 40 kg movidos.
+        // Antes se contaba a la mitad, así que el volumen semanal de quien entrena con
+        // mancuernas sube al actualizar. Es una corrección, no un cambio de criterio (R-4).
+        weeklyVolume += tonnageOf(session.sets, state.exercises);
       }
     }
 
@@ -853,7 +898,7 @@ export class StorageService {
       const topWeight = sets.length ? Math.max(...sets.map((s) => s.weight || 0)) : 0;
       const topReps = sets.length ? Math.max(...sets.map((s) => s.reps || 0)) : 0;
       const totalReps = sets.reduce((sum, s) => sum + (s.reps || 0), 0);
-      const volume = sets.reduce((sum, s) => sum + (s.weight || 0) * (s.reps || 0), 0);
+      const volume = tonnageOf(sets, state.exercises);
       return { dateISO: session.dateISO, sets, topWeight, topReps, totalReps, volume };
     });
   }

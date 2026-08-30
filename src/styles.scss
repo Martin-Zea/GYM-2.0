@@ -1,153 +1,150 @@
 /* ============ Self-hosted fonts ============ */
 /* Inter — variable (400–700), 7 unicode subsets */
+/* ============ Tipografía (T-800) ============
+   Barlow para el cuerpo y Barlow Condensed para display y números.
+   Solo subsets latin y latin-ext: la UI es ES/EN, y arrastrar cirílico, griego y
+   vietnamita —como hacía Inter— era peso muerto en el arranque (CE-2).
+   Sin peso 500: a 9-11 px no se distingue del 600 y son 22 kB menos. */
 @font-face {
-  font-family: 'Inter';
+  font-family: 'Barlow';
   font-style: normal;
-  font-weight: 400 700;
+  font-weight: 400;
   font-display: swap;
-  src: url('fonts/inter-cyrillic-ext.woff2') format('woff2');
-  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
-}
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url('fonts/inter-cyrillic.woff2') format('woff2');
-  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
-}
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url('fonts/inter-greek-ext.woff2') format('woff2');
-  unicode-range: U+1F00-1FFF;
-}
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url('fonts/inter-greek.woff2') format('woff2');
-  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
-}
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url('fonts/inter-vietnamese.woff2') format('woff2');
+  src: url('fonts/barlow-400-latin.woff2') format('woff2');
   unicode-range:
-    U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301,
-    U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
-  font-family: 'Inter';
+  font-family: 'Barlow';
   font-style: normal;
-  font-weight: 400 700;
+  font-weight: 400;
   font-display: swap;
-  src: url('fonts/inter-latin-ext.woff2') format('woff2');
+  src: url('fonts/barlow-400-latin-ext.woff2') format('woff2');
   unicode-range:
     U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
     U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
     U+A720-A7FF;
 }
 @font-face {
-  font-family: 'Inter';
+  font-family: 'Barlow';
   font-style: normal;
-  font-weight: 400 700;
+  font-weight: 600;
   font-display: swap;
-  src: url('fonts/inter-latin.woff2') format('woff2');
+  src: url('fonts/barlow-600-latin.woff2') format('woff2');
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
     U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
-
-/* JetBrains Mono — variable (400–500), 6 unicode subsets */
 @font-face {
-  font-family: 'JetBrains Mono';
+  font-family: 'Barlow';
   font-style: normal;
-  font-weight: 400 500;
+  font-weight: 600;
   font-display: swap;
-  src: url('fonts/jetbrains-mono-cyrillic-ext.woff2') format('woff2');
-  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
-}
-@font-face {
-  font-family: 'JetBrains Mono';
-  font-style: normal;
-  font-weight: 400 500;
-  font-display: swap;
-  src: url('fonts/jetbrains-mono-cyrillic.woff2') format('woff2');
-  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
-}
-@font-face {
-  font-family: 'JetBrains Mono';
-  font-style: normal;
-  font-weight: 400 500;
-  font-display: swap;
-  src: url('fonts/jetbrains-mono-greek.woff2') format('woff2');
-  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
-}
-@font-face {
-  font-family: 'JetBrains Mono';
-  font-style: normal;
-  font-weight: 400 500;
-  font-display: swap;
-  src: url('fonts/jetbrains-mono-vietnamese.woff2') format('woff2');
-  unicode-range:
-    U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301,
-    U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
-}
-@font-face {
-  font-family: 'JetBrains Mono';
-  font-style: normal;
-  font-weight: 400 500;
-  font-display: swap;
-  src: url('fonts/jetbrains-mono-latin-ext.woff2') format('woff2');
+  src: url('fonts/barlow-600-latin-ext.woff2') format('woff2');
   unicode-range:
     U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
     U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
     U+A720-A7FF;
 }
 @font-face {
-  font-family: 'JetBrains Mono';
+  font-family: 'Barlow';
   font-style: normal;
-  font-weight: 400 500;
+  font-weight: 700;
   font-display: swap;
-  src: url('fonts/jetbrains-mono-latin.woff2') format('woff2');
+  src: url('fonts/barlow-700-latin.woff2') format('woff2');
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
     U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('fonts/barlow-700-latin-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('fonts/barlow-condensed-600-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('fonts/barlow-condensed-600-latin-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('fonts/barlow-condensed-700-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('fonts/barlow-condensed-700-latin-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
 }
 
 /* ============ Design tokens — dark (default) ============ */
 :root {
-  --bg-0: #0f172a;
-  --bg-1: #1e293b;
-  --bg-2: #263244;
-  --bg-3: #334155;
-  --bg-hover: #3a4a63;
-  --border: #334155;
-  --border-strong: #475569;
-  --text-0: #f1f5f9;
-  --text-1: #cbd5e1;
-  --text-2: #94a3b8;
-  --text-3: #64748b;
-  --accent: #3b82f6;
-  --accent-dim: #2563eb;
-  --accent-fg: #ffffff;
-  --accent-bg: rgba(59, 130, 246, 0.1);
-  --accent-border: rgba(59, 130, 246, 0.25);
-  --secondary: #f97316;
-  --secondary-fg: #ffffff;
-  --success: #34d399;
-  --success-fg: #0f172a;
-  --success-bg: rgba(52, 211, 153, 0.12);
-  --success-border: rgba(52, 211, 153, 0.35);
-  --danger: #f87171;
-  --danger-bg: rgba(248, 113, 113, 0.1);
-  --danger-border: rgba(248, 113, 113, 0.25);
+  /* Paleta del diseño (T-705, plan §1). Se conserva la separación semántica: el acento es
+     ACCIÓN (botones, CTA, foco, badge IA) y el éxito es ESTADO "hecho". Nunca al revés. */
+  --bg-0: #0b0e11;
+  --bg-1: #12161b;
+  --bg-2: #171c22;
+  --bg-3: #1f262e;
+  --bg-hover: #262f39;
+  --border: #232b34;
+  --border-strong: #364049;
+  --text-0: #f2f5f7;
+  --text-1: #c7d0d9;
+  --text-2: #8d98a4;
+  /* Cuarto escalón de gris: se usa en texto de 11 px (badges, numeración de días),
+     así que necesita AA normal, no el 3:1 de texto grande (T-705). */
+  --text-3: #7b848e;
+  --accent: #ff6a3d;
+  --accent-dim: #e8552a;
+  --accent-fg: #0b0e11;
+  --accent-bg: rgba(255, 106, 61, 0.12);
+  --accent-border: rgba(255, 106, 61, 0.3);
+  --secondary: #ffc24d;
+  --secondary-fg: #0b0e11;
+  --success: #3fd68c;
+  --success-fg: #0b0e11;
+  --success-bg: rgba(63, 214, 140, 0.13);
+  --success-border: rgba(63, 214, 140, 0.35);
+  --warning: #ffc24d;
+  --warning-bg: rgba(255, 194, 77, 0.12);
+  --warning-border: rgba(255, 194, 77, 0.4);
+  --danger: #ff6b6b;
+  --danger-bg: rgba(255, 107, 107, 0.12);
+  --danger-border: rgba(255, 107, 107, 0.28);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
@@ -176,6 +173,11 @@
   --sp-6: 24px;
   --sp-8: 32px;
 
+  /* Familias (T-800). El display es condensado y en versalita: los títulos y los
+     números leen como los de un disco de pesas, que es de donde sale la referencia. */
+  --font-body: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+
   /* Altura real de la topbar (padding-top adaptable + 44px de botones + 12px + borde) */
   --topbar-h: calc(57px + max(14px, env(safe-area-inset-top)));
 }
@@ -190,22 +192,31 @@
   --border-strong: #cbd5e1;
   --text-0: #1e293b;
   --text-1: #334155;
-  --text-2: #64748b;
-  --text-3: #94a3b8;
-  --accent: #2a6dff;
-  --accent-dim: #1a5ce0;
+  /* Sobre casi-blanco, AA limita cuánto puede aclararse el gris más apagado: los dos
+     últimos escalones quedan próximos a propósito, antes que ilegibles (T-705). */
+  --text-2: #55606f;
+  --text-3: #66707f;
+  /* El naranja del diseño sobre blanco no llega a AA como texto ni como fondo de botón,
+     así que en claro se usa el mismo tono oscurecido (T-705: contraste verificado). */
+  --accent: #c2410c;
+  --accent-dim: #9a3412;
   --accent-fg: #ffffff;
-  --accent-bg: rgba(42, 109, 255, 0.08);
-  --accent-border: rgba(42, 109, 255, 0.25);
-  --secondary: #ff8c42;
+  --accent-bg: rgba(194, 65, 12, 0.08);
+  --accent-border: rgba(194, 65, 12, 0.25);
+  --secondary: #b45309;
   --secondary-fg: #ffffff;
-  --success: #0e9f6e;
+  /* Verde oscurecido: con #0e9f6e el texto blanco encima quedaba en 3,39:1, por debajo de
+     AA. Era un problema anterior a la paleta nueva; lo destapó el test de contraste. */
+  --success: #047857;
   --success-fg: #ffffff;
-  --success-bg: rgba(14, 159, 110, 0.1);
-  --success-border: rgba(14, 159, 110, 0.3);
-  --danger: #ef4444;
-  --danger-bg: rgba(239, 68, 68, 0.08);
-  --danger-border: rgba(239, 68, 68, 0.22);
+  --success-bg: rgba(4, 120, 87, 0.1);
+  --success-border: rgba(4, 120, 87, 0.3);
+  --warning: #b45309;
+  --warning-bg: rgba(180, 83, 9, 0.08);
+  --warning-border: rgba(180, 83, 9, 0.28);
+  --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.08);
+  --danger-border: rgba(220, 38, 38, 0.22);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.12);
@@ -234,6 +245,9 @@
   --success-fg: #000000;
   --success-bg: rgba(0, 255, 0, 0.15);
   --success-border: rgba(0, 255, 0, 0.5);
+  --warning: #ffff00;
+  --warning-bg: rgba(255, 255, 0, 0.15);
+  --warning-border: rgba(255, 255, 0, 0.5);
   --danger: #ff4444;
   --danger-bg: rgba(255, 68, 68, 0.15);
   --danger-border: rgba(255, 68, 68, 0.5);
@@ -256,14 +270,10 @@ body {
   padding: 0;
   background: var(--bg-0);
   color: var(--text-0);
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    system-ui,
-    sans-serif;
-  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  font-family: var(--font-body);
+  /* Los ajustes 'cv11'/'ss01'/'ss03' eran de Inter; Barlow no los tiene y activarlos
+     no haría nada. Lo que sí importa aquí son los números de ancho fijo. */
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-size: 0.875rem; /* escala con el tamaño de letra del sistema */
@@ -362,7 +372,7 @@ textarea:focus-visible {
   color: var(--text-0);
   font-weight: 800;
   font-size: 12px;
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--font-display);
 }
 .topbar-actions {
   display: flex;
@@ -411,7 +421,7 @@ textarea:focus-visible {
 
 /* Language toggle (app topbar) */
 .lang-btn {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--font-display);
 }
 .lang-label {
   font-size: 11px;
@@ -573,9 +583,11 @@ button.btn[disabled] {
   border-bottom: 1px solid var(--border);
 }
 .sheet-title {
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
   margin: 0;
 }
 .sheet-body {
@@ -651,10 +663,23 @@ button.btn[disabled] {
   margin-bottom: 4px;
 }
 .stat-value {
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  font-weight: 700;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
+}
+.stat-value small {
+  font-size: 0.5em;
+  font-weight: 600;
+  color: var(--text-2);
+}
+/* Pareja de métricas lado a lado: H1 y P1 usan exactamente la misma. */
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
 }
 .stat-sub {
   font-size: 11px;
@@ -666,10 +691,15 @@ button.btn[disabled] {
 .view-header {
   padding: 8px 4px 16px;
 }
+/* Títulos de vista en display condensado y versalita (T-801): es la voz del diseño y
+   tiene que sonar igual en las cinco pestañas, no solo en las nuevas. */
 .view-title {
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: 1.05;
   margin: 0 0 4px;
 }
 .view-sub {
@@ -971,4 +1001,268 @@ button.btn[disabled] {
 }
 .cdk-drop-list-dragging .ex-card:not(.cdk-drag-placeholder) {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Biblioteca de ejercicios y plantillas — compartido por day-editor y home (RF-EJ-02, RF-RUT-03) */
+.library {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  margin-top: var(--sp-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-2);
+}
+.library-filters {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.library-chip {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-2xs);
+  cursor: pointer;
+}
+.library-chip--on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.library-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.library-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--sp-2);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-0);
+  text-align: left;
+  cursor: pointer;
+}
+.library-item-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-sm);
+}
+.library-item-meta {
+  font-size: var(--fs-2xs);
+  color: var(--text-2);
+}
+.library-empty {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+}
+
+/* ============ Primitivas del sistema de diseño (T-801) ============
+   Los mockups de docs/disenos-vistas-gym.html repiten un puñado de piezas en las 31
+   pantallas. Viven aquí y no en cada componente para que una tarjeta sea la MISMA
+   tarjeta en Hoy, Rutinas y Coach: si cada vista se dibuja la suya, en tres cambios
+   ya no se parecen. */
+
+/* Antetítulo: etiqueta corta en versalita sobre un dato. */
+.k {
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+/* Número de display. Condensado y tabular: al cambiar de 99 a 100 no debe saltar. */
+.num {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-display);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.num small {
+  font-size: 0.5em;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+/* Título de display en versalita condensada. */
+.big-t {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-title);
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.card {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-3);
+}
+/* Tarjeta destacada: solo para LO QUE TOCA AHORA (el día de hoy, la rutina activa).
+   Si se usa para más de una cosa por pantalla deja de destacar nada. */
+.card--hi {
+  background: linear-gradient(150deg, var(--accent-bg), var(--bg-1));
+  border-color: var(--accent-border);
+}
+.card--ok {
+  border-color: var(--success-border);
+}
+.card--warn {
+  border-color: var(--warning-border);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 4px var(--sp-2);
+  border-radius: 99px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.chip--accent {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+.chip--ok {
+  background: var(--success-bg);
+  border-color: var(--success-border);
+  color: var(--success);
+}
+.chip--warn {
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
+  color: var(--warning);
+}
+
+/* Control segmentado. Los botones son <button> reales: el diseño los dibuja como
+   <span>, pero esto se navega con teclado y lector de pantalla. */
+.seg {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.seg > button {
+  flex: 1;
+  min-height: 34px;
+  padding: 5px var(--sp-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+.seg > button[aria-pressed='true'],
+.seg > button.on {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+/* Fila de lista con icono, texto y chevron. */
+.li {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--sp-2) 2px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  color: var(--text-0);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.li:last-child {
+  border-bottom: 0;
+}
+.li-ic {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-md);
+  background: var(--bg-2);
+  color: var(--text-2);
+}
+.li-body {
+  flex: 1;
+  min-width: 0;
+}
+.li-body b {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.li-body span {
+  display: block;
+  font-size: var(--fs-2xs);
+  color: var(--text-2);
+}
+.li-chev {
+  flex: none;
+  margin-left: auto;
+  color: var(--text-3);
+}
+
+/* Nota al pie de un bloque: explica una consecuencia, no decora. */
+.note {
+  margin: 0;
+  font-size: var(--fs-2xs);
+  line-height: 1.45;
+  color: var(--text-2);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Texto solo para lectores de pantalla: da nombre a un botón que solo muestra un icono. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Métrica que no se puede calcular: se dice, no se rellena con un cero (R-5). */
+.stat-empty {
+  font-family: var(--font-body);
+  font-size: var(--fs-2xs);
+  font-weight: 500;
+  color: var(--text-2);
 }

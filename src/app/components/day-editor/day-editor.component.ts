@@ -17,6 +17,8 @@ import {
 import { IconComponent } from '../icon/icon.component';
 import { FocusTrapDirective } from '../../directives/focus-trap.directive';
 import { StateService } from '../../services/state.service';
+import { CatalogService } from '../../services/catalog.service';
+import { CatalogExercise, Equipment, MuscleGroup } from '../../data/exercise-catalog';
 import { UIStateService } from '../../services/ui-state.service';
 import { StorageService, normalizeExerciseName } from '../../services/storage.service';
 import { TranslationService } from '../../services/translation.service';
@@ -121,6 +123,71 @@ export class DayEditorComponent implements OnInit {
       unit: 'KG',
       notes: '',
     };
+  }
+
+  // ── Biblioteca R4 (RF-EJ-01/02) ──
+
+  private readonly catalog = inject(CatalogService);
+  protected readonly showLibrary = signal(false);
+  protected readonly libraryText = signal('');
+  protected readonly libraryGroup = signal<MuscleGroup | null>(null);
+  protected readonly libraryEquipment = signal<Equipment | null>(null);
+
+  protected readonly muscleGroups: MuscleGroup[] = [
+    'chest',
+    'back',
+    'shoulders',
+    'biceps',
+    'triceps',
+    'quads',
+    'hamstrings',
+    'glutes',
+    'calves',
+    'core',
+  ];
+  protected readonly equipmentOptions: Equipment[] = [
+    'barbell',
+    'dumbbell',
+    'machine',
+    'cable',
+    'bodyweight',
+    'band',
+  ];
+
+  /** Resultados de la biblioteca, ya sin lo que el día tiene puesto. */
+  protected readonly libraryResults = computed(() => {
+    const inDay = new Set(
+      this.exercises()
+        .map((e) => e.catalogRef)
+        .filter(Boolean),
+    );
+    return this.catalog
+      .search({
+        text: this.libraryText(),
+        group: this.libraryGroup(),
+        equipment: this.libraryEquipment(),
+      })
+      .filter((item) => !inDay.has(item.ref))
+      .slice(0, 40);
+  });
+
+  protected groupLabel(group: MuscleGroup): string {
+    return this.T()[`muscle_${group}` as keyof ReturnType<typeof this.T>] as string;
+  }
+
+  protected equipmentLabel(equipment: Equipment): string {
+    return this.T()[`equipment_${equipment}` as keyof ReturnType<typeof this.T>] as string;
+  }
+
+  protected catalogName(item: CatalogExercise): string {
+    return this.catalog.nameOf(item, this.tr.lang());
+  }
+
+  /** Añade desde la biblioteca: el ejercicio llega con unidad, descanso y ladrillo sensatos. */
+  protected addFromCatalog(item: CatalogExercise): void {
+    const exercise = this.catalog.toExercise(item, this.tr.lang(), this.storage.uid());
+    this.exercises.update((arr) => [...arr, exercise]);
+    this.libraryText.set('');
   }
 
   protected addExercise(): void {
@@ -280,10 +347,57 @@ export class DayEditorComponent implements OnInit {
 
   protected setExNum(
     i: number,
-    key: 'defaultSets' | 'defaultRepTarget' | 'brick' | 'restSeconds',
+    key: 'defaultSets' | 'defaultRepTarget' | 'brick' | 'restSeconds' | 'repMin' | 'targetRpe',
     event: Event,
   ): void {
     this.patch(i, { [key]: Number((event.target as HTMLInputElement).value) });
+  }
+
+  // ── R5: esquema completo (RF-RUT-01/02) ──
+
+  /** Rango de reps: vacío = sin rango, el objetivo es un número seco. */
+  protected setRepMin(i: number, event: Event): void {
+    const raw = (event.target as HTMLInputElement).value.trim();
+    const num = Number(raw);
+    this.patch(i, { repMin: raw && Number.isFinite(num) && num > 0 ? num : undefined });
+  }
+
+  protected setTargetRpe(i: number, event: Event): void {
+    const raw = (event.target as HTMLInputElement).value.trim();
+    const num = Number(raw);
+    this.patch(i, {
+      targetRpe: raw && Number.isFinite(num) && num >= 1 && num <= 10 ? num : undefined,
+    });
+  }
+
+  protected setSetStyle(i: number, event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.patch(i, { setStyle: value === 'normal' ? undefined : (value as 'dropset' | 'amrap') });
+  }
+
+  /**
+   * Encadena este ejercicio con el anterior en una superserie (RF-RUT-02).
+   *
+   * La superserie es una propiedad del PAR, no del ejercicio suelto: se marca compartiendo
+   * `supersetId` con el de arriba, que es como el usuario la piensa ("este va con el anterior").
+   */
+  protected toggleSuperset(i: number): void {
+    if (i === 0) return;
+    const arr = this.exercises();
+    const prev = arr[i - 1];
+    const current = arr[i];
+    if (current.supersetId && current.supersetId === prev.supersetId) {
+      this.patch(i, { supersetId: undefined });
+      return;
+    }
+    const groupId = prev.supersetId ?? this.storage.uid();
+    if (!prev.supersetId) this.patch(i - 1, { supersetId: groupId });
+    this.patch(i, { supersetId: groupId });
+  }
+
+  protected isSupersetWithPrevious(i: number): boolean {
+    const arr = this.exercises();
+    return i > 0 && !!arr[i].supersetId && arr[i].supersetId === arr[i - 1].supersetId;
   }
 
   protected setExBrick(i: number, event: Event): void {

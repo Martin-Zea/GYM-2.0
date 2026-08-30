@@ -85,14 +85,14 @@
 }
 
 .achievement-weight {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-display);
   font-size: 13px;
   font-weight: 600;
   color: var(--accent);
 }
 
 .achievement-reps {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-display);
   font-size: 12px;
   color: var(--text-2);
 }
@@ -123,7 +123,7 @@
 }
 
 .mono {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-display);
 }
 
 /* ── Registro de peso (movido desde Ajustes) ── */
@@ -279,4 +279,20 @@
 .profile-ai-note {
   margin: 10px 0 0;
   color: var(--text-3);
+}
+
+.profile-goal-title {
+  margin-top: var(--sp-4);
+}
+
+.profile-measures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+.profile-measure {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }

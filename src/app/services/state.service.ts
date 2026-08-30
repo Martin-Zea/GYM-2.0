@@ -1,9 +1,12 @@
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import {
+  AiFeedbackEntry,
   AppSettings,
+  MeasureEntry,
   AppState,
   Exercise,
   Session,
+  Routine,
   SetRecord,
   StoredWorkoutDay,
   TodayDayProgress,
@@ -17,6 +20,11 @@ import { UIStateService } from './ui-state.service';
 import { TabLockService } from './tab-lock.service';
 import { STORAGE_KEYS } from './storage-keys';
 import { createInitialState } from '../data/initial-data';
+import { RoutineTemplate } from '../data/routine-templates';
+import { CatalogService } from './catalog.service';
+
+/** Tope de entradas de feedback guardadas (RF-IA-05). */
+const AI_FEEDBACK_CAP = 60;
 
 @Injectable({ providedIn: 'root' })
 export class StateService {
@@ -31,16 +39,34 @@ export class StateService {
   readonly exercises = computed(() => this.state().exercises);
 
   /** Días resueltos: los `exerciseIds` guardados se expanden a objetos `Exercise` del catálogo. */
+  readonly routines = computed(() => this.state().routines ?? []);
+
+  readonly activeRoutine = computed<Routine | null>(() => {
+    const s = this.state();
+    return (s.routines ?? []).find((r) => r.id === s.activeRoutineId) ?? s.routines?.[0] ?? null;
+  });
+
+  /**
+   * Días de la RUTINA ACTIVA, con los ejercicios resueltos desde el catálogo.
+   *
+   * Todo lo que el usuario ve —el día que toca, la rotación, el editor— pasa por aquí, así
+   * que cambiar de rutina cambia la app entera sin tocar ningún otro sitio (RF-RUT-04).
+   */
   readonly days = computed<WorkoutDay[]>(() => {
     const s = this.state();
     const byId = new Map(s.exercises.map((e) => [e.id, e]));
-    return s.days.map((d) => ({
-      id: d.id,
-      name: d.name,
-      exercises: d.exerciseIds
-        .map((id) => byId.get(id))
-        .filter((e): e is Exercise => e !== undefined),
-    }));
+    const byDayId = new Map(s.days.map((d) => [d.id, d]));
+    const routine = this.activeRoutine();
+    const stored = routine ? routine.dayIds.map((id) => byDayId.get(id)) : s.days;
+    return stored
+      .filter((d): d is StoredWorkoutDay => d !== undefined)
+      .map((d) => ({
+        id: d.id,
+        name: d.name,
+        exercises: d.exerciseIds
+          .map((id) => byId.get(id))
+          .filter((e): e is Exercise => e !== undefined),
+      }));
   });
 
   readonly sessions = computed(() => this.state().sessions);
@@ -49,7 +75,7 @@ export class StateService {
   readonly activeDay = computed(() => this.days()[this.state().activeDayIndex] ?? null);
   readonly routinePointer = computed(() => this.state().routinePointer);
   readonly currentDayIndex = computed(() => {
-    const days = this.state().days;
+    const days = this.days();
     if (!days.length) return 0;
     return this.state().routinePointer % days.length;
   });
@@ -164,11 +190,20 @@ export class StateService {
         ? s.days.map((d) => (d.id === stored.id ? stored : d))
         : [...s.days, stored];
 
+      // Un día nuevo pertenece a la rutina activa: si no, se guardaría en el limbo
+      const routines = exists
+        ? s.routines
+        : s.routines.map((r) =>
+            r.id === s.activeRoutineId ? { ...r, dayIds: [...r.dayIds, stored.id] } : r,
+          );
+      const activeCount = routines.find((r) => r.id === s.activeRoutineId)?.dayIds.length ?? 0;
+
       return {
         ...s,
         exercises: catalog,
         days,
-        activeDayIndex: exists ? s.activeDayIndex : days.length - 1,
+        routines,
+        activeDayIndex: exists ? s.activeDayIndex : Math.max(0, activeCount - 1),
       };
     });
   }
@@ -176,12 +211,156 @@ export class StateService {
   deleteDay(dayId: string): void {
     this.state.update((s) => {
       const days = s.days.filter((d) => d.id !== dayId);
+      const routines = s.routines.map((r) => ({
+        ...r,
+        dayIds: r.dayIds.filter((id) => id !== dayId),
+      }));
+      const activeCount = routines.find((r) => r.id === s.activeRoutineId)?.dayIds.length ?? 0;
       return {
         ...s,
         days,
-        activeDayIndex: Math.min(s.activeDayIndex, Math.max(0, days.length - 1)),
+        routines,
+        activeDayIndex: Math.min(s.activeDayIndex, Math.max(0, activeCount - 1)),
       };
     });
+  }
+
+  // ── CRUD de rutinas (RF-RUT-01, vistas R1–R3) ──
+
+  /** Crea una rutina vacía y la deja activa. */
+  createRoutine(name: string): string {
+    const id = this.storage.uid();
+    this.state.update((s) => ({
+      ...s,
+      routines: [...s.routines, { id, name: name.trim(), dayIds: [] }],
+      activeRoutineId: id,
+      routinePointer: 0,
+      activeDayIndex: 0,
+    }));
+    return id;
+  }
+
+  renameRoutine(routineId: string, name: string): void {
+    this.state.update((s) => ({
+      ...s,
+      routines: s.routines.map((r) => (r.id === routineId ? { ...r, name: name.trim() } : r)),
+    }));
+  }
+
+  /**
+   * Duplica una rutina con copias propias de sus días.
+   *
+   * Copias y no referencias: duplicar existe para probar una variante, y si los días fueran
+   * los mismos objetos, editarlos en la copia cambiaría el original.
+   */
+  duplicateRoutine(routineId: string, name: string): string | null {
+    const source = this.state().routines.find((r) => r.id === routineId);
+    if (!source) return null;
+    const id = this.storage.uid();
+    this.state.update((s) => {
+      const copies: StoredWorkoutDay[] = source.dayIds
+        .map((dayId) => s.days.find((d) => d.id === dayId))
+        .filter((d): d is StoredWorkoutDay => d !== undefined)
+        .map((d) => ({ ...d, id: this.storage.uid() }));
+      return {
+        ...s,
+        days: [...s.days, ...copies],
+        routines: [...s.routines, { id, name: name.trim(), dayIds: copies.map((d) => d.id) }],
+      };
+    });
+    return id;
+  }
+
+  /**
+   * Crea una rutina a partir de una plantilla (RF-RUT-03).
+   *
+   * Los ejercicios se reusan del catálogo cuando ya existen (por nombre normalizado), así
+   * que importar una plantilla NO parte el historial de quien ya hacía press banca.
+   */
+  importTemplate(template: RoutineTemplate, lang: 'es' | 'en', catalog: CatalogService): string {
+    const routineId = this.storage.uid();
+    const name = lang === 'en' ? template.en : template.es;
+
+    this.state.update((s) => {
+      const exercises = [...s.exercises];
+      const byNorm = new Map(exercises.map((e) => [normalizeExerciseName(e.name), e.id]));
+      const days: StoredWorkoutDay[] = [];
+
+      for (const day of template.days) {
+        const exerciseIds: string[] = [];
+        for (const ref of day.refs) {
+          const item = catalog.byRef(ref);
+          if (!item) continue;
+          const built = catalog.toExercise(item, lang, this.storage.uid());
+          const key = normalizeExerciseName(built.name);
+          const existing = byNorm.get(key);
+          if (existing) {
+            exerciseIds.push(existing);
+          } else {
+            exercises.push(built);
+            byNorm.set(key, built.id);
+            exerciseIds.push(built.id);
+          }
+        }
+        days.push({
+          id: this.storage.uid(),
+          name: lang === 'en' ? day.en : day.es,
+          exerciseIds,
+        });
+      }
+
+      return {
+        ...s,
+        exercises,
+        days: [...s.days, ...days],
+        routines: [...s.routines, { id: routineId, name, dayIds: days.map((d) => d.id) }],
+        activeRoutineId: routineId,
+        routinePointer: 0,
+        activeDayIndex: 0,
+      };
+    });
+
+    return routineId;
+  }
+
+  setActiveRoutine(routineId: string): void {
+    this.state.update((s) =>
+      s.routines.some((r) => r.id === routineId)
+        ? { ...s, activeRoutineId: routineId, routinePointer: 0, activeDayIndex: 0 }
+        : s,
+    );
+  }
+
+  setRoutineArchived(routineId: string, archived: boolean): void {
+    this.state.update((s) => ({
+      ...s,
+      routines: s.routines.map((r) => (r.id === routineId ? { ...r, archived } : r)),
+    }));
+  }
+
+  /**
+   * Borra una rutina y sus días.
+   *
+   * No se puede borrar la última: la app sin rutina no tiene qué mostrar en Inicio. Las
+   * sesiones históricas de esos días sobreviven — apuntan al `dayId`, no a la rutina.
+   */
+  deleteRoutine(routineId: string): boolean {
+    const routines = this.state().routines;
+    if (routines.length <= 1) return false;
+    this.state.update((s) => {
+      const target = s.routines.find((r) => r.id === routineId);
+      const remaining = s.routines.filter((r) => r.id !== routineId);
+      const dayIds = new Set(target?.dayIds ?? []);
+      return {
+        ...s,
+        days: s.days.filter((d) => !dayIds.has(d.id)),
+        routines: remaining,
+        activeRoutineId: s.activeRoutineId === routineId ? remaining[0].id : s.activeRoutineId,
+        routinePointer: s.activeRoutineId === routineId ? 0 : s.routinePointer,
+        activeDayIndex: 0,
+      };
+    });
+    return true;
   }
 
   saveSettings(settings: AppSettings): void {
@@ -457,6 +636,27 @@ export class StateService {
   }
 
   /**
+   * Registra qué hizo el atleta con una sugerencia (RF-IA-05).
+   *
+   * Se guarda un tope de entradas y solo la última por ejercicio y día: el valor está en la
+   * tendencia ("rechaza subir en sentadilla"), no en tener el registro completo.
+   */
+  recordAiFeedback(entry: Omit<AiFeedbackEntry, 'id' | 'dateISO'>): void {
+    const full: AiFeedbackEntry = { ...entry, id: this.storage.uid(), dateISO: this.todayKey };
+    this.state.update((s) => {
+      const rest = (s.aiFeedback ?? []).filter(
+        (f) => !(f.exerciseId === full.exerciseId && f.dateISO === full.dateISO),
+      );
+      return { ...s, aiFeedback: [...rest, full].slice(-AI_FEEDBACK_CAP) };
+    });
+  }
+
+  /** Feedback reciente de un ejercicio, del más nuevo al más viejo. */
+  aiFeedbackFor(exerciseId: string): AiFeedbackEntry[] {
+    return (this.state().aiFeedback ?? []).filter((f) => f.exerciseId === exerciseId).reverse();
+  }
+
+  /**
    * Nota de la sesión entera, distinta de las notas por ejercicio (RF-SES-05).
    *
    * Si todavía no hay sesión (ninguna serie registrada) no hay dónde guardarla y se ignora,
@@ -646,6 +846,62 @@ export class StateService {
   }
 
   /** Añade un ejercicio existente del catálogo a un día guardado (dedupe por id). */
+  /**
+   * Mete un ejercicio en el catálogo del usuario, reusando el id si ya existe por nombre.
+   *
+   * Reusar por nombre normalizado es lo que evita el bug clásico de re-tipear: dos entradas
+   * "Press banca" con historiales partidos por la mitad.
+   */
+  upsertExercise(exercise: Exercise): string {
+    const norm = normalizeExerciseName(exercise.name);
+    const existing = this.state().exercises.find((e) => normalizeExerciseName(e.name) === norm);
+    if (existing) return existing.id;
+    this.state.update((s) => ({ ...s, exercises: [...s.exercises, exercise] }));
+    return exercise.id;
+  }
+
+  /**
+   * Archiva o desarchiva un ejercicio (RF-EJ-03).
+   *
+   * Archivar NO borra: el ejercicio y su historial siguen en el catálogo, solo deja de
+   * ofrecerse al añadir. Borrarlo se llevaría por delante meses de progreso.
+   */
+  /**
+   * Guarda las medidas de HOY (RF-PER-04).
+   *
+   * Una entrada por día, como el peso corporal: medirse dos veces el mismo día y guardar las
+   * dos convertiría la gráfica en un serrucho sin significado.
+   */
+  saveMeasures(entry: Omit<MeasureEntry, 'dateISO'>): void {
+    const today = this.todayKey;
+    const clean = Object.fromEntries(
+      Object.entries(entry).filter(([, v]) => typeof v === 'number' && v > 0),
+    );
+    if (!Object.keys(clean).length) return;
+    this.state.update((s) => {
+      const rest = (s.settings.userProfile.measures ?? []).filter((m) => m.dateISO !== today);
+      return {
+        ...s,
+        settings: {
+          ...s.settings,
+          userProfile: {
+            ...s.settings.userProfile,
+            measures: [...rest, { dateISO: today, ...clean }].sort((a, b) =>
+              a.dateISO < b.dateISO ? -1 : 1,
+            ),
+          },
+        },
+      };
+    });
+  }
+
+  setExerciseArchived(exerciseId: string, archived: boolean): void {
+    this.state.update((s) => ({
+      ...s,
+      exercises: s.exercises.map((e) => (e.id === exerciseId ? { ...e, archived } : e)),
+    }));
+  }
+
   addExerciseToDay(dayId: string, exerciseId: string): void {
     this.state.update((s) => ({
       ...s,

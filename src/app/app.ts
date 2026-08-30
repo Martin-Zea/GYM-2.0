@@ -7,6 +7,7 @@ import { TranslationService } from './services/translation.service';
 import { AppUpdateService } from './services/app-update.service';
 import { ErrorService } from './services/error.service';
 import { ShareService } from './services/share.service';
+import { ApiKeyService } from './services/api-key.service';
 import { BackupService } from './services/backup.service';
 import { ThemeService } from './services/theme.service';
 import { WakeLockService } from './services/wake-lock.service';
@@ -16,12 +17,16 @@ import { IconComponent } from './components/icon/icon.component';
 import { RestTimerComponent } from './components/rest-timer/rest-timer.component';
 import { DayEditorComponent } from './components/day-editor/day-editor.component';
 import { SettingsComponent } from './components/settings/settings.component';
+import { ToolsComponent } from './components/tools/tools.component';
 import { DayDetailSheetComponent } from './components/day-detail-sheet/day-detail-sheet.component';
 import { DayPickerSheetComponent } from './components/day-picker-sheet/day-picker-sheet.component';
 import { DayHistorySheetComponent } from './components/day-history-sheet/day-history-sheet.component';
 import { ExerciseChartSheetComponent } from './components/exercise-chart-sheet/exercise-chart-sheet.component';
 import { BottomNavComponent } from './components/bottom-nav/bottom-nav.component';
-import { OnboardingComponent } from './components/onboarding/onboarding.component';
+import {
+  OnboardingComponent,
+  OnboardingResult,
+} from './components/onboarding/onboarding.component';
 import { LegalGateComponent } from './components/legal-gate/legal-gate.component';
 
 @Component({
@@ -33,6 +38,7 @@ import { LegalGateComponent } from './components/legal-gate/legal-gate.component
     RestTimerComponent,
     DayEditorComponent,
     SettingsComponent,
+    ToolsComponent,
     DayDetailSheetComponent,
     DayPickerSheetComponent,
     DayHistorySheetComponent,
@@ -53,6 +59,7 @@ export class App {
   protected readonly errorService = inject(ErrorService);
   private readonly storage = inject(StorageService);
   private readonly shareService = inject(ShareService);
+  private readonly apiKeys = inject(ApiKeyService);
   private readonly backup = inject(BackupService);
   // Inyectado para activar el efecto que aplica el tema al <html>
   private readonly themeService = inject(ThemeService);
@@ -79,6 +86,8 @@ export class App {
     this.checkBackupReminder();
     // Un descanso que seguía corriendo cuando el SO mató la app se retoma donde estaba.
     this.uiState.restoreRest();
+    // Descifra las keys a memoria y sella las que quedaran en claro de versiones anteriores.
+    void this.apiKeys.init();
     // Capture-phase popstate: intercept back button before Angular's router listener.
     // When an overlay is open, close it instead of navigating. The URL never changes
     // for overlay entries (pushState with empty string), so Angular's URL state stays
@@ -196,15 +205,42 @@ export class App {
     void this.shareService.share(pr.exerciseName, pr.value, unit, this.storage.todayISO());
   }
 
-  completeOnboarding(days: 3 | 4 | 5): void {
+  /**
+   * Cierra el onboarding: guarda el perfil que haya dado y prepara su primera rutina (O6).
+   *
+   * Lo que dejó en blanco se guarda como `null`, no como un valor por defecto: la app tiene
+   * que poder distinguir "soy principiante" de "no lo dijo" (RF-PER-01).
+   */
+  completeOnboarding(result: OnboardingResult): void {
     this.storage.setFlag(FLAGS.onboardingDone, STORAGE_KEYS.onboardingDone);
     this.showOnboarding.set(false);
-    // Aplica la plantilla elegida solo si el usuario aún no tiene datos propios
-    // (el onboarding solo aparece en el primer arranque, pero por si acaso).
+
+    const settings = this.state.settings();
+    this.state.saveSettings({
+      ...settings,
+      units: result.units,
+      userProfile: { ...settings.userProfile, ...result.profile },
+    });
+
+    // La plantilla solo se aplica si el usuario aún no tiene datos propios (el onboarding
+    // solo aparece en el primer arranque, pero por si acaso).
     const hasRealData = this.state
       .sessions()
       .some((s) => !s.skipped && s.dateISO >= this.storage.todayISO());
-    if (!hasRealData) this.state.applyTemplate(days);
+    if (hasRealData) return;
+
+    if (result.choice === 'template' || result.choice === 'ai') {
+      // Ambas rutas terminan en la pantalla de rutinas de Inicio, donde el usuario elige
+      // plantilla o lanza el generador viendo el coste antes (RF-RUT-03/05).
+      const days = Math.min(5, Math.max(3, result.daysPerWeek)) as 3 | 4 | 5;
+      this.state.applyTemplate(days);
+      return;
+    }
+    if (result.choice === 'manual') {
+      this.state.applyTemplate(3);
+      return;
+    }
+    // 'later': se queda con el estado vacío guiado, sin inventarle una rutina
   }
 
   acceptLegal(): void {

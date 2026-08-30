@@ -12,7 +12,13 @@ import { StorageService } from '../../services/storage.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
 import { ShareService } from '../../services/share.service';
-import { TrainingGoal, UserProfile, WeightLogEntry } from '../../models/workout.model';
+import {
+  TrainingGoal,
+  TrainingLevel,
+  UserProfile,
+  WeightLogEntry,
+} from '../../models/workout.model';
+import { Equipment } from '../../data/exercise-catalog';
 
 interface PrRecord {
   exerciseName: string;
@@ -152,6 +158,85 @@ export class ProfileComponent implements OnDestroy {
   }
 
   // ── Objetivo y notas para la IA ──
+
+  protected readonly levelOptions = [
+    { value: 'beginner', key: 'profile_level_beginner' },
+    { value: 'intermediate', key: 'profile_level_intermediate' },
+    { value: 'advanced', key: 'profile_level_advanced' },
+  ] as const;
+
+  // ── P4 · Medidas corporales (RF-PER-04) ──
+
+  protected readonly measureFields = [
+    { key: 'waistCm', label: 'measure_waist' },
+    { key: 'chestCm', label: 'measure_chest' },
+    { key: 'armCm', label: 'measure_arm' },
+    { key: 'thighCm', label: 'measure_thigh' },
+    { key: 'hipCm', label: 'measure_hip' },
+  ] as const;
+
+  private readonly measureDraft = signal<Record<string, number>>({});
+
+  protected measureLabel(key: string): string {
+    return this.T()[key as keyof ReturnType<typeof this.T>] as string;
+  }
+
+  /** Última medida registrada de ese campo, para mostrarla como referencia. */
+  protected lastMeasure(field: string): number | null {
+    const list = this.profile().measures ?? [];
+    for (let i = list.length - 1; i >= 0; i--) {
+      const value = (list[i] as unknown as Record<string, number | undefined>)[field];
+      if (typeof value === 'number') return value;
+    }
+    return null;
+  }
+
+  protected setMeasure(field: string, event: Event): void {
+    const raw = (event.target as HTMLInputElement).value.trim();
+    const num = Number(raw);
+    this.measureDraft.update((d) => {
+      const next = { ...d };
+      if (raw && Number.isFinite(num) && num > 0) next[field] = num;
+      else delete next[field];
+      return next;
+    });
+  }
+
+  protected saveMeasures(): void {
+    this.stateService.saveMeasures(this.measureDraft());
+    this.measureDraft.set({});
+  }
+
+  // ── Equipo disponible (RF-PER-01): filtra plantillas y sustitutos ──
+
+  protected readonly equipmentOptions: Equipment[] = [
+    'barbell',
+    'dumbbell',
+    'machine',
+    'cable',
+    'bodyweight',
+    'band',
+  ];
+
+  protected equipmentLabel(eq: Equipment): string {
+    return this.T()[`equipment_${eq}` as keyof ReturnType<typeof this.T>] as string;
+  }
+
+  protected hasEquipment(eq: Equipment): boolean {
+    return (this.profile().equipment ?? []).includes(eq);
+  }
+
+  /** Sin nada marcado el valor es `null`, que significa "no lo dijo" y no filtra nada. */
+  protected toggleEquipment(eq: Equipment): void {
+    const current = this.profile().equipment ?? [];
+    const next = current.includes(eq) ? current.filter((e) => e !== eq) : [...current, eq];
+    this.patchProfile({ equipment: next.length ? next : null });
+  }
+
+  /** Nivel de experiencia: ajusta cuánto tarda el motor local en subir y en descargar (§3). */
+  protected setLevel(level: TrainingLevel | null): void {
+    this.patchProfile({ level });
+  }
 
   protected setGoal(goal: TrainingGoal | null): void {
     this.patchProfile({ goal });

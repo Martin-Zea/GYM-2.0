@@ -1,0 +1,150 @@
+:host {
+  display: block;
+}
+
+.coach-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.coach-header .chip {
+  margin-left: auto;
+}
+
+.coach-tabs {
+  margin-bottom: var(--sp-4);
+}
+
+.coach-section {
+  margin: var(--sp-4) 0 var(--sp-2);
+}
+
+/* ── C1 ── */
+.coach-sug {
+  margin-bottom: var(--sp-2);
+}
+.coach-sug-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+}
+.coach-sug-name {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.coach-sug-value {
+  margin-left: auto;
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.coach-sug-reason {
+  margin: var(--sp-1) 0 var(--sp-2);
+}
+.coach-sug-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+.coach-sug-actions > .btn {
+  flex: 1;
+  min-height: 44px;
+}
+/* "Aceptar" es confirmar algo hecho, no una acción nueva: verde, no naranja. */
+.coach-accept {
+  background: var(--success);
+  color: var(--success-fg);
+  border-color: var(--success);
+}
+
+.coach-usage {
+  margin-top: var(--sp-4);
+}
+.coach-usage-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.coach-usage-head .note {
+  margin-left: auto;
+}
+.coach-bar {
+  height: 5px;
+  margin-top: var(--sp-2);
+  border-radius: 3px;
+  background: var(--bg-3);
+  overflow: hidden;
+}
+.coach-bar i {
+  display: block;
+  height: 100%;
+  background: var(--success);
+}
+
+/* ── C2 ── */
+.coach-blocked {
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-lg);
+  background: var(--warning-bg);
+  color: var(--text-1);
+}
+
+.coach-thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.coach-msg {
+  max-width: 85%;
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-lg);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.coach-msg--me {
+  align-self: flex-end;
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+.coach-msg--pending {
+  color: var(--text-2);
+}
+
+.coach-compose {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+}
+.coach-input {
+  flex: 1;
+  min-height: 44px;
+}
+.coach-send {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: var(--accent);
+}
+.coach-send:disabled {
+  opacity: 0.5;
+}
+
+.coach-cost {
+  margin-top: var(--sp-2);
+}
+.coach-error {
+  color: var(--danger);
+}
+.coach-clear {
+  width: 100%;
+  margin-top: var(--sp-4);
+}

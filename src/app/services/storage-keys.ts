@@ -20,4 +20,7 @@ export const STORAGE_KEYS = {
   restTimer: 'gt_rest_timer',
   /** Sugerencias calculadas al cerrar una sesión, listas para la próxima (RF-IA-06b). */
   nextSuggestions: 'gt_next_suggestions',
+  /** Consumo de tokens por mes de la capa IA (RF-IA-07). */
+  aiUsage: 'gt_ai_usage',
+  coachChat: 'gt_coach_chat',
 } as const;

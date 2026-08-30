@@ -4,17 +4,25 @@ import {
   SetRecord,
   SetRecommendation,
   TodaySetProgress,
+  TrainingFeel,
   UserProfile,
 } from '../../models/workout.model';
 import { HistoryEntry } from '../storage.service';
-import { AiProvider, AiProviderContext } from './ai-provider';
+import { AiProvider, AiProviderContext, AiSessionProvider } from './ai-provider';
+import { AiSessionContext, SessionRecommendation } from './session-context';
 import { goalRepTarget, roundToBrick } from './prompt-helpers';
+import {
+  completionRatio,
+  confirmedAtWeight,
+  consecutiveFailures,
+  failureDropWeight,
+  isStagnant,
+  levelParams,
+  progressStreak,
+} from './progression-rules';
 
-const DELOAD_SESSIONS = 4;
-const PLATEAU_SESSIONS = 5;
 const SPACING_MODERATE_DAYS = 14;
 const SPACING_LONG_DAYS = 28;
-const DOUBLE_PROG_CONFIRM_SESSIONS = 2;
 
 function daysBetween(isoA: string, isoB: string): number {
   return Math.round((new Date(isoB).getTime() - new Date(isoA).getTime()) / (1000 * 60 * 60 * 24));
@@ -42,15 +50,30 @@ function buildReasons(lang: 'es' | 'en') {
         ? `Primera sesión: arrancá con ${reps} reps e irás subiendo el objetivo.`
         : `First session: start with ${reps} reps and build from there.`,
 
-    deload: (topWeight: number, deloadWeight: number) =>
+    deload: (sessions: number, deloadWeight: number) =>
       es
-        ? `Llevás ${DELOAD_SESSIONS}+ sesiones progresando seguido. Semana de descarga: ${deloadWeight}kg para recuperarte bien.`
-        : `${DELOAD_SESSIONS}+ consecutive progress sessions. Deload week: ${deloadWeight}kg to recover properly.`,
+        ? `Llevás ${sessions} sesiones progresando seguido. Semana de descarga: ${deloadWeight}kg para recuperarte bien.`
+        : `${sessions} consecutive progress sessions. Deload week: ${deloadWeight}kg to recover properly.`,
 
-    plateau: (topWeight: number) =>
+    plateau: (topWeight: number, sessions: number) =>
       es
-        ? `Meseta en ${topWeight}kg hace ${PLATEAU_SESSIONS}+ sesiones. Cambiá el rango de reps o el tempo para romperla.`
-        : `Plateau at ${topWeight}kg for ${PLATEAU_SESSIONS}+ sessions. Change rep range or tempo to break through.`,
+        ? `Meseta en ${topWeight}kg hace ${sessions} sesiones. Cambiá el rango de reps o el tempo para romperla.`
+        : `Plateau at ${topWeight}kg for ${sessions} sessions. Change rep range or tempo to break through.`,
+
+    hardFeel: (topWeight: number) =>
+      es
+        ? `Cumpliste el objetivo, pero marcaste la última como pesada. Consolidá ${topWeight}kg antes de subir.`
+        : `You hit the target, but marked the last one as hard. Consolidate ${topWeight}kg before adding weight.`,
+
+    consecutiveFailures: (sessions: number, newWeight: number) =>
+      es
+        ? `${sessions} sesiones seguidas sin cerrar el objetivo. Bajamos a ${newWeight}kg para volver a completarlo.`
+        : `${sessions} sessions in a row short of the target. Dropping to ${newWeight}kg to complete it again.`,
+
+    stagnation: (sessions: number, deloadWeight: number) =>
+      es
+        ? `Sin avanzar hace ${sessions} sesiones. Descarga a ${deloadWeight}kg y volvé a subir con margen.`
+        : `No progress for ${sessions} sessions. Deload to ${deloadWeight}kg and build back up.`,
 
     premature: (prevWeight: number) =>
       es
@@ -162,38 +185,6 @@ function detectDegradation(sets: SetRecord[]): boolean {
   return firstReps > 0 && lastReps < firstReps * 0.6;
 }
 
-function completionRatio(sets: SetRecord[], repTarget: number, setsTarget: number): number {
-  const maxPossible = setsTarget * repTarget;
-  if (maxPossible <= 0) return 0;
-  // Use repTarget stored at time of recording if available, fall back to current target
-  const totalReps = sets.reduce((sum, s) => {
-    const target = s.repTarget ?? repTarget;
-    return sum + Math.min(s.reps || 0, target);
-  }, 0);
-  return totalReps / maxPossible;
-}
-
-function detectDeload(history: HistoryEntry[]): boolean {
-  if (history.length < DELOAD_SESSIONS) return false;
-  const last = history.slice(-DELOAD_SESSIONS);
-  return last.every((h, i) => i === 0 || h.topWeight > last[i - 1].topWeight);
-}
-
-function detectPlateau(
-  history: HistoryEntry[],
-  topWeight: number,
-  repTarget: number,
-  setsTarget: number,
-): boolean {
-  if (history.length < PLATEAU_SESSIONS) return false;
-  const last = history.slice(-PLATEAU_SESSIONS);
-  return last.every((h) => {
-    const sameWeight = h.topWeight === topWeight;
-    const ratio = completionRatio(h.sets, repTarget, setsTarget);
-    return sameWeight && ratio < 1;
-  });
-}
-
 function detectPrematureIncrease(currentSets: SetRecord[], lastSets: SetRecord[]): boolean {
   if (!lastSets.length || !currentSets.length) return false;
   const currentTop = Math.max(...currentSets.map((s) => s.weight || 0));
@@ -208,20 +199,32 @@ function detectSuperCompletion(sets: SetRecord[], repTarget: number): boolean {
   return sets.some((s) => (s.reps || 0) >= repTarget * 1.5);
 }
 
-function consecutiveConfirmed(
-  history: HistoryEntry[],
-  topWeight: number,
-  repTarget: number,
-  setsTarget: number,
-): boolean {
-  if (history.length < DOUBLE_PROG_CONFIRM_SESSIONS) return false;
-  const last = history.slice(-DOUBLE_PROG_CONFIRM_SESSIONS);
-  return last.every(
-    (h) => h.topWeight === topWeight && completionRatio(h.sets, repTarget, setsTarget) >= 1,
-  );
-}
+export class LocalProvider implements AiProvider, AiSessionProvider {
+  readonly name = 'local' as const;
 
-export class LocalProvider implements AiProvider {
+  /**
+   * La sesión entera resuelta con el motor de reglas.
+   *
+   * Recorrer los ejercicios uno a uno aquí no tiene coste: no hay red ni tokens. La interfaz
+   * de sesión existe para que el orquestador trate igual a los tres proveedores.
+   */
+  recommendSession(ctx: AiSessionContext): Promise<SessionRecommendation> {
+    const byExercise: Record<string, AiRecommendation> = {};
+    for (const ec of ctx.exercises) {
+      byExercise[ec.exercise.id] = this.compute(
+        ec.exercise,
+        [],
+        ec.lastSets,
+        ec.history,
+        ctx.userProfile,
+        ec.lastSessionDate,
+        ctx.lang,
+        { lastFeel: ec.lastFeel },
+      );
+    }
+    return Promise.resolve({ byExercise, source: 'local' });
+  }
+
   recommend({
     exercise,
     todaySets,
@@ -230,9 +233,12 @@ export class LocalProvider implements AiProvider {
     userProfile,
     lastSessionDate,
     lang,
+    lastFeel,
   }: AiProviderContext): Promise<AiRecommendation> {
     return Promise.resolve(
-      this.compute(exercise, todaySets, lastSets, history, userProfile, lastSessionDate, lang),
+      this.compute(exercise, todaySets, lastSets, history, userProfile, lastSessionDate, lang, {
+        lastFeel,
+      }),
     );
   }
 
@@ -248,10 +254,14 @@ export class LocalProvider implements AiProvider {
       sex: null,
       weightLog: [],
       goal: null,
+      level: null,
+      equipment: null,
+      daysPerWeek: null,
       aiNotes: '',
     },
     lastSessionDate: string | null = null,
     lang: 'es' | 'en' = 'es',
+    opts: { lastFeel?: TrainingFeel | null } = {},
   ): AiRecommendation {
     const brick = exercise.brick || 2.5;
     const repTarget = goalRepTarget(
@@ -260,6 +270,7 @@ export class LocalProvider implements AiProvider {
       exercise.unit,
     );
     const setsTarget = exercise.defaultSets || 3;
+    const params = levelParams(userProfile.level);
     const r = buildReasons(lang);
 
     const doneSets = todaySets
@@ -323,12 +334,41 @@ export class LocalProvider implements AiProvider {
       }
     }
 
-    // --- Deload por acumulación ---
-    if (detectDeload(history)) {
-      const deloadWeight = roundToBrick(topWeight * 0.7, brick);
+    // El estancamiento de §4.5 es no avanzar A PESAR de intentarlo. Quien cumple el objetivo
+    // cada sesión no está estancado aunque el peso no suba: le toca subirlo, no descargar.
+    // Por eso las dos señales van juntas y nunca se mira la falta de progreso por sí sola.
+    const failures = consecutiveFailures(history, repTarget, setsTarget);
+    const stagnant = isStagnant(history, params.stagnationSessions);
+
+    // --- Estancamiento real: falla el objetivo Y la marca lleva N sesiones sin moverse ---
+    if (failures >= params.failSessions && stagnant) {
+      const deloadWeight = roundToBrick(topWeight * params.deloadFactor, brick);
       return {
         sets: Array.from({ length: setsTarget }, () => ({ weight: deloadWeight, reps: repTarget })),
-        reason: r.deload(topWeight, deloadWeight),
+        reason: r.stagnation(params.stagnationSessions, deloadWeight),
+        source: 'local',
+      };
+    }
+
+    // --- Fallos consecutivos sin estancamiento largo: bajar 5–10% según nivel (§4.5) ---
+    // Va antes que cualquier regla de progreso: insistir en un peso que no se completa dos
+    // sesiones seguidas es la vía rápida a la lesión y al abandono.
+    if (failures >= params.failSessions) {
+      const dropped = failureDropWeight(topWeight, brick, params.failDrop);
+      return {
+        sets: Array.from({ length: setsTarget }, () => ({ weight: dropped, reps: repTarget })),
+        reason: r.consecutiveFailures(failures, dropped),
+        source: 'local',
+      };
+    }
+
+    // --- Descarga preventiva tras una racha larga de progreso ---
+    const streak = progressStreak(history);
+    if (streak >= params.deloadAfterProgress) {
+      const deloadWeight = roundToBrick(topWeight * params.deloadFactor, brick);
+      return {
+        sets: Array.from({ length: setsTarget }, () => ({ weight: deloadWeight, reps: repTarget })),
+        reason: r.deload(streak, deloadWeight),
         source: 'local',
       };
     }
@@ -345,11 +385,12 @@ export class LocalProvider implements AiProvider {
 
     const ratio = completionRatio(baseSets, repTarget, setsTarget);
 
-    // --- Meseta ---
-    if (detectPlateau(history, topWeight, repTarget, setsTarget) && ratio < 1) {
+    // --- Meseta: falló la última, la marca no se mueve, pero aún no son N fallos seguidos.
+    //     Se sostiene el peso y se sugiere cambiar el esquema antes de tocar la carga. ---
+    if (failures > 0 && stagnant && ratio < 1) {
       return {
         sets: Array.from({ length: setsTarget }, () => ({ weight: topWeight, reps: repTarget })),
-        reason: r.plateau(topWeight),
+        reason: r.plateau(topWeight, params.stagnationSessions),
         source: 'local',
       };
     }
@@ -375,9 +416,18 @@ export class LocalProvider implements AiProvider {
 
     // --- Objetivo cumplido ---
     if (ratio >= 1) {
+      // §4.5 exige RPE ≤ 8 para subir. La app registra la sensación como fácil/bien/pesado:
+      // si la última vez costó, se consolida el peso en vez de subirlo aunque salgan las reps.
+      if (opts.lastFeel === 'hard') {
+        return {
+          sets: Array.from({ length: setsTarget }, () => ({ weight: topWeight, reps: repTarget })),
+          reason: r.hardFeel(topWeight),
+          source: 'local',
+        };
+      }
       const newWeight = roundToBrick(topWeight + brick, brick);
       // Doble progresión: si confirmó 2 sesiones seguidas al 100%, subir todas las series
-      if (consecutiveConfirmed(history, topWeight, repTarget, setsTarget)) {
+      if (confirmedAtWeight(history, topWeight, repTarget, setsTarget, params.confirmSessions)) {
         return {
           sets: Array.from({ length: setsTarget }, () => ({ weight: newWeight, reps: repTarget })),
           reason: r.goalMetConfirmed(topWeight, newWeight),

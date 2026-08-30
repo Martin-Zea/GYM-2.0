@@ -153,6 +153,64 @@
                   </div>
                 </div>
 
+                <div class="field-row">
+                  <div class="field">
+                    <label class="field-label">{{ T().day_editor_rep_min }}</label>
+                    <input
+                      class="input"
+                      type="number"
+                      min="1"
+                      max="50"
+                      [placeholder]="T().day_editor_optional"
+                      [value]="ex.repMin ?? ''"
+                      (change)="setRepMin(i, $event)"
+                    />
+                  </div>
+                  <div class="field">
+                    <label class="field-label">{{ T().day_editor_rpe }}</label>
+                    <input
+                      class="input"
+                      type="number"
+                      min="1"
+                      max="10"
+                      [placeholder]="T().day_editor_optional"
+                      [value]="ex.targetRpe ?? ''"
+                      (change)="setTargetRpe(i, $event)"
+                    />
+                  </div>
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label class="field-label">{{ T().day_editor_set_style }}</label>
+                    <select
+                      class="select"
+                      [value]="ex.setStyle ?? 'normal'"
+                      (change)="setSetStyle(i, $event)"
+                    >
+                      <option value="normal">{{ T().set_style_normal }}</option>
+                      <option value="dropset">{{ T().set_style_dropset }}</option>
+                      <option value="amrap">{{ T().set_style_amrap }}</option>
+                    </select>
+                  </div>
+                  @if (i > 0) {
+                    <div class="field">
+                      <label class="field-label">{{ T().day_editor_superset }}</label>
+                      <button
+                        class="btn btn-sm"
+                        [class.btn-primary]="isSupersetWithPrevious(i)"
+                        (click)="toggleSuperset(i)"
+                      >
+                        {{
+                          isSupersetWithPrevious(i)
+                            ? T().day_editor_superset_on
+                            : T().day_editor_superset_off
+                        }}
+                      </button>
+                    </div>
+                  }
+                </div>
+
                 <div class="field">
                   <label class="field-label">{{ T().day_editor_unit }}</label>
                   <select class="select" [value]="ex.unit" (change)="setExUnit(i, $event)">
@@ -199,12 +257,78 @@
         }
       </div>
 
+      <!-- R4 · Biblioteca: el camino principal para añadir (RF-EJ-01/02) -->
+      <button
+        class="btn btn-primary"
+        style="width: 100%; justify-content: center; margin-top: 4px"
+        (click)="showLibrary.set(!showLibrary())"
+      >
+        <app-icon name="plus" [size]="14" />
+        {{ T().library_add_from }}
+      </button>
+
+      @if (showLibrary()) {
+        <div class="library">
+          <input
+            class="input"
+            [placeholder]="T().library_search"
+            [value]="libraryText()"
+            (input)="libraryText.set($any($event.target).value)"
+          />
+          <div class="library-filters">
+            <button
+              class="library-chip"
+              [class.library-chip--on]="libraryGroup() === null"
+              (click)="libraryGroup.set(null)"
+            >
+              {{ T().library_all }}
+            </button>
+            @for (g of muscleGroups; track g) {
+              <button
+                class="library-chip"
+                [class.library-chip--on]="libraryGroup() === g"
+                (click)="libraryGroup.set(libraryGroup() === g ? null : g)"
+              >
+                {{ groupLabel(g) }}
+              </button>
+            }
+          </div>
+          <div class="library-filters">
+            @for (eq of equipmentOptions; track eq) {
+              <button
+                class="library-chip"
+                [class.library-chip--on]="libraryEquipment() === eq"
+                (click)="libraryEquipment.set(libraryEquipment() === eq ? null : eq)"
+              >
+                {{ equipmentLabel(eq) }}
+              </button>
+            }
+          </div>
+
+          @if (libraryResults().length) {
+            <div class="library-list">
+              @for (item of libraryResults(); track item.ref) {
+                <button class="library-item" (click)="addFromCatalog(item)">
+                  <span class="library-item-name">{{ catalogName(item) }}</span>
+                  <span class="library-item-meta"
+                    >{{ groupLabel(item.group) }} · {{ equipmentLabel(item.equipment) }}</span
+                  >
+                  <app-icon name="plus" [size]="14" />
+                </button>
+              }
+            </div>
+          } @else {
+            <p class="library-empty">{{ T().library_empty }}</p>
+          }
+        </div>
+      }
+
       <button
         class="btn"
         style="width: 100%; justify-content: center; margin-top: 4px"
         (click)="addExercise()"
       >
-        <app-icon name="plus" [size]="14" />
+        <app-icon name="edit" [size]="14" />
         {{ T().day_editor_add_exercise }}
       </button>
 

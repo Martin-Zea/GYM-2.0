@@ -29,16 +29,136 @@
           <p class="slide-desc">{{ T().onboarding_slide3_desc }}</p>
         </div>
 
-        <div class="slide">
-          <div class="slide-icon-wrap">
-            <app-icon name="calendar" [size]="52" />
+        <!-- O2 · Perfil básico. Unidades es lo único obligatorio (RF-PER-01) -->
+        <div class="slide slide--form">
+          <h2 class="slide-title">{{ T().onb_profile_title }}</h2>
+          <p class="slide-desc">{{ T().onb_profile_desc }}</p>
+          <div class="onb-chips">
+            <button
+              class="btn btn-sm"
+              [class.btn-primary]="units() === 'kg'"
+              (click)="units.set('kg')"
+            >
+              kg
+            </button>
+            <button
+              class="btn btn-sm"
+              [class.btn-primary]="units() === 'lb'"
+              (click)="units.set('lb')"
+            >
+              lb
+            </button>
           </div>
-          <h2 class="slide-title">{{ T().onboarding_days_q }}</h2>
-          <p class="slide-desc">{{ T().onboarding_days_desc }}</p>
+          <input
+            class="input"
+            type="number"
+            inputmode="decimal"
+            [placeholder]="T().onb_weight_placeholder"
+            (change)="setNumber('weightKg', $event)"
+          />
+          <input
+            class="input"
+            type="number"
+            inputmode="numeric"
+            [placeholder]="T().onb_height_placeholder"
+            (change)="setNumber('heightCm', $event)"
+          />
+          <input
+            class="input"
+            type="number"
+            inputmode="numeric"
+            [placeholder]="T().onb_age_placeholder"
+            (change)="setNumber('age', $event)"
+          />
+        </div>
+
+        <!-- O3 · Nivel y objetivo -->
+        <div class="slide slide--form">
+          <h2 class="slide-title">{{ T().onb_level_title }}</h2>
+          <p class="slide-desc">{{ T().onb_level_desc }}</p>
+          <div class="onb-chips">
+            @for (l of levels; track l) {
+              <button
+                class="btn btn-sm"
+                [class.btn-primary]="level() === l"
+                (click)="level.set(level() === l ? null : l)"
+              >
+                {{ levelLabel(l) }}
+              </button>
+            }
+          </div>
+          <p class="slide-desc">{{ T().settings_goal_label }}</p>
+          <div class="onb-chips">
+            @for (g of goals; track g) {
+              <button
+                class="btn btn-sm"
+                [class.btn-primary]="goal() === g"
+                (click)="goal.set(goal() === g ? null : g)"
+              >
+                {{ goalLabel(g) }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- O4 · Equipo y días por semana -->
+        <div class="slide slide--form">
+          <h2 class="slide-title">{{ T().onb_equipment_title }}</h2>
+          <p class="slide-desc">{{ T().onb_equipment_desc }}</p>
+          <div class="onb-chips">
+            @for (eq of equipmentOptions; track eq) {
+              <button
+                class="btn btn-sm"
+                [class.btn-primary]="equipment().includes(eq)"
+                (click)="toggleEquipment(eq)"
+              >
+                {{ equipmentLabel(eq) }}
+              </button>
+            }
+          </div>
+          <p class="slide-desc">{{ T().gen_days_label }}</p>
+          <input
+            class="input"
+            type="number"
+            min="2"
+            max="6"
+            [value]="daysPerWeek()"
+            (change)="daysPerWeek.set(+$any($event.target).value)"
+          />
+        </div>
+
+        <!-- O5 · Lesiones y limitaciones -->
+        <div class="slide slide--form">
+          <h2 class="slide-title">{{ T().onb_notes_title }}</h2>
+          <p class="slide-desc">{{ T().onb_notes_desc }}</p>
+          <textarea
+            class="input"
+            rows="3"
+            maxlength="200"
+            [placeholder]="T().onb_notes_placeholder"
+            [value]="notes()"
+            (change)="notes.set($any($event.target).value)"
+          ></textarea>
+        </div>
+
+        <!-- O6 · Primera rutina (RF-PER-03) -->
+        <div class="slide slide--form">
+          <div class="slide-icon-wrap">
+            <app-icon name="calendar" [size]="44" />
+          </div>
+          <h2 class="slide-title">{{ T().onb_routine_title }}</h2>
+          <p class="slide-desc">{{ T().onb_routine_desc }}</p>
           <div class="days-options">
-            <button class="days-option" (click)="pickDays(3)">{{ T().onboarding_days_3 }}</button>
-            <button class="days-option" (click)="pickDays(4)">{{ T().onboarding_days_4 }}</button>
-            <button class="days-option" (click)="pickDays(5)">{{ T().onboarding_days_5 }}</button>
+            <button class="days-option" (click)="finish('template')">
+              {{ T().onb_routine_template }}
+            </button>
+            <button class="days-option" (click)="finish('ai')">{{ T().onb_routine_ai }}</button>
+            <button class="days-option" (click)="finish('manual')">
+              {{ T().onb_routine_manual }}
+            </button>
+            <button class="days-option" (click)="finish('later')">
+              {{ T().onb_routine_later }}
+            </button>
           </div>
         </div>
       </div>

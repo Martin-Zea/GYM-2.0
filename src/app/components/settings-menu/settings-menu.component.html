@@ -1,0 +1,63 @@
+<div class="main">
+  <div class="view-header">
+    <h2 class="view-title">{{ T().nav_settings }}</h2>
+  </div>
+
+  <button class="li" type="button" (click)="openProfile()">
+    <span class="li-ic"><app-icon name="user" [size]="16" /></span>
+    <span class="li-body">
+      <b>{{ T().settings_menu_profile }}</b>
+      <span>{{ profileSummary() }}</span>
+    </span>
+    <app-icon class="li-chev" name="chevron" [size]="16" />
+  </button>
+
+  <button class="li" type="button" (click)="uiState.openSettings('ai')">
+    <span class="li-ic sm-ic--accent"><app-icon name="sparkle" [size]="16" /></span>
+    <span class="li-body">
+      <b>{{ T().settings_menu_ai }}</b>
+      <span>{{ aiSummary() }}</span>
+    </span>
+    <app-icon class="li-chev" name="chevron" [size]="16" />
+  </button>
+
+  <button class="li" type="button" (click)="uiState.openSettings('data')">
+    <span class="li-ic"><app-icon name="download" [size]="16" /></span>
+    <span class="li-body">
+      <b>{{ T().settings_menu_data }}</b>
+      <span>{{ T().settings_data }}</span>
+    </span>
+    @if (backupPending()) {
+      <span class="chip chip--warn">{{ T().settings_menu_backup_pending }}</span>
+    } @else {
+      <app-icon class="li-chev" name="chevron" [size]="16" />
+    }
+  </button>
+
+  <button class="li" type="button" (click)="uiState.openSettings('prefs')">
+    <span class="li-ic"><app-icon name="settings" [size]="16" /></span>
+    <span class="li-body">
+      <b>{{ T().settings_menu_prefs }}</b>
+      <span>{{ T().settings_language }} · {{ T().settings_appearance }}</span>
+    </span>
+    <app-icon class="li-chev" name="chevron" [size]="16" />
+  </button>
+
+  <button class="li" type="button" (click)="uiState.openTools()">
+    <span class="li-ic"><app-icon name="timer" [size]="16" /></span>
+    <span class="li-body">
+      <b>{{ T().settings_menu_tools }}</b>
+      <span>{{ T().settings_menu_tools_desc }}</span>
+    </span>
+    <app-icon class="li-chev" name="chevron" [size]="16" />
+  </button>
+
+  <button class="li" type="button" (click)="uiState.openSettings('about')">
+    <span class="li-ic"><app-icon name="dots_h" [size]="16" /></span>
+    <span class="li-body">
+      <b>{{ T().settings_menu_about }}</b>
+      <span>{{ T().about_version }} {{ T().about_title }}</span>
+    </span>
+    <app-icon class="li-chev" name="chevron" [size]="16" />
+  </button>
+</div>

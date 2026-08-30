@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
-const ICONS: Record<string, string> = {
+const ICONS = {
   plus: `<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`,
   minus: `<path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`,
   check: `<path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
@@ -32,7 +32,20 @@ const ICONS: Record<string, string> = {
   trend_up: `<path d="M4 17l6-6 4 4 6-8M20 7h-5M20 7v5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
   trend_down: `<path d="M4 7l6 6 4-4 6 8M20 17h-5M20 17v-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
   trend_flat: `<path d="M4 12h14M15 8l4 4-4 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
+  timer: `<g stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.6 2M9 2h6"/></g>`,
+  search: `<g stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></g>`,
+  trophy: `<g stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v5a5 5 0 0 1-10 0zM7 5H3.5a3.5 3.5 0 0 0 3.6 3.9M17 5h3.5a3.5 3.5 0 0 1-3.6 3.9M12 14v4m-4 3h8"/></g>`,
+  key: `<g stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="14" r="4.5"/><path d="M11.5 10.5L21 3m-3 0l3 3m-6 0l3 3"/></g>`,
+  download: `<path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 21h16" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
+  send: `<path d="M4 12l16-8-6 16-2.5-6.5z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
+  dots_h: `<g fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></g>`,
 };
+
+/**
+ * Nombres válidos. Tiparlo (en vez de `string`) hace que un icono mal escrito falle en
+ * compilación; antes renderizaba un hueco vacío y solo se descubría mirando la pantalla.
+ */
+export type IconName = keyof typeof ICONS;
 
 @Component({
   selector: 'app-icon',
@@ -57,10 +70,8 @@ const ICONS: Record<string, string> = {
 })
 export class IconComponent {
   private readonly sanitizer = inject(DomSanitizer);
-  name = input.required<string>();
+  name = input.required<IconName>();
   size = input(16);
 
-  content = computed(
-    (): SafeHtml => this.sanitizer.bypassSecurityTrustHtml(ICONS[this.name()] ?? ''),
-  );
+  content = computed((): SafeHtml => this.sanitizer.bypassSecurityTrustHtml(ICONS[this.name()]));
 }

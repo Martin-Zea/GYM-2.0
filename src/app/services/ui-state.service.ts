@@ -24,11 +24,19 @@ type OverlayName =
   | 'dayDetail'
   | 'dayPicker'
   | 'dayHistory'
-  | 'chartSheet';
+  | 'chartSheet'
+  | 'tools';
+
+/** Secciones navegables de Ajustes (A3, A4, A5, A7 del diseño). */
+export type SettingsSection = 'prefs' | 'ai' | 'data' | 'about' | null;
 
 @Injectable({ providedIn: 'root' })
 export class UIStateService {
   readonly showSettings = signal(false);
+  /** Sección abierta de Ajustes; `null` muestra todas (ver `openSettings`). */
+  readonly settingsSection = signal<SettingsSection>(null);
+  /** A6 · hoja de herramientas (RF-HER-01). */
+  readonly showTools = signal(false);
   readonly editingDay = signal<EditingDayState>(null);
   readonly restTimer = signal<RestTimerState | null>(null);
 
@@ -147,9 +155,23 @@ export class UIStateService {
 
   // --- Open methods: push to stack + push history entry ---
 
-  openSettings(): void {
+  /**
+   * Abre Ajustes acotado a una sección (A3, A4, A5, A7 del diseño).
+   *
+   * Sin sección se muestra todo, que es como se comportaba antes de que Ajustes tuviera su
+   * propio tab: el menú A1 pasa la sección y el sheet deja de ser una lista interminable.
+   */
+  openSettings(section: SettingsSection = null): void {
+    this.settingsSection.set(section);
     this._push('settings');
     this.showSettings.set(true);
+  }
+  openTools(): void {
+    this._push('tools');
+    this.showTools.set(true);
+  }
+  closeTools(): void {
+    this._close('tools');
   }
   openEditingDay(day: EditingDayState): void {
     this._push('editingDay');
@@ -220,6 +242,9 @@ export class UIStateService {
     switch (name) {
       case 'settings':
         this.showSettings.set(false);
+        break;
+      case 'tools':
+        this.showTools.set(false);
         break;
       case 'editingDay':
         this.editingDay.set(null);

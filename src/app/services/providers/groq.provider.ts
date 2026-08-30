@@ -1,5 +1,9 @@
 import { AiRecommendation } from '../../models/workout.model';
-import { AiProvider, AiProviderContext } from './ai-provider';
+import { AiProvider, AiProviderContext, AiSessionProvider } from './ai-provider';
+import { AiSessionContext, SessionRecommendation } from './session-context';
+import { buildSessionPrompt, parseJsonLoose, sessionMaxTokens } from './session-prompt';
+import { validateSessionResponse } from './session-response';
+import { recordUsage } from './ai-usage';
 import {
   buildFeedbackNote,
   buildGoalNote,
@@ -7,6 +11,7 @@ import {
   buildPerfilParts,
   buildPrinciplesPrompt,
   buildProfileNote,
+  AuthError,
   fetchAiWithRateLimit,
   parseAndNormalizeSets,
   unitPromptLabel,
@@ -56,7 +61,7 @@ export async function fetchGroqRecommendation(
   const doneSets = todaySets.filter((s) => s?.done && !s.isWarmup);
   const perfilParts = buildPerfilParts(userProfile);
   const profileNote = buildProfileNote(perfilParts, userProfile);
-  const goalNote = buildGoalNote(userProfile.goal, userProfile.aiNotes);
+  const goalNote = buildGoalNote(userProfile.goal, userProfile.aiNotes, userProfile.level);
   const feedbackNote = buildFeedbackNote(lastFeel, lastNote);
 
   const summary = {
@@ -130,6 +135,10 @@ Poné "deload" en true SOLO cuando recomendás una descarga o back-off intencion
     parsed = JSON.parse(m[0]);
   }
 
+  // Cuenta contra el presupuesto igual que una llamada de sesión: el shadow log pasa por
+  // aquí y su gasto es tan real como el resto (RF-IA-07, decisión T-001).
+  recordUsage('groq', model, data?.usage);
+
   return {
     sets: parseAndNormalizeSets(parsed, setsTarget, brick, repTarget, {
       unit: exercise.unit,
@@ -141,10 +150,43 @@ Poné "deload" en true SOLO cuando recomendás una descarga o back-off intencion
   };
 }
 
-export class GroqProvider implements AiProvider {
-  constructor(private readonly apiKey: string) {}
+export class GroqProvider implements AiProvider, AiSessionProvider {
+  readonly name = 'groq' as const;
+
+  constructor(
+    private readonly apiKey: string,
+    private readonly model: string = GROQ_MODEL,
+  ) {}
 
   recommend(ctx: AiProviderContext): Promise<AiRecommendation> {
-    return fetchGroqRecommendation(ctx, this.apiKey, GROQ_MODEL);
+    return fetchGroqRecommendation(ctx, this.apiKey, this.model);
+  }
+
+  /** UNA llamada para toda la sesión (Art. 5). */
+  async recommendSession(ctx: AiSessionContext): Promise<SessionRecommendation> {
+    const { prompt } = buildSessionPrompt(ctx);
+    const resp = await fetchAiWithRateLimit('Groq', GROQ_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.apiKey}` },
+      body: JSON.stringify({
+        model: this.model,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0,
+        max_tokens: sessionMaxTokens(ctx.exercises.length),
+        response_format: { type: 'json_object' },
+      }),
+    });
+    if (resp.status === 401 || resp.status === 403) {
+      throw new AuthError('Groq', `Groq ${resp.status}`);
+    }
+    if (!resp.ok) {
+      throw new Error(`Groq ${resp.status}: ${(await resp.text()).slice(0, 120)}`);
+    }
+
+    const data = await resp.json();
+    const parsed = parseJsonLoose(data?.choices?.[0]?.message?.content ?? '');
+    const validated = validateSessionResponse(parsed, ctx, 'groq');
+    recordUsage('groq', this.model, data?.usage);
+    return { byExercise: validated.byExercise, source: 'groq', validated };
   }
 }

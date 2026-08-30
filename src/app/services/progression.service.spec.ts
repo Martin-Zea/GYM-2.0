@@ -34,6 +34,9 @@ function makeSettings(overrides: Partial<AppSettings> = {}): AppSettings {
       sex: null,
       weightLog: [],
       goal: null,
+      level: null,
+      equipment: null,
+      daysPerWeek: null,
       aiNotes: '',
     },
     ...overrides,
@@ -141,44 +144,25 @@ describe('ProgressionService', () => {
       expect(rec.sets.every((s) => s.weight === 22.5)).toBe(true);
     });
 
-    it('deload: 4+ sesiones consecutivas subiendo peso', () => {
-      const history = [
-        {
-          dateISO: '2026-05-01',
-          sets: lastSetsAt(15, 10),
-          topWeight: 15,
+    it('deload preventivo: racha de progreso del largo que pide el nivel', () => {
+      // Nivel por defecto (intermedio): 6 sesiones seguidas subiendo antes de descargar
+      const history = Array.from({ length: 7 }, (_, i) => {
+        const w = 15 + i * 2.5;
+        return {
+          dateISO: `2026-05-0${i + 1}`,
+          sets: lastSetsAt(w, 10),
+          topWeight: w,
           topReps: 10,
           totalReps: 30,
-          volume: 450,
-        },
-        {
-          dateISO: '2026-05-08',
-          sets: lastSetsAt(17.5, 10),
-          topWeight: 17.5,
-          topReps: 10,
-          totalReps: 30,
-          volume: 525,
-        },
-        {
-          dateISO: '2026-05-15',
-          sets: lastSetsAt(20, 10),
-          topWeight: 20,
-          topReps: 10,
-          totalReps: 30,
-          volume: 600,
-        },
-        {
-          dateISO: '2026-05-22',
-          sets: lastSetsAt(22.5, 10),
-          topWeight: 22.5,
-          topReps: 10,
-          totalReps: 30,
-          volume: 675,
-        },
-      ];
-      const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(22.5, 10), history);
+          volume: w * 30,
+        };
+      });
+      const top = history[history.length - 1].topWeight;
+
+      const rec = service.localRecommendation(makeExercise(), [], lastSetsAt(top, 10), history);
+
       expect(rec.reason).toContain('descarga');
-      expect(rec.sets[0].weight).toBeLessThan(22.5);
+      expect(rec.sets[0].weight).toBeLessThan(top);
     });
 
     it('super-completado: salta 2 ladrillos cuando reps >= 150% del objetivo', () => {

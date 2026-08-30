@@ -1,0 +1,125 @@
+<div class="sheet-backdrop" (click)="close()"></div>
+<div class="sheet">
+  <div class="sheet-panel tools-sheet" role="dialog" aria-modal="true" appFocusTrap>
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <h3 class="sheet-title">{{ T().tools_title }}</h3>
+      <button class="icon-btn" (click)="close()" [attr.aria-label]="T().close_btn">
+        <app-icon name="x" [size]="18" />
+      </button>
+    </div>
+
+    <div class="sheet-body tools-body">
+      <!-- 1RM y porcentajes -->
+      <section class="tool">
+        <h4 class="tool-title">{{ T().tools_1rm }}</h4>
+        <div class="tool-row">
+          <input
+            class="input"
+            type="number"
+            inputmode="decimal"
+            [value]="rmWeight()"
+            (input)="setNumber('rmWeight', $event)"
+            [attr.aria-label]="T().col_weight"
+          />
+          <span class="tool-x">×</span>
+          <input
+            class="input"
+            type="number"
+            inputmode="numeric"
+            [value]="rmReps()"
+            (input)="setNumber('rmReps', $event)"
+            [attr.aria-label]="T().col_reps"
+          />
+        </div>
+        @if (oneRm(); as rm) {
+          <p class="tool-result mono">{{ rm }} kg</p>
+          <div class="tool-percents">
+            @for (p of percents; track p) {
+              <div class="tool-percent">
+                <span class="tool-percent-label">{{ p }}%</span>
+                <span class="mono">{{ percentWeight(p) }}</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="tool-hint">{{ T().tools_1rm_hint }}</p>
+        }
+      </section>
+
+      <!-- Discos -->
+      <section class="tool">
+        <h4 class="tool-title">{{ T().tools_plates }}</h4>
+        <div class="tool-row">
+          <input
+            class="input"
+            type="number"
+            inputmode="decimal"
+            [value]="plateWeight()"
+            (input)="setNumber('plateWeight', $event)"
+            [attr.aria-label]="T().col_weight"
+          />
+        </div>
+        <p class="tool-hint">{{ tr.tp('tools_plates_bar', { kg: barWeight() }) }}</p>
+        @if (plates(); as breakdown) {
+          @if (breakdown.perSide.length) {
+            <p class="tool-result mono">{{ breakdown.perSide.join(' + ') }}</p>
+          } @else {
+            <p class="tool-hint">{{ T().tools_plates_none }}</p>
+          }
+        }
+      </section>
+
+      <!-- Conversor -->
+      <section class="tool">
+        <h4 class="tool-title">{{ T().tools_converter }}</h4>
+        <div class="tool-row">
+          <input
+            class="input"
+            type="number"
+            inputmode="decimal"
+            [value]="kgValue()"
+            (input)="setKg($event)"
+            aria-label="kg"
+          />
+          <span class="tool-x">⇄</span>
+          <input
+            class="input"
+            type="number"
+            inputmode="decimal"
+            [value]="lbValue()"
+            (input)="setLb($event)"
+            aria-label="lb"
+          />
+        </div>
+      </section>
+
+      <!-- Temporizador libre -->
+      <section class="tool">
+        <h4 class="tool-title">{{ T().tools_timer }}</h4>
+        <div class="tool-row">
+          <input
+            class="input"
+            type="number"
+            inputmode="numeric"
+            min="5"
+            step="5"
+            [value]="timerSeconds()"
+            (input)="setNumber('timerSeconds', $event)"
+            [attr.aria-label]="T().tools_timer"
+          />
+          @if (timerRunning()) {
+            <button class="btn btn-sm" (click)="stopTimer()">{{ T().tools_timer_stop }}</button>
+          } @else {
+            <button class="btn btn-sm btn-primary" (click)="startTimer()">
+              {{ T().tools_timer_start }}
+            </button>
+          }
+        </div>
+        @if (timerRunning()) {
+          <p class="tool-result mono">{{ timerRemaining() }}s</p>
+        }
+      </section>
+    </div>
+  </div>
+</div>

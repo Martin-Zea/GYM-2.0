@@ -68,7 +68,18 @@ export function buildBackup(
 ): BackupEnvelope {
   const payload: AppState = opts.includeCredentials
     ? state
-    : { ...state, settings: { ...state.settings, apiKey: '', cohereApiKey: '' } };
+    : {
+        ...state,
+        settings: {
+          ...state.settings,
+          apiKey: '',
+          cohereApiKey: '',
+          // Desde F4 la key viaja cifrada en el estado; cifrada o no, sigue siendo la
+          // credencial del usuario y no entra en un archivo que se comparte (R-8).
+          apiKeySealed: undefined,
+          cohereApiKeySealed: undefined,
+        },
+      };
 
   return {
     format: BACKUP_FORMAT,
@@ -127,5 +138,5 @@ function hasCredentials(d: Record<string, unknown>): boolean {
   const settings = d['settings'];
   if (typeof settings !== 'object' || settings === null) return false;
   const s = settings as Record<string, unknown>;
-  return Boolean(s['apiKey']) || Boolean(s['cohereApiKey']);
+  return Boolean(s['apiKey'] || s['cohereApiKey'] || s['apiKeySealed'] || s['cohereApiKeySealed']);
 }

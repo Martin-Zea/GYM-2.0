@@ -95,7 +95,7 @@
 }
 .reset-confirm-input {
   max-width: 120px;
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--font-display);
 }
 
 .settings-version {
@@ -135,5 +135,35 @@
   font-weight: 700;
 }
 .mono {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--font-display);
+}
+
+.settings-ai-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--fs-xs);
+}
+.settings-ai-ex {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-1);
+}
+.settings-test-ok {
+  color: var(--success);
+}
+.settings-key-warning {
+  color: var(--danger);
+}
+
+.settings-exercise-list {
+  max-height: 220px;
+  overflow-y: auto;
+}
+.settings-archived {
+  opacity: 0.5;
+  text-decoration: line-through;
 }

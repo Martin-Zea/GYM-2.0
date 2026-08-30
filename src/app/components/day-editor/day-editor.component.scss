@@ -61,7 +61,7 @@
 .ex-suggest-hint {
   font-size: 12px;
   color: var(--color-accent);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-display);
   white-space: nowrap;
 }
 

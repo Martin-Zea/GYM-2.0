@@ -1,7 +1,31 @@
 <div class="main">
   <div class="view-header">
-    <h2 class="view-title">{{ T().nav_history }}</h2>
+    <h2 class="view-title">{{ T().nav_progress }}</h2>
     <p class="view-sub">{{ T().history_view_sub }}</p>
+  </div>
+
+  <!-- P1 · adherencia y duración media: lo que resume el mes sin abrir un gráfico -->
+  <div class="stat-grid">
+    <div class="stat">
+      <div class="stat-label">{{ T().progress_adherence }}</div>
+      <div class="stat-value">
+        @if (adherencePct(); as pct) {
+          {{ pct }}<small>%</small>
+        } @else {
+          <span class="stat-empty">{{ T().progress_no_plan }}</span>
+        }
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">{{ T().progress_avg_duration }}</div>
+      <div class="stat-value">
+        @if (avgDuration(); as mins) {
+          {{ mins }}<small> min</small>
+        } @else {
+          <span class="stat-empty">{{ T().progress_no_duration }}</span>
+        }
+      </div>
+    </div>
   </div>
 
   <!-- ═══ Mes: mapa de calor ═══ -->
@@ -24,6 +48,7 @@
         @if (cell.trained) {
           <button
             class="cal-day trained"
+            [class]="'cal-day trained cal-day--i' + (cell.intensity ?? 1)"
             [class.today]="cell.isToday"
             [attr.aria-label]="dayAria(cell)"
             (click)="onDayClick(cell)"
@@ -164,6 +189,19 @@
         </div>
       </div>
 
+      <!-- RF-PRO-04/05: se avisa cuando el trazo está agregado o cuando hay sesiones
+           que no registraron esta métrica y por eso NO aparecen como un cero -->
+      @if (chart.aggregated || chart.missing > 0) {
+        <p class="chart-note">
+          @if (chart.aggregated) {
+            {{ T().charts_aggregated }}
+          }
+          @if (chart.missing > 0) {
+            {{ tr.tp('charts_missing_points', { n: chart.missing }) }}
+          }
+        </p>
+      }
+
       <div class="chart-svg-wrap">
         <svg viewBox="0 0 300 110">
           <defs>
@@ -270,3 +308,13 @@
     </div>
   }
 </div>
+
+<!-- RF-PRO-03: grupos fuera del rango objetivo esta semana -->
+@if (imbalances().length) {
+  <section class="hist-section">
+    <h3 class="section-title">{{ T().imbalance_title }}</h3>
+    @for (alert of imbalances(); track alert.group) {
+      <p class="chart-note">{{ imbalanceText(alert) }}</p>
+    }
+  </section>
+}

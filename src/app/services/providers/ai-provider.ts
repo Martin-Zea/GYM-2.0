@@ -6,6 +6,7 @@ import {
   UserProfile,
 } from '../../models/workout.model';
 import { HistoryEntry } from '../storage.service';
+import { AiSessionContext, SessionRecommendation } from './session-context';
 
 export interface AiProviderContext {
   exercise: Exercise;
@@ -23,4 +24,16 @@ export interface AiProviderContext {
 
 export interface AiProvider {
   recommend(ctx: AiProviderContext): Promise<AiRecommendation>;
+}
+
+/**
+ * Proveedor a nivel de SESIÓN (Art. 5, RF-IA-02).
+ *
+ * Es la interfaz principal desde F4: una llamada por sesión finalizada en vez de una por
+ * ejercicio. Los proveedores de red la implementan con un único request; el motor local la
+ * implementa recorriendo su motor de reglas, que no cuesta nada.
+ */
+export interface AiSessionProvider {
+  readonly name: 'groq' | 'cohere' | 'local';
+  recommendSession(ctx: AiSessionContext): Promise<SessionRecommendation>;
 }

@@ -1,0 +1,168 @@
+<div class="main coach">
+  <div class="view-header coach-header">
+    <h2 class="view-title">{{ T().coach_title }}</h2>
+    <span class="chip" [class.chip--ok]="source() === 'groq' || source() === 'cohere'">{{
+      providerLabel()
+    }}</span>
+  </div>
+
+  <div class="seg coach-tabs">
+    <button type="button" [attr.aria-pressed]="tab() === 'panel'" (click)="tab.set('panel')">
+      {{ T().coach_tab_panel }}
+    </button>
+    <button type="button" [attr.aria-pressed]="tab() === 'chat'" (click)="tab.set('chat')">
+      {{ T().coach_tab_chat }}
+    </button>
+    <button type="button" [attr.aria-pressed]="tab() === 'history'" (click)="tab.set('history')">
+      {{ T().coach_tab_history }}
+    </button>
+  </div>
+
+  @switch (tab()) {
+    <!-- ══ C1 · panel de sugerencias ══ -->
+    @case ('panel') {
+      @if (day(); as d) {
+        <p class="k coach-section">{{ tr.tp('coach_next_day', { day: d.name }) }}</p>
+      }
+
+      @for (row of rows(); track row.exercise.id) {
+        <div class="card coach-sug">
+          <div class="coach-sug-head">
+            <b class="coach-sug-name">{{ row.exercise.name }}</b>
+            @if (firstSet(row.rec); as set) {
+              <b class="coach-sug-value">{{ set.weight }} × {{ set.reps }}</b>
+            }
+          </div>
+          <p class="note coach-sug-reason">{{ row.rec.reason }}</p>
+
+          @if (row.answered; as answered) {
+            <span class="chip chip--ok">{{ actionLabel(answered.action) }}</span>
+          } @else {
+            <div class="coach-sug-actions">
+              <button class="btn btn-sm coach-accept" type="button" (click)="accept(row)">
+                {{ T().coach_accept }}
+              </button>
+              <button class="btn btn-ghost btn-sm" type="button" (click)="change(row)">
+                {{ T().coach_change }}
+              </button>
+              <button class="btn btn-ghost btn-sm" type="button" (click)="reject(row)">
+                {{ T().coach_reject }}
+              </button>
+            </div>
+          }
+        </div>
+      } @empty {
+        <p class="note">{{ T().coach_no_suggestions }}</p>
+      }
+
+      <div class="card coach-usage">
+        <div class="coach-usage-head">
+          <span class="k">{{ T().coach_usage_month }}</span>
+          <span class="note tabular">{{
+            tr.tp('coach_usage_value', { used: chat.tokensUsed(), budget: budget() })
+          }}</span>
+        </div>
+        <div class="coach-bar">
+          <i [style.width.%]="budget() > 0 ? (chat.tokensUsed() / budget()) * 100 : 0"></i>
+        </div>
+      </div>
+    }
+
+    <!-- ══ C2 · chat ══ -->
+    @case ('chat') {
+      @if (block(); as reason) {
+        <p class="note coach-blocked">
+          @switch (reason) {
+            @case ('no_key') {
+              {{ T().coach_chat_no_key }}
+            }
+            @case ('offline') {
+              {{ T().coach_chat_offline }}
+            }
+            @case ('over_budget') {
+              {{ T().coach_chat_over_budget }}
+            }
+          }
+        </p>
+      }
+
+      <div class="coach-thread">
+        @for (msg of chat.messages(); track msg.id) {
+          <p class="coach-msg" [class.coach-msg--me]="msg.role === 'user'">{{ msg.text }}</p>
+        } @empty {
+          <p class="note">{{ T().coach_chat_empty }}</p>
+        }
+        @if (chat.sending()) {
+          <p class="coach-msg coach-msg--pending">…</p>
+        }
+      </div>
+
+      @if (chat.error(); as err) {
+        <p class="note coach-error">
+          {{ err === 'auth' ? T().coach_chat_auth : T().coach_chat_failed }}
+        </p>
+      }
+
+      <form class="coach-compose" (submit)="onEnter($event)">
+        <input
+          class="input coach-input"
+          type="text"
+          [value]="draft()"
+          [disabled]="block() !== null || chat.sending()"
+          [attr.placeholder]="T().coach_chat_placeholder"
+          [attr.aria-label]="T().coach_chat_placeholder"
+          (input)="onDraft($event)"
+        />
+        <button
+          class="icon-btn coach-send"
+          type="submit"
+          [disabled]="block() !== null || chat.sending() || !draft().trim()"
+          [attr.aria-label]="T().coach_chat_send"
+        >
+          <app-icon name="send" [size]="18" />
+        </button>
+      </form>
+
+      <p class="note coach-cost">{{ tr.tp('coach_chat_cost', { n: chatTokens }) }}</p>
+      <p class="note">{{ T().coach_chat_disclaimer }}</p>
+
+      @if (chat.messages().length) {
+        <button class="btn btn-ghost coach-clear" type="button" (click)="chat.clear()">
+          {{ T().coach_chat_clear }}
+        </button>
+      }
+    }
+
+    <!-- ══ C3 · historial de sugerencias ══ -->
+    @case ('history') {
+      @for (entry of history(); track entry.id) {
+        <div class="li">
+          <div class="li-body">
+            <b>{{ entry.dateISO.slice(5) }} · {{ entry.exerciseName }}</b>
+            <span>
+              {{ actionLabel(entry.action) }}
+              @if (entry.suggested; as s) {
+                · {{ tr.tp('coach_suggested', { weight: s.weight, reps: s.reps }) }}
+              }
+              @if (entry.action === 'modified' && entry.applied; as a) {
+                · {{ tr.tp('coach_applied', { weight: a.weight, reps: a.reps }) }}
+              }
+            </span>
+          </div>
+          <span
+            class="chip"
+            [class.chip--ok]="entry.action === 'accepted'"
+            [class.chip--warn]="entry.action === 'modified'"
+            >{{ actionLabel(entry.action) }}</span
+          >
+        </div>
+      } @empty {
+        <p class="note">{{ T().coach_history_empty }}</p>
+      }
+
+      @if (history().length) {
+        <p class="note coach-section">{{ T().coach_history_note }}</p>
+      }
+    }
+  }
+</div>

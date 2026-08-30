@@ -226,7 +226,7 @@
 }
 .chart-delta-value {
   font-weight: 600;
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--font-display);
   color: var(--text-2);
 }
 .chart-delta--up .chart-delta-arrow,
@@ -254,7 +254,7 @@
 .chart-axis text {
   font-size: 11px;
   fill: var(--text-2);
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--font-display);
 }
 .chart-line {
   stroke: var(--accent);
@@ -302,7 +302,7 @@
   color: var(--text-1);
 }
 .chart-point-value {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--font-display);
   font-weight: 600;
   color: var(--text-0);
   font-variant-numeric: tabular-nums;
@@ -423,5 +423,26 @@
   color: var(--accent);
 }
 .mono {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--font-display);
+}
+
+/* Heatmap de asistencia por tonelaje (RF-PRO-02): un día suave y uno de piernas
+   no pueden verse igual. La intensidad es relativa al mejor día del mes. */
+.cal-day--i1 {
+  opacity: 0.45;
+}
+.cal-day--i2 {
+  opacity: 0.65;
+}
+.cal-day--i3 {
+  opacity: 0.85;
+}
+.cal-day--i4 {
+  opacity: 1;
+}
+
+.chart-note {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-2xs);
+  color: var(--text-2);
 }

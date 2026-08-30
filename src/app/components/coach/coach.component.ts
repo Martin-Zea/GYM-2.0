@@ -1,0 +1,168 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
+import { IconComponent } from '../icon/icon.component';
+import { StateService } from '../../services/state.service';
+import { TranslationService } from '../../services/translation.service';
+import { ProgressionService } from '../../services/progression.service';
+import { CoachChatService } from '../../services/coach-chat.service';
+import { AiFeedbackEntry, AiRecommendation, Exercise } from '../../models/workout.model';
+import { DEFAULT_TOKEN_BUDGET } from '../../services/providers/ai-usage';
+
+type Tab = 'panel' | 'chat' | 'history';
+
+interface SuggestionRow {
+  exercise: Exercise;
+  rec: AiRecommendation;
+  /** Ya respondida hoy: se marca en vez de volver a preguntar. */
+  answered: AiFeedbackEntry | null;
+}
+
+/** Coste aproximado de un mensaje de chat, para enseñarlo antes de gastar. */
+const CHAT_TOKENS_PER_MESSAGE = 120;
+
+@Component({
+  selector: 'app-coach',
+  standalone: true,
+  imports: [IconComponent],
+  templateUrl: './coach.component.html',
+  styleUrl: './coach.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class CoachComponent {
+  protected readonly state = inject(StateService);
+  protected readonly tr = inject(TranslationService);
+  protected readonly T = this.tr.T;
+  private readonly progression = inject(ProgressionService);
+  protected readonly chat = inject(CoachChatService);
+
+  protected readonly tab = signal<Tab>('panel');
+  protected readonly draft = signal('');
+  protected readonly chatTokens = CHAT_TOKENS_PER_MESSAGE;
+
+  private readonly suggestions = signal<Record<string, AiRecommendation> | null>(null);
+  protected readonly source = signal<'groq' | 'cohere' | 'local' | null>(null);
+
+  protected readonly day = computed(() => this.state.currentDay());
+
+  protected readonly budget = computed(
+    () => this.state.settings().aiTokenBudget ?? DEFAULT_TOKEN_BUDGET,
+  );
+
+  protected readonly block = computed(() => this.chat.blockedBy(this.state.settings()));
+
+  /**
+   * Sugerencias del próximo día. Se leen de lo PRECALCULADO al cerrar la última sesión: el
+   * panel no puede disparar una llamada al abrirse, o entrar al tab costaría tokens.
+   */
+  constructor() {
+    effect(() => {
+      const day = this.day();
+      if (!day) return;
+      void this.progression
+        .suggestionsForToday(day, this.state.settings(), this.tr.lang())
+        .then((result) => {
+          this.suggestions.set(result.byExercise);
+          this.source.set(result.source);
+        });
+    });
+  }
+
+  protected readonly rows = computed((): SuggestionRow[] => {
+    const day = this.day();
+    const byExercise = this.suggestions();
+    if (!day || !byExercise) return [];
+    return day.exercises.flatMap((exercise) => {
+      const rec = byExercise[exercise.id];
+      if (!rec) return [];
+      const answered = this.state.aiFeedbackFor(exercise.id)[0] ?? null;
+      return [{ exercise, rec, answered: this.isForToday(answered) ? answered : null }];
+    });
+  });
+
+  private isForToday(entry: AiFeedbackEntry | null): boolean {
+    return entry !== null && entry.dateISO === this.state.todayKey;
+  }
+
+  protected readonly history = computed(() => [...(this.state.state().aiFeedback ?? [])].reverse());
+
+  protected firstSet(rec: AiRecommendation) {
+    return rec.sets[0] ?? null;
+  }
+
+  // ── C1 · aceptar / cambiar / rechazar ──
+
+  protected accept(row: SuggestionRow): void {
+    const set = this.firstSet(row.rec);
+    this.state.recordAiFeedback({
+      exerciseId: row.exercise.id,
+      exerciseName: row.exercise.name,
+      action: 'accepted',
+      suggested: set,
+      applied: set,
+      source: row.rec.source,
+    });
+  }
+
+  protected reject(row: SuggestionRow): void {
+    this.state.recordAiFeedback({
+      exerciseId: row.exercise.id,
+      exerciseName: row.exercise.name,
+      action: 'rejected',
+      suggested: this.firstSet(row.rec),
+      applied: null,
+      source: row.rec.source,
+    });
+  }
+
+  protected change(row: SuggestionRow): void {
+    const set = this.firstSet(row.rec);
+    const raw = window.prompt(this.T().coach_change_prompt, String(set?.weight ?? ''));
+    const weight = Number(raw);
+    if (!raw || !Number.isFinite(weight) || weight <= 0) return;
+    this.state.recordAiFeedback({
+      exerciseId: row.exercise.id,
+      exerciseName: row.exercise.name,
+      action: 'modified',
+      suggested: set,
+      applied: { weight, reps: set?.reps ?? 0 },
+      source: row.rec.source,
+    });
+  }
+
+  protected actionLabel(action: AiFeedbackEntry['action']): string {
+    if (action === 'accepted') return this.T().coach_accepted;
+    if (action === 'rejected') return this.T().coach_rejected;
+    return this.T().coach_modified;
+  }
+
+  // ── C2 · chat ──
+
+  protected async send(): Promise<void> {
+    const text = this.draft().trim();
+    if (!text) return;
+    this.draft.set('');
+    await this.chat.send(text, this.state.settings(), this.tr.lang());
+  }
+
+  protected onDraft(event: Event): void {
+    this.draft.set((event.target as HTMLInputElement).value);
+  }
+
+  protected onEnter(event: Event): void {
+    event.preventDefault();
+    void this.send();
+  }
+
+  protected providerLabel(): string {
+    const source = this.source();
+    if (source === 'groq') return this.tr.tp('coach_provider_active', { name: 'Groq' });
+    if (source === 'cohere') return this.tr.tp('coach_provider_active', { name: 'Cohere' });
+    return this.T().coach_provider_local;
+  }
+}

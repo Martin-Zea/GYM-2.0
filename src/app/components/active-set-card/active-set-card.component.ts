@@ -12,12 +12,21 @@ import {
 import { IconComponent } from '../icon/icon.component';
 import { StateService } from '../../services/state.service';
 import { StorageService } from '../../services/storage.service';
+import { CatalogService } from '../../services/catalog.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
 import { SetLoggingService } from '../../services/set-logging.service';
-import { AiRecommendation, Exercise, TrainingFeel, WorkoutDay } from '../../models/workout.model';
+import {
+  AiFeedbackAction,
+  AiRecommendation,
+  Exercise,
+  SetRecommendation,
+  TrainingFeel,
+  WorkoutDay,
+} from '../../models/workout.model';
 import { DEFAULT_BAR_KG, DEFAULT_PLATES_KG, plateBreakdown } from '../../utils/plates';
 import { formatPrevSets } from '../../utils/rec-label';
+import { displayStep, fromDisplayWeight, toDisplayWeight, unitSuffixFor } from '../../utils/one-rm';
 
 /**
  * Vista enfocada de sesión: UNA serie protagonista con steppers grandes y un
@@ -34,6 +43,7 @@ import { formatPrevSets } from '../../utils/rec-label';
 export class ActiveSetCardComponent {
   protected readonly state = inject(StateService);
   private readonly storage = inject(StorageService);
+  private readonly catalog = inject(CatalogService);
   protected readonly uiState = inject(UIStateService);
   private readonly setLogging = inject(SetLoggingService);
   protected readonly tr = inject(TranslationService);
@@ -68,16 +78,28 @@ export class ActiveSetCardComponent {
   protected readonly doneCount = computed(() => this.setsArray().filter((s) => s.done).length);
   protected readonly isDone = computed(() => this.currentIdx() < 0);
 
+  /** Unidad de presentación. El estado guarda SIEMPRE kg (RF-PWA-04). */
+  protected readonly units = computed(() => this.state.settings().units ?? 'kg');
+  protected readonly unitSuffix = computed(() => unitSuffixFor(this.units()));
+
   protected readonly displayWeight = computed(() => {
     const c = this.current();
     if (!c || c.weight === '' || c.weight === undefined) return null;
-    return Number(c.weight);
+    return toDisplayWeight(Number(c.weight), this.units());
   });
 
   protected readonly displayReps = computed(() => {
     const c = this.current();
     if (!c || c.reps === '' || c.reps === undefined) return null;
     return Number(c.reps);
+  });
+
+  /** Objetivo de reps: rango si el esquema lo define, número seco si no (RF-RUT-01). */
+  protected readonly repRange = computed(() => {
+    const ex = this.exercise();
+    return ex.repMin && ex.repMin < ex.defaultRepTarget
+      ? `${ex.repMin}-${ex.defaultRepTarget}`
+      : `${ex.defaultRepTarget}`;
   });
 
   protected readonly needsWeight = computed(() => this.exercise().unit !== 'BODYWEIGHT');
@@ -102,19 +124,52 @@ export class ActiveSetCardComponent {
     const w = this.displayWeight();
     if (w === null || this.exercise().unit !== 'KG') return null;
     const s = this.state.settings();
-    return plateBreakdown(w, s.barWeightKg ?? DEFAULT_BAR_KG, s.platesKg ?? DEFAULT_PLATES_KG);
+    // La calculadora de discos trabaja en kg: la barra y los discos se configuran en kg
+    return plateBreakdown(
+      fromDisplayWeight(w, this.units()),
+      s.barWeightKg ?? DEFAULT_BAR_KG,
+      s.platesKg ?? DEFAULT_PLATES_KG,
+    );
   });
 
   protected readonly barWeight = computed(
     () => this.state.settings().barWeightKg ?? DEFAULT_BAR_KG,
   );
 
-  /** Sustitutos posibles: catálogo menos los ejercicios del día. */
+  /**
+   * Sustitutos posibles (RF-EJ-04).
+   *
+   * Primero las alternativas del mismo patrón de movimiento —lo que hace equivalente a un
+   * ejercicio—, incluso si el usuario aún no las tiene en su catálogo: se crean al elegirlas.
+   * Después, el resto de sus ejercicios, por si prefiere algo suyo.
+   */
   protected readonly substituteOptions = computed(() => {
+    const inDay = new Set(this.day().exercises.map((e) => e.id));
+    const mine = this.state.exercises().filter((e) => !inDay.has(e.id) && !e.archived);
+    const byRef = new Map(mine.filter((e) => e.catalogRef).map((e) => [e.catalogRef!, e]));
+
+    const alternatives = this.catalog.alternativesFor(this.exercise().name, { limit: 6 });
+    const suggested = alternatives.map((item) => ({
+      key: byRef.get(item.ref)?.id ?? `ref:${item.ref}`,
+      name: this.catalog.nameOf(item, this.tr.lang()),
+      suggested: true,
+    }));
+    const suggestedKeys = new Set(suggested.map((s) => s.key));
+
+    const others = mine
+      .filter((e) => !suggestedKeys.has(e.id))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((e) => ({ key: e.id, name: e.name, suggested: false }));
+
+    return [...suggested, ...others];
+  });
+
+  /** Ejercicios propios que se pueden sumar a la sesión de hoy (RF-SES-05). */
+  protected readonly addableExercises = computed(() => {
     const inDay = new Set(this.day().exercises.map((e) => e.id));
     return this.state
       .exercises()
-      .filter((e) => !inDay.has(e.id))
+      .filter((e) => !inDay.has(e.id) && !e.archived)
       .sort((a, b) => a.name.localeCompare(b.name));
   });
 
@@ -136,7 +191,10 @@ export class ActiveSetCardComponent {
   protected readonly prevSetsLine = computed(() => {
     const session = this.lastSession();
     if (!session) return '';
-    const sets = session.sets.filter((s) => s.exerciseId === this.exercise().id && !s.isWarmup);
+    const units = this.units();
+    const sets = session.sets
+      .filter((s) => s.exerciseId === this.exercise().id && !s.isWarmup)
+      .map((s) => ({ ...s, weight: toDisplayWeight(s.weight, units) }));
     return formatPrevSets(this.exercise().unit, sets);
   });
 
@@ -151,6 +209,101 @@ export class ActiveSetCardComponent {
   }
 
   protected readonly aiReason = computed(() => this.aiRec()?.reason ?? '');
+
+  // ── C1: aceptar / cambiar / rechazar la sugerencia (RF-IA-05) ──
+
+  /** Sugerencia para la serie en curso, si la hay. */
+  private readonly currentSuggestion = computed(() => {
+    const rec = this.aiRec();
+    const i = this.currentIdx();
+    if (!rec || rec.loading || !rec.sets?.length || i < 0) return null;
+    return rec.sets[i] ?? rec.sets[rec.sets.length - 1];
+  });
+
+  protected readonly feedbackGiven = computed<AiFeedbackAction | null>(
+    () =>
+      this.state.aiFeedbackFor(this.exercise().id).find((f) => f.dateISO === this.state.todayKey)
+        ?.action ?? null,
+  );
+
+  protected readonly canRateSuggestion = computed(
+    () => !!this.currentSuggestion() && !this.isDone(),
+  );
+
+  /** Aceptar: se aplica tal cual y se registra. Es el camino de un tap. */
+  protected acceptSuggestion(): void {
+    const sug = this.currentSuggestion();
+    const i = this.currentIdx();
+    if (!sug || i < 0) return;
+    this.state.updateSet(this.day().id, this.exercise().id, i, {
+      weight: sug.weight,
+      reps: sug.reps,
+      aiPrefilled: true,
+    });
+    this.rate('accepted', sug, sug);
+  }
+
+  /**
+   * Rechazar: se vuelve a lo de la última sesión y se registra el rechazo.
+   *
+   * Rechazar no puede dejar la serie vacía —el usuario sigue teniendo que entrenar—, así que
+   * cae a lo que hizo la última vez, que es la referencia que él mismo conoce.
+   */
+  protected rejectSuggestion(): void {
+    const sug = this.currentSuggestion();
+    const i = this.currentIdx();
+    if (!sug || i < 0) return;
+    const prev = this.lastSession()?.sets.filter((s) => s.exerciseId === this.exercise().id) ?? [];
+    const fallback = prev[i] ?? prev[prev.length - 1] ?? null;
+    if (fallback) {
+      this.state.updateSet(this.day().id, this.exercise().id, i, {
+        weight: fallback.weight,
+        reps: fallback.reps,
+        aiPrefilled: false,
+      });
+    }
+    this.rate('rejected', sug, fallback ? { weight: fallback.weight, reps: fallback.reps } : null);
+  }
+
+  protected feedbackLabel(action: AiFeedbackAction): string {
+    const t = this.T();
+    return action === 'accepted'
+      ? t.ai_feedback_accepted
+      : action === 'rejected'
+        ? t.ai_feedback_rejected
+        : t.ai_feedback_modified;
+  }
+
+  private rate(
+    action: AiFeedbackAction,
+    suggested: SetRecommendation | null,
+    applied: SetRecommendation | null,
+  ): void {
+    this.state.recordAiFeedback({
+      exerciseId: this.exercise().id,
+      exerciseName: this.exercise().name,
+      action,
+      suggested,
+      applied,
+      source: this.aiRec()?.source ?? 'local',
+    });
+  }
+
+  /**
+   * "Cambiar" no es un botón: si el atleta completa la serie con valores distintos a los
+   * sugeridos, eso ES la modificación y se registra sola. Pedirle que además pulse algo
+   * sería cobrarle un tap por informarnos.
+   */
+  private rateIfModified(applied: SetRecommendation): void {
+    if (this.feedbackGiven()) return;
+    const sug = this.currentSuggestion();
+    if (!sug) return;
+    if (sug.weight === applied.weight && sug.reps === applied.reps) {
+      this.rate('accepted', sug, applied);
+    } else {
+      this.rate('modified', sug, applied);
+    }
+  }
 
   constructor() {
     // Prefill de IA al llegar la recomendación (idéntico a la vista tabla)
@@ -174,17 +327,22 @@ export class ActiveSetCardComponent {
   }
 
   private weightStep(): number {
-    const brick = this.exercise().brick;
-    return brick > 0 ? brick : 0.5;
+    return displayStep(this.exercise().brick, this.units());
   }
 
+  /**
+   * Sube o baja el peso en la unidad que el usuario ve, y guarda el kg equivalente.
+   *
+   * El paso se calcula en la unidad de presentación: en libras, subir "un disco" son 5 lb,
+   * no los 5,51 que saldrían de convertir 2,5 kg.
+   */
   protected stepWeight(delta: number): void {
     const i = this.currentIdx();
     if (i < 0) return;
     const base = this.displayWeight() ?? 0;
-    const next = Math.max(0, Math.round((base + delta * this.weightStep()) * 4) / 4);
+    const nextDisplay = Math.max(0, Math.round((base + delta * this.weightStep()) * 4) / 4);
     this.state.updateSet(this.day().id, this.exercise().id, i, {
-      weight: next,
+      weight: fromDisplayWeight(nextDisplay, this.units()),
       aiPrefilled: false,
     });
   }
@@ -204,8 +362,12 @@ export class ActiveSetCardComponent {
     const ex = this.exercise();
     const day = this.day();
     const reps = this.displayReps() ?? ex.defaultRepTarget;
-    const weight = this.needsWeight() ? (this.displayWeight() ?? 0) : 0;
+    // De vuelta a kg antes de guardar: el historial es canónico en kg (R-4)
+    const weight = this.needsWeight()
+      ? fromDisplayWeight(this.displayWeight() ?? 0, this.units())
+      : 0;
     this.state.updateSet(day.id, ex.id, i, { reps, weight });
+    this.rateIfModified({ weight, reps });
     const result = this.setLogging.toggleDone(day, ex, i);
     if (result === 'done' && this.isDone()) {
       this.exerciseCompleted.emit();
@@ -285,8 +447,18 @@ export class ActiveSetCardComponent {
   }
 
   protected substitute(event: Event): void {
-    const id = (event.target as HTMLSelectElement).value;
-    if (!id) return;
+    const key = (event.target as HTMLSelectElement).value;
+    if (!key) return;
+    // Una alternativa del catálogo que el usuario aún no tiene se crea al elegirla: pedirle
+    // que la dé de alta antes sería mandarlo a otra pantalla en mitad de la serie.
+    let id = key;
+    if (key.startsWith('ref:')) {
+      const item = this.catalog.byRef(key.slice(4));
+      if (!item) return;
+      id = this.state.upsertExercise(
+        this.catalog.toExercise(item, this.tr.lang(), this.storage.uid()),
+      );
+    }
     this.state.substituteToday(this.day().id, this.exercise().id, id);
     this.showSubstitute.set(false);
   }

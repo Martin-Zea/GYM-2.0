@@ -14,8 +14,15 @@ import { StorageEstimateInfo, StorageService } from '../../services/storage.serv
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
 import { BackupService, ImportMode, ImportOutcome } from '../../services/backup.service';
+import { AiProviderName, ApiKeyService } from '../../services/api-key.service';
+import { KeyVault } from '../../services/crypto-keys';
+import {
+  DEFAULT_TOKEN_BUDGET,
+  totalTokens,
+  usageForMonth,
+} from '../../services/providers/ai-usage';
 import { AiShadowLogService } from '../../services/ai-shadow-log.service';
-import { AppSettings } from '../../models/workout.model';
+import { AiFeedbackAction, AiFeedbackEntry, AppSettings } from '../../models/workout.model';
 import { DEFAULT_BAR_KG, DEFAULT_PLATES_KG } from '../../utils/plates';
 import { APP_VERSION } from '../../version';
 
@@ -33,10 +40,17 @@ export class SettingsComponent implements OnInit {
   protected readonly uiState = inject(UIStateService);
   protected readonly tr = inject(TranslationService);
   protected readonly backup = inject(BackupService);
+  private readonly apiKeys = inject(ApiKeyService);
   protected readonly shadowLog = inject(AiShadowLogService);
   protected readonly T = this.tr.T;
 
   protected readonly appVersion = APP_VERSION;
+  /** Sección pedida desde el menú A1; `null` = todas. */
+  protected shows(section: 'prefs' | 'ai' | 'data' | 'about'): boolean {
+    const active = this.uiState.settingsSection();
+    return active === null || active === section;
+  }
+
   protected readonly showApiKey = signal(false);
   protected readonly showCohereKey = signal(false);
   protected readonly importError = signal('');
@@ -124,6 +138,50 @@ export class SettingsComponent implements OnInit {
     await this.refreshStorageInfo();
   }
 
+  // ── A5 · Preferencias y A6/A7 (RF-PWA-03/04, RF-HER-01) ──
+
+  protected readonly appVersionLabel = APP_VERSION;
+  protected readonly notificationState = signal<'default' | 'granted' | 'denied' | 'unsupported'>(
+    typeof Notification === 'undefined'
+      ? 'unsupported'
+      : (Notification.permission as 'default' | 'granted' | 'denied'),
+  );
+
+  protected openTools(): void {
+    this.uiState.closeSettings();
+    this.uiState.openTools();
+  }
+
+  protected patchUnits(units: 'kg' | 'lb'): void {
+    this.patch({ units });
+  }
+
+  /**
+   * Pide permiso de notificaciones desde un gesto explícito (RF-PWA-03).
+   *
+   * Pedirlo al arrancar es la forma más rápida de que lo denieguen para siempre: aquí el
+   * usuario ya sabe para qué es.
+   */
+  protected async requestNotifications(): Promise<void> {
+    if (typeof Notification === 'undefined') return;
+    try {
+      const result = await Notification.requestPermission();
+      this.notificationState.set(result as 'default' | 'granted' | 'denied');
+    } catch {
+      /* el navegador no lo permite en este contexto */
+    }
+  }
+
+  // ── Catálogo de ejercicios (RF-EJ-03) ──
+
+  protected readonly catalogList = computed(() =>
+    [...this.state.exercises()].sort((a, b) => a.name.localeCompare(b.name)),
+  );
+
+  protected toggleArchived(exerciseId: string, archived: boolean): void {
+    this.state.setExerciseArchived(exerciseId, archived);
+  }
+
   // ── Papelera de sesiones ──
   protected readonly trash = computed(() => [...(this.state.state().trash ?? [])].reverse());
 
@@ -153,12 +211,83 @@ export class SettingsComponent implements OnInit {
     this.patch({ defaultRest: Number((event.target as HTMLInputElement).value) });
   }
 
-  protected patchApiKey(event: Event): void {
-    this.patch({ apiKey: (event.target as HTMLInputElement).value });
+  // ── Keys, modelos y presupuesto (A3, RF-IA-07/08/09) ──
+
+  protected readonly vaultAvailable = inject(KeyVault).available;
+  protected readonly testResult = signal<Partial<Record<AiProviderName, string>>>({});
+
+  protected keyValue(provider: AiProviderName): string {
+    return this.apiKeys.get(provider);
   }
 
-  protected patchCohereApiKey(event: Event): void {
-    this.patch({ cohereApiKey: (event.target as HTMLInputElement).value });
+  protected saveKey(provider: AiProviderName, event: Event): void {
+    void this.apiKeys.set(provider, (event.target as HTMLInputElement).value);
+    this.testResult.update((r) => ({ ...r, [provider]: undefined }));
+  }
+
+  protected async testConnection(provider: AiProviderName): Promise<void> {
+    this.testResult.update((r) => ({ ...r, [provider]: 'testing' }));
+    const res = await this.apiKeys.testConnection(provider);
+    this.testResult.update((r) => ({ ...r, [provider]: res.ok ? 'ok' : res.reason }));
+  }
+
+  protected connectionLabel(result: string): string {
+    const t = this.T();
+    switch (result) {
+      case 'testing':
+        return t.settings_test_testing;
+      case 'ok':
+        return t.settings_test_ok;
+      case 'auth':
+        return t.settings_test_auth;
+      case 'empty':
+        return t.settings_test_empty;
+      case 'network':
+        return t.settings_test_network;
+      default:
+        return t.settings_test_other;
+    }
+  }
+
+  protected patchModel(provider: AiProviderName, event: Event): void {
+    const value = (event.target as HTMLInputElement).value.trim();
+    this.patch(
+      provider === 'groq' ? { groqModel: value || undefined } : { cohereModel: value || undefined },
+    );
+  }
+
+  protected readonly tokenBudget = computed(
+    () => this.settings().aiTokenBudget ?? DEFAULT_TOKEN_BUDGET,
+  );
+  protected readonly usedTokens = computed(() => {
+    this.state.state();
+    return totalTokens(usageForMonth());
+  });
+  protected readonly overBudget = computed(() => this.usedTokens() >= this.tokenBudget());
+
+  /** C3: historial de sugerencias y qué se hizo con cada una (RF-IA-05). */
+  protected readonly aiHistory = computed(() =>
+    [...(this.state.state().aiFeedback ?? [])].reverse().slice(0, 15),
+  );
+
+  protected feedbackLabel(action: AiFeedbackAction): string {
+    const t = this.T();
+    return action === 'accepted'
+      ? t.ai_feedback_accepted
+      : action === 'rejected'
+        ? t.ai_feedback_rejected
+        : t.ai_feedback_modified;
+  }
+
+  protected suggestionLabel(entry: AiFeedbackEntry): string {
+    const s = entry.suggested;
+    return s ? `${s.weight}×${s.reps}` : '—';
+  }
+
+  protected patchBudget(event: Event): void {
+    const n = Number((event.target as HTMLInputElement).value);
+    if (!Number.isFinite(n) || n < 0) return;
+    this.patch({ aiTokenBudget: n });
   }
 
   protected async importData(mode: ImportMode): Promise<void> {

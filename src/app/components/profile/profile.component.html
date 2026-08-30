@@ -139,9 +139,55 @@
 
   <!-- Objetivo y notas: lo que más pesa en la recomendación de la IA -->
   <section class="profile-section">
-    <p class="section-title">{{ T().settings_goal_label }}</p>
+    <p class="section-title">{{ T().profile_level_label }}</p>
+    <p class="profile-section-desc">{{ T().profile_level_desc }}</p>
+    <div class="profile-goal-chips profile-chips--level">
+      @for (opt of levelOptions; track opt.value) {
+        <button
+          class="btn btn-sm"
+          [class.btn-primary]="profile().level === opt.value"
+          (click)="setLevel(profile().level === opt.value ? null : opt.value)"
+        >
+          {{ T()[opt.key] }}
+        </button>
+      }
+    </div>
+
+    <p class="section-title profile-goal-title">{{ T().measures_title }}</p>
+    <p class="profile-section-desc">{{ T().measures_desc }}</p>
+    <div class="profile-measures">
+      @for (field of measureFields; track field.key) {
+        <label class="profile-measure">
+          <span class="field-label">{{ measureLabel(field.label) }}</span>
+          <input
+            class="input"
+            type="number"
+            inputmode="decimal"
+            [placeholder]="lastMeasure(field.key) !== null ? lastMeasure(field.key) + ' cm' : 'cm'"
+            (change)="setMeasure(field.key, $event)"
+          />
+        </label>
+      }
+    </div>
+    <button class="btn btn-sm" (click)="saveMeasures()">{{ T().measures_add }}</button>
+
+    <p class="section-title profile-goal-title">{{ T().profile_equipment_label }}</p>
+    <p class="profile-section-desc">{{ T().profile_equipment_desc }}</p>
+    <div class="profile-goal-chips profile-chips--equipment">
+      @for (eq of equipmentOptions; track eq) {
+        <button
+          class="btn btn-sm"
+          [class.btn-primary]="hasEquipment(eq)"
+          (click)="toggleEquipment(eq)"
+        >
+          {{ equipmentLabel(eq) }}
+        </button>
+      }
+    </div>
+
+    <p class="section-title profile-goal-title">{{ T().settings_goal_label }}</p>
     <p class="profile-section-desc">{{ T().settings_goal_desc }}</p>
-    <div class="profile-goal-chips">
+    <div class="profile-goal-chips profile-chips--goal">
       <button
         class="btn btn-sm"
         [class.btn-primary]="profile().goal === 'strength'"

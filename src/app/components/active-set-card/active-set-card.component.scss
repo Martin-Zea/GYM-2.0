@@ -339,7 +339,7 @@ button.asc-value {
 }
 
 .mono {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--font-display);
 }
 
 @keyframes spin {
@@ -366,4 +366,20 @@ button.asc-value {
 }
 .asc-next-btn:active {
   transform: scale(0.98);
+}
+
+.asc-ai-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.asc-ai-given,
+.asc-ai-hint {
+  font-size: var(--fs-2xs);
+  color: var(--text-2);
+}
+
+.asc-unit-suffix {
+  color: var(--text-2);
 }

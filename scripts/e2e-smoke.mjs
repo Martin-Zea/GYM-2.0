@@ -48,7 +48,7 @@ await page.waitForTimeout(600);
 check('home: tarjeta de hoy visible', (await page.locator('.today-card').count()) === 1);
 check('home: CTA visible', (await page.locator('.today-cta').count()) === 1);
 check('home: chips de ejercicios', (await page.locator('.today-ex-chip').count()) > 0);
-check('home: nav de 3 tabs', (await page.locator('.bottom-nav .nav-item').count()) === 3);
+check('home: nav de 5 tabs', (await page.locator('.bottom-nav .nav-item').count()) === 5);
 await page.screenshot({ path: `${OUT}/01-home.png`, fullPage: true });
 
 // ── Empezar sesión ──
@@ -152,21 +152,46 @@ check(
   (await page.locator('.resume-card').count()) === 0,
 );
 
-// ── Historial ──
+// ── T-704 · Pase mobile-first: targets y ancho (Art. 1, CE-1) ──
+const smallTargets = await page.evaluate(() => {
+  const MIN = 44;
+  const selectors = 'button, a[href], select, input[type="number"]';
+  const bad = [];
+  for (const el of document.querySelectorAll(selectors)) {
+    const r = el.getBoundingClientRect();
+    // Solo lo visible: lo que está oculto no se puede pulsar y no cuenta
+    if (r.width === 0 || r.height === 0) continue;
+    if (r.height < MIN && r.width < MIN) {
+      bad.push(`${el.tagName}.${el.className}`.slice(0, 60));
+    }
+  }
+  return bad;
+});
+check(`mobile: targets de 44px (${smallTargets.length} pequeños)`, smallTargets.length === 0);
+if (smallTargets.length) console.log('   targets pequeños:', smallTargets.slice(0, 6));
+
+const overflows = await page.evaluate(
+  () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+);
+check('mobile: sin scroll horizontal', !overflows);
+
+// ── Progreso (antes /history; la ruta vieja debe seguir redirigiendo) ──
 await page.goto(`${BASE}/history`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(600);
-check('historial: calendario', (await page.locator('.cal-grid').count()) === 1);
+check('progreso: /history redirige', page.url().endsWith('/progress'));
+check('progreso: calendario', (await page.locator('.cal-grid').count()) === 1);
+check('progreso: adherencia y duración', (await page.locator('.stat-grid .stat').count()) >= 2);
 check(
   'historial: día entrenado es botón',
   (await page.locator('button.cal-day.trained').count()) > 0,
 );
-check('historial: selector + gráfico', (await page.locator('.hist-ex-select').count()) === 1);
+check('progreso: selector + gráfico', (await page.locator('.hist-ex-select').count()) === 1);
 const hit = page.locator('.chart-hit').first();
 if (await hit.count()) {
   await hit.click();
   await page.waitForTimeout(300);
   check(
-    'historial: tap en punto muestra detalle',
+    'progreso: tap en punto muestra detalle',
     (await page.locator('.chart-point-info').count()) === 1,
   );
 }
@@ -176,16 +201,51 @@ await page.screenshot({ path: `${OUT}/08-history.png`, fullPage: true });
 await page.goto(`${BASE}/profile`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(500);
 check('perfil: peso editable', (await page.locator('#weight-today').count()) === 1);
-check('perfil: objetivo', (await page.locator('.profile-goal-chips').count()) === 1);
+check('perfil: nivel', (await page.locator('.profile-chips--level').count()) === 1);
+check('perfil: equipo', (await page.locator('.profile-chips--equipment').count()) === 1);
+check('perfil: objetivo', (await page.locator('.profile-chips--goal').count()) === 1);
 await page.screenshot({ path: `${OUT}/09-profile.png`, fullPage: true });
 
-// ── "+ Nuevo día" siempre disponible ──
-await page.goto(BASE, { waitUntil: 'networkidle' });
+// ── Rutinas (R1) ──
+await page.goto(`${BASE}/routines`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(500);
-await page.locator('.routine-section-header').click();
+check('rutinas: rutina activa destacada', (await page.locator('.card--hi').count()) >= 1);
+check('rutinas: 3 caminos para crear', (await page.locator('.rt-create-btn').count()) === 3);
+await page.screenshot({ path: `${OUT}/11-routines.png`, fullPage: true });
+
+// ── Coach (C1/C2/C3) ──
+await page.goto(`${BASE}/coach`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(700);
+check('coach: tres pestañas', (await page.locator('.coach-tabs button').count()) === 3);
+check('coach: presupuesto visible', (await page.locator('.coach-usage').count()) === 1);
+await page.locator('.coach-tabs button').nth(1).click();
 await page.waitForTimeout(300);
-check('rutina: botón + nuevo día visible', (await page.locator('.routine-add-btn').count()) === 1);
+check('coach: chat sin key queda bloqueado', (await page.locator('.coach-blocked').count()) === 1);
+check(
+  'coach: enviar deshabilitado sin key',
+  await page.locator('.coach-send').first().isDisabled(),
+);
+await page.screenshot({ path: `${OUT}/12-coach.png`, fullPage: true });
+
+// ── Ajustes como tab (A1) ──
+await page.goto(`${BASE}/settings`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(500);
+check('ajustes: menú de 6 filas', (await page.locator('.main .li').count()) === 6);
+await page.screenshot({ path: `${OUT}/13-settings.png`, fullPage: true });
+
+// ── R2: los días de la rutina y "añadir día" viven en el tab de Rutinas ──
+await page.goto(`${BASE}/routines`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(500);
+await page.locator('.card--hi').first().click();
+await page.waitForTimeout(400);
+check('rutina: días de la rutina listados', (await page.locator('.rt-day').count()) > 0);
+check('rutina: botón añadir día', (await page.locator('.rt-wide').count()) >= 1);
 await page.screenshot({ path: `${OUT}/10-routine.png`, fullPage: true });
+
+// Inicio ya no duplica la gestión de rutinas: es UNA decisión
+await page.goto(BASE, { waitUntil: 'networkidle' });
+await page.waitForTimeout(400);
+check('home: sin gestión de rutinas duplicada', (await page.locator('.routine-bar').count()) === 0);
 
 check('cero errores de página', consoleErrors.length === 0);
 if (consoleErrors.length) console.log('pageerrors:', consoleErrors.join(' | '));

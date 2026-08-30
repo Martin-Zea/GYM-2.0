@@ -77,13 +77,59 @@ export class HomeComponent {
 
   protected readonly aiCache = signal<Partial<Record<string, AiRecommendation>>>({});
 
-  // Cola de llamadas a IA (concurrencia 1): TODO pedido — prefetch del día, card activo,
-  // expandir, botón manual — pasa por requestAi() y se serializa para no disparar una ráfaga
-  // de fetch concurrentes contra el límite de tokens/min de Groq. aiInFlight deduplica pedidos
-  // del mismo ejercicio ya encolados o en curso.
-  private readonly aiQueue: Exercise[] = [];
-  private readonly aiInFlight = new Set<string>();
-  private aiDraining = false;
+  /**
+   * Las sugerencias de la sesión ya vienen calculadas del cierre de la anterior (RF-IA-06b),
+   * así que aquí NO hay red: se resuelven de una vez para todo el día. La cola de llamadas
+   * por ejercicio que había antes hacía 6–8 peticiones por sesión (Art. 5, `audit.md` §6.1).
+   */
+  private aiLoaded = false;
+
+  constructor() {
+    effect(() => {
+      const m = this.mode();
+      sessionStorage.setItem('gym_mode', m);
+      this.uiState.trainingActive.set(m === 'training');
+    });
+
+    // Cambió el día activo: las sugerencias del anterior ya no valen.
+    // `untracked` corta el bucle reactivo (escribir aiCache dentro del effect que lo lee).
+    effect(() => {
+      const idx = this.state.activeDayIndex();
+      untracked(() => {
+        this.aiCache.set({});
+        this.aiLoaded = false;
+        this.activeExerciseId.set(null);
+        if (this.mode() === 'training') {
+          const day = this.state.days()[idx];
+          if (day) this.initActiveExercise(day.id);
+        }
+      });
+    });
+
+    // Puente desde DayDetailSheet: "Entrenar" se pulsa allí y la sesión arranca aquí.
+    effect(() => {
+      if (this.uiState.pendingTrainingStart()) {
+        untracked(() => {
+          this.uiState.pendingTrainingStart.set(false);
+          this.mode.set('training');
+          const day = this.state.activeDay();
+          if (day) {
+            this.state.startSession(day.id);
+            this.initActiveExercise(day.id);
+          }
+        });
+      }
+    });
+
+    // Atajo del manifest ("Empezar entrenamiento"): /?start=1 arranca la sesión directo
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('start') === '1') {
+      history.replaceState(null, '', window.location.pathname);
+      if (this.mode() !== 'training' && this.state.days().length) {
+        setTimeout(() => this.startTraining());
+      }
+    }
+  }
 
   /**
    * Día de sesión: el día activo con las sustituciones "solo por hoy" aplicadas.
@@ -234,6 +280,48 @@ export class HomeComponent {
     return { streak, vol, isEmpty: streak === 0 && weeklyVolume === 0 };
   });
 
+  /** Sesiones registradas en el mes en curso (H1 del diseño). */
+  protected readonly monthSessionCount = computed(() => {
+    const prefix = this.state.todayKey.slice(0, 7);
+    return this.state.sessions().filter((s) => !s.skipped && s.dateISO.startsWith(prefix)).length;
+  });
+
+  /**
+   * Último récord de peso conseguido, para la tarjeta de PR de H1.
+   *
+   * Se recorre el historial una vez y de más viejo a más nuevo: un récord es superar TODO lo
+   * anterior, así que hay que ver el pasado antes de juzgar el presente. Se ignoran las
+   * unidades sin peso, donde "más kilos" no significa nada.
+   */
+  protected readonly lastPr = computed(() => {
+    const s = this.state.state();
+    const names = new Map(s.exercises.map((e) => [e.id, e]));
+    const best = new Map<string, number>();
+    let latest: { name: string; weight: number; dateISO: string } | null = null;
+
+    const ordered = [...s.sessions]
+      .filter((x) => !x.skipped)
+      .sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+    for (const session of ordered) {
+      for (const set of session.sets) {
+        const exercise = names.get(set.exerciseId);
+        if (!exercise || set.isWarmup || typeof set.weight !== 'number' || set.weight <= 0)
+          continue;
+        if (exercise.unit === 'TIME' || exercise.unit === 'BODYWEIGHT') continue;
+        const prev = best.get(set.exerciseId);
+        if (prev === undefined) {
+          best.set(set.exerciseId, set.weight);
+          continue;
+        }
+        if (set.weight > prev) {
+          best.set(set.exerciseId, set.weight);
+          latest = { name: exercise.name, weight: set.weight, dateISO: session.dateISO };
+        }
+      }
+    }
+    return latest;
+  });
+
   /** Resumen de la semana pasada — solo lunes/martes, si hubo al menos 1 sesión. */
   protected readonly lastWeekSummary = computed(() => {
     const dow = (new Date().getDay() + 6) % 7;
@@ -258,82 +346,6 @@ export class HomeComponent {
         : `${Math.round(volume)}kg`;
     return { sessions: sessions.length, vol };
   });
-
-  protected readonly routineExpanded = signal(false);
-
-  protected readonly routineDays = computed(() => {
-    const s = this.state.state();
-    const T = this.T();
-    const todayISO = this.storage.todayISO();
-    return this.state.days().map((day, i) => {
-      const last = this.storage.lastSessionForDay(s, day.id);
-      let lastLabel = T.first_time_label;
-      if (last) {
-        const daysAgo = daysBetweenISO(last.dateISO, todayISO);
-        lastLabel =
-          daysAgo === 0
-            ? T.today_ago
-            : daysAgo === 1
-              ? T.days_ago_one
-              : this.tr.tp('days_ago_many', { n: daysAgo });
-      }
-      const trainedToday = !!last && last.dateISO === todayISO;
-      return {
-        day,
-        index: i,
-        lastLabel,
-        isCurrent: i === this.state.currentDayIndex(),
-        trainedToday,
-      };
-    });
-  });
-
-  constructor() {
-    effect(() => {
-      const m = this.mode();
-      sessionStorage.setItem('gym_mode', m);
-      this.uiState.trainingActive.set(m === 'training');
-    });
-
-    effect(() => {
-      const idx = this.state.activeDayIndex();
-      untracked(() => {
-        this.aiCache.set({});
-        // Cambió el día: descarta los pedidos pendientes del día anterior. El que ya está
-        // corriendo termina solo; su delete sobre el Set vacío es no-op.
-        this.aiQueue.length = 0;
-        this.aiInFlight.clear();
-        this.activeExerciseId.set(null);
-        if (this.mode() === 'training') {
-          const day = this.state.days()[idx];
-          if (day) this.initActiveExercise(day.id);
-        }
-      });
-    });
-
-    effect(() => {
-      if (this.uiState.pendingTrainingStart()) {
-        untracked(() => {
-          this.uiState.pendingTrainingStart.set(false);
-          this.mode.set('training');
-          const day = this.state.activeDay();
-          if (day) {
-            this.state.startSession(day.id);
-            this.initActiveExercise(day.id);
-          }
-        });
-      }
-    });
-
-    // Atajo del manifest ("Empezar entrenamiento"): /?start=1 arranca la sesión directo
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('start') === '1') {
-      history.replaceState(null, '', window.location.pathname);
-      if (this.mode() !== 'training' && this.state.days().length) {
-        setTimeout(() => this.startTraining());
-      }
-    }
-  }
 
   protected setSessionView(view: SessionView): void {
     this.sessionView.set(view);
@@ -460,12 +472,8 @@ export class HomeComponent {
    * como hasta ahora.
    */
   private precomputeNextSuggestions(day: WorkoutDay, sessionISO: string): void {
-    void this.progression.precomputeNextSession(
-      this.state.settings(),
-      day.exercises,
-      sessionISO,
-      this.tr.lang(),
-    );
+    void sessionISO;
+    void this.progression.precomputeNextSession(this.state.settings(), day, this.tr.lang());
   }
 
   protected onExerciseCompleted(completedExercise: Exercise): void {
@@ -541,58 +549,27 @@ export class HomeComponent {
   }
 
   protected requestAi(exercise: Exercise): void {
-    // Deduplica: ya encolado o en curso → no agendar de nuevo.
-    if (this.aiInFlight.has(exercise.id)) return;
-    this.aiInFlight.add(exercise.id);
-
-    // Estado de carga inmediato (spinner) aunque el fetch espere su turno en la cola.
-    this.aiCache.update((c) => ({
-      ...c,
-      [exercise.id]: { sets: [], reason: '', source: 'local', loading: true },
-    }));
-
-    this.aiQueue.push(exercise);
-    void this.drainAiQueue();
+    void exercise;
+    if (this.aiLoaded) return;
+    this.aiLoaded = true;
+    void this.loadSessionSuggestions();
   }
 
-  private async drainAiQueue(): Promise<void> {
-    if (this.aiDraining) return;
-    this.aiDraining = true;
-    try {
-      while (this.aiQueue.length) {
-        const exercise = this.aiQueue.shift()!;
-        try {
-          await this.runAiRequest(exercise);
-        } finally {
-          this.aiInFlight.delete(exercise.id);
-        }
-      }
-    } finally {
-      this.aiDraining = false;
-    }
-  }
-
-  private async runAiRequest(exercise: Exercise): Promise<void> {
-    const day = this.state.activeDay();
+  /**
+   * Resuelve las sugerencias del día entero de una sola vez.
+   *
+   * Si hay unas precalculadas cuyo contexto sigue vigente, se usan tal cual; si no, el motor
+   * local responde al instante. En ningún caso se llama a la red desde la sesión activa:
+   * H2 no puede esperar por nadie (RF-IA-06b, Art. 8).
+   */
+  private async loadSessionSuggestions(): Promise<void> {
+    const day = this.sessionDay();
     if (!day) return;
-
-    const s = this.state.state();
-    const tp = this.state.getTodayProgress(day.id);
-    const todaySets = tp.sets[exercise.id] ?? [];
-    const lastSets = this.storage.lastSetsForExercise(s, exercise.id);
-    const history = this.storage.historyForExercise(s, exercise.id);
-    const lastSession = this.storage.lastSessionForExercise(s, exercise.id);
-
-    const rec = await this.progression.recommend(
+    const result = await this.progression.suggestionsForToday(
+      day,
       this.state.settings(),
-      exercise,
-      todaySets,
-      lastSets,
-      history,
       this.tr.lang(),
-      lastSession?.dateISO ?? null,
     );
-
-    this.aiCache.update((c) => ({ ...c, [exercise.id]: rec }));
+    this.aiCache.set({ ...result.byExercise });
   }
 }
