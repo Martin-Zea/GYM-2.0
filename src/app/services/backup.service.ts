@@ -1,11 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { StateService } from './state.service';
 import { StorageService } from './storage.service';
+import { ApiKeyService } from './api-key.service';
 import { TranslationService } from './translation.service';
 import { STORAGE_KEYS } from './storage-keys';
 import { buildBackup, parseBackup } from './backup-format';
 import { MergeSummary, mergeStates } from './backup-merge';
 import { APP_VERSION } from '../version';
+import { AppState } from '../models/workout.model';
 
 /** Qué hacer con el backup importado (RF-STO-05). */
 export type ImportMode = 'merge' | 'replace';
@@ -29,6 +31,7 @@ export class BackupService {
   private readonly state = inject(StateService);
   private readonly storage = inject(StorageService);
   private readonly tr = inject(TranslationService);
+  private readonly apiKeys = inject(ApiKeyService);
 
   /**
    * Exporta el estado. Las keys de IA quedan FUERA salvo pedido explícito: el archivo se
@@ -36,9 +39,15 @@ export class BackupService {
    * un problema del que el usuario no se entera (RF-STO-05b, `audit.md` R-8).
    */
   async exportData(opts: { includeCredentials?: boolean } = {}): Promise<void> {
+    const includeCredentials = opts.includeCredentials === true;
     const envelope = buildBackup(this.state.state(), {
       appVersion: APP_VERSION,
-      includeCredentials: opts.includeCredentials === true,
+      includeCredentials,
+      // En claro y desde el vault: en el estado solo hay texto cifrado con una clave que no
+      // sale de este dispositivo, así que copiar eso no restauraría nada en otro.
+      credentials: includeCredentials
+        ? { groq: this.apiKeys.get('groq'), cohere: this.apiKeys.get('cohere') }
+        : undefined,
     });
     const fileName = `gym-backup-${this.storage.todayISO()}.json`;
     const file = new File([JSON.stringify(envelope, null, 2)], fileName, {
@@ -115,11 +124,32 @@ export class BackupService {
 
     if (mode === 'replace') {
       this.state.state.set(imported);
+      void this.adoptCredentials(imported);
       return outcome;
     }
 
     const { state, summary } = mergeStates(this.state.state(), imported);
     this.state.state.set(state);
+    void this.adoptCredentials(imported);
     return { ...outcome, summary };
+  }
+
+  /**
+   * Deja las keys utilizables tras importar.
+   *
+   * Dos casos, y los dos importan:
+   *
+   * - el backup TRAE keys en claro → se vuelven a cifrar con el vault de ESTE dispositivo y
+   *   el texto plano sale del estado, que es la única forma de que una key sea portable sin
+   *   quedar en claro para siempre;
+   * - el backup NO trae keys → se re-sella la que ya tenía el usuario. En modo `replace` el
+   *   estado importado no tiene credenciales, así que sin esto la key configurada aquí
+   *   desaparecería al recargar por haber restaurado datos de entrenamiento.
+   */
+  private async adoptCredentials(imported: AppState): Promise<void> {
+    const groq = imported.settings.apiKey?.trim() || this.apiKeys.get('groq');
+    const cohere = imported.settings.cohereApiKey?.trim() || this.apiKeys.get('cohere');
+    if (groq) await this.apiKeys.set('groq', groq);
+    if (cohere) await this.apiKeys.set('cohere', cohere);
   }
 }

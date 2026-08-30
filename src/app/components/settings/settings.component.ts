@@ -56,7 +56,14 @@ export class SettingsComponent implements OnInit {
   protected readonly importError = signal('');
   protected readonly importReport = signal('');
   /** Incluir las keys de IA en el export: apagado por defecto (RF-STO-05b). */
-  protected readonly includeCredentials = signal(false);
+  /**
+   * Las keys VIAJAN en la copia por defecto (decisión del usuario, 2026-08-30).
+   *
+   * Va en contra del defecto conservador de T-001, y a cambio la copia sirve para lo que la
+   * gente espera: restaurar el teléfono y seguir entrenando sin volver a pegar la key. El
+   * archivo queda con la credencial en claro, y la etiqueta lo dice sin rodeos.
+   */
+  protected readonly includeCredentials = signal(true);
   protected readonly resetConfirm = signal(false);
   protected readonly resetInput = signal('');
 

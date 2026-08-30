@@ -64,22 +64,38 @@ export function checksumOf(value: unknown): string {
 /** Arma el sobre listo para escribir a disco. */
 export function buildBackup(
   state: AppState,
-  opts: { appVersion: string; includeCredentials: boolean },
+  opts: {
+    appVersion: string;
+    includeCredentials: boolean;
+    /** Keys en claro, que solo conoce `ApiKeyService`. Necesarias para que el backup sirva. */
+    credentials?: { groq: string; cohere: string };
+  },
 ): BackupEnvelope {
-  const payload: AppState = opts.includeCredentials
-    ? state
+  // El sobre NUNCA lleva `apiKeySealed`. Ese blob está cifrado con una clave no extraíble que
+  // vive en el IndexedDB de ESTE dispositivo: en otro teléfono —o aquí mismo tras borrar los
+  // datos del sitio, que es justo cuando se restaura— sería indescifrable, y en silencio.
+  // Una credencial portable tiene que viajar en claro o no viajar.
+  const settings = opts.includeCredentials
+    ? {
+        ...state.settings,
+        // Sin `credentials` se cae al texto plano del estado: es lo que hay en navegadores
+        // sin WebCrypto y en estados anteriores a F4, y perderlo sería vaciar el backup.
+        apiKey: opts.credentials?.groq || state.settings.apiKey || '',
+        cohereApiKey: opts.credentials?.cohere || state.settings.cohereApiKey || '',
+        apiKeySealed: undefined,
+        cohereApiKeySealed: undefined,
+      }
     : {
-        ...state,
-        settings: {
-          ...state.settings,
-          apiKey: '',
-          cohereApiKey: '',
-          // Desde F4 la key viaja cifrada en el estado; cifrada o no, sigue siendo la
-          // credencial del usuario y no entra en un archivo que se comparte (R-8).
-          apiKeySealed: undefined,
-          cohereApiKeySealed: undefined,
-        },
+        ...state.settings,
+        apiKey: '',
+        cohereApiKey: '',
+        // Cifrada o no, sigue siendo la credencial del usuario y no entra en un archivo que
+        // se comparte (R-8).
+        apiKeySealed: undefined,
+        cohereApiKeySealed: undefined,
       };
+
+  const payload: AppState = { ...state, settings };
 
   return {
     format: BACKUP_FORMAT,

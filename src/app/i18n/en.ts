@@ -132,7 +132,7 @@ export const en: Translations = {
   settings_import_replace: 'Import and replace',
   settings_export_credentials: 'Include AI keys in the backup',
   settings_export_credentials_desc:
-    'Off by default: the file gets shared and the keys would travel in plain text.',
+    'On: the backup can restore without pasting your key again. The file holds the key in plain text: do not share it.',
   import_merge_report:
     'Merged: {sessions} new sessions, {skipped} already there, {exercises} exercises and {days} days added.',
   import_replace_report: 'Data replaced with the backup.',

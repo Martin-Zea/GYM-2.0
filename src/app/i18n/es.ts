@@ -133,7 +133,7 @@ export const es: Translations = {
   settings_import_replace: 'Importar y reemplazar',
   settings_export_credentials: 'Incluir claves de IA en la copia',
   settings_export_credentials_desc:
-    'Apagado por defecto: el archivo se comparte y las claves viajarían en texto plano.',
+    'Activado: la copia sirve para restaurar sin volver a pegar la key. El archivo queda con la clave en texto plano: no lo compartas.',
   import_merge_report:
     'Fusionado: {sessions} sesiones nuevas, {skipped} ya estaban, {exercises} ejercicios y {days} días agregados.',
   import_replace_report: 'Datos reemplazados por los del backup.',

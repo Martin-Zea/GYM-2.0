@@ -86,6 +86,42 @@ describe('Formato de backup (RF-STO-05)', () => {
     expect(JSON.stringify(envelope)).not.toContain('gsk-secreta');
   });
 
+  it('las keys viajan EN CLARO, nunca el blob cifrado (T-809)', () => {
+    // `apiKeySealed` está cifrado con una clave no extraíble atada a este dispositivo:
+    // copiarlo daría un backup indescifrable justo donde más se necesita (teléfono nuevo,
+    // o este mismo tras borrar los datos del sitio).
+    const sealed = state({
+      settings: {
+        ...state().settings,
+        apiKey: '',
+        apiKeySealed: { v: 1, iv: 'iv-del-dispositivo', ct: 'blob-cifrado-del-dispositivo' },
+      },
+    });
+
+    const envelope = buildBackup(sealed, {
+      appVersion: '1.4.0',
+      includeCredentials: true,
+      credentials: { groq: 'gsk-en-claro', cohere: '' },
+    });
+
+    expect(envelope.state.settings.apiKey).toBe('gsk-en-claro');
+    expect(envelope.state.settings.apiKeySealed).toBeUndefined();
+    expect(JSON.stringify(envelope)).not.toContain('blob-cifrado-del-dispositivo');
+  });
+
+  it('sin keys, el sobre tampoco arrastra el blob cifrado', () => {
+    const sealed = state({
+      settings: {
+        ...state().settings,
+        apiKeySealed: { v: 1, iv: 'iv', ct: 'blob-cifrado-del-dispositivo' },
+      },
+    });
+
+    const envelope = buildBackup(sealed, { appVersion: '1.4.0', includeCredentials: false });
+
+    expect(envelope.state.settings.apiKeySealed).toBeUndefined();
+  });
+
   it('con la opción explícita, las incluye', () => {
     const withKeys = state({ settings: { ...state().settings, apiKey: 'gsk-secreta' } });
 
