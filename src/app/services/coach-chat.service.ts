@@ -12,10 +12,32 @@ import {
   usageForMonth,
 } from './providers/ai-usage';
 import { AuthError, fetchAiWithRateLimit } from './providers/prompt-helpers';
-import { GROQ_MODEL } from './providers/groq.provider';
+import {
+  GROQ_MODEL,
+  REASONING_MIN_TOKENS,
+  reasoningOverridesFor,
+  reasons,
+} from './providers/groq.provider';
 import { COHERE_MODEL } from './providers/cohere.provider';
 
 export type ChatRole = 'user' | 'assistant';
+
+/**
+ * El modelo configurado no existe o la key no tiene acceso a él.
+ *
+ * Merece su propio tipo porque es el único fallo de la lista que el usuario puede arreglar
+ * solo, y en un sitio concreto: el selector de modelo de Ajustes.
+ */
+export class ModelError extends Error {}
+
+async function modelAwareError(provider: string, resp: Response): Promise<Error> {
+  const body: unknown = await resp.json().catch(() => null);
+  const error = (body as { error?: { code?: string; message?: string } } | null)?.error;
+  if (error?.code === 'model_not_found' || /model/i.test(error?.message ?? '')) {
+    return new ModelError(error?.message ?? 'model_not_found');
+  }
+  return new Error(`${provider} ${resp.status}`);
+}
 
 export interface ChatMessage {
   id: string;
@@ -97,7 +119,9 @@ export class CoachChatService {
       const reply = await this.ask(settings, lang);
       this.push({ role: 'assistant', text: reply });
     } catch (e) {
-      this.error.set(e instanceof AuthError ? 'auth' : 'failed');
+      if (e instanceof AuthError) this.error.set('auth');
+      else if (e instanceof ModelError) this.error.set('model');
+      else this.error.set('failed');
     } finally {
       this.usage.set(usageForMonth());
       this.sending.set(false);
@@ -121,20 +145,24 @@ export class CoachChatService {
     const system = this.systemPrompt(lang);
 
     if (key.provider === 'groq') {
+      const model = settings.groqModel || GROQ_MODEL;
       const resp = await fetchAiWithRateLimit('Groq', GROQ_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key.value}` },
         body: JSON.stringify({
-          model: settings.groqModel || GROQ_MODEL,
+          model,
+          // Un modelo que razona gasta tokens antes de escribir: sin margen extra la
+          // respuesta llega cortada o vacía.
+          max_tokens: reasons(model) ? Math.max(REASONING_MIN_TOKENS, MAX_TOKENS) : MAX_TOKENS,
           messages: [{ role: 'system', content: system }, ...history],
           temperature: 0.3,
-          max_tokens: MAX_TOKENS,
+          ...reasoningOverridesFor(model),
         }),
       });
       if (resp.status === 401 || resp.status === 403) throw new AuthError('Groq', 'auth');
-      if (!resp.ok) throw new Error(`Groq ${resp.status}`);
+      if (!resp.ok) throw await modelAwareError('Groq', resp);
       const data = await resp.json();
-      recordUsage('groq', settings.groqModel || GROQ_MODEL, data?.usage);
+      recordUsage('groq', model, data?.usage);
       return String(data?.choices?.[0]?.message?.content ?? '').trim();
     }
 
@@ -149,7 +177,7 @@ export class CoachChatService {
       }),
     });
     if (resp.status === 401 || resp.status === 403) throw new AuthError('Cohere', 'auth');
-    if (!resp.ok) throw new Error(`Cohere ${resp.status}`);
+    if (!resp.ok) throw await modelAwareError('Cohere', resp);
     const data = await resp.json();
     recordUsage('cohere', COHERE_MODEL, data?.meta?.tokens);
     const parts: unknown[] = data?.message?.content ?? [];

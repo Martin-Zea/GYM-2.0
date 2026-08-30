@@ -755,4 +755,11 @@ export const es: Translations = {
   progress_no_plan: 'Sin plan declarado',
   progress_no_duration: 'Sin datos',
   progress_minutes: '{n} min',
+
+  // Selector de modelo desde la propia key (T-808)
+  settings_models_load: 'Ver modelos de mi key',
+  settings_models_loading: 'Consultando…',
+  settings_models_none: 'No se pudo obtener la lista. Podés escribir el ID a mano.',
+  settings_models_default: 'Por defecto del proveedor',
+  settings_test_model: 'Ese modelo no está disponible con tu key. Elegí otro de la lista.',
 };

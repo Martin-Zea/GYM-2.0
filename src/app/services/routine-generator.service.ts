@@ -5,7 +5,12 @@ import { ApiKeyService } from './api-key.service';
 import { CatalogService } from './catalog.service';
 import { StateService } from './state.service';
 import { StorageService } from './storage.service';
-import { GROQ_MODEL } from './providers/groq.provider';
+import {
+  GROQ_MODEL,
+  REASONING_MIN_TOKENS,
+  reasoningOverridesFor,
+  reasons,
+} from './providers/groq.provider';
 import { COHERE_MODEL } from './providers/cohere.provider';
 import { AuthError, fetchAiWithRateLimit } from './providers/prompt-helpers';
 import { parseJsonLoose } from './providers/session-prompt';
@@ -145,15 +150,18 @@ Exactly ${spec.daysPerWeek} days.`;
     settings: AppSettings,
     spec: RoutineSpec,
   ): Promise<GeneratedRoutine> {
+    const model = settings.groqModel ?? GROQ_MODEL;
+    const budget = Math.min(1800, 120 + spec.daysPerWeek * 180);
     const resp = await fetchAiWithRateLimit('Groq', GROQ_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
       body: JSON.stringify({
-        model: settings.groqModel ?? GROQ_MODEL,
+        model,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
-        max_tokens: Math.min(1800, 120 + spec.daysPerWeek * 180),
+        max_tokens: reasons(model) ? Math.max(REASONING_MIN_TOKENS, budget) : budget,
         response_format: { type: 'json_object' },
+        ...reasoningOverridesFor(model),
       }),
     });
     if (resp.status === 401 || resp.status === 403) throw new AuthError('Groq');

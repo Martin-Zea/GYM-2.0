@@ -751,4 +751,11 @@ export const en: Translations = {
   progress_no_plan: 'No plan set',
   progress_no_duration: 'No data',
   progress_minutes: '{n} min',
+
+  // Selector de modelo desde la propia key (T-808)
+  settings_models_load: "Show my key's models",
+  settings_models_loading: 'Checking…',
+  settings_models_none: 'Could not fetch the list. You can type the ID manually.',
+  settings_models_default: 'Provider default',
+  settings_test_model: 'That model is not available with your key. Pick another from the list.',
 };

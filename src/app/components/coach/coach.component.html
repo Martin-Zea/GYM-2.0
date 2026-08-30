@@ -99,7 +99,17 @@
 
       @if (chat.error(); as err) {
         <p class="note coach-error">
-          {{ err === 'auth' ? T().coach_chat_auth : T().coach_chat_failed }}
+          @switch (err) {
+            @case ('auth') {
+              {{ T().coach_chat_auth }}
+            }
+            @case ('model') {
+              {{ T().settings_test_model }}
+            }
+            @default {
+              {{ T().coach_chat_failed }}
+            }
+          }
         </p>
       }
 

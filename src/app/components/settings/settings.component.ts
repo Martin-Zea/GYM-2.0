@@ -242,11 +242,43 @@ export class SettingsComponent implements OnInit {
         return t.settings_test_auth;
       case 'empty':
         return t.settings_test_empty;
+      case 'model':
+        return t.settings_test_model;
       case 'network':
         return t.settings_test_network;
       default:
         return t.settings_test_other;
     }
+  }
+
+  /**
+   * Modelos que la key puede usar, preguntados al proveedor (T-808).
+   *
+   * Vacío hasta que el usuario lo pide: es una llamada de red y no tiene por qué salir sola
+   * al abrir Ajustes.
+   */
+  protected readonly models = signal<Record<AiProviderName, string[]>>({ groq: [], cohere: [] });
+  protected readonly loadingModels = signal<AiProviderName | null>(null);
+  protected readonly modelsEmpty = signal<AiProviderName | null>(null);
+
+  protected async loadModels(provider: AiProviderName): Promise<void> {
+    if (this.loadingModels()) return;
+    this.loadingModels.set(provider);
+    this.modelsEmpty.set(null);
+    try {
+      const list = await this.apiKeys.listModels(provider);
+      this.models.update((m) => ({ ...m, [provider]: list }));
+      if (!list.length) this.modelsEmpty.set(provider);
+    } finally {
+      this.loadingModels.set(null);
+    }
+  }
+
+  protected selectModel(provider: AiProviderName, event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.patch(
+      provider === 'groq' ? { groqModel: value || undefined } : { cohereModel: value || undefined },
+    );
   }
 
   protected patchModel(provider: AiProviderName, event: Event): void {

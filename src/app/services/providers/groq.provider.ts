@@ -17,14 +17,25 @@ import {
   unitPromptLabel,
 } from './prompt-helpers';
 
-export const GROQ_MODEL = 'llama-3.3-70b-versatile';
+/**
+ * Modelo por defecto de Groq.
+ *
+ * Era `llama-3.3-70b-versatile` hasta que las cuentas nuevas dejaron de tener acceso a los
+ * Llama de chat (`model_not_found`). `gpt-oss-120b` es de producción, sigue instrucciones y
+ * respeta `response_format: json_object`, que es lo que la sesión necesita.
+ *
+ * Es solo el DEFECTO: el usuario elige el suyo en Ajustes → IA y keys, de la lista real que
+ * devuelve su propia key. Ningún ID quemado aquí sobrevive al catálogo del proveedor.
+ */
+export const GROQ_MODEL = 'openai/gpt-oss-120b';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 /**
  * Overrides del body de chat completions para modelos "de razonamiento" (piensan antes
  * de responder). Sin esto, el `max_tokens` bajo de esta función se agota en tokens de
  * razonamiento antes de llegar al JSON, y Groq devuelve 400 "Failed to validate JSON".
- * `llama-3.3-70b-versatile` no es un modelo de razonamiento y no necesita overrides.
+ * El modelo por defecto SÍ razona, así que los overrides son la norma, no la excepción:
+ * ver `reasoningOverridesFor()`.
  */
 export interface GroqRequestOverrides {
   reasoning_effort?: string;
@@ -150,6 +161,35 @@ Poné "deload" en true SOLO cuando recomendás una descarga o back-off intencion
   };
 }
 
+/**
+ * Ajustes obligatorios para modelos que RAZONAN antes de responder (gpt-oss, qwen3).
+ *
+ * Estos modelos gastan tokens pensando antes de escribir una sola letra de la respuesta. Con
+ * un `max_tokens` ajustado —el que basta para un JSON de sesión— se quedan sin presupuesto a
+ * mitad del razonamiento y Groq devuelve 400 "Failed to validate JSON": no es que el modelo
+ * no sepa, es que no llegó a contestar.
+ *
+ * `reasoning_format: 'hidden'` mantiene el razonamiento fuera de la respuesta (si no, ensucia
+ * el JSON) y el suelo de tokens le da margen para terminar.
+ *
+ * Importa desde F8: el catálogo de Groq ya no ofrece los Llama de chat a todas las cuentas,
+ * así que el modelo que elija el usuario casi seguro razona.
+ */
+export function reasoningOverridesFor(model: string): GroqRequestOverrides {
+  if (/gpt-oss/i.test(model)) return { reasoning_effort: 'low', reasoning_format: 'hidden' };
+  // Qwen3 razona por defecto; aquí no hace falta y se apaga para no pagarlo en cada llamada.
+  if (/qwen3/i.test(model)) return { reasoning_effort: 'none', reasoning_format: 'hidden' };
+  return {};
+}
+
+/** `true` si el modelo consume tokens razonando y necesita más margen de salida. */
+export function reasons(model: string): boolean {
+  return Object.keys(reasoningOverridesFor(model)).length > 0;
+}
+
+/** Suelo de `max_tokens` para modelos que razonan (medido en el shadow log). */
+export const REASONING_MIN_TOKENS = 1000;
+
 export class GroqProvider implements AiProvider, AiSessionProvider {
   readonly name = 'groq' as const;
 
@@ -172,8 +212,11 @@ export class GroqProvider implements AiProvider, AiSessionProvider {
         model: this.model,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0,
-        max_tokens: sessionMaxTokens(ctx.exercises.length),
+        max_tokens: reasons(this.model)
+          ? Math.max(REASONING_MIN_TOKENS, sessionMaxTokens(ctx.exercises.length))
+          : sessionMaxTokens(ctx.exercises.length),
         response_format: { type: 'json_object' },
+        ...reasoningOverridesFor(this.model),
       }),
     });
     if (resp.status === 401 || resp.status === 403) {

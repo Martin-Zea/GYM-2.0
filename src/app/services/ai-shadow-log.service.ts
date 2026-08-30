@@ -12,7 +12,11 @@ import { STORAGE_KEYS } from './storage-keys';
 /**
  * Shadow logging temporal para evaluar candidatos de reemplazo de `llama-3.3-70b-versatile`
  * (deprecado por Groq, decommission 2026-08-16) — ver `specs/ai-shadow-log.md`.
- * Se retira del código una vez tomada la decisión de a qué modelo migrar.
+ *
+ * DECISIÓN TOMADA (2026-08-30): el reemplazo es `openai/gpt-oss-120b`, ya en producción como
+ * `GROQ_MODEL`. Por eso sale de esta lista: medir contra el modelo que YA se usa no compara
+ * nada. Queda `qwen3.6-27b` como único candidato vivo; cuando no interese seguir midiendo,
+ * este servicio entero se puede borrar.
  */
 const LOG_CAP = 150;
 const REASON_MAX_LEN = 300;
@@ -24,11 +28,7 @@ const SAMPLE_RATE = 2; // 1 de cada 2 recomendaciones reales de Groq
  * y Groq devuelve 400 "Failed to validate JSON". `max_tokens` sube para dejar margen al
  * razonamiento + la respuesta.
  */
-const SHADOW_MODELS: readonly [string, GroqRequestOverrides][] = [
-  [
-    'openai/gpt-oss-120b',
-    { reasoning_effort: 'low', reasoning_format: 'hidden', max_tokens: 1000 },
-  ],
+export const SHADOW_MODELS: readonly [string, GroqRequestOverrides][] = [
   ['qwen/qwen3.6-27b', { reasoning_effort: 'none', reasoning_format: 'hidden', max_tokens: 1000 }],
 ];
 

@@ -90,7 +90,12 @@
   - AC (RF-IA-06b): el disparo ocurre **al finalizar la sesión**, calculando la próxima; nunca con el usuario esperando en H2. Sin sugerencia persistida, H2 precarga con la última sesión + motor local y sigue funcionando.
   - AC (RF-IA-06c): se **conserva la estabilidad determinista** actual — registrar series durante el día no recalcula la sugerencia. Solo la invalidan datos nuevos reales o el feedback explícito.
   - AC: la cascada Groq → Cohere → local existente se preserva tal cual (ya cumple EA-2).
-- **T-401** ⚠️ Spike: verificar CORS y formato real de Groq y Cohere desde navegador con una key de prueba (riesgo §6 del plan). Gate de la fase.
+- **T-401** 🟡 Spike: verificar CORS y formato real de Groq y Cohere desde navegador con una key de prueba (riesgo §6 del plan). Gate de la fase.
+  - **CORS: verificado y NO bloquea.** Con una key real, el navegador llegó a `api.groq.com` y recibió una
+    respuesta de error estructurada (`model_not_found`), lo que solo puede pasar si la petición completó.
+  - **Formato de error: verificado.** Groq devuelve `{ error: { message, type, code } }`; ya se parsea.
+  - Pendiente: verificar el formato de una respuesta EXITOSA de chat y del JSON de sesión con un modelo
+    al que la key tenga acceso.
 - **T-402** ✅ `GroqProvider` y `CohereProvider` con timeout 15 s, backoff, manejo 401/429 (RF-IA-02) `[P tras T-401]`.
 - **T-403** ✅ Serializador de contexto compacto versionado + diccionario de abreviaturas (RF-IA-03, CE-4).
   - AC (Art. 5): reemplaza el `JSON.stringify(summary, null, 2)` actual por el formato CSV-like abreviado. El contexto se arma **por sesión** (T-400), no por ejercicio.
@@ -119,7 +124,9 @@
 > Contexto CSV-like neutro de idioma con presupuesto de 1.200 tokens verificado, caché por hash de contexto,
 > candado anti doble-tap, contador de consumo con corte por presupuesto, prueba de conexión, selección de
 > modelo, y panel C1 (aceptar/cambiar/rechazar) con el feedback reinyectado en el contexto + historial C3.
-> **T-401 sigue abierta**: verificar CORS y formato reales exige una key de prueba que solo tiene el usuario.
+> **T-401 parcialmente cerrada**: con una key real se confirmó que CORS no bloquea desde el navegador y que
+> el formato de error de Groq es el esperado. Queda verificar una respuesta exitosa, que depende de que la
+> key tenga acceso a algún modelo de chat (ver T-808: el modelo se elige de la lista real de la key).
 
 ## F5 · Rutinas y generación (RF-RUT, RF-EJ, RF-PER) — ✅ COMPLETA
 

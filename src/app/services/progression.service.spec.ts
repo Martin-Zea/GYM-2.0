@@ -2,7 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { ProgressionService } from './progression.service';
 import { AppSettings, Exercise, SetRecord, TodaySetProgress } from '../models/workout.model';
 import { StorageService } from './storage.service';
-import { AiShadowLogService } from './ai-shadow-log.service';
+import { AiShadowLogService, SHADOW_MODELS } from './ai-shadow-log.service';
+import { GROQ_MODEL } from './providers/groq.provider';
 import { STORAGE_KEYS } from './storage-keys';
 
 function makeExercise(overrides: Partial<Exercise> = {}): Exercise {
@@ -453,10 +454,11 @@ describe('ProgressionService', () => {
       });
     }
 
-    it('no bloquea la respuesta real aunque los candidatos tarden o nunca resuelvan', async () => {
+    it('no bloquea la respuesta real aunque el candidato tarde o nunca resuelva', async () => {
+      // Solo cuelga el CANDIDATO. El modelo de producción responde: si también colgara, no se
+      // estaría midiendo el shadow sino la llamada real.
       const fetchMock = fetchModelAware({
-        'openai/gpt-oss-120b': () => new Promise(() => {}), // nunca resuelve
-        'qwen/qwen3.6-27b': () => new Promise(() => {}),
+        'qwen/qwen3.6-27b': () => new Promise(() => {}), // nunca resuelve
       });
       vi.stubGlobal('fetch', fetchMock);
 
@@ -474,9 +476,8 @@ describe('ProgressionService', () => {
       expect(rec.sets[0].weight).toBe(20);
     });
 
-    it('un candidato que falla no afecta al otro ni llega al usuario, y ambos quedan en el log', async () => {
+    it('un candidato que falla no llega al usuario, pero sí queda en el log', async () => {
       const fetchMock = fetchModelAware({
-        'openai/gpt-oss-120b': () => Promise.resolve(groqResponse(groqSets(22.5))),
         'qwen/qwen3.6-27b': () =>
           Promise.resolve({ ok: false, status: 500, text: async () => 'boom' }),
       });
@@ -490,7 +491,9 @@ describe('ProgressionService', () => {
         lastSetsAt(20, 10),
         [],
       );
-      expect(rec.source).toBe('groq'); // el fallo del candidato nunca llega al usuario
+      // Medir un candidato no puede degradar lo que ve quien entrena.
+      expect(rec.source).toBe('groq');
+      expect(rec.sets[0].weight).toBe(20);
 
       await vi.waitFor(() => {
         const log = JSON.parse(localStorage.getItem(STORAGE_KEYS.aiShadowLog) ?? '[]');
@@ -498,14 +501,17 @@ describe('ProgressionService', () => {
       });
 
       const [entry] = JSON.parse(localStorage.getItem(STORAGE_KEYS.aiShadowLog) ?? '[]');
-      const ok = entry.shadowModels.find((m: { name: string }) => m.name === 'openai/gpt-oss-120b');
       const failed = entry.shadowModels.find(
         (m: { name: string }) => m.name === 'qwen/qwen3.6-27b',
       );
-      expect(ok.ok).toBe(true);
-      expect(ok.sets[0].weight).toBe(22.5);
       expect(failed.ok).toBe(false);
       expect(failed.error).toBeTruthy();
+    });
+
+    it('el modelo de producción NO se mide contra sí mismo', () => {
+      // Cuando gpt-oss-120b pasó a producción salió de la lista: compararlo consigo mismo no
+      // dice nada y gastaría tokens en cada llamada muestreada.
+      expect(SHADOW_MODELS.map(([name]) => name)).not.toContain(GROQ_MODEL);
     });
 
     it('no dispara shadow cuando la recomendación real no vino de Groq', async () => {

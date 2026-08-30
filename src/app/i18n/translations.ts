@@ -756,6 +756,13 @@ export interface Translations {
   progress_no_plan: string;
   progress_no_duration: string;
   progress_minutes: string;
+
+  // Selector de modelo desde la propia key (T-808)
+  settings_models_load: string;
+  settings_models_loading: string;
+  settings_models_none: string;
+  settings_models_default: string;
+  settings_test_model: string;
 }
 
 export { es } from './es';

@@ -185,6 +185,26 @@
                 }}</span>
               }
             </div>
+            <!-- El modelo se elige de lo que la key puede usar, no de una constante que caduca -->
+            @if (models().groq.length) {
+              <select class="select" (change)="selectModel('groq', $event)">
+                <option value="">{{ T().settings_models_default }}</option>
+                @for (m of models().groq; track m) {
+                  <option [value]="m" [selected]="m === settings().groqModel">{{ m }}</option>
+                }
+              </select>
+            } @else {
+              <button class="btn btn-ghost btn-sm" (click)="loadModels('groq')">
+                {{
+                  loadingModels() === 'groq'
+                    ? T().settings_models_loading
+                    : T().settings_models_load
+                }}
+              </button>
+              @if (modelsEmpty() === 'groq') {
+                <p class="settings-row-desc">{{ T().settings_models_none }}</p>
+              }
+            }
             <input
               class="input"
               [placeholder]="T().settings_model_placeholder"

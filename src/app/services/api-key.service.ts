@@ -9,7 +9,7 @@ export type AiProviderName = 'groq' | 'cohere';
 
 export type ConnectionResult =
   | { ok: true }
-  | { ok: false; reason: 'auth' | 'network' | 'empty' | 'other'; detail?: string };
+  | { ok: false; reason: 'auth' | 'network' | 'empty' | 'model' | 'other'; detail?: string };
 
 /**
  * Custodia de las API keys (RF-IA-08, Art. 4).
@@ -119,6 +119,10 @@ export class ApiKeyService {
       });
       if (resp.ok) return { ok: true };
       if (resp.status === 401 || resp.status === 403) return { ok: false, reason: 'auth' };
+      // Un modelo retirado o fuera del plan de la key devuelve 400/404 con `model_not_found`.
+      // Sin distinguirlo, el usuario ve "error 400" y no puede saber que basta con elegir otro.
+      const body: unknown = await resp.json().catch(() => null);
+      if (isModelError(body)) return { ok: false, reason: 'model', detail: model };
       return { ok: false, reason: 'other', detail: String(resp.status) };
     } catch (e) {
       return { ok: false, reason: 'network', detail: (e as Error).message };
@@ -126,4 +130,67 @@ export class ApiKeyService {
       clearTimeout(timer);
     }
   }
+
+  /**
+   * Modelos que ESTA key puede usar de verdad (RF-IA-08).
+   *
+   * Se pregunta al proveedor en vez de mantener una lista en el código: los catálogos cambian
+   * y el acceso depende del plan de cada cuenta, así que una constante quemada acaba
+   * apuntando a un modelo que existe en la documentación pero no para quien la usa.
+   */
+  async listModels(provider: AiProviderName): Promise<string[]> {
+    const key = this.get(provider);
+    if (!key) return [];
+
+    const url =
+      provider === 'groq'
+        ? 'https://api.groq.com/openai/v1/models'
+        : 'https://api.cohere.com/v1/models';
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
+    try {
+      const resp = await fetch(url, {
+        headers: { Authorization: `Bearer ${key}` },
+        signal: controller.signal,
+      });
+      if (!resp.ok) return [];
+      const data: unknown = await resp.json();
+      return extractModelIds(data, provider);
+    } catch {
+      return [];
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+}
+
+export function isModelError(body: unknown): boolean {
+  if (typeof body !== 'object' || body === null) return false;
+  const error = (body as { error?: { code?: string; message?: string } }).error;
+  const code = error?.code ?? '';
+  const message = error?.message ?? '';
+  return code === 'model_not_found' || /model/i.test(message);
+}
+
+/**
+ * Groq responde `{ data: [{ id }] }` (formato OpenAI) y Cohere `{ models: [{ name }] }`.
+ * Los de audio y embeddings se descartan: aquí solo sirven los de chat.
+ */
+export function extractModelIds(data: unknown, provider: AiProviderName): string[] {
+  if (typeof data !== 'object' || data === null) return [];
+  const rows: unknown[] =
+    provider === 'groq'
+      ? ((data as { data?: unknown[] }).data ?? [])
+      : ((data as { models?: unknown[] }).models ?? []);
+  if (!Array.isArray(rows)) return [];
+
+  return rows
+    .map((row) => {
+      if (typeof row !== 'object' || row === null) return '';
+      const r = row as { id?: string; name?: string };
+      return r.id ?? r.name ?? '';
+    })
+    .filter((id) => id && !/whisper|tts|embed|rerank|guard/i.test(id))
+    .sort();
 }
