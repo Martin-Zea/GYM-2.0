@@ -7,7 +7,7 @@
 }
 
 .section-title {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -16,7 +16,7 @@
 }
 
 .weight-trend {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--success);
   margin: 8px 2px 0;
 
@@ -59,7 +59,7 @@
 }
 
 .achievement-name {
-  font-size: 14px;
+  font-size: var(--fs-md);
   font-weight: 500;
   color: var(--text-0);
   white-space: nowrap;
@@ -75,19 +75,19 @@
 
 .achievement-weight {
   font-family: var(--font-display);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--accent);
 }
 
 .achievement-reps {
   font-family: var(--font-display);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
 }
 
 .achievement-date {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
 }
 
@@ -101,7 +101,7 @@
   color: var(--text-2);
 
   p {
-    font-size: 13px;
+    font-size: var(--fs-sm);
     text-align: center;
     margin: 0;
   }
@@ -142,7 +142,7 @@
   color: var(--accent);
 }
 .weight-log-date {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--text-2);
   min-width: 58px;
   flex-shrink: 0;
@@ -159,7 +159,7 @@
   border: none;
   border-bottom: 1px solid transparent;
   border-radius: 0;
-  font-size: 14px;
+  font-size: var(--fs-md);
   color: var(--text-0);
   padding: 2px 0;
   text-align: right;
@@ -175,7 +175,7 @@
   }
 }
 .weight-log-unit {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
 }
 .weight-log-del {
@@ -193,7 +193,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
   padding: 6px 0 4px;
   gap: 8px;
@@ -213,7 +213,7 @@
   }
 }
 .profile-row-label {
-  font-size: 14px;
+  font-size: var(--fs-md);
   color: var(--text-0);
   font-weight: 500;
 }
@@ -228,7 +228,7 @@
   }
 }
 .profile-row-unit {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
 }
 .profile-row-select {
@@ -237,7 +237,7 @@
 
 /* ── Objetivo + notas para la IA ── */
 .profile-section-desc {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
   margin: 0 0 10px;
   line-height: 1.5;
@@ -254,14 +254,14 @@
 }
 .profile-notes-label {
   display: block;
-  font-size: 14px;
+  font-size: var(--fs-md);
   color: var(--text-0);
   font-weight: 500;
   margin-bottom: 4px;
 }
 .profile-notes-input {
   resize: none;
-  font-size: 14px;
+  font-size: var(--fs-md);
   line-height: 1.4;
   width: 100%;
 }

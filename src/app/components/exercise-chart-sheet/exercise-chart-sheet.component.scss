@@ -18,7 +18,7 @@
   font-weight: 600;
 }
 .cs-pr-value {
-  font-size: 22px;
+  font-size: var(--fs-title);
   font-weight: 700;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
@@ -49,7 +49,7 @@
   stroke-width: 2;
 }
 .cs-axis text {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   fill: var(--text-2);
   font-family: var(--font-display);
 }

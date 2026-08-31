@@ -14,7 +14,7 @@
 }
 
 .rest-label {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--text-2);
@@ -51,14 +51,14 @@
   font-variant-numeric: tabular-nums;
 }
 .rest-time-value {
-  font-size: 56px;
+  font-size: var(--fs-num-2xl);
   font-weight: 600;
   letter-spacing: -0.04em;
   color: var(--text-0);
   line-height: 1;
 }
 .rest-time-sub {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--text-2);
   margin-top: 6px;
 }
@@ -77,7 +77,7 @@
   place-items: center;
   color: var(--text-1);
   font-weight: 600;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
   transition: background 0.12s;
 }
@@ -91,7 +91,7 @@
   border: 1px solid var(--border);
   color: var(--text-0);
   font-weight: 500;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   transition: background 0.12s;
 }
 .rest-skip:hover {
@@ -100,7 +100,7 @@
 .rest-next {
   margin-top: 24px;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
 }
 .rest-next strong {
@@ -114,6 +114,6 @@
     height: 200px;
   }
   .rest-time-value {
-    font-size: 48px;
+    font-size: var(--fs-num-xl);
   }
 }

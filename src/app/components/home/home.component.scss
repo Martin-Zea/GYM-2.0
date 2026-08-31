@@ -39,7 +39,7 @@
 }
 .today-eyebrow {
   display: block;
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--accent);
@@ -64,7 +64,7 @@
   overflow: hidden;
 }
 .today-last {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--text-2);
   margin: 0;
 }
@@ -76,7 +76,7 @@
   width: 100%;
   justify-content: center;
   padding: 13px 16px;
-  font-size: 15px;
+  font-size: var(--fs-lg);
 }
 /* ── Layout de sesión (móvil: una columna; desktop: sidebar) ── */
 .session-layout {
@@ -97,7 +97,7 @@
   padding: 0 2px;
 }
 .tsb-total {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-variant-numeric: tabular-nums;
   color: var(--text-2);
   background: var(--bg-2);
@@ -114,7 +114,7 @@
   width: 100%;
   padding: 8px 10px;
   border-radius: var(--radius-md);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-1);
   text-align: left;
   transition:
@@ -144,7 +144,7 @@
   text-overflow: ellipsis;
 }
 .tsb-badge {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-variant-numeric: tabular-nums;
   color: var(--text-3);
   background: var(--bg-2);
@@ -199,13 +199,13 @@
   min-width: 0;
 }
 .ai-hero-text strong {
-  font-size: 16px;
+  font-size: var(--fs-lg);
   font-weight: 700;
   color: var(--text-0);
   letter-spacing: -0.02em;
 }
 .ai-hero-text span {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--text-2);
   line-height: 1.4;
 }
@@ -235,14 +235,14 @@
   flex: 1;
 }
 .finish-stat-value {
-  font-size: 28px;
+  font-size: var(--fs-num-md);
   font-weight: 700;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
   color: var(--text-0);
 }
 .finish-stat-label {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   color: var(--text-3);
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -255,7 +255,7 @@
 }
 .finish-warning {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--text-2);
   text-align: center;
   padding: 8px 12px;
@@ -265,7 +265,7 @@
 }
 .finish-all-done {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--success);
   text-align: center;
   font-weight: 500;
@@ -327,7 +327,7 @@
   }
 
   .today-title {
-    font-size: 28px;
+    font-size: var(--fs-num-md);
   }
   .dashboard {
     padding-bottom: 48px;
@@ -384,7 +384,7 @@
   font-weight: 600;
 }
 .session-day-name {
-  font-size: 15px;
+  font-size: var(--fs-lg);
   font-weight: 600;
   color: var(--text-0);
   white-space: nowrap;
@@ -526,7 +526,7 @@
 }
 .session-all-done-msg {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--fs-lg);
   font-weight: 600;
   color: var(--text-0);
 }

@@ -31,7 +31,7 @@
 }
 
 .legal-title {
-  font-size: 22px;
+  font-size: var(--fs-title);
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--text-0);
@@ -40,7 +40,7 @@
 }
 
 .legal-disclaimer {
-  font-size: 14px;
+  font-size: var(--fs-md);
   line-height: 1.65;
   color: var(--text-2);
   margin: 0;
@@ -55,7 +55,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: var(--fs-md);
 
   a {
     color: var(--accent);
@@ -99,14 +99,14 @@
 }
 
 .legal-checkbox-text {
-  font-size: 14px;
+  font-size: var(--fs-md);
   line-height: 1.5;
   color: var(--text-1);
 }
 
 .legal-btn {
   width: 100%;
-  font-size: 15px;
+  font-size: var(--fs-lg);
   font-weight: 600;
   color: var(--accent-fg);
   background: var(--accent);

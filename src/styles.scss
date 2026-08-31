@@ -153,16 +153,44 @@
   --radius-lg: 12px;
   --radius-xl: 16px;
 
-  /* Escala tipográfica en rem (suelo móvil: 11px @16px root).
-     En rem para respetar el tamaño de letra configurado en el sistema. */
-  --fs-2xs: 0.6875rem;
-  --fs-xs: 0.75rem;
-  --fs-sm: 0.8125rem;
-  --fs-md: 0.875rem;
-  --fs-lg: 1rem;
-  --fs-xl: 1.125rem;
-  --fs-title: 1.375rem;
-  --fs-display: 1.625rem;
+  /* ===================================================================
+     ESCALA TIPOGRÁFICA — ÚNICO lugar donde se toca el tamaño de letra.
+     Ningún componente declara un font-size propio; todos leen de aquí.
+     Lo vigila `scripts/check-typography.mjs` (corre dentro de `npm test`).
+
+     Para agrandar TODA la app de una vez, subí --fs-scale (1.1 = 10 %
+     más grande). Para agrandar solo un escalón, tocá ese token.
+
+     En rem para respetar el tamaño de letra configurado en el navegador:
+     un valor en px lo ignora, y por eso no se usan aquí. Por lo mismo,
+     el font-size va en `body` y NUNCA en `html`: en el root reescala
+     esta tabla entera.
+     Referencia en px a root de 16px, con --fs-scale en 1.
+     =================================================================== */
+  --fs-scale: 1;
+
+  /* Texto */
+  --fs-2xs: calc(0.6875rem * var(--fs-scale)); /* 11px — suelo móvil */
+  --fs-xs: calc(0.75rem * var(--fs-scale)); /* 12px */
+  --fs-sm: calc(0.8125rem * var(--fs-scale)); /* 13px */
+  --fs-md: calc(0.875rem * var(--fs-scale)); /* 14px — cuerpo */
+  --fs-lg: calc(1rem * var(--fs-scale)); /* 16px */
+  --fs-xl: calc(1.125rem * var(--fs-scale)); /* 18px */
+  --fs-title: calc(1.375rem * var(--fs-scale)); /* 22px */
+  --fs-display: calc(1.625rem * var(--fs-scale)); /* 26px */
+
+  /* Números grandes de contenido (tonelaje, peso de la serie, cronómetro).
+     Escalan con el texto: son dato, no adorno. */
+  --fs-num-md: calc(1.75rem * var(--fs-scale)); /* 28px */
+  --fs-num-lg: calc(2rem * var(--fs-scale)); /* 32px */
+  --fs-num-xl: calc(3rem * var(--fs-scale)); /* 48px */
+  --fs-num-2xl: calc(3.5rem * var(--fs-scale)); /* 56px */
+
+  /* Glifos de controles (+/−) dentro de cajas de tamaño FIJO (48×48, 28×44).
+     NO escalan a propósito: son geometría del botón, como --radius-*.
+     Si crecen se desbordan del área táctil. */
+  --fs-glyph-sm: 20px;
+  --fs-glyph-md: 24px;
 
   /* Escala de espaciado */
   --sp-1: 4px;
@@ -276,10 +304,19 @@ body {
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-size: 0.875rem; /* escala con el tamaño de letra del sistema */
   line-height: 1.5;
   letter-spacing: -0.01em;
   overscroll-behavior: none;
+}
+
+/* El tamaño de letra va SOLO en body, NUNCA en html.
+   `rem` se mide contra el root: con el font-size en `html, body`, el root quedaba en
+   14px y toda la escala rendía al 87,5 % de lo que documenta (--fs-2xs daba 9,6px en
+   vez de 11px). Además pisaba el tamaño de letra que el usuario configura en el
+   navegador, que es justo lo que la escala en rem existe para respetar.
+   Lo vigila `scripts/check-typography.mjs`. */
+body {
+  font-size: var(--fs-md);
 }
 
 button {
@@ -358,7 +395,7 @@ textarea:focus-visible {
   align-items: center;
   gap: 10px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--fs-md);
   letter-spacing: -0.02em;
 }
 .brand-mark {
@@ -371,7 +408,7 @@ textarea:focus-visible {
   place-items: center;
   color: var(--text-0);
   font-weight: 800;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-family: var(--font-display);
 }
 .topbar-actions {
@@ -424,7 +461,7 @@ textarea:focus-visible {
   font-family: var(--font-display);
 }
 .lang-label {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   letter-spacing: 0.04em;
 }
@@ -442,7 +479,7 @@ textarea:focus-visible {
   gap: 6px;
   padding: 8px 12px;
   border-radius: var(--radius-md);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 500;
   background: var(--bg-2);
   color: var(--text-0);
@@ -488,7 +525,7 @@ textarea:focus-visible {
 }
 .btn-sm {
   padding: 5px 9px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
 }
 button.btn[disabled] {
   opacity: 0.4;
@@ -518,13 +555,13 @@ button.btn[disabled] {
 }
 .empty h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--fs-lg);
   color: var(--text-0);
   font-weight: 600;
 }
 .empty p {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   max-width: 280px;
 }
 
@@ -611,7 +648,7 @@ button.btn[disabled] {
   margin-bottom: 14px;
 }
 .field-label {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-2);
@@ -630,7 +667,7 @@ button.btn[disabled] {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   color: var(--text-0);
-  font-size: 14px;
+  font-size: var(--fs-md);
   outline: none; /* el foco de teclado lo aporta :focus-visible global */
   transition: border-color 0.12s;
 }
@@ -642,7 +679,7 @@ button.btn[disabled] {
   color: var(--text-3);
 }
 .field-hint {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   color: var(--text-3);
   margin-top: -2px;
 }
@@ -655,7 +692,7 @@ button.btn[disabled] {
   padding: 14px;
 }
 .stat-label {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-2);
@@ -682,7 +719,7 @@ button.btn[disabled] {
   margin-bottom: var(--sp-2);
 }
 .stat-sub {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   color: var(--text-3);
   margin-top: 2px;
 }
@@ -703,14 +740,14 @@ button.btn[disabled] {
   margin: 0 0 4px;
 }
 .view-sub {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--text-2);
   margin: 0;
 }
 
 /* ============ Section title (shared: home + training sidebar) ============ */
 .section-title {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text-2);
@@ -720,7 +757,7 @@ button.btn[disabled] {
 
 /* ============ Set chip (shared: day-detail-sheet + day-history-sheet) ============ */
 .detail-set-chip {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
   background: var(--bg-2);
   border: 1px solid var(--border);
@@ -737,7 +774,7 @@ button.btn[disabled] {
 }
 .muted-link {
   color: var(--text-2);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -833,7 +870,7 @@ button.btn[disabled] {
   box-shadow: var(--shadow-lg);
 }
 .exit-confirm-msg {
-  font-size: 14px;
+  font-size: var(--fs-md);
   color: var(--text-0);
   margin: 0 0 20px;
   line-height: 1.5;
@@ -859,7 +896,7 @@ button.btn[disabled] {
   padding: 12px 16px;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   line-height: 1.4;
   animation: toast-in 0.2s ease;
 }
@@ -899,12 +936,12 @@ button.btn[disabled] {
 
 .quarantine-title {
   color: var(--danger);
-  font-size: 15px;
+  font-size: var(--fs-lg);
 }
 
 .quarantine-msg {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   line-height: 1.45;
   color: var(--text-dim);
 }
@@ -928,7 +965,7 @@ button.btn[disabled] {
   color: inherit;
   border-radius: var(--radius-sm);
   padding: 4px 10px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   cursor: pointer;
   font-family: inherit;
 }

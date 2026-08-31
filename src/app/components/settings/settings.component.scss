@@ -2,7 +2,7 @@
   margin-bottom: 22px;
 }
 .settings-section-title {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-2);
@@ -25,12 +25,12 @@
   min-width: 0;
 }
 .settings-row-label {
-  font-size: 14px;
+  font-size: var(--fs-md);
   color: var(--text-0);
   font-weight: 500;
 }
 .settings-row-desc {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
   margin-top: 2px;
 }
@@ -79,7 +79,7 @@
   gap: 10px;
 }
 .reset-confirm-label {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--text-1);
   margin: 0;
   line-height: 1.5;
@@ -99,7 +99,7 @@
 }
 
 .settings-version {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   color: var(--text-2);
   text-align: center;
   margin: 8px 0 0;

@@ -58,7 +58,7 @@
 }
 
 .slide-title {
-  font-size: 21px;
+  font-size: var(--fs-title);
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--text-0);
@@ -66,7 +66,7 @@
 }
 
 .slide-desc {
-  font-size: 15px;
+  font-size: var(--fs-lg);
   line-height: 1.6;
   color: var(--text-2);
   margin: 0;
@@ -107,7 +107,7 @@
 }
 
 .btn-ghost {
-  font-size: 15px;
+  font-size: var(--fs-lg);
   font-weight: 500;
   color: var(--text-2);
   background: transparent;
@@ -124,7 +124,7 @@
 
 .btn-primary {
   flex: 1;
-  font-size: 15px;
+  font-size: var(--fs-lg);
   font-weight: 600;
   color: var(--accent-fg);
   background: var(--accent);

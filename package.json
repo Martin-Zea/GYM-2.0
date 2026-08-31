@@ -6,8 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
+    "test": "node scripts/check-typography.mjs && ng test",
     "lint": "ng lint",
+    "lint:typography": "node scripts/check-typography.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "e2e": "node scripts/e2e-smoke.mjs"

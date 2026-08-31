@@ -1,5 +1,5 @@
 .sheet-sub {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
   margin: 2px 0 0;
 }
@@ -30,12 +30,12 @@
   gap: 6px;
 }
 .history-date {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--text-0);
 }
 .history-incomplete-badge {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 500;
   color: var(--text-3);
   background: var(--bg-2);
@@ -46,12 +46,12 @@
   letter-spacing: 0.04em;
 }
 .history-vol {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   color: var(--text-3);
   font-variant-numeric: tabular-nums;
 }
 .history-vol-delta {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--text-3);
@@ -68,7 +68,7 @@
   gap: 4px;
 }
 .history-ex-name {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 500;
   color: var(--text-2);
 }
@@ -79,7 +79,7 @@
 }
 
 .history-skipped {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   font-style: italic;
 }
@@ -102,7 +102,7 @@
   border-radius: 8px;
 }
 .history-confirm-q {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-1);
 }
 .history-confirm-actions {
@@ -122,19 +122,19 @@
   gap: 6px;
 }
 .history-edit-idx {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   color: var(--text-3);
   width: 14px;
 }
 .history-edit-sep {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   color: var(--text-3);
   white-space: nowrap;
 }
 .history-edit-input {
   width: 64px;
   padding: 5px 8px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
   background: var(--bg-1);

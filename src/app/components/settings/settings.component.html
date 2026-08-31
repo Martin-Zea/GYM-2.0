@@ -362,12 +362,15 @@
             />
           </label>
           @if (importError()) {
-            <p style="color: var(--danger); font-size: 12px; margin-top: 8px">
+            <p style="color: var(--danger); font-size: var(--fs-xs); margin-top: 8px">
               {{ importError() }}
             </p>
           }
           @if (importReport()) {
-            <p style="color: var(--success); font-size: 12px; margin-top: 8px" role="status">
+            <p
+              style="color: var(--success); font-size: var(--fs-xs); margin-top: 8px"
+              role="status"
+            >
               {{ importReport() }}
             </p>
           }
@@ -408,7 +411,9 @@
               </button>
             </div>
             @if (purgeReport()) {
-              <p style="font-size: 12px; margin-top: 6px" role="status">{{ purgeReport() }}</p>
+              <p style="font-size: var(--fs-xs); margin-top: 6px" role="status">
+                {{ purgeReport() }}
+              </p>
             }
           </div>
 
