@@ -203,7 +203,64 @@
           </button>
         </div>
       } @else {
-        <p class="k">{{ T().generator_days_week }}</p>
+        <!--
+          El contexto se ENSEÑA antes de gastar la llamada (T-832). Verlo es lo que permite
+          corregirlo: quien lee "Intermedio · Fuerza · gimnasio completo" se da cuenta de que
+          en realidad entrena en casa, y lo arregla aquí en vez de descubrirlo en la rutina.
+        -->
+        <p class="k">{{ T().generator_context_title }}</p>
+
+        <p class="k rt-sub">{{ T().profile_level_label }}</p>
+        <div class="seg">
+          @for (lv of levelOptions; track lv) {
+            <button type="button" [attr.aria-pressed]="genLevel() === lv" (click)="setLevel(lv)">
+              {{ levelLabel(lv) }}
+            </button>
+          }
+        </div>
+
+        <p class="k rt-sub">{{ T().settings_goal_label }}</p>
+        <div class="seg">
+          @for (g of goalOptions; track g) {
+            <button type="button" [attr.aria-pressed]="genGoal() === g" (click)="setGoal(g)">
+              {{ goalLabel(g) }}
+            </button>
+          }
+        </div>
+
+        <p class="k rt-sub">{{ T().profile_equipment_label }}</p>
+        <div class="rt-chips">
+          @for (eq of equipmentOptions; track eq) {
+            <button
+              class="btn btn-sm"
+              type="button"
+              [class.btn-primary]="hasEquipment(eq)"
+              [attr.aria-pressed]="hasEquipment(eq)"
+              (click)="toggleEquipment(eq)"
+            >
+              {{ equipmentLabel(eq) }}
+            </button>
+          }
+        </div>
+        @if (!genEquipment()?.length) {
+          <p class="note">{{ T().generator_equipment_any }}</p>
+        }
+
+        <p class="k rt-sub">{{ T().generator_context_notes }}</p>
+        <textarea
+          class="input rt-notes"
+          rows="3"
+          [value]="genNotes()"
+          [attr.placeholder]="T().generator_notes_placeholder"
+          [attr.aria-label]="T().generator_context_notes"
+          (input)="onNotes($event)"
+        ></textarea>
+
+        @if (genLayoffDays(); as days) {
+          <p class="note rt-layoff">{{ tr.tp('generator_layoff_note', { n: days }) }}</p>
+        }
+
+        <p class="k rt-sub">{{ T().generator_days_week }}</p>
         <div class="seg">
           @for (n of GEN_DAYS; track n) {
             <button type="button" [attr.aria-pressed]="genDays() === n" (click)="genDays.set(n)">
@@ -212,7 +269,7 @@
           }
         </div>
 
-        <p class="k">{{ T().generator_minutes }}</p>
+        <p class="k rt-sub">{{ T().generator_minutes }}</p>
         <div class="seg">
           @for (m of GEN_MINUTES; track m) {
             <button
@@ -237,14 +294,21 @@
           <p class="note rt-error">{{ errorLabel(err) }}</p>
         }
 
-        <button
-          class="btn btn-primary rt-wide"
-          type="button"
-          [disabled]="generating() || genBlock() !== null"
-          (click)="runGenerator()"
-        >
-          {{ generating() ? T().generator_running : T().generator_run }}
-        </button>
+        <p class="note">{{ T().generator_context_scope }}</p>
+
+        <div class="rt-actions">
+          <button class="btn btn-ghost" type="button" (click)="back()">
+            {{ T().cancel }}
+          </button>
+          <button
+            class="btn btn-primary"
+            type="button"
+            [disabled]="generating() || genBlock() !== null"
+            (click)="runGenerator()"
+          >
+            {{ generating() ? T().generator_running : T().generator_run }}
+          </button>
+        </div>
       }
     }
   }

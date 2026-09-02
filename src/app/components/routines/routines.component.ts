@@ -24,7 +24,7 @@ import {
 import { RoutineTemplate } from '../../data/routine-templates';
 import { Equipment } from '../../data/exercise-catalog';
 import { daysBetweenISO } from '../../utils/date';
-import { Routine, WorkoutDay } from '../../models/workout.model';
+import { Routine, TrainingGoal, TrainingLevel, WorkoutDay } from '../../models/workout.model';
 
 /** Cuatro pantallas del diseño (R1, R2, R6, R7) bajo una sola ruta. */
 type View = 'list' | 'detail' | 'templates' | 'generator';
@@ -199,17 +199,109 @@ export class RoutinesComponent {
       this.generator.estimateCost(this.spec(), this.state.settings(), this.tr.lang()),
   );
 
+  // ── Contexto de la generación (T-832) ──
+  //
+  // La spec salía entera del perfil y no se enseñaba en ninguna parte: llegabas al
+  // generador, veías dos selectores y un coste, y no había forma de saber que se estaban
+  // usando tu nivel, tu objetivo y tus notas. Aunque el contexto viajara, la pantalla no
+  // daba ninguna razón para creerlo — y por eso el resultado "parecía genérico".
+  //
+  // Ahora se muestra y se puede corregir ANTES de gastar la llamada. Los cambios valen
+  // SOLO para esta generación: el perfil es contexto duradero y no se reescribe desde un
+  // panel de paso, igual que el chat propone y nunca escribe solo.
+
+  protected readonly equipmentOptions: Equipment[] = [
+    'barbell',
+    'dumbbell',
+    'machine',
+    'cable',
+    'bodyweight',
+    'band',
+  ];
+
+  private readonly profile = computed(() => this.state.settings().userProfile);
+
+  /** `null` = sin tocar: se usa lo del perfil. Un valor = el atleta lo corrigió aquí. */
+  private readonly levelOverride = signal<TrainingLevel | null>(null);
+  private readonly goalOverride = signal<TrainingGoal | null>(null);
+  private readonly equipmentOverride = signal<Equipment[] | null>(null);
+  private readonly notesOverride = signal<string | null>(null);
+
+  protected readonly genLevel = computed(
+    () => this.levelOverride() ?? this.profile()?.level ?? null,
+  );
+  protected readonly genGoal = computed(() => this.goalOverride() ?? this.profile()?.goal ?? null);
+  protected readonly genEquipment = computed(
+    () => this.equipmentOverride() ?? (this.profile()?.equipment as Equipment[] | null) ?? null,
+  );
+  protected readonly genNotes = computed(
+    () => this.notesOverride() ?? this.profile()?.aiNotes ?? '',
+  );
+
+  /** Días parado, del parón declarado. Se enseña porque cambia la rutina que se pide. */
+  protected readonly genLayoffDays = computed(() => {
+    const since = this.profile()?.layoffSinceISO;
+    if (!since) return null;
+    const days = daysBetweenISO(since, this.storage.todayISO());
+    return days >= 14 ? days : null;
+  });
+
+  protected setLevel(level: TrainingLevel): void {
+    this.levelOverride.set(this.genLevel() === level ? null : level);
+  }
+
+  protected setGoal(goal: TrainingGoal): void {
+    this.goalOverride.set(this.genGoal() === goal ? null : goal);
+  }
+
+  protected toggleEquipment(eq: Equipment): void {
+    const current = this.genEquipment() ?? [];
+    const next = current.includes(eq) ? current.filter((e) => e !== eq) : [...current, eq];
+    this.equipmentOverride.set(next.length ? next : null);
+  }
+
+  protected hasEquipment(eq: Equipment): boolean {
+    return (this.genEquipment() ?? []).includes(eq);
+  }
+
+  protected onNotes(event: Event): void {
+    this.notesOverride.set((event.target as HTMLTextAreaElement).value);
+  }
+
+  protected equipmentLabel(eq: Equipment): string {
+    return this.T()[`equipment_${eq}` as keyof ReturnType<typeof this.T>] as string;
+  }
+
+  protected levelLabel(level: TrainingLevel): string {
+    return level === 'beginner'
+      ? this.T().profile_level_beginner
+      : level === 'intermediate'
+        ? this.T().profile_level_intermediate
+        : this.T().profile_level_advanced;
+  }
+
+  protected goalLabel(goal: TrainingGoal): string {
+    return goal === 'strength'
+      ? this.T().settings_goal_strength
+      : goal === 'hypertrophy'
+        ? this.T().settings_goal_hypertrophy
+        : this.T().settings_goal_endurance;
+  }
+
+  protected readonly levelOptions: TrainingLevel[] = ['beginner', 'intermediate', 'advanced'];
+  protected readonly goalOptions: TrainingGoal[] = ['strength', 'hypertrophy', 'endurance'];
+
   private spec() {
-    const p = this.state.settings().userProfile;
     return {
       daysPerWeek: this.genDays(),
-      level: p?.level ?? null,
-      goal: p?.goal ?? null,
-      equipment: (p?.equipment as Equipment[] | null) ?? null,
+      level: this.genLevel(),
+      goal: this.genGoal(),
+      equipment: this.genEquipment(),
+      layoffDays: this.genLayoffDays(),
       // Los minutos van PRIMERO: `buildPrompt()` recorta las notas a 200 caracteres y
       // `aiNotes` está capado en exactamente 200, así que puestos al final se perdían
       // enteros — y quien llena `aiNotes` hasta el tope es justamente el chat.
-      notes: [`~${this.genMinutes()} min`, p?.aiNotes].filter(Boolean).join(' · '),
+      notes: [`~${this.genMinutes()} min`, this.genNotes()].filter(Boolean).join(' · '),
     };
   }
 

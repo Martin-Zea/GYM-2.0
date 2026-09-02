@@ -33,6 +33,14 @@ export interface RoutineSpec {
   goal: TrainingGoal | null;
   equipment: Equipment[] | null;
   notes: string;
+  /**
+   * Días que el atleta lleva sin entrenar, si vuelve de un parón (T-832).
+   *
+   * Va como campo propio y no dentro de las notas porque antes solo llegaba si el modelo
+   * del chat se acordaba de repetirlo al redactarlas: el dato existía en el perfil
+   * (`layoffSinceISO`) y el generador no lo leía nunca.
+   */
+  layoffDays?: number | null;
 }
 
 /** Por qué no se puede generar ahora mismo. `null` = adelante. */
@@ -190,6 +198,20 @@ export class RoutineGeneratorService {
     // nombre; los DÍAS no se enlazan con nada y deben seguir la UI. Sin esta línea el
     // modelo elegía, y una conversación en español terminaba en "Push Day".
     const dayLang = lang === 'en' ? 'English' : 'Spanish';
+    // Volver de un parón no es continuar: menos volumen y series algo más cortas las
+    // primeras semanas. El umbral es el mismo que usa el motor para recortar cargas.
+    const layoffLine =
+      spec.layoffDays && spec.layoffDays >= 14
+        ? `- Returning after ${spec.layoffDays} days off: fewer exercises per day and conservative volume.\n`
+        : '';
+    // Sin esto el modelo elegía series y reps a ojo, y devolvía casi lo mismo para un
+    // objetivo de fuerza que para uno de resistencia.
+    const repsLine =
+      spec.goal === 'strength'
+        ? '- Sets and reps: 3-5 sets of 3-6 reps on main lifts, 3x8-10 on accessories.\n'
+        : spec.goal === 'endurance'
+          ? '- Sets and reps: 2-3 sets of 15-20 reps.\n'
+          : '- Sets and reps: 3-4 sets of 8-12 reps.\n';
     return `You are a strength coach. Design a training routine.
 
 CONSTRAINTS:
@@ -197,10 +219,10 @@ CONSTRAINTS:
 - Athlete level: ${spec.level ?? 'intermediate'}.
 - Goal: ${spec.goal ?? 'general strength and hypertrophy'}.
 - Available equipment: ${equipment}.
-${spec.notes.trim() ? `- Athlete notes: ${spec.notes.trim().slice(0, 200)}\n` : ''}
-- Prefer exercises from this list, using these exact English names: ${known}
+${spec.notes.trim() ? `- Athlete notes: ${spec.notes.trim().slice(0, 200)}\n` : ''}${layoffLine}${repsLine}- Prefer exercises from this list, using these exact English names: ${known}
 - 4 to 6 exercises per day, compound movements first.
 - Every day must have at least one exercise.
+- If the athlete notes mention pain or an injury, avoid exercises that load that area.
 - Write the DAY names in ${dayLang}. Exercise names stay in English.
 
 Reply with JSON only, no markdown:

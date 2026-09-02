@@ -104,3 +104,20 @@
 .rt-preview-day {
   margin: var(--sp-1) 0 0;
 }
+
+/* Panel de contexto del generador (T-832): lo que se va a usar, visible y corregible. */
+.rt-sub {
+  margin-top: var(--sp-4);
+}
+.rt-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.rt-notes {
+  width: 100%;
+  resize: vertical;
+}
+.rt-layoff {
+  color: var(--warn, var(--text-1));
+}

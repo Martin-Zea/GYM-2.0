@@ -613,6 +613,12 @@ export interface Translations {
   generator_save_only: string;
   generator_save_activate: string;
   generator_discard: string;
+  generator_context_title: string;
+  generator_context_notes: string;
+  generator_context_scope: string;
+  generator_notes_placeholder: string;
+  generator_equipment_any: string;
+  generator_layoff_note: string;
   generator_days_week: string;
   generator_minutes: string;
   generator_saved: string;
