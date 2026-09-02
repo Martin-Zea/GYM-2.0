@@ -615,6 +615,7 @@ export interface Translations {
   generator_discard: string;
   generator_context_title: string;
   generator_context_notes: string;
+  generator_notes_count: string;
   generator_context_scope: string;
   generator_notes_placeholder: string;
   generator_equipment_any: string;

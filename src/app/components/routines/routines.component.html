@@ -250,11 +250,15 @@
         <textarea
           class="input rt-notes"
           rows="3"
+          [attr.maxlength]="MAX_SPEC_NOTES"
           [value]="genNotes()"
           [attr.placeholder]="T().generator_notes_placeholder"
           [attr.aria-label]="T().generator_context_notes"
           (input)="onNotes($event)"
         ></textarea>
+        <p class="note rt-notes-count">
+          {{ tr.tp('generator_notes_count', { n: genNotes().length, max: MAX_SPEC_NOTES }) }}
+        </p>
 
         @if (genLayoffDays(); as days) {
           <p class="note rt-layoff">{{ tr.tp('generator_layoff_note', { n: days }) }}</p>

@@ -610,6 +610,7 @@ export const en: Translations = {
   generator_discard: 'Discard',
   generator_context_title: 'What I will generate with',
   generator_context_notes: 'Your notes',
+  generator_notes_count: '{n}/{max} characters',
   generator_context_scope: 'Changes here apply to this routine only; your profile stays as it is.',
   generator_notes_placeholder: 'Injuries, preferences, what you want to focus on…',
   generator_equipment_any: 'No equipment set: a full gym is assumed.',

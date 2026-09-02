@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { IconComponent } from '../icon/icon.component';
 import { StateService } from '../../services/state.service';
 import { StorageService } from '../../services/storage.service';
@@ -18,6 +18,7 @@ import {
   GeneratedDay,
   GeneratedRoutine,
   GeneratorError,
+  MAX_SPEC_NOTES,
   RoutineGeneratorService,
   snapTo,
 } from '../../services/routine-generator.service';
@@ -53,6 +54,7 @@ export class RoutinesComponent {
   private readonly catalog = inject(CatalogService);
   private readonly generator = inject(RoutineGeneratorService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   protected readonly view = signal<View>('list');
   protected readonly detailId = signal<string | null>(null);
@@ -69,6 +71,10 @@ export class RoutinesComponent {
       this.genMinutes.set(snapTo(GEN_MINUTES, params.get('min'), DEFAULT_GEN_MINUTES));
       this.generated.set(null);
       this.genError.set(null);
+      // Llegar por aquí significa contexto NUEVO —el chat acaba de actualizar el perfil—,
+      // así que las correcciones de una visita anterior dejan de valer. Si no, el panel
+      // enseñaría un nivel viejo que contradice lo que el atleta acaba de contar.
+      this.resetContextOverrides();
       this.view.set('generator');
     });
   }
@@ -182,6 +188,7 @@ export class RoutinesComponent {
   /** Las opciones que la UI sabe representar; también las que aceptan el chat y el deep link. */
   protected readonly GEN_DAYS = GEN_DAYS;
   protected readonly GEN_MINUTES = GEN_MINUTES;
+  protected readonly MAX_SPEC_NOTES = MAX_SPEC_NOTES;
 
   protected readonly genDays = signal<number>(DEFAULT_GEN_DAYS);
   protected readonly genMinutes = signal<number>(DEFAULT_GEN_MINUTES);
@@ -221,28 +228,56 @@ export class RoutinesComponent {
 
   private readonly profile = computed(() => this.state.settings().userProfile);
 
-  /** `null` = sin tocar: se usa lo del perfil. Un valor = el atleta lo corrigió aquí. */
-  private readonly levelOverride = signal<TrainingLevel | null>(null);
-  private readonly goalOverride = signal<TrainingGoal | null>(null);
-  private readonly equipmentOverride = signal<Equipment[] | null>(null);
-  private readonly notesOverride = signal<string | null>(null);
+  /**
+   * `undefined` = sin tocar (manda el perfil); `null` = el atleta lo BORRÓ aquí.
+   *
+   * La distinción no es cosmética. Con `null` para las dos cosas y un `??` detrás, quitar la
+   * marca era imposible: al deseleccionar "Intermedio" el override volvía a `null`, el `??`
+   * caía otra vez en el perfil —que dice "intermedio"— y el botón seguía marcado. El toggle
+   * parecía roto y no había forma de decir "no declares mi nivel en esta rutina".
+   */
+  private readonly levelOverride = signal<TrainingLevel | null | undefined>(undefined);
+  private readonly goalOverride = signal<TrainingGoal | null | undefined>(undefined);
+  private readonly equipmentOverride = signal<Equipment[] | null | undefined>(undefined);
+  private readonly notesOverride = signal<string | undefined>(undefined);
 
-  protected readonly genLevel = computed(
-    () => this.levelOverride() ?? this.profile()?.level ?? null,
-  );
-  protected readonly genGoal = computed(() => this.goalOverride() ?? this.profile()?.goal ?? null);
-  protected readonly genEquipment = computed(
-    () => this.equipmentOverride() ?? (this.profile()?.equipment as Equipment[] | null) ?? null,
-  );
+  protected readonly genLevel = computed(() => {
+    const o = this.levelOverride();
+    return o !== undefined ? o : (this.profile()?.level ?? null);
+  });
+  protected readonly genGoal = computed(() => {
+    const o = this.goalOverride();
+    return o !== undefined ? o : (this.profile()?.goal ?? null);
+  });
+  protected readonly genEquipment = computed(() => {
+    const o = this.equipmentOverride();
+    return o !== undefined ? o : ((this.profile()?.equipment as Equipment[] | null) ?? null);
+  });
   protected readonly genNotes = computed(
     () => this.notesOverride() ?? this.profile()?.aiNotes ?? '',
   );
 
-  /** Días parado, del parón declarado. Se enseña porque cambia la rutina que se pide. */
+  /**
+   * Días parado, si el atleta sigue de vuelta pendiente.
+   *
+   * `layoffSinceISO` NO se borra nunca (es una ventana histórica, T-827), así que mirarlo a
+   * secas anunciaría "volvés tras 60 días" para siempre, meses después de haber vuelto. Se
+   * aplica la MISMA regla que `effectiveLastSession()`: una sesión real posterior a la
+   * declaración es la vuelta de verdad y cancela el parón.
+   */
   protected readonly genLayoffDays = computed(() => {
-    const since = this.profile()?.layoffSinceISO;
-    if (!since) return null;
-    const days = daysBetweenISO(since, this.storage.todayISO());
+    const p = this.profile();
+    if (!p?.layoffSinceISO) return null;
+
+    const declaredAt = p.layoffDeclaredISO;
+    if (declaredAt) {
+      const volvió = this.state
+        .sessions()
+        .some((s) => !s.skipped && s.sets.length > 0 && s.dateISO >= declaredAt);
+      if (volvió) return null;
+    }
+
+    const days = daysBetweenISO(p.layoffSinceISO, this.storage.todayISO());
     return days >= 14 ? days : null;
   });
 
@@ -257,7 +292,17 @@ export class RoutinesComponent {
   protected toggleEquipment(eq: Equipment): void {
     const current = this.genEquipment() ?? [];
     const next = current.includes(eq) ? current.filter((e) => e !== eq) : [...current, eq];
-    this.equipmentOverride.set(next.length ? next : null);
+    // Lista vacía = "sin equipo declarado", no "usa lo del perfil": si no, deseleccionar el
+    // último chip lo devolvía marcado.
+    this.equipmentOverride.set(next);
+  }
+
+  /** Vuelve a lo que dice el perfil. Lo llama la llegada desde el chat con contexto nuevo. */
+  private resetContextOverrides(): void {
+    this.levelOverride.set(undefined);
+    this.goalOverride.set(undefined);
+    this.equipmentOverride.set(undefined);
+    this.notesOverride.set(undefined);
   }
 
   protected hasEquipment(eq: Equipment): boolean {
@@ -298,10 +343,11 @@ export class RoutinesComponent {
       goal: this.genGoal(),
       equipment: this.genEquipment(),
       layoffDays: this.genLayoffDays(),
-      // Los minutos van PRIMERO: `buildPrompt()` recorta las notas a 200 caracteres y
-      // `aiNotes` está capado en exactamente 200, así que puestos al final se perdían
-      // enteros — y quien llena `aiNotes` hasta el tope es justamente el chat.
-      notes: [`~${this.genMinutes()} min`, this.genNotes()].filter(Boolean).join(' · '),
+      // Los minutos van en su PROPIA restricción, no dentro de las notas: metidos ahí
+      // competían por los 200 caracteres que el prompt deja al texto del atleta, y el
+      // recorte se comía uno u otro sin avisar. Cada dato en su línea.
+      minutes: this.genMinutes(),
+      notes: this.genNotes(),
     };
   }
 
@@ -323,6 +369,11 @@ export class RoutinesComponent {
     }
     this.view.set('list');
     this.detailId.set(null);
+    // Salir del generador limpia `?gen=1` de la URL: si se queda, recargar (o el atajo de
+    // la PWA) te devuelve al generador cuando ya habías cancelado.
+    if (this.route.snapshot.queryParamMap.get('gen')) {
+      void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
+    }
   }
 
   protected activate(id: string): void {

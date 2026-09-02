@@ -21,17 +21,20 @@ import {
   DEFAULT_GEN_MINUTES,
   GEN_DAYS,
   GEN_MINUTES,
+  MAX_SPEC_NOTES,
   snapTo,
 } from '../utils/gen-options';
 
 // Se reexportan para que el componente del generador tenga una sola puerta de entrada.
-export { DEFAULT_GEN_DAYS, DEFAULT_GEN_MINUTES, GEN_DAYS, GEN_MINUTES, snapTo };
+export { DEFAULT_GEN_DAYS, DEFAULT_GEN_MINUTES, GEN_DAYS, GEN_MINUTES, MAX_SPEC_NOTES, snapTo };
 
 export interface RoutineSpec {
   daysPerWeek: number;
   level: TrainingLevel | null;
   goal: TrainingGoal | null;
   equipment: Equipment[] | null;
+  /** Duración objetivo de cada sesión. Va en su propia restricción, no dentro de `notes`. */
+  minutes?: number | null;
   notes: string;
   /**
    * Días que el atleta lleva sin entrenar, si vuelve de un parón (T-832).
@@ -219,7 +222,7 @@ CONSTRAINTS:
 - Athlete level: ${spec.level ?? 'intermediate'}.
 - Goal: ${spec.goal ?? 'general strength and hypertrophy'}.
 - Available equipment: ${equipment}.
-${spec.notes.trim() ? `- Athlete notes: ${spec.notes.trim().slice(0, 200)}\n` : ''}${layoffLine}${repsLine}- Prefer exercises from this list, using these exact English names: ${known}
+${spec.minutes ? `- Target session length: about ${spec.minutes} minutes.\n` : ''}${spec.notes.trim() ? `- Athlete notes: ${spec.notes.trim().slice(0, MAX_SPEC_NOTES)}\n` : ''}${layoffLine}${repsLine}- Prefer exercises from this list, using these exact English names: ${known}
 - 4 to 6 exercises per day, compound movements first.
 - Every day must have at least one exercise.
 - If the athlete notes mention pain or an injury, avoid exercises that load that area.

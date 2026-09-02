@@ -16,6 +16,14 @@
 export const GEN_DAYS = [2, 3, 4, 5, 6] as const;
 export const GEN_MINUTES = [45, 60, 90] as const;
 
+/**
+ * Tope de las notas que viajan al generador.
+ *
+ * Es el mismo número que el `maxlength` del campo, y tiene que serlo: el atleta debe ver
+ * dónde se corta su texto en vez de escribir 400 caracteres y que la mitad se pierda callada.
+ */
+export const MAX_SPEC_NOTES = 200;
+
 export const DEFAULT_GEN_DAYS = 4;
 export const DEFAULT_GEN_MINUTES = 60;
 

@@ -612,6 +612,7 @@ export const es: Translations = {
   generator_discard: 'Descartar',
   generator_context_title: 'Con esto voy a generar',
   generator_context_notes: 'Tus notas',
+  generator_notes_count: '{n}/{max} caracteres',
   generator_context_scope: 'Lo que cambies aquí vale solo para esta rutina; tu perfil no se toca.',
   generator_notes_placeholder: 'Lesiones, preferencias, en qué querés centrarte…',
   generator_equipment_any: 'Sin equipo declarado: se asume un gimnasio completo.',
