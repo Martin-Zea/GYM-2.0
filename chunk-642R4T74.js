@@ -1,0 +1,1 @@
+var u=[20,15,10,5,2.5,1.25];function l(n,o=20,a=u){if(n<=o)return{perSide:[],remainderKg:0,belowBar:n<o};let r=(n-o)/2,t=[],d=[...a].filter(e=>e>0).sort((e,i)=>i-e);for(let e of d)for(;r>=e-1e-9;)t.push(e),r=Math.round((r-e)*1e3)/1e3;return{perSide:t,remainderKg:Math.round(r*2*1e3)/1e3,belowBar:!1}}export{u as a,l as b};
