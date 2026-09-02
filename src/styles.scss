@@ -178,6 +178,10 @@
   --fs-xl: calc(1.125rem * var(--fs-scale)); /* 18px */
   --fs-title: calc(1.375rem * var(--fs-scale)); /* 22px */
   --fs-display: calc(1.625rem * var(--fs-scale)); /* 26px */
+  /* Escritorio: titulares que en el móvil no caben (T-834). Escalan con el resto, así que
+     quien sube el tamaño de letra del sistema los sube también. */
+  --fs-display-lg: calc(2.375rem * var(--fs-scale)); /* 38px */
+  --fs-hero: calc(4.75rem * var(--fs-scale)); /* 76px — portada del panel */
 
   /* Números grandes de contenido (tonelaje, peso de la serie, cronómetro).
      Escalan con el texto: son dato, no adorno. */
@@ -808,11 +812,11 @@ button.btn[disabled] {
 }
 
 /* ============ Desktop ≥ 1024px — shell layout only ============ */
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .app {
     max-width: none;
     display: grid;
-    grid-template-columns: 68px 1fr;
+    grid-template-columns: 92px 1fr;
     grid-template-rows: auto 1fr;
     grid-template-areas:
       'topbar  topbar'
@@ -836,8 +840,20 @@ button.btn[disabled] {
     height: 100%;
   }
 
+  /*
+   * UN contenedor para todas las rutas (T-833).
+   *
+   * En escritorio `.main` no tenía ancho máximo, así que cada vista decidía por su cuenta:
+   * Inicio se quedaba en ~720px y Rutinas o el generador se iban a 1300px a sangre. Un
+   * control segmentado de 1300px con tres opciones da 430px por opción, y el campo de notas
+   * medía 1300×80 para un texto de 57 caracteres. El ancho de lectura es una decisión del
+   * sistema, no de cada pantalla.
+   */
   .main {
-    padding: 16px 32px 48px;
+    width: 100%;
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 24px 32px 48px;
   } /* no bottom-nav in desktop */
 
   /* Sesión activa: sin topbar ni nav lateral — la sesión ocupa todo */
@@ -1020,7 +1036,7 @@ button.btn[disabled] {
 }
 
 /* En escritorio la nav es lateral: los toasts no tienen nada que esquivar abajo */
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .app-toast,
   .save-error-toast {
     bottom: 24px;
@@ -1216,10 +1232,23 @@ button.btn[disabled] {
   font-weight: 600;
   cursor: pointer;
 }
+/*
+ * Seleccionado ≠ acción (T-833).
+ *
+ * Esto era un relleno macizo de `--accent`, el mismo color y peso que un botón primario.
+ * En el generador llegaba a haber OCHO rellenos de acento a la vez —nivel, objetivo, cuatro
+ * chips de equipo, días, duración— y el único elemento que de verdad era una acción,
+ * "Generar propuesta", quedaba indistinguible del resto. Cuando todo es acento, nada lo es.
+ *
+ * El estado seleccionado pasa al par suave (`--accent-bg` + `--accent-border`), el mismo
+ * tratamiento que ya usaba `.chip--accent`: se lee igual de claro y devuelve el relleno
+ * macizo a quien tiene que llevarlo.
+ */
 .seg > button[aria-pressed='true'],
 .seg > button.on {
-  background: var(--accent);
-  color: var(--accent-fg);
+  background: var(--accent-bg);
+  box-shadow: inset 0 0 0 1px var(--accent-border);
+  color: var(--accent);
 }
 
 /* Fila de lista con icono, texto y chevron. */
@@ -1302,4 +1331,126 @@ button.btn[disabled] {
   font-size: var(--fs-2xs);
   font-weight: 500;
   color: var(--text-2);
+}
+
+/* ============ Primitivas compartidas móvil ↔ escritorio (T-834) ============
+   Viven aquí y no en cada componente porque las MISMAS piezas aparecen en el Inicio
+   móvil, en Progreso y en el panel de escritorio. Resolverlas en local significaba
+   construirlas dos veces y que divergieran a la tercera. Además, styles.scss no cuenta
+   para el presupuesto por componente, que es lo que aprieta en home. */
+
+/* Métrica con etiqueta, valor y variación. La unidad va dentro del valor, en `em`, para
+   que siga a su número si alguien mueve la escala. */
+.stat-label {
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+  margin: 0;
+}
+.stat-value {
+  font-family: var(--font-display);
+  font-size: var(--fs-num-md);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  margin: 2px 0 0;
+}
+.stat-unit {
+  font-family: var(--font-body);
+  font-size: 0.45em;
+  font-weight: 400;
+  color: var(--text-2);
+}
+.stat-delta {
+  font-size: var(--fs-2xs);
+  margin: 2px 0 0;
+}
+.stat-delta--up {
+  color: var(--success);
+}
+.stat-delta--down {
+  color: var(--warning);
+}
+
+/* Franja de la semana: siete casillas, una por día. */
+.week-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--sp-1);
+}
+.week-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.week-cell-label {
+  font-size: var(--fs-2xs);
+  color: var(--text-3);
+}
+.week-cell-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-md);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+}
+.week-cell--done .week-cell-box {
+  background: var(--success-bg);
+  border-color: var(--success-border);
+  color: var(--success);
+}
+.week-cell--today .week-cell-label {
+  color: var(--accent);
+}
+.week-cell--today .week-cell-box {
+  border-color: var(--accent-border);
+}
+
+/* Medidor con rango recomendado detrás: el valor solo no dice si está bien. */
+.meter {
+  position: relative;
+  height: 7px;
+  border-radius: 99px;
+  background: var(--bg-3);
+  overflow: hidden;
+}
+.meter-range {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--success-bg);
+}
+.meter-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--success);
+}
+.meter-fill--low {
+  background: var(--warning);
+}
+
+/* Fila de datos densa, para las tablas del escritorio. */
+.data-row {
+  display: grid;
+  gap: var(--sp-3);
+  align-items: center;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border);
+}
+.data-row--head {
+  background: var(--bg-2);
+}
+.data-row--head span {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  color: var(--text-3);
+}
+.data-row:last-child {
+  border-bottom: 0;
 }

@@ -59,6 +59,8 @@ export class ActiveSetCardComponent {
 
   protected readonly showPlates = signal(false);
   protected readonly showNote = signal(false);
+  /** Acciones secundarias plegadas: visibles solo cuando se piden (T-833). */
+  protected readonly showMore = signal(false);
   protected readonly showSubstitute = signal(false);
   protected readonly showAddExercise = signal(false);
 
@@ -92,6 +94,22 @@ export class ActiveSetCardComponent {
     const c = this.current();
     if (!c || c.reps === '' || c.reps === undefined) return null;
     return Number(c.reps);
+  });
+
+  /**
+   * Parte el nombre en título y calificativo: "Press de Pecho (Máquina)" (T-834).
+   *
+   * Casi todo el catálogo lleva el equipamiento entre paréntesis, y metido en el `<h2>`
+   * partía el título en dos líneas y empujaba los steppers fuera del pliegue. Es puro
+   * dato de PRESENTACIÓN: el nombre guardado no se toca —lo usan `refFor()` y todo el
+   * historial— y si no hay paréntesis, el título se queda tal cual.
+   */
+  protected readonly nameParts = computed(() => {
+    const full = this.exercise().name.trim();
+    const m = /^(.*?)\s*\(([^()]+)\)$/.exec(full);
+    return m && m[1].trim()
+      ? { name: m[1].trim(), qualifier: m[2].trim() }
+      : { name: full, qualifier: null as string | null };
   });
 
   /** Objetivo de reps: rango si el esquema lo define, número seco si no (RF-RUT-01). */

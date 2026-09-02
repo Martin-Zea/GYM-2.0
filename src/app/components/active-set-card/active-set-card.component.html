@@ -2,7 +2,10 @@
   <!-- Cabecera: nombre + serie actual -->
   <div class="asc-head">
     <div class="asc-head-info">
-      <h2 class="asc-name">{{ exercise().name }}</h2>
+      <h2 class="asc-name">{{ nameParts().name }}</h2>
+      @if (nameParts().qualifier; as q) {
+        <span class="asc-qualifier">{{ q }}</span>
+      }
       <p class="asc-meta">
         {{ exercise().defaultSets }}×{{ repRange() }}
         @if (exercise().targetRpe; as rpe) {
@@ -216,26 +219,44 @@
     </div>
   }
 
-  <!-- Nota rápida + sustituto -->
+  <!--
+    Siete acciones secundarias con el mismo peso visual no se leen: se ignoran (T-833).
+    Queda fuera la más frecuente —la nota— y el resto se pliega tras "Más". La destructiva
+    va separada por una línea, no mezclada entre "Ver tabla" y "Añadir ejercicio".
+  -->
   <div class="asc-footer">
     <button class="asc-link" (click)="showNote.set(!showNote())">
       {{ todayNote() ? T().asc_note_edit : T().asc_note_add }}
     </button>
-    @if (canSubstitute() && substituteOptions().length) {
-      <button class="asc-link" (click)="showSubstitute.set(!showSubstitute())">
-        {{ T().asc_substitute }}
-      </button>
-    }
-    @if (!isDone() && doneCount() > 0) {
-      <button class="asc-link" (click)="undoLastSet()">{{ T().asc_undo_set }}</button>
-    }
-    <button class="asc-link" (click)="showAddExercise.set(!showAddExercise())">
-      {{ T().asc_add_exercise }}
-    </button>
-    <button class="asc-link asc-link--danger" (click)="removeExerciseToday()">
-      {{ T().asc_remove_exercise }}
+    <button class="asc-link" [attr.aria-expanded]="showMore()" (click)="showMore.set(!showMore())">
+      {{ T().asc_more }}
     </button>
   </div>
+
+  @if (showMore()) {
+    <div class="asc-more">
+      @if (canSubstitute() && substituteOptions().length) {
+        <button
+          class="asc-link"
+          (click)="showSubstitute.set(!showSubstitute()); showMore.set(false)"
+        >
+          {{ T().asc_substitute }}
+        </button>
+      }
+      @if (!isDone() && doneCount() > 0) {
+        <button class="asc-link" (click)="undoLastSet()">{{ T().asc_undo_set }}</button>
+      }
+      <button
+        class="asc-link"
+        (click)="showAddExercise.set(!showAddExercise()); showMore.set(false)"
+      >
+        {{ T().asc_add_exercise }}
+      </button>
+      <button class="asc-link asc-link--danger asc-more-danger" (click)="removeExerciseToday()">
+        {{ T().asc_remove_exercise }}
+      </button>
+    </div>
+  }
 
   @if (showNote()) {
     <textarea

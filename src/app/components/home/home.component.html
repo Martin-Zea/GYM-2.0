@@ -13,6 +13,136 @@
     </div>
   } @else {
     <div class="dashboard">
+      <!--
+        ══ Panel de ESCRITORIO (T-836) ══
+        Misma ruta que el móvil, otro producto: aquí `/` no es una decisión, es el sitio
+        donde se entiende qué está pasando. Se pinta solo en escritorio para que un
+        teléfono no construya un DOM que nunca va a enseñar.
+      -->
+      @if (viewport.isDesktop() && hasCompletedSessions()) {
+        <div class="panel">
+          <!-- Portada: una afirmación, no una fila de widgets -->
+          <div class="panel-hero">
+            <p class="panel-eyebrow">{{ T().panel_eyebrow }}</p>
+            <h1 class="panel-headline">{{ panelHeadline() }}</h1>
+          </div>
+
+          <div class="panel-kpis">
+            <div class="stat panel-kpi">
+              <p class="stat-label">{{ T().panel_kpi_volume }}</p>
+              <p class="stat-value">
+                {{ kpiVolume() }}<span class="stat-unit"> {{ T().panel_unit_t }}</span>
+              </p>
+              @if (kpis().volumeKg.deltaPct; as d) {
+                <p
+                  class="stat-delta"
+                  [class.stat-delta--up]="d > 0"
+                  [class.stat-delta--down]="d < 0"
+                >
+                  {{ d > 0 ? '+' : '' }}{{ d }}% {{ T().panel_vs_previous }}
+                </p>
+              } @else {
+                <p class="stat-delta">{{ T().panel_no_comparison }}</p>
+              }
+            </div>
+            <div class="stat panel-kpi">
+              <p class="stat-label">{{ T().panel_kpi_sets }}</p>
+              <p class="stat-value">{{ kpis().sets.value }}</p>
+              @if (kpis().sets.deltaPct; as d) {
+                <p
+                  class="stat-delta"
+                  [class.stat-delta--up]="d > 0"
+                  [class.stat-delta--down]="d < 0"
+                >
+                  {{ d > 0 ? '+' : '' }}{{ d }}% {{ T().panel_vs_previous }}
+                </p>
+              } @else {
+                <p class="stat-delta">{{ T().panel_no_comparison }}</p>
+              }
+            </div>
+            <div class="stat panel-kpi">
+              <p class="stat-label">{{ T().panel_kpi_sessions }}</p>
+              <p class="stat-value">{{ kpis().sessions.value }}</p>
+              @if (kpis().sessions.deltaPct; as d) {
+                <p
+                  class="stat-delta"
+                  [class.stat-delta--up]="d > 0"
+                  [class.stat-delta--down]="d < 0"
+                >
+                  {{ d > 0 ? '+' : '' }}{{ d }}% {{ T().panel_vs_previous }}
+                </p>
+              } @else {
+                <p class="stat-delta">{{ T().panel_no_comparison }}</p>
+              }
+            </div>
+            <div class="stat panel-kpi">
+              <p class="stat-label">{{ T().progress_adherence }}</p>
+              <p class="stat-value">
+                @if (adherencePct(); as pct) {
+                  {{ pct }}<span class="stat-unit">%</span>
+                } @else {
+                  <span class="stat-empty">—</span>
+                }
+              </p>
+            </div>
+          </div>
+
+          <!-- Volumen por grupo: el diagnóstico que ninguna otra pantalla da -->
+          <div class="card panel-groups">
+            <div class="panel-card-head">
+              <p class="k">{{ T().panel_groups_title }}</p>
+              <p class="note">{{ T().panel_groups_sub }}</p>
+            </div>
+            @for (g of groupLoad(); track g.group) {
+              <div class="panel-group">
+                <div class="panel-group-head">
+                  <span class="panel-group-name">{{ g.label }}</span>
+                  <span class="panel-group-sets" [class.panel-group-sets--low]="g.low">
+                    {{ g.latest }}
+                  </span>
+                </div>
+                <div class="meter">
+                  <div class="meter-range" [style]="rangeStyle()"></div>
+                  <div
+                    class="meter-fill"
+                    [class.meter-fill--low]="g.low"
+                    [style.width.%]="g.pct"
+                  ></div>
+                </div>
+              </div>
+            } @empty {
+              <p class="note">{{ T().panel_groups_empty }}</p>
+            }
+          </div>
+
+          <!-- Sesiones recientes: densidad que en un teléfono no cabe -->
+          <div class="card panel-table">
+            <div class="data-row data-row--head panel-table-row">
+              <span>{{ T().panel_col_date }}</span>
+              <span>{{ T().panel_col_day }}</span>
+              <span>{{ T().panel_col_sets }}</span>
+              <span>{{ T().panel_col_duration }}</span>
+              <span>{{ T().panel_col_volume }}</span>
+            </div>
+            @for (row of recentSessions(); track row.id) {
+              <div class="data-row panel-table-row">
+                <span class="panel-cell-muted">{{ row.dateISO.slice(5) }}</span>
+                <span>{{ row.dayName }}</span>
+                <span class="panel-cell-num">{{ row.sets }}</span>
+                <span class="panel-cell-muted">
+                  @if (row.minutes) {
+                    {{ row.minutes }} min
+                  } @else {
+                    —
+                  }
+                </span>
+                <span class="panel-cell-num">{{ row.volume }} kg</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
       <!-- RIGHT/TOP aside: AI hero + semana en una línea -->
       <div class="dash-aside">
         @if (!hasCompletedSessions()) {
@@ -27,34 +157,59 @@
           </div>
         }
 
-        @if (!weekStatsDisplay().isEmpty) {
-          <div class="week-line">
-            <div class="week-line-days">
+        <!--
+          La semana se ve SIEMPRE, aunque esté vacía (T-834).
+          Antes desaparecía entera con `!weekStatsDisplay().isEmpty`, o sea justo cuando
+          llevabas la semana sin entrenar — que es cuando más falta hace verlo. Una semana
+          en blanco no es ausencia de información: es la información.
+          Lo único que sigue condicionado es el primer arranque, sin ninguna sesión: ahí no
+          hay nada que contar todavía y manda el mensaje de bienvenida.
+        -->
+        @if (hasCompletedSessions()) {
+          <div class="card home-week">
+            <div class="home-week-head">
+              <p class="k">{{ T().home_week_title }}</p>
+              <p class="home-week-count">
+                <strong>{{ weekSessionCount() }}</strong>
+                {{ tr.tp('home_week_of', { n: state.days().length }) }}
+              </p>
+            </div>
+
+            <div class="week-strip">
               @for (trained of weekMap(); track $index) {
-                <span class="week-day-dot" [class.week-day-dot--on]="trained"></span>
+                <div
+                  class="week-cell"
+                  [class.week-cell--done]="trained"
+                  [class.week-cell--today]="$index === todayIndex()"
+                >
+                  <span class="week-cell-label">{{ weekDayLabels()[$index] }}</span>
+                  <span class="week-cell-box">
+                    @if (trained) {
+                      <app-icon name="check" [size]="12" />
+                    }
+                  </span>
+                </div>
               }
             </div>
-            <span class="week-line-text mono">
-              {{ tr.tp('week_line_sessions', { n: weekSessionCount() }) }} ·
-              <strong>{{ weekStatsDisplay().vol }}</strong>
-            </span>
-          </div>
-        }
 
-        <!-- H1 · racha y volumen del mes de un vistazo -->
-        @if (!weekStatsDisplay().isEmpty) {
-          <div class="stat-grid">
-            <div class="stat">
-              <div class="stat-label">{{ T().home_streak }}</div>
-              <div class="stat-value">
-                {{ weekStatsDisplay().streak }}<small> {{ T().home_streak_unit }}</small>
+            <div class="stat-grid home-week-stats">
+              <div class="stat">
+                <p class="stat-label">{{ T().home_streak }}</p>
+                <p class="stat-value">
+                  {{ weekStatsDisplay().streak
+                  }}<span class="stat-unit"> {{ T().home_streak_unit }}</span>
+                </p>
               </div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">{{ T().home_month }}</div>
-              <div class="stat-value">
-                {{ monthSessionCount() }}<small> {{ T().home_month_unit }}</small>
+              <div class="stat">
+                <p class="stat-label">{{ T().home_volume }}</p>
+                <p class="stat-value">{{ weekStatsDisplay().vol }}</p>
               </div>
+              @if (adherencePct(); as pct) {
+                <div class="stat">
+                  <p class="stat-label">{{ T().home_adherence }}</p>
+                  <p class="stat-value">{{ pct }}<span class="stat-unit">%</span></p>
+                </div>
+              }
             </div>
           </div>
         }
@@ -66,6 +221,26 @@
             <span class="home-pr-text">{{
               tr.tp('home_pr_line', { name: pr.name, weight: pr.weight })
             }}</span>
+          </div>
+        }
+
+        <!--
+          La rotación deja de ser invisible (T-834): sabías qué te tocaba HOY y nada más.
+          Ver lo que viene es lo que convierte "una rutina" en "un plan".
+        -->
+        @if (upcomingDays().length) {
+          <div class="card home-next">
+            <p class="k">{{ T().home_next_title }}</p>
+            <div class="home-next-days">
+              @for (day of upcomingDays(); track day.id) {
+                <div class="home-next-day">
+                  <span class="home-next-name">{{ day.name }}</span>
+                  <span class="home-next-meta">
+                    {{ tr.tp('routines_exercises_n', { n: day.exercises.length }) }}
+                  </span>
+                </div>
+              }
+            </div>
           </div>
         }
 

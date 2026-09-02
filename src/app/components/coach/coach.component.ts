@@ -153,6 +153,27 @@ export class CoachComponent {
     });
   }
 
+  /** Las que todavía no se respondieron hoy: las que "Aceptar todo" tiene que tocar. */
+  protected readonly pendingRows = computed(() => this.rows().filter((r) => !r.answered));
+
+  /** El atleta pidió verlas una a una: la tarjeta de conjunto se aparta y deja el detalle. */
+  protected readonly batchDismissed = signal(false);
+
+  /**
+   * Acepta de una vez lo que el motor propone para TODA la sesión (T-834).
+   *
+   * Cuatro tarjetas idénticas con tres botones cada una son doce decisiones para lo que
+   * casi siempre es una sola: "está bien, seguimos". El detalle por ejercicio sigue ahí
+   * abajo para quien quiera discutir uno — pero deja de ser el único camino.
+   */
+  protected acceptAll(): void {
+    for (const row of this.pendingRows()) this.accept(row);
+  }
+
+  protected reviewOneByOne(): void {
+    this.batchDismissed.set(true);
+  }
+
   protected reject(row: SuggestionRow): void {
     this.state.recordAiFeedback({
       exerciseId: row.exercise.id,

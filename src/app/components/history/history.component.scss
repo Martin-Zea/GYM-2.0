@@ -282,7 +282,7 @@
 }
 
 /* ── Escritorio: limitar el zoom proporcional del SVG ── */
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .chart-svg-wrap {
     max-width: 520px;
     margin-inline: auto;
@@ -411,4 +411,9 @@
   margin: 0 0 var(--sp-2);
   font-size: var(--fs-2xs);
   color: var(--text-2);
+}
+
+/* Tres métricas en vez de dos: la que falta pesa un tercio, no la mitad (T-834). */
+.progress-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }

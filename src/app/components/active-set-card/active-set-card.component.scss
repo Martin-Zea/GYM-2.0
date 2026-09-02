@@ -28,11 +28,33 @@
   letter-spacing: -0.02em;
   overflow-wrap: anywhere;
 }
+/*
+ * El "(Máquina)" del nombre baja a etiqueta (T-834): partía el título en dos líneas en
+ * casi todos los ejercicios del catálogo y empujaba los steppers fuera del pliegue. Es
+ * metadato compitiendo con el nombre. El dato guardado NO cambia — solo cómo se pinta.
+ */
+.asc-qualifier {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--bg-3);
+  font-size: var(--fs-2xs);
+  color: var(--text-2);
+}
 .asc-meta {
   margin: 3px 0 0;
   font-size: var(--fs-xs);
   color: var(--text-2);
 }
+/*
+ * "Serie 1 de 4" es ESTADO, no acción (T-834).
+ *
+ * Iba en acento, el mismo color y peso que el botón que hay que pulsar. En una pantalla
+ * cuyo único trabajo es que toques "Serie hecha", un contador compitiendo por el mismo
+ * color es ruido. La variante `--done` sí conserva el verde: ahí el color SÍ significa
+ * lo que dice, el ejercicio está terminado.
+ */
 .asc-set-chip {
   flex-shrink: 0;
   display: inline-flex;
@@ -40,9 +62,9 @@
   gap: 5px;
   font-size: var(--fs-xs);
   font-weight: 600;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 1px solid var(--accent-border);
+  color: var(--text-1);
+  background: var(--bg-3);
+  border: 1px solid var(--border);
   padding: 6px 11px;
   border-radius: 999px;
   white-space: nowrap;
@@ -382,4 +404,17 @@ button.asc-value {
 
 .asc-unit-suffix {
   color: var(--text-2);
+}
+
+/* Acciones plegadas: la destructiva separada, no en la misma fila que "Añadir ejercicio". */
+.asc-more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  padding-top: var(--sp-2);
+}
+.asc-more-danger {
+  width: 100%;
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--border);
 }

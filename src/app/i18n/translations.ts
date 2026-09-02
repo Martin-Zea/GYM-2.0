@@ -316,6 +316,7 @@ export interface Translations {
   // Calendar page
   cal_trained: string;
   cal_stat_sessions: string;
+  cal_stat_sessions_one: string;
   cal_stat_streak: string;
   cal_routine_title: string;
   cal_no_sessions: string;
@@ -381,6 +382,7 @@ export interface Translations {
   asc_remove_exercise: string;
   asc_remove_exercise_confirm: string;
   asc_add_exercise: string;
+  asc_more: string;
   asc_add_exercise_hint: string;
   asc_add_exercise_pick: string;
   asc_set_note_placeholder: string;
@@ -575,6 +577,7 @@ export interface Translations {
   routines_create_template: string;
   routines_create_scratch: string;
   routines_new_name: string;
+  routines_default_name: string;
   routines_activate: string;
   routines_duplicate: string;
   routines_rename: string;
@@ -615,6 +618,11 @@ export interface Translations {
   generator_discard: string;
   generator_context_title: string;
   generator_context_notes: string;
+  generator_context_edit: string;
+  generator_context_done: string;
+  generator_context_no_level: string;
+  generator_context_no_goal: string;
+  generator_context_any_gym: string;
   generator_notes_count: string;
   generator_context_scope: string;
   generator_notes_placeholder: string;
@@ -636,6 +644,9 @@ export interface Translations {
   coach_provider_active: string;
   coach_provider_local: string;
   coach_next_day: string;
+  coach_batch_body: string;
+  coach_batch_accept: string;
+  coach_batch_review: string;
   coach_accept: string;
   coach_change: string;
   coach_reject: string;
@@ -675,6 +686,31 @@ export interface Translations {
   settings_menu_profile_empty: string;
 
   // H1 según el diseño (T-806)
+  panel_eyebrow: string;
+  panel_headline_up: string;
+  panel_headline_down: string;
+  panel_headline_idle: string;
+  panel_headline_neutral_one: string;
+  panel_headline_neutral: string;
+  panel_kpi_volume: string;
+  panel_kpi_sets: string;
+  panel_kpi_sessions: string;
+  panel_unit_t: string;
+  panel_vs_previous: string;
+  panel_no_comparison: string;
+  panel_groups_title: string;
+  panel_groups_sub: string;
+  panel_groups_empty: string;
+  panel_col_date: string;
+  panel_col_day: string;
+  panel_col_sets: string;
+  panel_col_duration: string;
+  panel_col_volume: string;
+  home_week_title: string;
+  home_week_of: string;
+  home_volume: string;
+  home_adherence: string;
+  home_next_title: string;
   home_streak: string;
   home_streak_unit: string;
   home_month: string;
@@ -684,6 +720,7 @@ export interface Translations {
 
   // P1 según el diseño (T-807)
   progress_adherence: string;
+  progress_streak_unit: string;
   progress_avg_duration: string;
   progress_no_plan: string;
   progress_no_duration: string;

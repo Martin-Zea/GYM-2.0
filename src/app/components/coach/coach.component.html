@@ -25,6 +25,26 @@
         <p class="k coach-section">{{ tr.tp('coach_next_day', { day: d.name }) }}</p>
       }
 
+      <!--
+        UNA decisión para toda la sesión (T-834). El detalle por ejercicio sigue debajo,
+        pero deja de ser el único camino: lo habitual es aceptar el conjunto.
+      -->
+      @if (pendingRows().length > 1 && !batchDismissed()) {
+        <div class="card card--hi coach-batch">
+          <p class="coach-batch-text">
+            {{ tr.tp('coach_batch_body', { n: pendingRows().length }) }}
+          </p>
+          <div class="coach-sug-actions">
+            <button class="btn btn-sm coach-accept" type="button" (click)="acceptAll()">
+              {{ T().coach_batch_accept }}
+            </button>
+            <button class="btn btn-ghost btn-sm" type="button" (click)="reviewOneByOne()">
+              {{ T().coach_batch_review }}
+            </button>
+          </div>
+        </div>
+      }
+
       @for (row of rows(); track row.exercise.id) {
         <div class="card coach-sug">
           <div class="coach-sug-head">

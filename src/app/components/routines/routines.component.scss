@@ -121,3 +121,34 @@
 .rt-layoff {
   color: var(--warn, var(--text-1));
 }
+
+/* Chip seleccionable: `.chip` es un <span> por defecto, aquí es un <button> real. */
+.rt-chip {
+  min-height: 34px;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+}
+
+/* Resumen del contexto: una línea, no un formulario. */
+.rt-ctx {
+  padding: var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-2);
+}
+.rt-ctx-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+.rt-ctx-text {
+  min-width: 0;
+}
+.rt-ctx-summary {
+  margin-top: 2px;
+  color: var(--text-1);
+  line-height: 1.45;
+}

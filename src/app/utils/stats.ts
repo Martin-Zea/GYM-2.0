@@ -2,7 +2,7 @@ import { AppState, Exercise, Session, SetRecord } from '../models/workout.model'
 import { MuscleGroup } from '../data/exercise-catalog';
 import { e1rm } from './pr';
 import { sessionDurationMinutes, tonnageOf, workingSets } from './session';
-import { mondayOfISO, shiftISO } from './date';
+import { daysBetweenISO, mondayOfISO, shiftISO } from './date';
 
 /**
  * Métricas locales de progreso (RF-PRO-01).
@@ -140,12 +140,20 @@ export function adherence(
   weeks = 4,
 ): number | null {
   if (!daysPerWeek || daysPerWeek <= 0) return null;
-  const fromISO = shiftISO(todayISO, -weeks * 7);
+  const real = sessions.filter((s) => !s.skipped && s.sets.length > 0);
+  if (!real.length) return null;
 
-  const done = sessions.filter(
-    (s) => !s.skipped && s.sets.length > 0 && s.dateISO >= fromISO && s.dateISO <= todayISO,
-  ).length;
-  const planned = daysPerWeek * weeks;
+  // La ventana no puede empezar ANTES de la primera sesión (T-834). Con 4 semanas fijas,
+  // quien acaba de instalar la app se da de bruces con un 25 %: se le exigen 20 sesiones
+  // planificadas en un periodo en el que ni siquiera existía. No es una adherencia mala,
+  // es una división contra un plan que nadie tuvo ocasión de cumplir.
+  const primera = real.reduce((a, s) => (s.dateISO < a ? s.dateISO : a), real[0].dateISO);
+  const diasDesdeLaPrimera = daysBetweenISO(primera, todayISO) + 1;
+  const semanas = Math.min(weeks, Math.max(1, Math.ceil(diasDesdeLaPrimera / 7)));
+
+  const fromISO = shiftISO(todayISO, -semanas * 7);
+  const done = real.filter((s) => s.dateISO >= fromISO && s.dateISO <= todayISO).length;
+  const planned = daysPerWeek * semanas;
   return Math.min(100, Math.round((done / planned) * 100));
 }
 

@@ -1,0 +1,383 @@
+/*
+ * Estilos del MODO SESIÓN de Inicio (T-834).
+ *
+ * Viven aparte del panel porque son la mitad del peso del archivo y otro problema: el
+ * dashboard es UNA decisión, la sesión es una herramienta a pantalla completa. El
+ * presupuesto de estilos se mide por archivo, así que separarlos deja sitio para crecer
+ * -- y es el paso previo a extraer la sesión a su propio componente.
+ */
+
+/* ── Layout de sesión (móvil: una columna; desktop: sidebar) ── */
+.session-layout {
+  display: block;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Training sidebar content ── */
+.tsb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding: 0 2px;
+}
+
+.tsb-total {
+  font-size: var(--fs-2xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.tsb-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-xs);
+  color: var(--text-1);
+  text-align: left;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+
+.tsb-row:hover {
+  background: var(--bg-hover);
+  color: var(--text-0);
+}
+
+.tsb-row--active {
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  color: var(--text-0);
+}
+
+.tsb-row--done .tsb-name {
+  color: var(--text-3);
+  text-decoration: line-through;
+  text-decoration-color: var(--text-3);
+}
+
+.tsb-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tsb-badge {
+  font-size: var(--fs-2xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-3);
+  background: var(--bg-2);
+  padding: 1px 6px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+.tsb-row--done .tsb-badge {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.tsb-row--active .tsb-badge {
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.tsb-finish {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.tsb-finish-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ── Finish training sheet ── */
+.finish-sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.finish-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  background: var(--bg-2);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.finish-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 16px 0;
+  flex: 1;
+}
+
+.finish-stat-value {
+  font-size: var(--fs-num-md);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-0);
+}
+
+.finish-stat-label {
+  font-size: var(--fs-2xs);
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.finish-stat-sep {
+  width: 1px;
+  background: var(--border);
+  align-self: stretch;
+  margin: 10px 0;
+}
+
+.finish-warning {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  text-align: center;
+  padding: 8px 12px;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-md);
+}
+
+.finish-all-done {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--success);
+  text-align: center;
+  font-weight: 500;
+  padding: 8px 12px;
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
+  border-radius: var(--radius-md);
+}
+
+/* ═══ SESIÓN a pantalla completa ═══ */
+.session {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-0);
+}
+
+.session-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: max(10px, env(safe-area-inset-top)) 12px 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklab, var(--bg-0) 92%, var(--accent));
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.session-day-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+  text-align: left;
+  padding: 4px 0;
+}
+
+.session-day-eyebrow {
+  font-size: var(--fs-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.session-day-name {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--text-0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.session-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.session-progress {
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.session-progress-bar {
+  width: 44px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-3);
+  overflow: hidden;
+}
+
+.session-progress-fill {
+  height: 100%;
+  background: var(--success);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.session-finish-btn {
+  color: var(--success);
+}
+
+/* ── Cola de ejercicios ── */
+.session-queue {
+  display: flex;
+  gap: 6px;
+  padding: 12px 16px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.session-pill {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  max-width: 190px;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s;
+}
+
+.session-pill-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.session-pill-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+.session-pill--active {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+  color: var(--accent);
+  font-weight: 600;
+
+  .session-pill-count {
+    color: var(--accent);
+  }
+}
+
+.session-pill--done {
+  background: var(--success-bg);
+  border-color: var(--success-border);
+  color: var(--success);
+}
+
+.session-main {
+  padding: 12px 16px calc(24px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.session-view-toggle {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+  padding: 9px 14px;
+  min-height: 40px;
+  border-radius: 999px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  transition:
+    color 0.12s,
+    border-color 0.12s;
+}
+
+.session-view-toggle:hover {
+  color: var(--text-0);
+  border-color: var(--border-strong);
+}
+
+.session-all-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.session-all-done-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--success-bg);
+  border: 1.5px solid var(--success-border);
+  color: var(--success);
+}
+
+.session-all-done-msg {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--text-0);
+}

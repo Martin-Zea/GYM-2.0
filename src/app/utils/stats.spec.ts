@@ -165,13 +165,34 @@ describe('adherence()', () => {
   ];
 
   it('compara lo hecho con lo planificado', () => {
-    // 2 sesiones de 4×4 = 16 planificadas → 13 %
-    expect(adherence(sessions, 4, '2026-08-29')).toBe(13);
+    // La primera sesión es del 24 y hoy es el 29: 6 días → 1 semana de ventana.
+    // 2 sesiones de 4 planificadas → 50 %.
+    expect(adherence(sessions, 4, '2026-08-29')).toBe(50);
+  });
+
+  it('con historial largo usa la ventana completa de 4 semanas', () => {
+    const viejo = [session('2026-07-01', [set('e', 50, 5)]), ...sessions];
+    // 4 semanas × 4 = 16 planificadas; solo las 2 de agosto caen dentro → 13 %.
+    expect(adherence(viejo, 4, '2026-08-29')).toBe(13);
+  });
+
+  /**
+   * Un usuario recién instalado se daba de bruces con un 25 %: se le exigían 20 sesiones
+   * planificadas en 4 semanas en las que ni siquiera tenía la app (T-834).
+   */
+  it('no exige sesiones anteriores a la primera que registró', () => {
+    const reciente = [session('2026-08-28', [set('e', 50, 5)])];
+    // Un solo día de historia → una semana de ventana, no cuatro.
+    expect(adherence(reciente, 5, '2026-08-29')).toBe(20);
   });
 
   it('sin plan declarado devuelve null en vez de un porcentaje inventado', () => {
     expect(adherence(sessions, null, '2026-08-29')).toBeNull();
     expect(adherence(sessions, 0, '2026-08-29')).toBeNull();
+  });
+
+  it('sin ninguna sesión real no hay adherencia que calcular', () => {
+    expect(adherence([], 4, '2026-08-29')).toBeNull();
   });
 
   it('no pasa del 100 % aunque entrene de más', () => {

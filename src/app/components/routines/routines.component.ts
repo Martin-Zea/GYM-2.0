@@ -32,6 +32,8 @@ type View = 'list' | 'detail' | 'templates' | 'generator';
 
 interface RoutineRow {
   routine: Routine;
+  /** Nombre a PINTAR: la rutina inicial se crea sin nombre y dejaba un hueco en blanco. */
+  name: string;
   dayCount: number;
   lastUsedISO: string | null;
   isActive: boolean;
@@ -94,12 +96,25 @@ export class RoutinesComponent {
       const used = sessions.filter((x) => dayIds.has(x.dayId)).map((x) => x.dateISO);
       return {
         routine,
+        name: this.routineName(routine),
         dayCount: routine.dayIds.length,
         lastUsedISO: used.length ? used.reduce((a, b) => (a > b ? a : b)) : null,
         isActive: routine.id === s.activeRoutineId,
       };
     });
   });
+
+  /**
+   * El nombre de una rutina, con recambio si no tiene.
+   *
+   * `createInitialState()` crea la rutina inicial con `name: ''` —y no puede hacer otra
+   * cosa: corre antes de que se sepa el idioma—, así que la pestaña Rutinas enseñaba un
+   * hueco en blanco entre el chip "Activa" y la meta. El recambio se aplica al pintar, que
+   * es donde sí se conoce el idioma.
+   */
+  protected routineName(routine: Routine): string {
+    return routine.name.trim() || this.T().routines_default_name;
+  }
 
   protected readonly activeRow = computed(() => this.rows().find((r) => r.isActive) ?? null);
   protected readonly otherRows = computed(() =>
@@ -332,6 +347,29 @@ export class RoutinesComponent {
         ? this.T().settings_goal_hypertrophy
         : this.T().settings_goal_endurance;
   }
+
+  /** El panel arranca RESUMIDO: se abre solo si el atleta quiere corregir algo. */
+  protected readonly editingContext = signal(false);
+
+  /**
+   * El contexto en una línea: lo que se va a usar, legible de un vistazo.
+   *
+   * Es la pieza que hace que el generador deje de parecer una caja negra sin obligar a
+   * atravesar cinco secciones de formulario.
+   */
+  protected readonly contextSummary = computed(() => {
+    const equipo = this.genEquipment();
+    const partes = [
+      this.genLevel() ? this.levelLabel(this.genLevel()!) : this.T().generator_context_no_level,
+      this.genGoal() ? this.goalLabel(this.genGoal()!) : this.T().generator_context_no_goal,
+      equipo?.length
+        ? equipo.map((e) => this.equipmentLabel(e)).join(', ')
+        : this.T().generator_context_any_gym,
+    ];
+    const notas = this.genNotes().trim();
+    if (notas) partes.push(notas.length > 60 ? `${notas.slice(0, 60)}…` : notas);
+    return partes.join(' · ');
+  });
 
   protected readonly levelOptions: TrainingLevel[] = ['beginner', 'intermediate', 'advanced'];
   protected readonly goalOptions: TrainingGoal[] = ['strength', 'hypertrophy', 'endurance'];

@@ -51,10 +51,25 @@
   min-height: 44px;
 }
 /* "Aceptar" es confirmar algo hecho, no una acción nueva: verde, no naranja. */
+/*
+ * Aceptar y rechazar pesan lo mismo (T-833).
+ *
+ * "Aceptar" era un bloque macizo verde mientras "Cambiar" y "No" eran texto plano gris:
+ * la UI empujaba a aceptar lo que propone la IA. En una app cuyo principio es que decide
+ * el atleta, eso es la interfaz votando. Aceptar sigue siendo la opción destacada —es la
+ * más frecuente— pero con el par suave, no con un muro de color.
+ */
 .coach-accept {
-  background: var(--success);
-  color: var(--success-fg);
-  border-color: var(--success);
+  background: var(--success-bg);
+  color: var(--success);
+  border-color: var(--success-border);
+  font-weight: 600;
+}
+
+/* Y las otras dos dejan de ser texto suelto: son botones con su propio contorno. */
+.coach-sug-actions .btn-ghost {
+  border-color: var(--border);
+  color: var(--text-1);
 }
 
 .coach-usage {
@@ -195,4 +210,12 @@
 .coach-weight-arrow {
   color: var(--text-2);
   margin: 0 2px;
+}
+
+/* Decisión de conjunto: una sola, arriba del detalle por ejercicio (T-834). */
+.coach-batch-text {
+  margin: 0 0 var(--sp-3);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--text-1);
 }

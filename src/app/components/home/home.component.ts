@@ -23,6 +23,11 @@ import { TranslationService } from '../../services/translation.service';
 import { STORAGE_KEYS } from '../../services/storage-keys';
 import { AiRecommendation, Exercise, Session, WorkoutDay } from '../../models/workout.model';
 import { daysBetweenISO, mondayOfISO, shiftISO, weekdayISO } from '../../utils/date';
+import { WEEKLY_SET_RANGE, adherence } from '../../utils/stats';
+import { dashboardKpis, groupSeriesByWeek, realSessions } from '../../utils/dashboard';
+import { sessionDurationMinutes, tonnageOf, workingSets } from '../../utils/session';
+import { CatalogService } from '../../services/catalog.service';
+import { ViewportService } from '../../services/viewport.service';
 
 type SessionView = 'focused' | 'list';
 
@@ -47,7 +52,10 @@ interface SessionQueueItem {
     RouterLink,
   ],
   templateUrl: './home.component.html',
-  styleUrl: './home.component.scss',
+  // Dos hojas por concerns distintos (T-834): el panel es UNA decisión, la sesión es una
+  // herramienta a pantalla completa. También reparte el presupuesto de estilos, que se
+  // mide por archivo, y prepara el terreno para extraer la sesión a su propio componente.
+  styleUrls: ['./home.component.scss', './home-session.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent {
@@ -58,6 +66,8 @@ export class HomeComponent {
   private readonly setLogging = inject(SetLoggingService);
   protected readonly tr = inject(TranslationService);
   protected readonly T = this.tr.T;
+  private readonly catalog = inject(CatalogService);
+  protected readonly viewport = inject(ViewportService);
 
   protected readonly mode = signal<'today' | 'training'>(
     (sessionStorage.getItem('gym_mode') as 'today' | 'training' | null) ?? 'today',
@@ -271,6 +281,129 @@ export class HomeComponent {
         ? `${(weeklyVolume / 1000).toFixed(1).replace(/\.0$/, '')}t`
         : `${Math.round(weeklyVolume)}kg`;
     return { streak, vol, isEmpty: streak === 0 && weeklyVolume === 0 };
+  });
+
+  /** Iniciales del día de la semana, empezando en lunes. Mismo patrón que el calendario. */
+  private static readonly DOW_BASE = new Date(2024, 0, 1); // un lunes
+  protected readonly weekDayLabels = computed(() => {
+    const fmt = new Intl.DateTimeFormat(this.tr.lang(), { weekday: 'narrow' });
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(HomeComponent.DOW_BASE);
+      d.setDate(1 + i);
+      return fmt.format(d);
+    });
+  });
+
+  /** Índice del día de HOY dentro de la semana (0 = lunes), para marcarlo en la franja. */
+  protected readonly todayIndex = computed(() => weekdayISO(this.state.todayKey));
+
+  /** Adherencia de las últimas 4 semanas contra los días que declara la rutina activa. */
+  protected readonly adherencePct = computed(() =>
+    adherence(this.state.sessions(), this.state.days().length || null, this.state.todayKey),
+  );
+
+  /**
+   * Los dos días que vienen DESPUÉS del de hoy en la rotación.
+   *
+   * La rotación existía pero era invisible: sabías qué te tocaba hoy y nada más. Ver lo que
+   * viene es lo que convierte "una rutina" en "un plan".
+   */
+  protected readonly upcomingDays = computed(() => {
+    const days = this.state.days();
+    if (days.length < 2) return [];
+    const from = this.state.currentDayIndex();
+    return [1, 2].map((offset) => days[(from + offset) % days.length]).filter(Boolean);
+  });
+
+  // ══ Panel de escritorio (T-836) ══
+  //
+  // Misma ruta, otro producto: en el teléfono `/` es UNA decisión; en el escritorio es el
+  // sitio donde se entiende qué está pasando. Todo esto se pinta SOLO en escritorio —
+  // `@if (viewport.isDesktop())` en la plantilla—, así que un teléfono no construye el
+  // DOM de un panel que no va a enseñar.
+
+  /** Volumen, series y sesiones de la semana, comparados con la anterior. */
+  protected readonly kpis = computed(() =>
+    dashboardKpis(this.state.state(), this.state.todayKey, 7),
+  );
+
+  /** Series por grupo muscular en las últimas 4 semanas, contra el rango recomendado. */
+  protected readonly groupLoad = computed(() => {
+    const to = this.state.todayKey;
+    return (
+      groupSeriesByWeek(
+        this.state.state(),
+        (ex) => this.catalog.byRef(ex.catalogRef)?.group ?? null,
+        shiftISO(to, -27),
+        to,
+      )
+        // Un grupo cuya última semana está a cero y nunca tuvo nada no es un desequilibrio:
+        // es un grupo que este atleta no entrena. Enseñarlo a cero es ruido, no diagnóstico.
+        .filter((g) => g.points.some((p) => p.sets > 0))
+        .map((g) => ({
+          ...g,
+          label: this.T()[`muscle_${g.group}` as keyof ReturnType<typeof this.T>] as string,
+          pct: Math.min(100, Math.round((g.latest / WEEKLY_SET_RANGE.max) * 100)),
+          low: g.latest < WEEKLY_SET_RANGE.min,
+        }))
+    );
+  });
+
+  /** Volumen de la semana en toneladas, con un decimal. */
+  protected readonly kpiVolume = computed(() =>
+    (this.kpis().volumeKg.value / 1000).toFixed(1).replace(/\.0$/, ''),
+  );
+
+  /** El rango recomendado, dibujado detrás del medidor. */
+  protected readonly rangeStyle = computed(() => {
+    const left = (WEEKLY_SET_RANGE.min / WEEKLY_SET_RANGE.max) * 100;
+    return `left:${left}%;right:0`;
+  });
+
+  /**
+   * El titular del panel: una afirmación, no una etiqueta (T-836).
+   *
+   * Se construye con lo que HAY. Sin comparación posible dice lo que hay —cuántas sesiones
+   * llevás— en vez de inventar un porcentaje: el día 1 no existe una historia que contar, y
+   * fingir que sí es lo que hace que un panel deje de creerse.
+   */
+  protected readonly panelHeadline = computed(() => {
+    const { volumeKg, sessions } = this.kpis();
+
+    // Semana sin entrenar: "levantaste un 100 % menos" es técnicamente cierto y una forma
+    // pésima de dar la bienvenida. Cuando no hay nada que comparar porque no hay nada, se
+    // dice eso — no se convierte una ausencia en un porcentaje.
+    if (volumeKg.value === 0) return this.T().panel_headline_idle;
+
+    // Sin semana previa tampoco hay historia: se cuenta lo que hay.
+    if (volumeKg.deltaPct === null || volumeKg.deltaPct === 0) {
+      // Singular aparte: "llevás 1 sesiones esta semana" es el mismo descuido que ya
+      // apareció en el pie del calendario. Un titular con una falta no se cree.
+      const key = sessions.value === 1 ? 'panel_headline_neutral_one' : 'panel_headline_neutral';
+      return this.tr.tp(key, { n: sessions.value });
+    }
+
+    return this.tr.tp(volumeKg.deltaPct > 0 ? 'panel_headline_up' : 'panel_headline_down', {
+      pct: Math.abs(volumeKg.deltaPct),
+    });
+  });
+
+  /** Las últimas sesiones, para la tabla densa que el móvil no puede dar. */
+  protected readonly recentSessions = computed(() => {
+    const s = this.state.state();
+    const byDay = new Map(s.days.map((d) => [d.id, d.name]));
+    return realSessions(s.sessions)
+      .slice()
+      .sort((a, b) => b.dateISO.localeCompare(a.dateISO))
+      .slice(0, 6)
+      .map((session) => ({
+        id: session.id,
+        dateISO: session.dateISO,
+        dayName: byDay.get(session.dayId) ?? '—',
+        sets: workingSets(session.sets).length,
+        minutes: sessionDurationMinutes(session),
+        volume: Math.round(tonnageOf(session.sets, s.exercises)),
+      }));
   });
 
   /** Sesiones registradas en el mes en curso (H1 del diseño). */

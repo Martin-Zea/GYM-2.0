@@ -7,6 +7,7 @@ import {
   StoredWorkoutDay,
 } from '../models/workout.model';
 import { shiftISO, toLocalISO } from '../utils/date';
+import { catalogRefForName } from '../services/catalog.service';
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -31,6 +32,14 @@ function ex(
     restSeconds: rest,
     unit,
     notes: '',
+    // El enlace al catálogo se resuelve YA, no solo al migrar (T-836).
+    //
+    // La migración v8→v9 lo puebla para quien viene de una versión anterior, pero una
+    // instalación NUEVA nace en el schema actual y nunca la ejecuta: sus ejercicios se
+    // quedaban sin `catalogRef` para siempre. Y sin él no hay grupo muscular, así que el
+    // reparto de volumen y los avisos de desequilibrio salían vacíos justo para quien
+    // acababa de instalar la app.
+    catalogRef: catalogRefForName(name) ?? undefined,
   };
 }
 

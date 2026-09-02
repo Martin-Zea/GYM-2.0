@@ -45,14 +45,14 @@
   letter-spacing: 0.03em;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .bottom-nav {
     position: static;
     grid-area: sidenav;
     bottom: auto;
     left: auto;
     transform: none;
-    width: 68px;
+    width: 92px;
     max-width: none;
     flex-direction: column;
     justify-content: flex-start;
@@ -67,16 +67,24 @@
     -webkit-backdrop-filter: none;
   }
 
+  /*
+   * El rail conserva las ETIQUETAS (T-833).
+   *
+   * En móvil cada icono llevaba su texto; en escritorio —donde sobra espacio— quedaban
+   * cinco iconos mudos y sin tooltip. Es al revés de lo que pide el medio: el sitio donde
+   * hay ancho de sobra es justo donde no hay que hacer adivinar.
+   */
   .nav-item {
     flex: 0 0 auto;
-    width: 48px;
-    height: 48px;
-    min-height: auto;
-    padding: 0;
+    width: 100%;
+    height: auto;
+    min-height: 56px;
+    padding: var(--sp-2) 4px;
     border-radius: var(--radius-md);
   }
 
   .nav-label {
-    display: none;
+    display: block;
+    font-size: var(--fs-2xs);
   }
 }

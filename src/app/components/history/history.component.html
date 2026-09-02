@@ -4,27 +4,38 @@
     <p class="view-sub">{{ T().history_view_sub }}</p>
   </div>
 
-  <!-- P1 · adherencia y duración media: lo que resume el mes sin abrir un gráfico -->
-  <div class="stat-grid">
+  <!--
+    P1 · tres métricas compactas (T-834).
+    Eran dos tarjetas grandes y una decía "Sin datos" la mitad del tiempo: media fila de
+    pantalla prime ocupada por una ausencia. Con tres del mismo tamaño, la que falta pesa
+    un tercio y las otras dos siguen leyéndose.
+  -->
+  <div class="stat-grid progress-stats">
     <div class="stat">
-      <div class="stat-label">{{ T().progress_adherence }}</div>
-      <div class="stat-value">
+      <p class="stat-label">{{ T().progress_adherence }}</p>
+      <p class="stat-value">
         @if (adherencePct(); as pct) {
-          {{ pct }}<small>%</small>
+          {{ pct }}<span class="stat-unit">%</span>
         } @else {
-          <span class="stat-empty">{{ T().progress_no_plan }}</span>
+          <span class="stat-empty">—</span>
         }
-      </div>
+      </p>
     </div>
     <div class="stat">
-      <div class="stat-label">{{ T().progress_avg_duration }}</div>
-      <div class="stat-value">
+      <p class="stat-label">{{ T().home_streak }}</p>
+      <p class="stat-value">
+        {{ stats().streak }}<span class="stat-unit"> {{ T().progress_streak_unit }}</span>
+      </p>
+    </div>
+    <div class="stat">
+      <p class="stat-label">{{ T().progress_avg_duration }}</p>
+      <p class="stat-value">
         @if (avgDuration(); as mins) {
-          {{ mins }}<small> min</small>
+          {{ mins }}<span class="stat-unit"> min</span>
         } @else {
-          <span class="stat-empty">{{ T().progress_no_duration }}</span>
+          <span class="stat-empty">—</span>
         }
-      </div>
+      </p>
     </div>
   </div>
 
@@ -70,7 +81,8 @@
 
     <div class="cal-footer">
       <span class="cal-stat mono"
-        ><strong>{{ stats().total }}</strong> {{ T().cal_stat_sessions }}</span
+        ><strong>{{ stats().total }}</strong>
+        {{ stats().total === 1 ? T().cal_stat_sessions_one : T().cal_stat_sessions }}</span
       >
       <span
         class="cal-stat mono"

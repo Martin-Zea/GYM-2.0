@@ -13,7 +13,7 @@
       @if (activeRow(); as row) {
         <button class="card card--hi rt-card" type="button" (click)="openDetail(row.routine.id)">
           <span class="chip chip--accent">{{ T().routines_active }}</span>
-          <span class="big-t rt-name">{{ row.routine.name }}</span>
+          <span class="big-t rt-name">{{ row.name }}</span>
           <span class="rt-meta">
             {{ tr.tp('routines_days_count', { n: row.dayCount }) }}
             @if (nextDayName(); as next) {
@@ -25,7 +25,7 @@
 
       @for (row of otherRows(); track row.routine.id) {
         <button class="card rt-card" type="button" (click)="openDetail(row.routine.id)">
-          <span class="rt-name-sm">{{ row.routine.name }}</span>
+          <span class="rt-name-sm">{{ row.name }}</span>
           <span class="rt-meta">
             {{ tr.tp('routines_days_count', { n: row.dayCount }) }} ·
             @if (row.lastUsedISO) {
@@ -43,7 +43,7 @@
           type="button"
           (click)="openDetail(row.routine.id)"
         >
-          <span class="rt-name-sm">{{ row.routine.name }}</span>
+          <span class="rt-name-sm">{{ row.name }}</span>
           <span class="rt-meta">{{ T().routines_archived }}</span>
         </button>
       }
@@ -74,7 +74,7 @@
             <app-icon name="arrow_left" [size]="20" />
           </button>
           <div class="rt-header-body">
-            <h2 class="view-title">{{ routine.name }}</h2>
+            <h2 class="view-title">{{ routineName(routine) }}</h2>
             @if (rotationLabel()) {
               <p class="view-sub">{{ tr.tp('routines_rotation', { days: rotationLabel() }) }}</p>
             }
@@ -204,64 +204,81 @@
         </div>
       } @else {
         <!--
-          El contexto se ENSEÑA antes de gastar la llamada (T-832). Verlo es lo que permite
-          corregirlo: quien lee "Intermedio · Fuerza · gimnasio completo" se da cuenta de que
-          en realidad entrena en casa, y lo arregla aquí en vez de descubrirlo en la rutina.
+          El contexto se ENSEÑA antes de gastar la llamada (T-832), pero RESUMIDO (T-833).
+          Desplegado siempre eran cinco secciones que atravesar para llegar al botón: lo que
+          quería ser "mirá con qué genero" se había vuelto un formulario que rellenar. La
+          línea resumen dice lo mismo de un vistazo y solo se abre si algo está mal.
         -->
-        <p class="k">{{ T().generator_context_title }}</p>
-
-        <p class="k rt-sub">{{ T().profile_level_label }}</p>
-        <div class="seg">
-          @for (lv of levelOptions; track lv) {
-            <button type="button" [attr.aria-pressed]="genLevel() === lv" (click)="setLevel(lv)">
-              {{ levelLabel(lv) }}
-            </button>
-          }
-        </div>
-
-        <p class="k rt-sub">{{ T().settings_goal_label }}</p>
-        <div class="seg">
-          @for (g of goalOptions; track g) {
-            <button type="button" [attr.aria-pressed]="genGoal() === g" (click)="setGoal(g)">
-              {{ goalLabel(g) }}
-            </button>
-          }
-        </div>
-
-        <p class="k rt-sub">{{ T().profile_equipment_label }}</p>
-        <div class="rt-chips">
-          @for (eq of equipmentOptions; track eq) {
+        <div class="rt-ctx">
+          <div class="rt-ctx-head">
+            <div class="rt-ctx-text">
+              <p class="k">{{ T().generator_context_title }}</p>
+              <p class="rt-ctx-summary">{{ contextSummary() }}</p>
+            </div>
             <button
-              class="btn btn-sm"
+              class="btn btn-ghost btn-sm"
               type="button"
-              [class.btn-primary]="hasEquipment(eq)"
-              [attr.aria-pressed]="hasEquipment(eq)"
-              (click)="toggleEquipment(eq)"
+              [attr.aria-expanded]="editingContext()"
+              (click)="editingContext.set(!editingContext())"
             >
-              {{ equipmentLabel(eq) }}
+              {{ editingContext() ? T().generator_context_done : T().generator_context_edit }}
             </button>
+          </div>
+          @if (genLayoffDays(); as days) {
+            <p class="note rt-layoff">{{ tr.tp('generator_layoff_note', { n: days }) }}</p>
           }
         </div>
-        @if (!genEquipment()?.length) {
-          <p class="note">{{ T().generator_equipment_any }}</p>
-        }
 
-        <p class="k rt-sub">{{ T().generator_context_notes }}</p>
-        <textarea
-          class="input rt-notes"
-          rows="3"
-          [attr.maxlength]="MAX_SPEC_NOTES"
-          [value]="genNotes()"
-          [attr.placeholder]="T().generator_notes_placeholder"
-          [attr.aria-label]="T().generator_context_notes"
-          (input)="onNotes($event)"
-        ></textarea>
-        <p class="note rt-notes-count">
-          {{ tr.tp('generator_notes_count', { n: genNotes().length, max: MAX_SPEC_NOTES }) }}
-        </p>
+        @if (editingContext()) {
+          <p class="k rt-sub">{{ T().profile_level_label }}</p>
+          <div class="seg">
+            @for (lv of levelOptions; track lv) {
+              <button type="button" [attr.aria-pressed]="genLevel() === lv" (click)="setLevel(lv)">
+                {{ levelLabel(lv) }}
+              </button>
+            }
+          </div>
 
-        @if (genLayoffDays(); as days) {
-          <p class="note rt-layoff">{{ tr.tp('generator_layoff_note', { n: days }) }}</p>
+          <p class="k rt-sub">{{ T().settings_goal_label }}</p>
+          <div class="seg">
+            @for (g of goalOptions; track g) {
+              <button type="button" [attr.aria-pressed]="genGoal() === g" (click)="setGoal(g)">
+                {{ goalLabel(g) }}
+              </button>
+            }
+          </div>
+
+          <p class="k rt-sub">{{ T().profile_equipment_label }}</p>
+          <div class="rt-chips">
+            @for (eq of equipmentOptions; track eq) {
+              <button
+                class="chip rt-chip"
+                type="button"
+                [class.chip--accent]="hasEquipment(eq)"
+                [attr.aria-pressed]="hasEquipment(eq)"
+                (click)="toggleEquipment(eq)"
+              >
+                {{ equipmentLabel(eq) }}
+              </button>
+            }
+          </div>
+          @if (!genEquipment()?.length) {
+            <p class="note">{{ T().generator_equipment_any }}</p>
+          }
+
+          <p class="k rt-sub">{{ T().generator_context_notes }}</p>
+          <textarea
+            class="input rt-notes"
+            rows="3"
+            [attr.maxlength]="MAX_SPEC_NOTES"
+            [value]="genNotes()"
+            [attr.placeholder]="T().generator_notes_placeholder"
+            [attr.aria-label]="T().generator_context_notes"
+            (input)="onNotes($event)"
+          ></textarea>
+          <p class="note rt-notes-count">
+            {{ tr.tp('generator_notes_count', { n: genNotes().length, max: MAX_SPEC_NOTES }) }}
+          </p>
         }
 
         <p class="k rt-sub">{{ T().generator_days_week }}</p>

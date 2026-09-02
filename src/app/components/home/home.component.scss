@@ -11,15 +11,26 @@
   gap: 20px;
   padding: 16px 16px 100px;
 }
+
 .dash-aside {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
+
 .dash-main {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  /*
+   * En móvil la DECISIÓN va primero (T-834).
+   *
+   * El aside va antes en el DOM porque en escritorio ocupa la columna derecha, pero al
+   * apilarse en móvil empujaba "hoy te toca" por debajo del pliegue: el contexto enterraba
+   * la única decisión que la pantalla tiene que provocar. En escritorio esto no aplica —
+   * allí manda `grid-column`/`grid-row`, no `order`.
+   */
+  order: -1;
 }
 
 /* ── Today card ── */
@@ -32,11 +43,13 @@
   flex-direction: column;
   gap: 12px;
 }
+
 .today-card-top {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
+
 .today-eyebrow {
   display: block;
   font-size: var(--fs-2xs);
@@ -46,6 +59,7 @@
   font-weight: 600;
   margin-bottom: 8px;
 }
+
 .today-title {
   /* El nombre del día es el titular de la pantalla: display condensado en versalita,
      como los números de un disco (T-806). */
@@ -63,113 +77,27 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
 .today-last {
   font-size: var(--fs-sm);
   color: var(--text-2);
   margin: 0;
 }
+
 .today-progress {
   display: block;
   padding: 0 4px;
 }
+
 .today-cta {
   width: 100%;
   justify-content: center;
   padding: 13px 16px;
   font-size: var(--fs-lg);
 }
-/* ── Layout de sesión (móvil: una columna; desktop: sidebar) ── */
-.session-layout {
-  display: block;
-  flex: 1;
-  min-height: 0;
-}
+
 .training-sidebar {
   display: none;
-}
-
-/* ── Training sidebar content ── */
-.tsb-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  padding: 0 2px;
-}
-.tsb-total {
-  font-size: var(--fs-2xs);
-  font-variant-numeric: tabular-nums;
-  color: var(--text-2);
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-  padding: 2px 7px;
-  border-radius: 999px;
-  font-weight: 500;
-}
-.tsb-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 10px;
-  border-radius: var(--radius-md);
-  font-size: var(--fs-xs);
-  color: var(--text-1);
-  text-align: left;
-  transition:
-    background 0.12s,
-    color 0.12s;
-}
-.tsb-row:hover {
-  background: var(--bg-hover);
-  color: var(--text-0);
-}
-.tsb-row--active {
-  background: var(--accent-bg);
-  border: 1px solid var(--accent-border);
-  color: var(--text-0);
-}
-.tsb-row--done .tsb-name {
-  color: var(--text-3);
-  text-decoration: line-through;
-  text-decoration-color: var(--text-3);
-}
-.tsb-name {
-  flex: 1;
-  min-width: 0;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.tsb-badge {
-  font-size: var(--fs-2xs);
-  font-variant-numeric: tabular-nums;
-  color: var(--text-3);
-  background: var(--bg-2);
-  padding: 1px 6px;
-  border-radius: 999px;
-  flex-shrink: 0;
-  font-weight: 500;
-}
-.tsb-row--done .tsb-badge {
-  background: var(--success-bg);
-  color: var(--success);
-}
-.tsb-row--active .tsb-badge {
-  background: var(--accent-bg);
-  color: var(--accent);
-  font-weight: 700;
-}
-.tsb-finish {
-  margin-top: auto;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-}
-.tsb-finish-btn {
-  width: 100%;
-  justify-content: center;
 }
 
 /* ── AI hero banner ── */
@@ -182,6 +110,7 @@
   border: 1px solid var(--accent-border);
   border-radius: var(--radius-lg);
 }
+
 .ai-hero-icon {
   width: 32px;
   height: 32px;
@@ -192,90 +121,28 @@
   color: var(--accent);
   flex-shrink: 0;
 }
+
 .ai-hero-text {
   display: flex;
   flex-direction: column;
   gap: 1px;
   min-width: 0;
 }
+
 .ai-hero-text strong {
   font-size: var(--fs-lg);
   font-weight: 700;
   color: var(--text-0);
   letter-spacing: -0.02em;
 }
+
 .ai-hero-text span {
   font-size: var(--fs-sm);
   color: var(--text-2);
   line-height: 1.4;
 }
 
-/* ── Finish training sheet ── */
-.finish-sheet-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.finish-stats {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  background: var(--bg-2);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  border: 1px solid var(--border);
-}
-.finish-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 16px 0;
-  flex: 1;
-}
-.finish-stat-value {
-  font-size: var(--fs-num-md);
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-0);
-}
-.finish-stat-label {
-  font-size: var(--fs-2xs);
-  color: var(--text-3);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-}
-.finish-stat-sep {
-  width: 1px;
-  background: var(--border);
-  align-self: stretch;
-  margin: 10px 0;
-}
-.finish-warning {
-  margin: 0;
-  font-size: var(--fs-sm);
-  color: var(--text-2);
-  text-align: center;
-  padding: 8px 12px;
-  background: var(--danger-bg);
-  border: 1px solid var(--danger-border);
-  border-radius: var(--radius-md);
-}
-.finish-all-done {
-  margin: 0;
-  font-size: var(--fs-sm);
-  color: var(--success);
-  text-align: center;
-  font-weight: 500;
-  padding: 8px 12px;
-  background: var(--success-bg);
-  border: 1px solid var(--success-border);
-  border-radius: var(--radius-md);
-}
-
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .dashboard {
     display: grid;
     grid-template-columns: 1fr 296px;
@@ -288,11 +155,20 @@
   }
   .dash-aside {
     grid-column: 2;
-    grid-row: 1;
+    grid-row: 2;
   }
   .dash-main {
-    grid-column: 1;
-    grid-row: 1 / 3;
+    grid-column: 2;
+    grid-row: 1;
+    /*
+     * La DECISIÓN vive arriba a la derecha, fuera del scroll del panel (T-836).
+     *
+     * Aquí hubo un `position: sticky` que se retiró: pegar una COLUMNA más alta que la
+     * ventana no la mantiene a la vista —solo la despega del flujo— y en pantallas bajas
+     * (portátil de 13", ~620 px útiles) el aviso de sesión sin terminar acababa dibujado
+     * encima de la tarjeta del día. Estar primero en la columna ya la deja visible en
+     * cualquier ventana de altura normal, y sin superponer nada.
+     */
   }
   .session-layout {
     display: grid;
@@ -340,195 +216,11 @@
   color: var(--text-0);
   border: 1px solid var(--border-strong);
 }
+
 .skip-undo-toast .app-toast-btn {
   background: var(--accent);
   color: var(--accent-fg);
   font-weight: 600;
-}
-
-/* ═══ SESIÓN a pantalla completa ═══ */
-.session {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-0);
-}
-
-.session-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: max(10px, env(safe-area-inset-top)) 12px 10px 16px;
-  border-bottom: 1px solid var(--border);
-  background: color-mix(in oklab, var(--bg-0) 92%, var(--accent));
-  position: sticky;
-  top: 0;
-  z-index: 40;
-}
-.session-day-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
-  min-width: 0;
-  flex: 1;
-  text-align: left;
-  padding: 4px 0;
-}
-.session-day-eyebrow {
-  font-size: var(--fs-2xs);
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: var(--accent);
-  font-weight: 600;
-}
-.session-day-name {
-  font-size: var(--fs-lg);
-  font-weight: 600;
-  color: var(--text-0);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-.session-header-right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-.session-progress {
-  font-size: var(--fs-xs);
-  color: var(--text-2);
-  font-variant-numeric: tabular-nums;
-}
-.session-progress-bar {
-  width: 44px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--bg-3);
-  overflow: hidden;
-}
-.session-progress-fill {
-  height: 100%;
-  background: var(--success);
-  border-radius: 2px;
-  transition: width 0.3s ease;
-}
-.session-finish-btn {
-  color: var(--success);
-}
-
-/* ── Cola de ejercicios ── */
-.session-queue {
-  display: flex;
-  gap: 6px;
-  padding: 12px 16px 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-}
-.session-pill {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 40px;
-  padding: 7px 12px;
-  border-radius: 999px;
-  background: var(--bg-1);
-  border: 1px solid var(--border);
-  color: var(--text-2);
-  font-size: var(--fs-xs);
-  font-weight: 500;
-  max-width: 190px;
-  transition:
-    background 0.12s,
-    color 0.12s,
-    border-color 0.12s;
-}
-.session-pill-name {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-}
-.session-pill-count {
-  font-variant-numeric: tabular-nums;
-  color: var(--text-3);
-  flex-shrink: 0;
-}
-.session-pill--active {
-  background: var(--accent-bg);
-  border-color: var(--accent-border);
-  color: var(--accent);
-  font-weight: 600;
-
-  .session-pill-count {
-    color: var(--accent);
-  }
-}
-.session-pill--done {
-  background: var(--success-bg);
-  border-color: var(--success-border);
-  color: var(--success);
-}
-
-.session-main {
-  padding: 12px 16px calc(24px + env(safe-area-inset-bottom));
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.session-view-toggle {
-  align-self: center;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--fs-xs);
-  color: var(--text-2);
-  padding: 9px 14px;
-  min-height: 40px;
-  border-radius: 999px;
-  background: var(--bg-1);
-  border: 1px solid var(--border);
-  transition:
-    color 0.12s,
-    border-color 0.12s;
-}
-.session-view-toggle:hover {
-  color: var(--text-0);
-  border-color: var(--border-strong);
-}
-
-.session-all-done {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  padding: 40px 20px;
-  text-align: center;
-}
-.session-all-done-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--success-bg);
-  border: 1.5px solid var(--success-border);
-  color: var(--success);
-}
-.session-all-done-msg {
-  margin: 0;
-  font-size: var(--fs-lg);
-  font-weight: 600;
-  color: var(--text-0);
 }
 
 /* ── Dashboard: chips de ejercicios + acciones visibles ── */
@@ -537,6 +229,7 @@
   flex-wrap: wrap;
   gap: 6px;
 }
+
 .today-ex-chip {
   font-size: var(--fs-xs);
   color: var(--text-1);
@@ -552,6 +245,7 @@
     color 0.12s,
     border-color 0.12s;
 }
+
 .today-ex-chip:hover {
   color: var(--accent);
   border-color: var(--border-strong);
@@ -566,6 +260,7 @@
   padding-top: 10px;
   margin-top: 2px;
 }
+
 .today-action-btn {
   display: inline-flex;
   align-items: center;
@@ -578,9 +273,11 @@
   border-radius: var(--radius-sm);
   transition: color 0.12s;
 }
+
 .today-action-btn:hover {
   color: var(--accent);
 }
+
 .today-action-btn--muted:hover {
   color: var(--danger);
 }
@@ -596,19 +293,23 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
 }
+
 .week-line-days {
   display: flex;
   gap: 4px;
 }
+
 .week-day-dot {
   width: 14px;
   height: 14px;
   border-radius: 4px;
   background: var(--bg-3);
 }
+
 .week-day-dot--on {
   background: var(--success);
 }
+
 .week-line-text {
   font-size: var(--fs-xs);
   color: var(--text-2);
@@ -628,6 +329,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
 }
+
 .week-summary-title {
   font-size: var(--fs-2xs);
   text-transform: uppercase;
@@ -635,6 +337,7 @@
   color: var(--text-3);
   font-weight: 600;
 }
+
 .week-summary-body {
   font-size: var(--fs-sm);
   color: var(--text-1);
@@ -653,6 +356,7 @@
   flex-direction: column;
   gap: var(--sp-2);
 }
+
 .resume-card {
   gap: var(--sp-3);
   padding: var(--sp-3);
@@ -661,23 +365,28 @@
   border-radius: var(--radius-md);
   background: var(--bg-2);
 }
+
 .resume-card-text {
   gap: 2px;
   font-size: var(--fs-xs);
   color: var(--text-1);
 }
+
 .resume-card-text strong {
   font-size: var(--fs-sm);
   color: var(--text-0);
 }
+
 .resume-actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--sp-2);
 }
+
 .rest-state {
   align-items: flex-start;
 }
+
 .rest-state-msg {
   display: flex;
   align-items: center;
@@ -687,7 +396,6 @@
   color: var(--success);
 }
 
-/* `.library` y `.library-item-meta` son globales (styles.scss) */
 /* ── H1 · tarjetas de estado (T-806) ── */
 .home-pr {
   display: flex;
@@ -695,7 +403,146 @@
   gap: var(--sp-2);
   margin-bottom: var(--sp-2);
 }
+
 .home-pr-text {
   font-size: var(--fs-xs);
   font-weight: 600;
+}
+
+/* Tarjeta de la semana: siempre visible desde T-834. */
+.home-week-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--sp-3);
+}
+.home-week-count {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+}
+.home-week-count strong {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  color: var(--text-0);
+}
+.home-week-stats {
+  margin: var(--sp-3) 0 0;
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* Lo que viene después en la rotación. */
+.home-next-days {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+.home-next-day {
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-md);
+  background: var(--bg-2);
+}
+.home-next-name {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-next-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--fs-2xs);
+  color: var(--text-3);
+}
+
+/* ══ Panel de escritorio (T-836) ══
+   Solo se pinta en ≥768px; en móvil ni se construye el DOM. */
+.panel {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-5);
+    grid-column: 1;
+    grid-row: 1 / 3;
+  }
+  .panel-hero {
+    max-width: 44ch;
+  }
+  .panel-eyebrow {
+    margin: 0;
+    font-size: var(--fs-2xs);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+  }
+  .panel-headline {
+    margin: var(--sp-3) 0 0;
+    font-family: var(--font-display);
+    font-size: var(--fs-display-lg);
+    font-weight: 700;
+    line-height: 1.02;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+  .panel-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--sp-3);
+  }
+  .panel-kpi {
+    padding: var(--sp-3) var(--sp-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg-1);
+  }
+  .panel-card-head {
+    margin-bottom: var(--sp-3);
+  }
+  .panel-group + .panel-group {
+    margin-top: var(--sp-3);
+  }
+  .panel-group-head {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+  .panel-group-name {
+    font-size: var(--fs-xs);
+    color: var(--text-1);
+  }
+  .panel-group-sets {
+    font-family: var(--font-display);
+    font-size: var(--fs-md);
+    font-weight: 700;
+  }
+  .panel-group-sets--low {
+    color: var(--warning);
+  }
+  .panel-table {
+    padding: 0;
+    overflow: hidden;
+  }
+  .panel-table-row {
+    grid-template-columns: 72px 1.6fr 72px 92px 100px;
+  }
+  .panel-cell-muted {
+    font-size: var(--fs-xs);
+    color: var(--text-2);
+  }
+  .panel-cell-num {
+    font-family: var(--font-display);
+    font-size: var(--fs-md);
+    font-weight: 700;
+  }
 }
