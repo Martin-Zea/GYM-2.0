@@ -267,6 +267,20 @@ function checkSettings(i: Issues, settings: unknown, strict: boolean): void {
     }
   }
 
+  // La calculadora de discos consume estos dos y no puede defenderse sola de un array con
+  // un cero: el bucle no avanzaría. `plateBreakdown` ya lo filtra, pero un dato imposible
+  // no debe llegar siquiera al estado — un backup con `platesKg: [0]` pasaba entero (T-831).
+  const plates = settings['platesKg'];
+  if (plates !== undefined) {
+    if (!Array.isArray(plates) || plates.some((p) => typeof p !== 'number' || !(p > 0))) {
+      i.add('settings.platesKg', `se esperaban pesos positivos, llegó ${describe(plates)}`);
+    }
+  }
+  const bar = settings['barWeightKg'];
+  if (bar !== undefined && (typeof bar !== 'number' || !(bar > 0))) {
+    i.add('settings.barWeightKg', `se esperaba un peso positivo, llegó ${describe(bar)}`);
+  }
+
   const profile = settings['userProfile'];
   if (profile === undefined && !strict) return;
   if (!isObj(profile)) {

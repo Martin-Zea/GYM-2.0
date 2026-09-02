@@ -2,6 +2,7 @@ import { AppState, Exercise, Session, SetRecord } from '../models/workout.model'
 import { MuscleGroup } from '../data/exercise-catalog';
 import { e1rm } from './pr';
 import { sessionDurationMinutes, tonnageOf, workingSets } from './session';
+import { mondayOfISO, shiftISO } from './date';
 
 /**
  * Métricas locales de progreso (RF-PRO-01).
@@ -26,10 +27,7 @@ export interface WeeklyPoint {
 
 /** Lunes de la semana de una fecha ISO. */
 export function weekStartISO(dateISO: string): string {
-  const d = new Date(`${dateISO}T00:00:00`);
-  const day = (d.getDay() + 6) % 7; // lunes = 0
-  d.setDate(d.getDate() - day);
-  return d.toISOString().slice(0, 10);
+  return mondayOfISO(dateISO);
 }
 
 /**
@@ -142,9 +140,7 @@ export function adherence(
   weeks = 4,
 ): number | null {
   if (!daysPerWeek || daysPerWeek <= 0) return null;
-  const from = new Date(`${todayISO}T00:00:00`);
-  from.setDate(from.getDate() - weeks * 7);
-  const fromISO = from.toISOString().slice(0, 10);
+  const fromISO = shiftISO(todayISO, -weeks * 7);
 
   const done = sessions.filter(
     (s) => !s.skipped && s.sets.length > 0 && s.dateISO >= fromISO && s.dateISO <= todayISO,

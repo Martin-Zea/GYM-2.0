@@ -58,9 +58,15 @@
                   (click)="$event.stopPropagation()"
                 />
               } @else {
-                <span class="ex-name-label" [class.ex-name-label--empty]="!ex.name.trim()">
+                <button
+                  type="button"
+                  class="ex-name-label"
+                  [class.ex-name-label--empty]="!ex.name.trim()"
+                  [attr.aria-expanded]="expandedIndices().has(i)"
+                  (click)="$event.stopPropagation(); toggleExpand(i)"
+                >
                   {{ ex.name.trim() || T().day_editor_exercise_placeholder }}
-                </span>
+                </button>
                 <button
                   class="icon-btn ex-rename-btn"
                   [title]="T().day_editor_rename"

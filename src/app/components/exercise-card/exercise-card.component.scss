@@ -33,6 +33,16 @@
 .exercise-name-wrap {
   flex: 1;
   min-width: 0;
+  /* Es un <button> por accesibilidad (T-831): hay que devolverle la apariencia de texto. */
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
 }
 .exercise-name {
   font-weight: 600;

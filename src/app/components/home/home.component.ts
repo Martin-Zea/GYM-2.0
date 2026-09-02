@@ -22,7 +22,7 @@ import { ProgressionService } from '../../services/progression.service';
 import { TranslationService } from '../../services/translation.service';
 import { STORAGE_KEYS } from '../../services/storage-keys';
 import { AiRecommendation, Exercise, Session, WorkoutDay } from '../../models/workout.model';
-import { daysBetweenISO } from '../../utils/date';
+import { daysBetweenISO, mondayOfISO, shiftISO, weekdayISO } from '../../utils/date';
 
 type SessionView = 'focused' | 'list';
 
@@ -246,27 +246,20 @@ export class HomeComponent {
 
   // ── Semana: mapa Lun-Dom + total + volumen ──
 
-  /** ISO (YYYY-MM-DD) del lunes de la semana actual. */
+  /** ISO (YYYY-MM-DD) del lunes de la semana actual, en el calendario LOCAL. */
   private mondayISO(): string {
-    const now = new Date();
-    const dow = (now.getDay() + 6) % 7; // 0 = lunes
-    now.setDate(now.getDate() - dow);
-    return now.toISOString().slice(0, 10);
+    return mondayOfISO(this.storage.todayISO());
   }
 
   protected readonly weekMap = computed<boolean[]>(() => {
-    const monday = new Date(this.mondayISO() + 'T12:00:00Z');
+    const monday = this.mondayISO();
     const trained = new Set(
       this.state
         .sessions()
         .filter((s) => !s.skipped && s.sets.length)
         .map((s) => s.dateISO),
     );
-    return Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(monday);
-      d.setDate(d.getDate() + i);
-      return trained.has(d.toISOString().slice(0, 10));
-    });
+    return Array.from({ length: 7 }, (_, i) => trained.has(shiftISO(monday, i)));
   });
 
   protected readonly weekSessionCount = computed(() => this.weekMap().filter(Boolean).length);
@@ -324,12 +317,9 @@ export class HomeComponent {
 
   /** Resumen de la semana pasada — solo lunes/martes, si hubo al menos 1 sesión. */
   protected readonly lastWeekSummary = computed(() => {
-    const dow = (new Date().getDay() + 6) % 7;
-    if (dow > 1) return null;
     const monday = this.mondayISO();
-    const prevMonday = new Date(monday + 'T12:00:00Z');
-    prevMonday.setDate(prevMonday.getDate() - 7);
-    const from = prevMonday.toISOString().slice(0, 10);
+    if (weekdayISO(this.storage.todayISO()) > 1) return null;
+    const from = shiftISO(monday, -7);
     const sessions = this.state
       .sessions()
       .filter((s) => !s.skipped && s.sets.length && s.dateISO >= from && s.dateISO < monday);

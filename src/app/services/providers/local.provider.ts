@@ -13,6 +13,7 @@ import { AiSessionContext, SessionRecommendation } from './session-context';
 import { floorToBrick, goalRepTarget, roundToBrick } from './prompt-helpers';
 import { LAYOFF_LONG_DAYS, LAYOFF_MODERATE_DAYS, layoffFactor } from './progression-rules';
 import { injuryBlocksIncrease } from './session-response';
+import { toLocalISO } from '../../utils/date';
 import {
   completionRatio,
   confirmedAtWeight,
@@ -362,7 +363,7 @@ export class LocalProvider implements AiSessionProvider {
     // series con pesos distintos —exactamente lo que produce la propia doble progresión al
     // subir "solo las últimas 2"— esquivaban el recorte, y el motor proponía saltar dos
     // ladrillos a quien llevaba dos meses parado. La fecha manda sobre la forma.
-    const todayISO = new Date().toISOString().slice(0, 10);
+    const todayISO = toLocalISO();
     const layoff = lastSessionDate ? layoffFactor(lastSessionDate, todayISO) : 1;
     const gap = lastSessionDate ? daysBetween(lastSessionDate, todayISO) : 0;
 

@@ -5,7 +5,12 @@
   [class.is-active]="isActive()"
 >
   <div class="exercise-head" (click)="toggle()">
-    <div class="exercise-name-wrap">
+    <button
+      type="button"
+      class="exercise-name-wrap"
+      [attr.aria-expanded]="expanded()"
+      (click)="$event.stopPropagation(); toggle()"
+    >
       <p class="exercise-name">{{ exercise().name }}</p>
       <div class="exercise-meta">
         {{ exercise().defaultSets }}×{{ exercise().defaultRepTarget }}
@@ -20,7 +25,7 @@
           <span>{{ exercise().notes }}</span>
         }
       </div>
-    </div>
+    </button>
     <div class="exercise-status">
       <span class="set-pill">{{ doneSetsCount() }}/{{ setsArray().length }}</span>
       <a

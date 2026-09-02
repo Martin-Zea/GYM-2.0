@@ -13,6 +13,7 @@ import { StateService } from '../../services/state.service';
 import { StorageEstimateInfo, StorageService } from '../../services/storage.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
+import { toLocalISO } from '../../utils/date';
 import { BackupService, ImportMode, ImportOutcome } from '../../services/backup.service';
 import { AiProviderName, ApiKeyService } from '../../services/api-key.service';
 import { KeyVault } from '../../services/crypto-keys';
@@ -136,9 +137,11 @@ export class SettingsComponent implements OnInit {
 
   /** Fecha de corte de la purga: hoy menos los meses elegidos. */
   private purgeCutoffISO(): string {
+    // Los meses sí se restan sobre una fecha local (no hay aritmética de meses en ISO),
+    // pero se serializa por el calendario LOCAL, no por UTC.
     const d = new Date();
     d.setMonth(d.getMonth() - this.purgeMonths());
-    return d.toISOString().slice(0, 10);
+    return toLocalISO(d);
   }
 
   protected async purgeHistory(): Promise<void> {

@@ -169,7 +169,10 @@ export class ExerciseCardComponent {
       weight = val as unknown as number;
     } else {
       const num = Number(val);
-      weight = isNaN(num) ? ('' as unknown as number) : num;
+      // Suelo en 0: un peso negativo se aceptaba tal cual y llegaba al historial, al
+      // tonelaje (volumen semanal negativo) y al contexto de la IA como marca de
+      // referencia. No hay techo: el máximo razonable es una decisión del atleta.
+      weight = isNaN(num) ? ('' as unknown as number) : Math.max(0, num);
     }
     this.state.updateSet(this.day().id, this.exercise().id, i, { weight, aiPrefilled: false });
   }

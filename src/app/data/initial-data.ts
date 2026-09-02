@@ -6,13 +6,12 @@ import {
   SetRecord,
   StoredWorkoutDay,
 } from '../models/workout.model';
+import { shiftISO, toLocalISO } from '../utils/date';
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
 function seedDate(): string {
-  const d = new Date();
-  d.setDate(d.getDate() - 7);
-  return d.toISOString().slice(0, 10);
+  return shiftISO(toLocalISO(), -7);
 }
 
 function ex(

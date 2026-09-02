@@ -26,19 +26,9 @@ import { CatalogService } from './catalog.service';
 /** Tope de entradas de feedback guardadas (RF-IA-05). */
 const AI_FEEDBACK_CAP = 60;
 
-/**
- * Cambia de rutina activa conservando la posición de cada una (T-830).
- *
- * Aparca el puntero vivo en la rutina que se deja y recupera el de la que entra. Antes
- * esto era `routinePointer: 0` a secas: alternar entre dos rutinas te devolvía siempre al
- * día 1 de la que abrías, y la posición de la que dejabas no se guardaba en ningún sitio,
- * así que no había forma de recuperarla. Que se pierda al alternar convierte "tengo una
- * rutina de gimnasio y otra de casa" en algo que no se puede hacer.
- *
- * `pointer` de la rutina ACTIVA queda desactualizado a propósito mientras lo es: la
- * posición viva es `routinePointer`. Tener dos copias sincronizadas todo el tiempo sería
- * una fuente de verdad duplicada; así hay una sola, y el campo es solo el aparcamiento.
- */
+/** Un entrenamiento abierto más tiempo que esto no está en curso: quedó olvidado (T-831). */
+const MAX_OPEN_SESSION_HOURS = 12;
+
 /**
  * Cuántos días tiene la rotación viva: los de la rutina ACTIVA que existen de verdad.
  *
@@ -54,6 +44,19 @@ function activeDayCount(s: AppState): number {
   return active.dayIds.filter((id) => known.has(id)).length;
 }
 
+/**
+ * Cambia de rutina activa conservando la posición de cada una (T-830).
+ *
+ * Aparca el puntero vivo en la rutina que se deja y recupera el de la que entra. Antes
+ * esto era `routinePointer: 0` a secas: alternar entre dos rutinas te devolvía siempre al
+ * día 1 de la que abrías, y la posición de la que dejabas no se guardaba en ningún sitio,
+ * así que no había forma de recuperarla. Que se pierda al alternar convierte "tengo una
+ * rutina de gimnasio y otra de casa" en algo que no se puede hacer.
+ *
+ * `pointer` de la rutina ACTIVA queda desactualizado a propósito mientras lo es: la
+ * posición viva es `routinePointer`. Tener dos copias sincronizadas todo el tiempo sería
+ * una fuente de verdad duplicada; así hay una sola, y el campo es solo el aparcamiento.
+ */
 function switchRoutine(s: AppState, routineId: string): AppState {
   if (s.activeRoutineId === routineId) return s;
   const target = s.routines.find((r) => r.id === routineId);
@@ -535,10 +538,41 @@ export class StateService {
     localStorage.removeItem(STORAGE_KEYS.nextSuggestions);
   }
 
-  getTodayProgress(dayId: string): TodayDayProgress {
+  /**
+   * La fecha a la que pertenece el entrenamiento EN CURSO de ese día (T-831).
+   *
+   * Normalmente es hoy. Pero si la sesión se abrió antes de medianoche y sigue abierta, es
+   * el día en que ARRANCÓ: cruzar las 00:00 a mitad de un entrenamiento no lo convierte en
+   * dos. Antes, todo lo que comparaba contra `todayKey` devolvía "no es de hoy" en cuanto
+   * pasaba la medianoche, así que las series marcadas desaparecían de la pantalla y el
+   * atleta las repetía — un entrenamiento partido en dos sesiones con dos fechas.
+   *
+   * Solo aplica a una sesión ABIERTA: si ya se cerró con `endedAt`, volver al gimnasio
+   * después de medianoche empieza un día nuevo, que es lo correcto.
+   */
+  private activeDateFor(dayId: string): string {
+    const today = this.todayKey;
     const tp = this.state().todayProgress[dayId];
-    if (!tp || tp.dateISO !== this.todayKey) {
-      return { dateISO: this.todayKey, sets: {} };
+    if (!tp || tp.dateISO === today || !tp.startedAt) return today;
+
+    const started = Date.parse(tp.startedAt);
+    if (!Number.isFinite(started)) return today;
+    const openHours = (Date.now() - started) / 3_600_000;
+    // Negativo = el reloj del sistema se movió hacia atrás; > 12 h no es un entrenamiento,
+    // es un estado que quedó olvidado. En ambos casos manda la fecha de hoy.
+    if (openHours < 0 || openHours >= MAX_OPEN_SESSION_HOURS) return today;
+
+    const closed = this.state().sessions.some(
+      (x) => x.dayId === dayId && x.dateISO === tp.dateISO && !!x.endedAt,
+    );
+    return closed ? today : tp.dateISO;
+  }
+
+  getTodayProgress(dayId: string): TodayDayProgress {
+    const active = this.activeDateFor(dayId);
+    const tp = this.state().todayProgress[dayId];
+    if (!tp || tp.dateISO !== active) {
+      return { dateISO: active, sets: {} };
     }
     return tp;
   }
@@ -550,10 +584,9 @@ export class StateService {
   startSession(dayId: string): void {
     this.state.update((s) => {
       const prev = s.todayProgress[dayId];
+      const active = this.activeDateFor(dayId);
       const today: TodayDayProgress =
-        prev?.dateISO === this.todayKey
-          ? structuredClone(prev)
-          : { dateISO: this.todayKey, sets: {} };
+        prev?.dateISO === active ? structuredClone(prev) : { dateISO: active, sets: {} };
       if (today.startedAt) return s;
       today.startedAt = new Date().toISOString();
       return { ...s, todayProgress: { ...s.todayProgress, [dayId]: today } };
@@ -605,9 +638,8 @@ export class StateService {
 
   /** La sesión de HOY para ese día, si existe. */
   todaySession(dayId: string): Session | null {
-    return (
-      this.state().sessions.find((s) => s.dayId === dayId && s.dateISO === this.todayKey) ?? null
-    );
+    const active = this.activeDateFor(dayId);
+    return this.state().sessions.find((s) => s.dayId === dayId && s.dateISO === active) ?? null;
   }
 
   /**
@@ -629,10 +661,9 @@ export class StateService {
   private patchToday(dayId: string, fn: (today: TodayDayProgress) => void): void {
     this.state.update((s) => {
       const prev = s.todayProgress[dayId];
+      const active = this.activeDateFor(dayId);
       const today: TodayDayProgress =
-        prev?.dateISO === this.todayKey
-          ? structuredClone(prev)
-          : { dateISO: this.todayKey, sets: {} };
+        prev?.dateISO === active ? structuredClone(prev) : { dateISO: active, sets: {} };
       fn(today);
       return { ...s, todayProgress: { ...s.todayProgress, [dayId]: today } };
     });
@@ -738,10 +769,11 @@ export class StateService {
     patch: Partial<TodaySetProgress>,
   ): void {
     this.state.update((s) => {
+      const active = this.activeDateFor(dayId);
       const today: TodayDayProgress =
-        s.todayProgress[dayId]?.dateISO === this.todayKey
+        s.todayProgress[dayId]?.dateISO === active
           ? structuredClone(s.todayProgress[dayId])
-          : { dateISO: this.todayKey, sets: {} };
+          : { dateISO: active, sets: {} };
 
       if (!today.sets[exerciseId]) today.sets[exerciseId] = [];
       const cur = today.sets[exerciseId][setIndex] ?? { weight: '', reps: '', done: false };
@@ -768,7 +800,9 @@ export class StateService {
     const reps = Number(cur.reps) || 0;
     if (reps <= 0) return 'needs_reps';
 
-    const weight = Number(cur.weight) || 0;
+    // Defensivo: esta es la puerta por la que el dato entra al HISTORIAL, así que el
+    // suelo se aplica aquí también y no solo en el input de la vista lista.
+    const weight = Math.max(0, Number(cur.weight) || 0);
     this.updateSet(dayId, exercise.id, setIndex, { done: true, weight, reps });
     this.commitSession(dayId);
     return 'done';
@@ -779,7 +813,9 @@ export class StateService {
     if (!day) return;
 
     const tp = this.state().todayProgress[dayId];
-    if (!tp || tp.dateISO !== this.todayKey) return;
+    // La fecha ACTIVA, no "hoy": un entrenamiento que cruzó la medianoche se guarda con la
+    // fecha en que empezó. Una sesión, una fecha (T-831).
+    if (!tp || tp.dateISO !== this.activeDateFor(dayId)) return;
 
     const hasAnyDone = Object.values(tp.sets).some((arr) => arr.some((s) => s?.done));
     const alreadySaved = this.todaySession(dayId);
@@ -843,7 +879,7 @@ export class StateService {
           {
             id: this.storage.uid(),
             dayId,
-            dateISO: this.todayKey,
+            dateISO: tp.dateISO,
             sets: setsList,
             startedAt,
           },
@@ -854,10 +890,11 @@ export class StateService {
 
   /** Sensación del ejercicio al completarlo — se guarda en la sesión de HOY. */
   setExerciseFeel(dayId: string, exerciseId: string, feel: TrainingFeel | null): void {
+    const active = this.activeDateFor(dayId);
     this.state.update((s) => ({
       ...s,
       sessions: s.sessions.map((session) => {
-        if (session.dayId !== dayId || session.dateISO !== this.todayKey || session.skipped) {
+        if (session.dayId !== dayId || session.dateISO !== active || session.skipped) {
           return session;
         }
         const feelings = { ...(session.feelings ?? {}) };
@@ -870,10 +907,11 @@ export class StateService {
 
   /** Nota rápida por ejercicio — se guarda en la sesión de HOY. */
   setExerciseNote(dayId: string, exerciseId: string, note: string): void {
+    const active = this.activeDateFor(dayId);
     this.state.update((s) => ({
       ...s,
       sessions: s.sessions.map((session) => {
-        if (session.dayId !== dayId || session.dateISO !== this.todayKey || session.skipped) {
+        if (session.dayId !== dayId || session.dateISO !== active || session.skipped) {
           return session;
         }
         const notes = { ...(session.notes ?? {}) };
@@ -888,10 +926,11 @@ export class StateService {
   /** Sustituye un ejercicio SOLO POR HOY (p. ej. máquina ocupada). No toca la rutina. */
   substituteToday(dayId: string, originalExId: string, substituteExId: string | null): void {
     this.state.update((s) => {
+      const active = this.activeDateFor(dayId);
       const today: TodayDayProgress =
-        s.todayProgress[dayId]?.dateISO === this.todayKey
+        s.todayProgress[dayId]?.dateISO === active
           ? structuredClone(s.todayProgress[dayId])
-          : { dateISO: this.todayKey, sets: {} };
+          : { dateISO: active, sets: {} };
       const overrides = { ...(today.overrides ?? {}) };
       if (substituteExId) overrides[originalExId] = substituteExId;
       else delete overrides[originalExId];

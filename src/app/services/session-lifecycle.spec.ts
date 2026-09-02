@@ -3,6 +3,7 @@ import { StateService } from './state.service';
 import { StorageService } from './storage.service';
 import { TabLockService } from './tab-lock.service';
 import { Exercise, WorkoutDay } from '../models/workout.model';
+import { shiftISO } from '../utils/date';
 
 /** Deja que corra el effect de persistencia de `StateService`. */
 function flush(): void {
@@ -160,6 +161,89 @@ describe('Ciclo de vida de la sesión (RF-SES-02/07/08b)', () => {
       service.setSessionNote(day.id, '  dormí mal  ');
 
       expect(service.sessionNoteFor(day.id)).toBe('dormí mal');
+    });
+  });
+
+  /**
+   * Cruzar la medianoche a mitad de un entrenamiento (T-831).
+   *
+   * Todo lo que comparaba contra `todayKey` devolvía "no es de hoy" en cuanto cambiaba la
+   * fecha: las series marcadas desaparecían de la pantalla y el atleta las repetía, con lo
+   * que un mismo entrenamiento acababa partido en dos sesiones con dos fechas distintas.
+   * Con el bug de UTC eso ocurría a las 21:00 en Argentina — plena franja de gimnasio.
+   */
+  describe('una sesión abierta que cruza la medianoche (T-831)', () => {
+    /** Mueve "hoy" un día hacia adelante sin tocar el progreso ya guardado. */
+    const avanzarUnDia = (): void => {
+      const manana = shiftISO(service.todayKey, 1);
+      vi.spyOn(TestBed.inject(StorageService), 'todayISO').mockReturnValue(manana);
+    };
+
+    it('el progreso NO se pierde y las series siguen ahí', () => {
+      service.startSession(day.id);
+      service.updateSet(day.id, exercise.id, 0, { weight: 40, reps: 8 });
+      service.toggleSetDone(day.id, exercise, 0);
+      const antes = service.getTodayProgress(day.id);
+      expect(antes.sets[exercise.id]?.[0]?.done).toBe(true);
+
+      avanzarUnDia();
+
+      const despues = service.getTodayProgress(day.id);
+      expect(despues.sets[exercise.id]?.[0]?.done).toBe(true);
+      expect(despues.dateISO).toBe(antes.dateISO);
+    });
+
+    it('las series de después de medianoche entran en la MISMA sesión', () => {
+      service.startSession(day.id);
+      service.updateSet(day.id, exercise.id, 0, { weight: 40, reps: 8 });
+      service.toggleSetDone(day.id, exercise, 0);
+      const fechaInicio = service.getTodayProgress(day.id).dateISO;
+
+      avanzarUnDia();
+      service.updateSet(day.id, exercise.id, 1, { weight: 40, reps: 8 });
+      service.toggleSetDone(day.id, exercise, 1);
+
+      // Una sola sesión, fechada cuando EMPEZÓ, con las dos series dentro. (El día trae
+      // además la sesión sembrada de hace 7 días, que no entra en la comparación.)
+      const delDia = service
+        .sessions()
+        .filter((x) => x.dayId === day.id && !x.skipped && x.dateISO >= fechaInicio);
+      expect(delDia).toHaveLength(1);
+      expect(delDia[0].dateISO).toBe(fechaInicio);
+      expect(delDia[0].sets).toHaveLength(2);
+      // Y NADA con la fecha del día siguiente: el entrenamiento no se partió en dos.
+      expect(service.sessions().some((x) => x.dateISO === shiftISO(fechaInicio, 1))).toBe(false);
+    });
+
+    it('pero si la sesión YA se cerró, el día siguiente empieza de cero', () => {
+      service.startSession(day.id);
+      service.updateSet(day.id, exercise.id, 0, { weight: 40, reps: 8 });
+      service.toggleSetDone(day.id, exercise, 0);
+      service.finishSession(day.id);
+
+      avanzarUnDia();
+
+      // Volver al gimnasio después de medianoche con la sesión cerrada es un día nuevo.
+      expect(service.getTodayProgress(day.id).sets[exercise.id] ?? []).toHaveLength(0);
+    });
+
+    it('un progreso abierto hace más de 12 h se considera olvidado, no en curso', () => {
+      service.startSession(day.id);
+      service.updateSet(day.id, exercise.id, 0, { weight: 40, reps: 8 });
+      service.toggleSetDone(day.id, exercise, 0);
+      // Retrasar el arranque 20 h: eso ya no es un entrenamiento en curso.
+      const hace20h = new Date(Date.now() - 20 * 3_600_000).toISOString();
+      service.state.update((st) => ({
+        ...st,
+        todayProgress: {
+          ...st.todayProgress,
+          [day.id]: { ...st.todayProgress[day.id], startedAt: hace20h },
+        },
+      }));
+
+      avanzarUnDia();
+
+      expect(service.getTodayProgress(day.id).sets[exercise.id] ?? []).toHaveLength(0);
     });
   });
 });

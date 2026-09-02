@@ -22,7 +22,7 @@ import {
   metricValue,
   rangeCutoff,
 } from '../../utils/chart';
-import { daysBetweenISO } from '../../utils/date';
+import { daysBetweenISO, shiftISO } from '../../utils/date';
 import { tonnageOf } from '../../utils/session';
 import {
   AGGREGATION_THRESHOLD,
@@ -192,29 +192,22 @@ export class HistoryComponent {
 
   protected readonly stats = computed(() => {
     const trained = this.realTrainedIsos();
-    const now = new Date();
+    const todayISO = this.storage.todayISO();
 
     let last30 = 0;
     for (let i = 0; i < 30; i++) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      if (trained.has(d.toISOString().slice(0, 10))) last30++;
+      if (trained.has(shiftISO(todayISO, -i))) last30++;
     }
 
     let prev30 = 0;
     for (let i = 30; i < 60; i++) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      if (trained.has(d.toISOString().slice(0, 10))) prev30++;
+      if (trained.has(shiftISO(todayISO, -i))) prev30++;
     }
 
-    const todayISO = this.storage.todayISO();
     const startOffset = trained.has(todayISO) ? 0 : 1;
     let streak = 0;
     for (let i = startOffset; i < 366; i++) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      if (trained.has(d.toISOString().slice(0, 10))) streak++;
+      if (trained.has(shiftISO(todayISO, -i))) streak++;
       else break;
     }
 
@@ -241,12 +234,10 @@ export class HistoryComponent {
 
   protected readonly imbalances = computed(() => {
     const today = this.storage.todayISO();
-    const from = new Date(`${today}T00:00:00`);
-    from.setDate(from.getDate() - 7);
     const volumes = volumeByGroup(
       this.state.state(),
       (ex) => this.catalog.byRef(ex.catalogRef)?.group ?? null,
-      from.toISOString().slice(0, 10),
+      shiftISO(today, -7),
       today,
     );
     return volumeImbalances(volumes);
@@ -295,12 +286,27 @@ export class HistoryComponent {
   protected readonly selectedId = signal<string | null>(null);
   protected readonly selectedPoint = signal<number | null>(null);
 
-  /** Ejercicios con al menos 2 sesiones con peso (los graficables). */
+  /**
+   * Ejercicios con al menos 2 sesiones con peso (los graficables).
+   *
+   * Cuenta las sesiones con UN solo barrido en vez de llamar a `historyForExercise()` por
+   * cada ejercicio del catálogo (T-831). Con 80 ejercicios y 1000 sesiones lo anterior eran
+   * ~45 ms en escritorio —varias veces eso en un móvil— y se recalculaba con cada cambio
+   * de estado mientras `/progress` estuviera abierto.
+   */
   protected readonly chartableExercises = computed<Exercise[]>(() => {
     const s = this.state.state();
-    return s.exercises.filter(
-      (ex) => this.storage.historyForExercise(s, ex.id).filter((h) => h.topWeight > 0).length >= 2,
-    );
+    const counts = new Map<string, number>();
+    for (const session of s.sessions) {
+      if (session.skipped) continue;
+      const seen = new Set<string>();
+      for (const set of session.sets) {
+        if (set.isWarmup || !(set.weight > 0) || seen.has(set.exerciseId)) continue;
+        seen.add(set.exerciseId);
+        counts.set(set.exerciseId, (counts.get(set.exerciseId) ?? 0) + 1);
+      }
+    }
+    return s.exercises.filter((ex) => (counts.get(ex.id) ?? 0) >= 2);
   });
 
   protected readonly hasBodyweight = computed(

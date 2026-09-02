@@ -22,7 +22,10 @@ export function plateBreakdown(
   }
   let perSideTarget = (targetKg - barKg) / 2;
   const perSide: number[] = [];
-  const sorted = [...plates].sort((a, b) => b - a);
+  // Un disco de 0 (o negativo) no resta nada: el `while` no avanzaría y la pestaña se
+  // quedaría colgada sin error ni salida. Por la UI no entra —`patchPlates()` filtra
+  // `n > 0`— pero un backup importado sí llegaba hasta aquí (T-831).
+  const sorted = [...plates].filter((p) => p > 0).sort((a, b) => b - a);
   for (const p of sorted) {
     while (perSideTarget >= p - 1e-9) {
       perSide.push(p);

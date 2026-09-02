@@ -17,7 +17,7 @@ import { tonnageOf } from '../utils/session';
 import { DEFAULT_ROUTINE_ID, createInitialState } from '../data/initial-data';
 import { STORAGE_KEYS } from './storage-keys';
 import { IDB_SNAPSHOT_STORE, IDB_STATE_STORE, IdbService } from './idb';
-import { daysBetweenISO as daysBetween } from '../utils/date';
+import { daysBetweenISO as daysBetween, shiftISO, toLocalISO } from '../utils/date';
 import { formatIssues, validateMigratedState, validateRawState } from './state-schema';
 import { GT_KEYS, GtDataKey, StorageAdapter } from './storage-adapter';
 import { TabLockService } from './tab-lock.service';
@@ -817,9 +817,7 @@ export class StorageService {
 
   /** Purga la papelera: las sesiones borradas hace más de 30 días desaparecen. */
   private purgeTrash(trash: AppState['trash']): NonNullable<AppState['trash']> {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 30);
-    const cutoffISO = cutoff.toISOString().slice(0, 10);
+    const cutoffISO = shiftISO(this.todayISO(), -30);
     return (trash ?? []).filter((t) => t.deletedISO >= cutoffISO);
   }
 
@@ -843,8 +841,9 @@ export class StorageService {
     return state;
   }
 
+  /** El día del atleta es el de SU reloj, no el de UTC (T-831, ver `utils/date.ts`). */
   todayISO(): string {
-    return new Date().toISOString().slice(0, 10);
+    return toLocalISO();
   }
 
   uid(): string {
