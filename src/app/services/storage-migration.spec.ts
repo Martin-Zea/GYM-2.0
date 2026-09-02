@@ -239,6 +239,38 @@ describe('Migración del blob v6 al conjunto gt_* (T-102)', () => {
     expect(adapter.readMeta()?.generation).toBeGreaterThan(1);
   });
 
+  it('las rutinas y cuál está activa sobreviven al ciclo save → load ya migrado (T-830)', async () => {
+    // `disassemble()` no escribía `routines` ni `activeRoutineId`: al recargar,
+    // `buildState()` no los encontraba y envolvía TODOS los días en una rutina única sin
+    // nombre. Cada rutina que el usuario creaba desaparecía en el siguiente arranque,
+    // fusionada con las demás. Solo pasa DESPUÉS de migrar a gt_*, que es donde acaba
+    // todo usuario real: antes de migrar se escribe el blob entero y no se perdía nada.
+    seedLegacy();
+    await storage.runPartitionMigration(storage.load());
+
+    const base = storage.load();
+    const state: AppState = {
+      ...base,
+      days: [...base.days, { id: 'd-casa', name: 'Casa A', exerciseIds: [] }],
+      routines: [
+        { ...base.routines[0], name: 'Gimnasio' },
+        { id: 'r-casa', name: 'Casa', dayIds: ['d-casa'], pointer: 3 },
+      ],
+      activeRoutineId: 'r-casa',
+      routinePointer: 5,
+    };
+    expect(storage.save(state)).toEqual({ ok: true });
+
+    const back = storage.load();
+    expect(back.routines).toHaveLength(2);
+    expect(back.routines.map((r) => r.name)).toEqual(['Gimnasio', 'Casa']);
+    expect(back.activeRoutineId).toBe('r-casa');
+    expect(back.routines.find((r) => r.id === 'r-casa')?.dayIds).toEqual(['d-casa']);
+    // La posición aparcada de la rutina que NO está activa también viaja.
+    expect(back.routines.find((r) => r.id === 'r-casa')?.pointer).toBe(3);
+    expect(back.routinePointer).toBe(5);
+  });
+
   it('antes de migrar, guardar sigue escribiendo el blob viejo (nada se pierde)', () => {
     seedLegacy();
     const state: AppState = { ...storage.load(), routinePointer: 5 };

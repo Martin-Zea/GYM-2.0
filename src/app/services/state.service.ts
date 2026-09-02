@@ -26,6 +26,48 @@ import { CatalogService } from './catalog.service';
 /** Tope de entradas de feedback guardadas (RF-IA-05). */
 const AI_FEEDBACK_CAP = 60;
 
+/**
+ * Cambia de rutina activa conservando la posición de cada una (T-830).
+ *
+ * Aparca el puntero vivo en la rutina que se deja y recupera el de la que entra. Antes
+ * esto era `routinePointer: 0` a secas: alternar entre dos rutinas te devolvía siempre al
+ * día 1 de la que abrías, y la posición de la que dejabas no se guardaba en ningún sitio,
+ * así que no había forma de recuperarla. Que se pierda al alternar convierte "tengo una
+ * rutina de gimnasio y otra de casa" en algo que no se puede hacer.
+ *
+ * `pointer` de la rutina ACTIVA queda desactualizado a propósito mientras lo es: la
+ * posición viva es `routinePointer`. Tener dos copias sincronizadas todo el tiempo sería
+ * una fuente de verdad duplicada; así hay una sola, y el campo es solo el aparcamiento.
+ */
+/**
+ * Cuántos días tiene la rotación viva: los de la rutina ACTIVA que existen de verdad.
+ *
+ * Es el mismo criterio que `days()`, y tiene que serlo. `advanceRoutine()` usaba
+ * `s.days.length` —TODOS los días de TODAS las rutinas—, así que con dos rutinas guardadas
+ * el puntero avanzaba en módulo 8 mientras `currentDay()` leía en módulo 5: terminar una
+ * sesión podía saltar de día o repetirlo.
+ */
+function activeDayCount(s: AppState): number {
+  const active = (s.routines ?? []).find((r) => r.id === s.activeRoutineId) ?? s.routines?.[0];
+  if (!active) return s.days.length;
+  const known = new Set(s.days.map((d) => d.id));
+  return active.dayIds.filter((id) => known.has(id)).length;
+}
+
+function switchRoutine(s: AppState, routineId: string): AppState {
+  if (s.activeRoutineId === routineId) return s;
+  const target = s.routines.find((r) => r.id === routineId);
+  return {
+    ...s,
+    routines: s.routines.map((r) =>
+      r.id === s.activeRoutineId ? { ...r, pointer: s.routinePointer } : r,
+    ),
+    activeRoutineId: routineId,
+    routinePointer: target?.pointer ?? 0,
+    activeDayIndex: 0,
+  };
+}
+
 @Injectable({ providedIn: 'root' })
 export class StateService {
   private readonly storage = inject(StorageService);
@@ -230,13 +272,9 @@ export class StateService {
   /** Crea una rutina vacía y la deja activa. */
   createRoutine(name: string): string {
     const id = this.storage.uid();
-    this.state.update((s) => ({
-      ...s,
-      routines: [...s.routines, { id, name: name.trim(), dayIds: [] }],
-      activeRoutineId: id,
-      routinePointer: 0,
-      activeDayIndex: 0,
-    }));
+    this.state.update((s) =>
+      switchRoutine({ ...s, routines: [...s.routines, { id, name: name.trim(), dayIds: [] }] }, id),
+    );
     return id;
   }
 
@@ -277,7 +315,20 @@ export class StateService {
    * Los ejercicios se reusan del catálogo cuando ya existen (por nombre normalizado), así
    * que importar una plantilla NO parte el historial de quien ya hacía press banca.
    */
-  importTemplate(template: RoutineTemplate, lang: 'es' | 'en', catalog: CatalogService): string {
+  /**
+   * Importa una plantilla (o una propuesta del generador) como rutina nueva.
+   *
+   * `activate` decide si además pasa a ser la que se entrena. Por defecto sí —es lo que
+   * espera quien fue a buscar una plantilla—, pero tiene que poder decirse que no: guardar
+   * activaba en silencio, así que quien estaba a mitad de su rotación de 5 días y probaba
+   * el generador se quedaba sin ella sin haber pedido cambiarla.
+   */
+  importTemplate(
+    template: RoutineTemplate,
+    lang: 'es' | 'en',
+    catalog: CatalogService,
+    opts: { activate?: boolean } = {},
+  ): string {
     const routineId = this.storage.uid();
     const name = lang === 'en' ? template.en : template.es;
 
@@ -309,15 +360,13 @@ export class StateService {
         });
       }
 
-      return {
+      const imported: AppState = {
         ...s,
         exercises,
         days: [...s.days, ...days],
         routines: [...s.routines, { id: routineId, name, dayIds: days.map((d) => d.id) }],
-        activeRoutineId: routineId,
-        routinePointer: 0,
-        activeDayIndex: 0,
       };
+      return opts.activate === false ? imported : switchRoutine(imported, routineId);
     });
 
     return routineId;
@@ -325,9 +374,7 @@ export class StateService {
 
   setActiveRoutine(routineId: string): void {
     this.state.update((s) =>
-      s.routines.some((r) => r.id === routineId)
-        ? { ...s, activeRoutineId: routineId, routinePointer: 0, activeDayIndex: 0 }
-        : s,
+      s.routines.some((r) => r.id === routineId) ? switchRoutine(s, routineId) : s,
     );
   }
 
@@ -351,14 +398,14 @@ export class StateService {
       const target = s.routines.find((r) => r.id === routineId);
       const remaining = s.routines.filter((r) => r.id !== routineId);
       const dayIds = new Set(target?.dayIds ?? []);
-      return {
+      const base: AppState = {
         ...s,
         days: s.days.filter((d) => !dayIds.has(d.id)),
         routines: remaining,
-        activeRoutineId: s.activeRoutineId === routineId ? remaining[0].id : s.activeRoutineId,
-        routinePointer: s.activeRoutineId === routineId ? 0 : s.routinePointer,
         activeDayIndex: 0,
       };
+      // Al borrar la activa se hereda la posición de la que la reemplaza, no un cero.
+      return s.activeRoutineId === routineId ? switchRoutine(base, remaining[0].id) : base;
     });
     return true;
   }
@@ -369,7 +416,7 @@ export class StateService {
 
   advanceRoutine(fromDayIndex?: number): void {
     this.state.update((s) => {
-      const days = s.days.length || 1;
+      const days = activeDayCount(s) || 1;
       const base = fromDayIndex !== undefined ? fromDayIndex : s.routinePointer % days;
       const nextIndex = (base + 1) % days;
       const rem = s.routinePointer % days;

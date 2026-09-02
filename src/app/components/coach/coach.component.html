@@ -182,6 +182,31 @@
         </div>
       }
 
+      <!--
+        Tarjeta HERMANA de la de contexto, no parte de ella (T-830): pedir una rutina no es
+        un hecho sobre el atleta, es una intención de navegación. El chat no crea nada — esto
+        abre el generador con la spec puesta, y allí el usuario ve el coste y decide.
+      -->
+      @if (chat.routineRequest(); as req) {
+        <div class="card card--hi coach-proposal">
+          <p class="k">{{ T().coach_routine_title }}</p>
+          <p class="coach-proposal-row">{{ routineSummary() }}</p>
+          <p class="note">{{ T().coach_routine_note }}</p>
+          <div class="coach-sug-actions">
+            <button class="btn btn-sm coach-accept" type="button" (click)="openGenerator()">
+              {{ openGeneratorLabel() }}
+            </button>
+            <button
+              class="btn btn-ghost btn-sm"
+              type="button"
+              (click)="chat.dismissRoutineRequest()"
+            >
+              {{ T().coach_proposal_dismiss }}
+            </button>
+          </div>
+        </div>
+      }
+
       @if (proposalSaved()) {
         <p class="note coach-proposal-saved" role="status">{{ T().coach_proposal_saved }}</p>
       }

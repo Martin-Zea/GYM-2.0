@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
 import { IconComponent } from '../icon/icon.component';
 import { StateService } from '../../services/state.service';
 import { StorageService } from '../../services/storage.service';
@@ -7,8 +9,17 @@ import { UIStateService } from '../../services/ui-state.service';
 import { CatalogService, templatesForProfile } from '../../services/catalog.service';
 import {
   CostEstimate,
+  DEFAULT_GEN_DAYS,
+  DEFAULT_GEN_MINUTES,
+  GEN_DAYS,
+  GEN_MINUTES,
+  GenBlock,
+  GenFailure,
+  GeneratedDay,
   GeneratedRoutine,
+  GeneratorError,
   RoutineGeneratorService,
+  snapTo,
 } from '../../services/routine-generator.service';
 import { RoutineTemplate } from '../../data/routine-templates';
 import { Equipment } from '../../data/exercise-catalog';
@@ -41,11 +52,26 @@ export class RoutinesComponent {
   protected readonly uiState = inject(UIStateService);
   private readonly catalog = inject(CatalogService);
   private readonly generator = inject(RoutineGeneratorService);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly view = signal<View>('list');
   protected readonly detailId = signal<string | null>(null);
   protected readonly toast = signal<string | null>(null);
   protected readonly confirmDeleteId = signal<string | null>(null);
+
+  constructor() {
+    // `?gen=1&days=4&min=60` abre el generador con la spec puesta. Es como llega la
+    // petición del chat, pero la URL es editable y se comparte: lo que entra por aquí se
+    // valida igual que lo que manda el modelo, porque son dos puertas al mismo estado.
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      if (params.get('gen') !== '1') return;
+      this.genDays.set(snapTo(GEN_DAYS, params.get('days'), DEFAULT_GEN_DAYS));
+      this.genMinutes.set(snapTo(GEN_MINUTES, params.get('min'), DEFAULT_GEN_MINUTES));
+      this.generated.set(null);
+      this.genError.set(null);
+      this.view.set('generator');
+    });
+  }
 
   // ── R1 · lista ──
 
@@ -153,18 +179,24 @@ export class RoutinesComponent {
 
   // ── R7 · generador ──
 
-  protected readonly genDays = signal(4);
-  protected readonly genMinutes = signal(60);
+  /** Las opciones que la UI sabe representar; también las que aceptan el chat y el deep link. */
+  protected readonly GEN_DAYS = GEN_DAYS;
+  protected readonly GEN_MINUTES = GEN_MINUTES;
+
+  protected readonly genDays = signal<number>(DEFAULT_GEN_DAYS);
+  protected readonly genMinutes = signal<number>(DEFAULT_GEN_MINUTES);
   protected readonly generating = signal(false);
   protected readonly generated = signal<GeneratedRoutine | null>(null);
-  protected readonly genError = signal(false);
+  protected readonly genError = signal<GenFailure | null>(null);
 
-  protected readonly canGenerate = computed(() =>
-    this.generator.canGenerate(this.state.settings()),
+  /** Qué impide generar ahora mismo, para poder DECIRLO en vez de deshabilitar y callar. */
+  protected readonly genBlock = computed(
+    (): GenBlock => this.generator.blockedBy(this.state.settings()),
   );
 
   protected readonly costEstimate = computed(
-    (): CostEstimate => this.generator.estimateCost(this.spec(), this.state.settings()),
+    (): CostEstimate =>
+      this.generator.estimateCost(this.spec(), this.state.settings(), this.tr.lang()),
   );
 
   private spec() {
@@ -174,7 +206,10 @@ export class RoutinesComponent {
       level: p?.level ?? null,
       goal: p?.goal ?? null,
       equipment: (p?.equipment as Equipment[] | null) ?? null,
-      notes: [p?.aiNotes, `~${this.genMinutes()} min`].filter(Boolean).join(' · '),
+      // Los minutos van PRIMERO: `buildPrompt()` recorta las notas a 200 caracteres y
+      // `aiNotes` está capado en exactamente 200, así que puestos al final se perdían
+      // enteros — y quien llena `aiNotes` hasta el tope es justamente el chat.
+      notes: [`~${this.genMinutes()} min`, p?.aiNotes].filter(Boolean).join(' · '),
     };
   }
 
@@ -259,27 +294,84 @@ export class RoutinesComponent {
   protected async runGenerator(): Promise<void> {
     if (this.generating()) return;
     this.generating.set(true);
-    this.genError.set(false);
+    this.genError.set(null);
     try {
-      this.generated.set(await this.generator.generate(this.spec(), this.state.settings()));
-    } catch {
-      this.genError.set(true);
+      this.generated.set(
+        await this.generator.generate(this.spec(), this.state.settings(), this.tr.lang()),
+      );
+    } catch (e) {
+      this.genError.set(e instanceof GeneratorError ? e.code : 'failed');
     } finally {
       this.generating.set(false);
     }
   }
 
-  protected saveGenerated(): void {
+  /**
+   * Guarda la propuesta. `activate` es una elección del usuario, no un efecto secundario.
+   *
+   * Guardar activaba siempre: quien estaba a mitad de su rotación y probaba el generador
+   * se quedaba sin ella. Ahora las dos salidas están rotuladas y la que no cambia nada es
+   * la secundaria.
+   */
+  protected saveGenerated(activate: boolean): void {
     const routine = this.generated();
     if (!routine) return;
-    const id = this.generator.save(routine, this.T().routines_new_name, this.tr.lang());
+    const id = this.generator.save(routine, this.T().routines_new_name, this.tr.lang(), {
+      activate,
+    });
     this.generated.set(null);
-    this.showToast(this.T().generator_saved);
+    this.showToast(activate ? this.T().generator_saved : this.T().generator_saved_inactive);
     this.openDetail(id);
   }
 
-  protected exerciseSummary(day: { exercises: { name: string }[] }): string {
-    return day.exercises.map((e) => e.name).join(' · ');
+  /** Mensaje del motivo por el que no se puede generar. */
+  protected blockLabel(block: NonNullable<GenBlock>): string {
+    const t = this.T();
+    return block === 'no_key'
+      ? t.generator_no_key
+      : block === 'offline'
+        ? t.generator_offline
+        : t.generator_over_budget;
+  }
+
+  /** Mensaje del fallo de una generación que sí se intentó. */
+  protected errorLabel(code: GenFailure): string {
+    const t = this.T();
+    switch (code) {
+      case 'budget':
+        return t.generator_over_budget;
+      case 'offline':
+        return t.generator_offline;
+      case 'no_key':
+        return t.generator_no_key;
+      case 'auth':
+        return t.generator_auth_failed;
+      case 'model':
+        return t.generator_model_failed;
+      case 'empty':
+        return t.generator_empty;
+      default:
+        return t.generator_failed;
+    }
+  }
+
+  /**
+   * Los ejercicios de la propuesta, con el nombre que van a tener una vez guardados.
+   *
+   * El modelo los devuelve en inglés a la fuerza —`refFor()` los enlaza al catálogo por
+   * nombre— y `importTemplate()` los guarda ya traducidos. Enseñar el nombre crudo hacía
+   * que revisaras "Back squat · Deadlift" y te quedara "Sentadilla · Peso muerto": los
+   * mismos ejercicios, pero no lo que confirmaste. Lo que no enlaza se muestra tal cual,
+   * porque es exactamente lo que se va a crear.
+   */
+  protected exerciseSummary(day: GeneratedDay): string {
+    const lang = this.tr.lang();
+    return day.exercises
+      .map((e) => {
+        const item = e.ref ? this.catalog.byRef(e.ref) : null;
+        return item ? this.catalog.nameOf(item, lang) : e.name;
+      })
+      .join(' · ');
   }
 
   protected dateLabel(iso: string): string {

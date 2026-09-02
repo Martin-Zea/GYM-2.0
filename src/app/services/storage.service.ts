@@ -6,6 +6,7 @@ import {
   ExerciseUnit,
   SetRecord,
   Session,
+  Routine,
   StoredWorkoutDay,
   TodayDayProgress,
   UserProfile,
@@ -22,7 +23,7 @@ import { GT_KEYS, GtDataKey, StorageAdapter } from './storage-adapter';
 import { TabLockService } from './tab-lock.service';
 
 const STORAGE_KEY = STORAGE_KEYS.appState;
-const CURRENT_SCHEMA = 10;
+const CURRENT_SCHEMA = 11;
 
 /**
  * Unidades del esquema ≤ v6 → enum neutro de v7 (`audit.md` R-4).
@@ -152,6 +153,12 @@ interface Partitions {
     days: StoredWorkoutDay[];
     activeDayIndex: number;
     routinePointer: number;
+    // `routines`/`activeRoutineId` faltaban aquí y NO se guardaban en el modo particionado
+    // (T-830): al recargar, `buildState()` no los encontraba y envolvía TODOS los días en
+    // una rutina única sin nombre. Cada rutina que el usuario creaba desaparecía en el
+    // siguiente arranque, fusionada con las demás.
+    routines: Routine[];
+    activeRoutineId: string;
   };
   [GT_KEYS.sessions]: {
     sessions: Session[];
@@ -250,6 +257,20 @@ export class StorageService {
         ...m,
         routines: m.routines?.length ? m.routines : [{ id: 'routine-1', name: '', dayIds }],
         activeRoutineId: m.activeRoutineId ?? m.routines?.[0]?.id ?? 'routine-1',
+      };
+    }
+    // v10 → v11: cada rutina aparca su propia posición en la rotación (T-830). La activa
+    // hereda el puntero global —que es el suyo— y el resto arranca en cero: nadie tenía
+    // posición guardada antes, así que inventarles una sería peor que empezar de cero.
+    if (version < 11) {
+      const activeId = m.activeRoutineId ?? m.routines?.[0]?.id;
+      m = {
+        ...m,
+        routines: (m.routines ?? []).map((r) =>
+          r.pointer !== undefined
+            ? r
+            : { ...r, pointer: r.id === activeId ? (m.routinePointer ?? 0) : 0 },
+        ),
       };
     }
     return { ...m, schemaVersion: CURRENT_SCHEMA };
@@ -529,6 +550,8 @@ export class StorageService {
         days: state.days,
         activeDayIndex: state.activeDayIndex,
         routinePointer: state.routinePointer,
+        routines: state.routines,
+        activeRoutineId: state.activeRoutineId,
       },
       [GT_KEYS.sessions]: {
         sessions: state.sessions,
@@ -561,6 +584,11 @@ export class StorageService {
       days: routines?.days ?? [],
       activeDayIndex: routines?.activeDayIndex ?? 0,
       routinePointer: routines?.routinePointer ?? 0,
+      // Ausentes en particiones escritas antes de T-830: `buildState()` cae entonces al
+      // envoltorio de una sola rutina, igual que hacía antes. Tras el primer guardado
+      // vuelven a estar, y la fusión deja de pasar.
+      ...(routines?.routines?.length ? { routines: routines.routines } : {}),
+      ...(routines?.activeRoutineId ? { activeRoutineId: routines.activeRoutineId } : {}),
       sessions: sessions?.sessions ?? [],
       trash: sessions?.trash ?? [],
       todayProgress: sessions?.todayProgress ?? {},

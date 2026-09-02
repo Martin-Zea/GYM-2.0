@@ -3,6 +3,13 @@ import { normalizeExerciseName } from './storage.service';
 import { AiSessionContext } from './providers/session-context';
 import { allowedCeiling } from './providers/session-response';
 import { floorToBrick, roundToBrick } from './providers/prompt-helpers';
+import {
+  DEFAULT_GEN_DAYS,
+  DEFAULT_GEN_MINUTES,
+  GEN_DAYS,
+  GEN_MINUTES,
+  snapTo,
+} from '../utils/gen-options';
 
 /**
  * Propuesta de cambio de CONTEXTO que el coach puede sugerir en el chat (T-811).
@@ -76,11 +83,33 @@ export const MAX_LAYOFF_DAYS = 3650;
 const GOALS: readonly string[] = ['strength', 'hypertrophy', 'endurance'];
 const LEVELS: readonly string[] = ['beginner', 'intermediate', 'advanced'];
 
+/**
+ * Petición de rutina detectada en la conversación (T-830).
+ *
+ * NO forma parte de `CoachProposal` a propósito, y la diferencia no es cosmética:
+ *
+ * 1. `validateProposal()` termina en `Object.keys(out).length ? out : null`, así que un
+ *    objeto que solo pidiera una rutina devolvería una propuesta no nula y `acceptProposal()`
+ *    guardaría un perfil idéntico al que ya había: un "Aceptar" que no acepta nada.
+ * 2. `CoachProposal` significa *cambio duradero de contexto del atleta*. Pedir una rutina es
+ *    una INTENCIÓN DE NAVEGACIÓN, no un hecho sobre la persona. Mezclarlas contamina el
+ *    contrato que el Art. 6 protege.
+ *
+ * El chat sigue sin poder crear ni borrar días: esto abre el generador con la spec puesta,
+ * y ahí el usuario ve el coste, revisa la propuesta y decide guardar. Tres pasos conscientes.
+ */
+export interface RoutineRequest {
+  daysPerWeek: number;
+  minutes?: number;
+}
+
 export interface ParsedReply {
   /** El texto que se le muestra al usuario, ya sin el bloque. */
   text: string;
   /** La propuesta, si traía una válida. */
   proposal: CoachProposal | null;
+  /** La petición de rutina, si la hubo. Separada de la propuesta (ver `RoutineRequest`). */
+  routineRequest: RoutineRequest | null;
 }
 
 /**
@@ -101,20 +130,29 @@ export function parseCoachReply(raw: string): ParsedReply {
     return {
       text: typeof reply === 'string' ? reply.trim() : '',
       proposal: validateProposal(direct),
+      routineRequest: validateRoutineRequest(
+        (direct as { routineRequest?: unknown }).routineRequest,
+      ),
     };
   }
 
   // Camino heredado: texto normal, con o sin bloque marcado. Se conserva para los modelos
   // que ignoran `response_format` y para no romper una conversación en curso.
   const start = raw.indexOf(OPEN);
-  if (start === -1) return { text: raw.trim(), proposal: null };
+  if (start === -1) return { text: raw.trim(), proposal: null, routineRequest: null };
 
   const end = raw.indexOf(CLOSE, start);
   const text = (raw.slice(0, start) + (end === -1 ? '' : raw.slice(end + CLOSE.length))).trim();
-  if (end === -1) return { text, proposal: null };
+  if (end === -1) return { text, proposal: null, routineRequest: null };
 
-  const body = raw.slice(start + OPEN.length, end).trim();
-  return { text, proposal: validateProposal(safeParse(body)) };
+  const body = safeParse(raw.slice(start + OPEN.length, end).trim());
+  return {
+    text,
+    proposal: validateProposal(body),
+    routineRequest: validateRoutineRequest(
+      (body as { routineRequest?: unknown } | null)?.routineRequest,
+    ),
+  };
 }
 
 /** Algunos modelos envuelven el JSON en un bloque de código aunque se les pida crudo. */
@@ -169,6 +207,32 @@ export function validateProposal(raw: unknown): CoachProposal | null {
   if (weights.length) out.weights = weights;
 
   return Object.keys(out).length ? out : null;
+}
+
+/**
+ * Filtra la petición de rutina y la ajusta a lo que la UI sabe representar.
+ *
+ * Pasa por el MISMO `snapTo` que usan los botones del generador y el deep link: son tres
+ * puertas al mismo estado y tienen que coincidir por construcción. Si el atleta dice
+ * "30 minutos", la tarjeta enseñará 45 antes de gastar nada — ajustar en silencio y generar
+ * otra cosa es la única salida que no vale.
+ *
+ * Sin `daysPerWeek` no hay petición: es el único dato que el generador no puede deducir del
+ * perfil, y abrirlo "a ver qué sale" no es lo que pidió nadie.
+ */
+export function validateRoutineRequest(raw: unknown): RoutineRequest | null {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
+  const r = raw as { daysPerWeek?: unknown; minutes?: unknown };
+  if (r.daysPerWeek === null || r.daysPerWeek === undefined || r.daysPerWeek === '') return null;
+  if (!Number.isFinite(Number(r.daysPerWeek))) return null;
+
+  const out: RoutineRequest = {
+    daysPerWeek: snapTo(GEN_DAYS, r.daysPerWeek, DEFAULT_GEN_DAYS),
+  };
+  if (r.minutes !== null && r.minutes !== undefined && Number.isFinite(Number(r.minutes))) {
+    out.minutes = snapTo(GEN_MINUTES, r.minutes, DEFAULT_GEN_MINUTES);
+  }
+  return out;
 }
 
 /**

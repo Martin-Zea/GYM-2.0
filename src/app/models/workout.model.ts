@@ -63,6 +63,16 @@ export interface Routine {
   name: string;
   dayIds: string[];
   archived?: boolean;
+  /**
+   * Posición APARCADA en la rotación de esta rutina (T-830).
+   *
+   * Solo tiene sentido mientras la rutina NO es la activa: la posición viva es
+   * `AppState.routinePointer`, y se guarda aquí al salir y se lee al volver. Mientras la
+   * rutina está activa este campo está deliberadamente desactualizado — quien manda es el
+   * puntero global. Sin esto, cambiar de rutina y volver te devolvía siempre al día 1:
+   * `setActiveRoutine()` hacía `routinePointer: 0` y la posición no vivía en ningún sitio.
+   */
+  pointer?: number;
 }
 
 export interface SetRecord {

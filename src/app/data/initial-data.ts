@@ -141,7 +141,7 @@ export function createInitialState(daysCount: 3 | 4 | 5 = 5): AppState {
   if (daysCount !== 5) {
     const t = buildTemplate(daysCount);
     return {
-      schemaVersion: 10,
+      schemaVersion: 11,
       exercises: t.exercises,
       days: t.days,
       routines: [{ id: DEFAULT_ROUTINE_ID, name: '', dayIds: t.days.map((d) => d.id) }],
@@ -308,7 +308,7 @@ export function createInitialState(daysCount: 3 | 4 | 5 = 5): AppState {
   ];
 
   return {
-    schemaVersion: 10,
+    schemaVersion: 11,
     exercises,
     days,
     routines: [{ id: DEFAULT_ROUTINE_ID, name: '', dayIds: days.map((d) => d.id) }],

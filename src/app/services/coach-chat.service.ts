@@ -22,6 +22,7 @@ import { COHERE_MODEL } from './providers/cohere.provider';
 import {
   CoachProposal,
   ResolvedWeight,
+  RoutineRequest,
   diffSuggestions,
   layoffFromText,
   layoffSinceFrom,
@@ -141,6 +142,14 @@ export class CoachChatService {
   readonly proposal = signal<CoachProposal | null>(null);
   /** Los pesos de la propuesta ya resueltos contra la sesión y acotados (T-813). */
   readonly proposedWeights = signal<ResolvedWeight[]>([]);
+  /**
+   * Petición de rutina pendiente de ofrecer (T-830).
+   *
+   * Va aparte de `proposal` porque no es un cambio de contexto: no se acepta ni se guarda,
+   * se usa para abrir el generador con la spec puesta. El chat sigue sin crear ni borrar
+   * días — quien construye es el generador, y solo cuando el usuario pulsa.
+   */
+  readonly routineRequest = signal<RoutineRequest | null>(null);
   readonly error = signal<string | null>(null);
 
   /**
@@ -178,11 +187,16 @@ export class CoachChatService {
     this.sending.set(true);
 
     try {
-      const { text: reply, proposal } = parseCoachReply(await this.ask(settings, lang));
+      const {
+        text: reply,
+        proposal,
+        routineRequest,
+      } = parseCoachReply(await this.ask(settings, lang));
       this.push({ role: 'assistant', text: reply || fallbackReply(lang) });
       // La propuesta NO se aplica: queda esperando confirmación. Que el chat cambie tus
       // números sin que lo veas es justo lo que hace desconfiar de la sugerencia.
       await this.previewProposal(withLayoffFallback(proposal, clean), settings);
+      this.routineRequest.set(routineRequest);
     } catch (e) {
       if (e instanceof AuthError) this.error.set('auth');
       else if (e instanceof ModelError) this.error.set('model');
@@ -196,6 +210,7 @@ export class CoachChatService {
   clear(): void {
     this.messages.set([]);
     this.dismissProposal();
+    this.routineRequest.set(null);
     this.write([]);
   }
 
@@ -203,6 +218,22 @@ export class CoachChatService {
     this.pendingApply = null;
     this.proposal.set(null);
     this.proposedWeights.set([]);
+  }
+
+  /**
+   * Devuelve la petición de rutina y la borra.
+   *
+   * Se CONSUME, no se lee: si se quedara, volver al chat después de generar y guardar
+   * seguiría ofreciendo lo mismo, y un segundo toque crearía una rutina duplicada.
+   */
+  consumeRoutineRequest(): RoutineRequest | null {
+    const req = this.routineRequest();
+    this.routineRequest.set(null);
+    return req;
+  }
+
+  dismissRoutineRequest(): void {
+    this.routineRequest.set(null);
   }
 
   /**
@@ -453,6 +484,11 @@ export class CoachChatService {
             '{"reply":"your answer, max 4 sentences, in English"}',
             'Never give medical advice; if they mention pain, tell them to see a professional.',
             'You cannot create or delete routine days.',
+            'If they ask you to BUILD a new routine, answer briefly and add:',
+            '"routineRequest": {"daysPerWeek": 4, "minutes": 60}',
+            '  The app then opens its routine generator with that already filled in.',
+            '  Only when they ask for a routine to be built — not when they ask your opinion',
+            '  about how many days to train.',
             '',
             'Add these fields ONLY when the athlete states something DURABLE:',
             '"layoffDays": days without training, as a number (2 months = 60).',
@@ -472,6 +508,11 @@ export class CoachChatService {
             '{"reply":"tu respuesta, máximo 4 frases, en español"}',
             'Nunca des consejo médico; si mencionan dolor, decí que consulten a un profesional.',
             'No podés crear ni borrar días de rutina.',
+            'Si te piden ARMAR una rutina nueva, contestá breve y añadí:',
+            '"routineRequest": {"daysPerWeek": 4, "minutes": 60}',
+            '  La app abre entonces su generador de rutinas con eso ya puesto.',
+            '  Solo cuando piden que se les arme una — no cuando preguntan tu opinión sobre',
+            '  cuántos días entrenar.',
             '',
             'Añadí estos campos SOLO si el atleta cuenta algo DURADERO:',
             '"layoffDays": días sin entrenar, en número (2 meses = 60).',

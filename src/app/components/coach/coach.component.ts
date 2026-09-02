@@ -6,6 +6,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { Router } from '@angular/router';
 import { IconComponent } from '../icon/icon.component';
 import { StateService } from '../../services/state.service';
 import { TranslationService } from '../../services/translation.service';
@@ -45,6 +46,7 @@ export class CoachComponent {
   protected readonly T = this.tr.T;
   private readonly progression = inject(ProgressionService);
   protected readonly chat = inject(CoachChatService);
+  private readonly router = inject(Router);
 
   protected readonly tab = signal<Tab>('panel');
   protected readonly draft = signal('');
@@ -199,6 +201,42 @@ export class CoachComponent {
   );
 
   protected readonly proposalSaved = signal(false);
+
+  /**
+   * Abre el generador con la spec que salió de la conversación (T-830).
+   *
+   * Si además hay una propuesta de contexto pendiente, se acepta ANTES de navegar: la spec
+   * del generador se arma desde el perfil (nivel, objetivo, equipo, notas), así que
+   * aceptarla primero es lo que hace que la rutina salga con lo que el atleta acaba de
+   * contar. El botón lo dice: "Aceptar y abrir el generador".
+   */
+  protected async openGenerator(): Promise<void> {
+    const req = this.chat.consumeRoutineRequest();
+    if (!req) return;
+    if (this.chat.proposal()) await this.acceptProposal();
+    void this.router.navigate(['/routines'], {
+      queryParams: { gen: 1, days: req.daysPerWeek, min: req.minutes ?? null },
+    });
+  }
+
+  /**
+   * La spec, con el valor YA AJUSTADO a lo que el generador sabe hacer.
+   *
+   * Si el atleta pidió 30 minutos, aquí dice 45: enseñar lo que pidió y generar otra cosa
+   * sería mentir en la única pantalla donde iba a confiar.
+   */
+  protected readonly routineSummary = computed(() => {
+    const req = this.chat.routineRequest();
+    if (!req) return '';
+    return req.minutes
+      ? this.tr.tp('coach_routine_summary', { days: req.daysPerWeek, minutes: req.minutes })
+      : this.tr.tp('coach_routine_summary_days', { days: req.daysPerWeek });
+  });
+
+  /** Lo que hará el botón, dicho entero: aceptar el contexto es parte del mismo toque. */
+  protected readonly openGeneratorLabel = computed(() =>
+    this.chat.proposal() ? this.T().coach_routine_accept_open : this.T().coach_routine_open,
+  );
 
   protected async acceptProposal(): Promise<void> {
     await this.chat.acceptProposal();

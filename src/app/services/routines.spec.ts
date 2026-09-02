@@ -133,6 +133,54 @@ describe('Rutinas (RF-RUT-01/03/04)', () => {
     });
   });
 
+  describe('posición en la rotación por rutina (T-830)', () => {
+    it('cambiar de rutina y volver retoma donde ibas, no en el día 1', () => {
+      const original = state.activeRoutine()!.id;
+      state.advanceRoutine();
+      state.advanceRoutine();
+      const parked = state.routinePointer();
+      expect(parked).toBeGreaterThan(0);
+
+      const other = state.createRoutine('Casa');
+      expect(state.routinePointer()).toBe(0);
+
+      state.setActiveRoutine(original);
+
+      expect(state.activeRoutine()?.id).toBe(original);
+      expect(state.routinePointer()).toBe(parked);
+      expect(state.routines().find((r) => r.id === other)?.pointer).toBe(0);
+    });
+
+    it('advanceRoutine avanza sobre los días de la rutina ACTIVA, no sobre todos', () => {
+      const first = state.days()[0].id;
+      state.createRoutine('Casa');
+      state.saveDay({ id: 'd-casa-1', name: 'A', exercises: [] });
+      state.saveDay({ id: 'd-casa-2', name: 'B', exercises: [] });
+
+      // Dos días en la rutina activa: dos avances tienen que volver al primero.
+      const start = state.currentDay()?.id;
+      state.advanceRoutine();
+      state.advanceRoutine();
+
+      expect(state.currentDay()?.id).toBe(start);
+      expect(state.days()).toHaveLength(2);
+      // El día de la otra rutina no participa de esta rotación.
+      expect(state.days().some((d) => d.id === first)).toBe(false);
+    });
+
+    it('importar sin activar deja la rutina en marcha y su posición intacta', () => {
+      const original = state.activeRoutine()!.id;
+      state.advanceRoutine();
+      const parked = state.routinePointer();
+
+      state.importTemplate(ROUTINE_TEMPLATES[0], 'es', catalog, { activate: false });
+
+      expect(state.activeRoutine()?.id).toBe(original);
+      expect(state.routinePointer()).toBe(parked);
+      expect(state.routines()).toHaveLength(2);
+    });
+  });
+
   describe('archivado de ejercicios (RF-EJ-03)', () => {
     it('archivar conserva el ejercicio y su historial', () => {
       const ex = state.exercises()[0];

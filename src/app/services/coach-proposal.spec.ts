@@ -6,7 +6,9 @@ import {
   parseCoachReply,
   resolveWeightProposal,
   validateProposal,
+  validateRoutineRequest,
 } from './coach-proposal';
+import { DEFAULT_GEN_DAYS, DEFAULT_GEN_MINUTES, GEN_DAYS, snapTo } from '../utils/gen-options';
 import { AiSessionContext } from './providers/session-context';
 import { AiRecommendation, Exercise, SetRecord, UserProfile } from '../models/workout.model';
 
@@ -83,6 +85,85 @@ describe('validateProposal() — nada del modelo entra sin filtrar (Art. 6)', ()
     expect(validateProposal(null)).toBeNull();
     expect(validateProposal('subí 5kg')).toBeNull();
     expect(validateProposal(42)).toBeNull();
+  });
+});
+
+describe('snapTo() — ajustar a lo que la UI sabe representar (T-830)', () => {
+  it('ajusta al valor permitido más cercano en vez de rechazar', () => {
+    expect(snapTo(GEN_DAYS, 7, DEFAULT_GEN_DAYS)).toBe(6);
+    expect(snapTo(GEN_DAYS, 1, DEFAULT_GEN_DAYS)).toBe(2);
+    expect(snapTo(GEN_DAYS, 999, DEFAULT_GEN_DAYS)).toBe(6);
+  });
+
+  it('un valor permitido se queda como está', () => {
+    for (const n of GEN_DAYS) expect(snapTo(GEN_DAYS, n, DEFAULT_GEN_DAYS)).toBe(n);
+  });
+
+  it('lo que no es número cae al valor por defecto, no a cero', () => {
+    // `Number(null)` y `Number('')` valen 0: sin la guarda se colaban como un cero finito
+    // y ajustaban al valor MÁS BAJO en vez de al de por defecto.
+    expect(snapTo(GEN_DAYS, 'abc', DEFAULT_GEN_DAYS)).toBe(DEFAULT_GEN_DAYS);
+    expect(snapTo(GEN_DAYS, null, DEFAULT_GEN_DAYS)).toBe(DEFAULT_GEN_DAYS);
+    expect(snapTo(GEN_DAYS, '', DEFAULT_GEN_DAYS)).toBe(DEFAULT_GEN_DAYS);
+    expect(snapTo(GEN_DAYS, undefined, DEFAULT_GEN_DAYS)).toBe(DEFAULT_GEN_DAYS);
+  });
+
+  it('acepta el número como texto: la URL trae strings', () => {
+    expect(snapTo(GEN_DAYS, '5', DEFAULT_GEN_DAYS)).toBe(5);
+  });
+});
+
+describe('validateRoutineRequest() — el chat deriva, no construye (T-830)', () => {
+  it('ajusta días y minutos a las opciones reales del generador', () => {
+    expect(validateRoutineRequest({ daysPerWeek: 7, minutes: 30 })).toEqual({
+      daysPerWeek: 6,
+      minutes: 45,
+    });
+  });
+
+  it('sin días no hay petición: es el único dato que no sale del perfil', () => {
+    expect(validateRoutineRequest({ minutes: 60 })).toBeNull();
+    expect(validateRoutineRequest({})).toBeNull();
+    expect(validateRoutineRequest({ daysPerWeek: 'muchos' })).toBeNull();
+  });
+
+  it('los minutos son opcionales', () => {
+    expect(validateRoutineRequest({ daysPerWeek: 4 })).toEqual({ daysPerWeek: 4 });
+    expect(validateRoutineRequest({ daysPerWeek: 4, minutes: 'largo' })).toEqual({
+      daysPerWeek: 4,
+    });
+  });
+
+  it('lo que no es un objeto no pide nada', () => {
+    expect(validateRoutineRequest(null)).toBeNull();
+    expect(validateRoutineRequest('armame una rutina')).toBeNull();
+    expect(validateRoutineRequest([4])).toBeNull();
+  });
+
+  it('una petición de rutina NO es un cambio de contexto', () => {
+    // Si `routineRequest` viviera dentro de `CoachProposal`, un objeto que solo pidiera una
+    // rutina devolvería una propuesta no nula y `acceptProposal()` guardaría un perfil
+    // idéntico al que ya había: un "Aceptar" que no acepta nada.
+    expect(validateProposal({ routineRequest: { daysPerWeek: 4 } })).toBeNull();
+  });
+
+  it('parseCoachReply saca la petición del JSON, junto al texto', () => {
+    const out = parseCoachReply(
+      '{"reply":"Te armo una de 4 días.","routineRequest":{"daysPerWeek":4,"minutes":60}}',
+    );
+    expect(out.text).toBe('Te armo una de 4 días.');
+    expect(out.routineRequest).toEqual({ daysPerWeek: 4, minutes: 60 });
+    expect(out.proposal).toBeNull();
+  });
+
+  it('una charla normal no pide ninguna rutina', () => {
+    expect(parseCoachReply('Cuatro días te va bien.').routineRequest).toBeNull();
+  });
+
+  it('unos minutos absurdos se ajustan al tope, no se inventan', () => {
+    expect(validateRoutineRequest({ daysPerWeek: 3, minutes: 1000 })?.minutes).toBe(90);
+    expect(validateRoutineRequest({ daysPerWeek: 3, minutes: null })?.minutes).toBeUndefined();
+    expect(DEFAULT_GEN_MINUTES).toBe(60);
   });
 });
 

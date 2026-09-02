@@ -599,16 +599,24 @@ export interface Translations {
   templates_imported: string;
   generator_title: string;
   generator_no_key: string;
+  generator_offline: string;
+  generator_over_budget: string;
+  generator_auth_failed: string;
+  generator_model_failed: string;
+  generator_empty: string;
   generator_cost: string;
   generator_run: string;
   generator_running: string;
   generator_failed: string;
   generator_review: string;
-  generator_save: string;
+  generator_short: string;
+  generator_save_only: string;
+  generator_save_activate: string;
   generator_discard: string;
   generator_days_week: string;
   generator_minutes: string;
   generator_saved: string;
+  generator_saved_inactive: string;
 
   // Genéricas de navegación (T-802)
   back: string;
@@ -693,6 +701,12 @@ export interface Translations {
   settings_tab_readonly: string;
   coach_proposal_accept: string;
   coach_proposal_dismiss: string;
+  coach_routine_title: string;
+  coach_routine_summary: string;
+  coach_routine_summary_days: string;
+  coach_routine_note: string;
+  coach_routine_open: string;
+  coach_routine_accept_open: string;
   coach_proposal_saved: string;
 
   // Propuesta de pesos desde el chat (T-813)

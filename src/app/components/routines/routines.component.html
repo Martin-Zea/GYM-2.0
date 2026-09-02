@@ -172,10 +172,19 @@
         <h2 class="view-title">{{ T().generator_title }}</h2>
       </div>
 
-      @if (!canGenerate()) {
-        <p class="note">{{ T().generator_no_key }}</p>
-      } @else if (generated(); as routine) {
+      @if (generated(); as routine) {
         <p class="k">{{ T().generator_review }}</p>
+        <!-- Pedir 6 y guardar 4 en silencio es la app decidiendo que cuatro está bien -->
+        @if (routine.days.length !== routine.requestedDays) {
+          <p class="note rt-warn">
+            {{
+              tr.tp('generator_short', {
+                got: routine.days.length,
+                asked: routine.requestedDays,
+              })
+            }}
+          </p>
+        }
         @for (day of routine.days; track day.name) {
           <div class="card">
             <p class="rt-name-sm">{{ day.name }}</p>
@@ -186,14 +195,17 @@
           <button class="btn btn-ghost" type="button" (click)="generated.set(null)">
             {{ T().generator_discard }}
           </button>
-          <button class="btn btn-primary" type="button" (click)="saveGenerated()">
-            {{ T().generator_save }}
+          <button class="btn btn-ghost" type="button" (click)="saveGenerated(false)">
+            {{ T().generator_save_only }}
+          </button>
+          <button class="btn btn-primary" type="button" (click)="saveGenerated(true)">
+            {{ T().generator_save_activate }}
           </button>
         </div>
       } @else {
         <p class="k">{{ T().generator_days_week }}</p>
         <div class="seg">
-          @for (n of [2, 3, 4, 5, 6]; track n) {
+          @for (n of GEN_DAYS; track n) {
             <button type="button" [attr.aria-pressed]="genDays() === n" (click)="genDays.set(n)">
               {{ n }}
             </button>
@@ -202,7 +214,7 @@
 
         <p class="k">{{ T().generator_minutes }}</p>
         <div class="seg">
-          @for (m of [45, 60, 90]; track m) {
+          @for (m of GEN_MINUTES; track m) {
             <button
               type="button"
               [attr.aria-pressed]="genMinutes() === m"
@@ -218,14 +230,17 @@
           {{ tr.tp('generator_cost', { tokens: costEstimate().total, seconds: 30 }) }}
         </p>
 
-        @if (genError()) {
-          <p class="note rt-error">{{ T().generator_failed }}</p>
+        <!-- Un botón deshabilitado sin motivo es un callejón sin salida: el motivo SIEMPRE -->
+        @if (genBlock(); as block) {
+          <p class="note rt-error">{{ blockLabel(block) }}</p>
+        } @else if (genError(); as err) {
+          <p class="note rt-error">{{ errorLabel(err) }}</p>
         }
 
         <button
           class="btn btn-primary rt-wide"
           type="button"
-          [disabled]="generating() || costEstimate().overBudget"
+          [disabled]="generating() || genBlock() !== null"
           (click)="runGenerator()"
         >
           {{ generating() ? T().generator_running : T().generator_run }}

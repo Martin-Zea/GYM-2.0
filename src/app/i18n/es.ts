@@ -593,16 +593,27 @@ export const es: Translations = {
   generator_title: 'Generador IA',
   generator_no_key:
     'Necesitás una key de Groq o Cohere para generar. Configurala en Ajustes → IA y keys.',
+  generator_offline: 'Sin conexión. El generador necesita internet; las plantillas no.',
+  generator_over_budget:
+    'Se agotó el presupuesto de IA de este mes. Podés subirlo en Ajustes → IA y keys, o usar una plantilla.',
+  generator_auth_failed: 'Tu key fue rechazada. Revisala en Ajustes → IA y keys.',
+  generator_model_failed:
+    'Tu key no puede usar el modelo elegido. Cambialo en Ajustes → IA y keys.',
+  generator_empty: 'La respuesta llegó incompleta. Probá con menos días o de nuevo.',
   generator_cost: '~{tokens} tokens · ~{seconds} s',
   generator_run: 'Generar propuesta',
   generator_running: 'Generando…',
   generator_failed: 'No se pudo generar. Probá de nuevo o usá una plantilla.',
   generator_review: 'Revisar propuesta',
-  generator_save: 'Guardar rutina',
+  generator_short:
+    'Pediste {asked} días y llegaron {got}. Podés guardarla igual y añadir el resto.',
+  generator_save_only: 'Guardar sin activar',
+  generator_save_activate: 'Guardar y usar ahora',
   generator_discard: 'Descartar',
   generator_days_week: 'Días por semana',
   generator_minutes: 'Duración de sesión',
-  generator_saved: 'Rutina guardada. Revisala antes de entrenar.',
+  generator_saved: 'Rutina guardada y activada. Revisala antes de entrenar.',
+  generator_saved_inactive: 'Rutina guardada. Seguís con la que tenías.',
 
   // Genéricas de navegación (T-802)
   back: 'Atrás',
@@ -695,6 +706,13 @@ export const es: Translations = {
     'Esta pestaña no guarda cambios: hay otra pestaña de la app abierta. Cerrá las demás y recargá para editar las keys.',
   coach_proposal_accept: 'Anotar',
   coach_proposal_dismiss: 'Ahora no',
+  coach_routine_title: 'Rutina nueva',
+  coach_routine_summary: '{days} días por semana · ~{minutes} min por sesión',
+  coach_routine_summary_days: '{days} días por semana',
+  coach_routine_note:
+    'El coach no arma rutinas: abre el generador con esto puesto. Vas a ver el coste y a revisar la propuesta antes de guardar nada.',
+  coach_routine_open: 'Abrir el generador',
+  coach_routine_accept_open: 'Aceptar y abrir el generador',
   coach_proposal_saved: 'Anotado. Se aplicará a la próxima sesión.',
 
   // Propuesta de pesos desde el chat (T-813)

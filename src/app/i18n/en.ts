@@ -591,16 +591,27 @@ export const en: Translations = {
   templates_imported: 'Routine imported and activated.',
   generator_title: 'AI generator',
   generator_no_key: 'You need a Groq or Cohere key to generate. Set it in Settings → AI and keys.',
+  generator_offline: 'You are offline. The generator needs internet; templates do not.',
+  generator_over_budget:
+    'This month’s AI budget is used up. Raise it in Settings → AI and keys, or use a template.',
+  generator_auth_failed: 'Your key was rejected. Check it in Settings → AI and keys.',
+  generator_model_failed:
+    'Your key cannot use the selected model. Change it in Settings → AI and keys.',
+  generator_empty: 'The reply came back incomplete. Try fewer days, or try again.',
   generator_cost: '~{tokens} tokens · ~{seconds} s',
   generator_run: 'Generate proposal',
   generator_running: 'Generating…',
   generator_failed: 'Could not generate. Try again or use a template.',
   generator_review: 'Review proposal',
-  generator_save: 'Save routine',
+  generator_short:
+    'You asked for {asked} days and got {got}. You can still save it and add the rest.',
+  generator_save_only: 'Save without activating',
+  generator_save_activate: 'Save and use now',
   generator_discard: 'Discard',
   generator_days_week: 'Days per week',
   generator_minutes: 'Session length',
-  generator_saved: 'Routine saved. Review it before training.',
+  generator_saved: 'Routine saved and activated. Review it before training.',
+  generator_saved_inactive: 'Routine saved. You are still on your current one.',
 
   // Genéricas de navegación (T-802)
   back: 'Back',
@@ -691,6 +702,13 @@ export const en: Translations = {
     'This tab does not save changes: another app tab is open. Close the others and reload to edit your keys.',
   coach_proposal_accept: 'Save it',
   coach_proposal_dismiss: 'Not now',
+  coach_routine_title: 'New routine',
+  coach_routine_summary: '{days} days per week · ~{minutes} min per session',
+  coach_routine_summary_days: '{days} days per week',
+  coach_routine_note:
+    'The coach does not build routines: it opens the generator with this filled in. You will see the cost and review the proposal before anything is saved.',
+  coach_routine_open: 'Open the generator',
+  coach_routine_accept_open: 'Accept and open the generator',
   coach_proposal_saved: 'Noted. It applies to your next session.',
 
   // Propuesta de pesos desde el chat (T-813)
