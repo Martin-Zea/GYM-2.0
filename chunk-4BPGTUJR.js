@@ -1,0 +1,1 @@
+var u=[2,3,4,5,6],E=[45,60,90],c=200,N=4,_=60;function i(s,n,e){if(n==null||n==="")return e;let t=Number(n);return Number.isFinite(t)?s.reduce((o,r)=>Math.abs(r-t)<Math.abs(o-t)?r:o):e}export{u as a,E as b,c,N as d,_ as e,i as f};
