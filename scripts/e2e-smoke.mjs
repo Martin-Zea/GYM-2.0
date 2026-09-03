@@ -259,6 +259,25 @@ await page.goto(BASE, { waitUntil: 'networkidle' });
 await page.waitForTimeout(400);
 check('home: sin gestión de rutinas duplicada', (await page.locator('.routine-bar').count()) === 0);
 
+// ── Escritorio: la columna de sección dice SIEMPRE dónde estás (T-839) ──
+//
+// Regresión real: al entrar a una sección sin `?vista=` no se marcaba ninguna fila, aunque
+// la pantalla ya estuviera enseñando una de sus vistas. La fila se encendía solo al pulsarla,
+// así que la columna dejaba de responder a lo único que tiene que responder.
+await page.setViewportSize({ width: 1440, height: 900 });
+
+for (const [name, url] of [
+  ['progreso', '/progress'],
+  ['coach', '/coach'],
+]) {
+  await page.goto(`${BASE}${url}`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(700);
+  const marked = await page.locator('.sr-row--on').count();
+  check(`escritorio: ${name} entra con su fila marcada`, marked === 1);
+}
+
+await page.setViewportSize({ width: 390, height: 844 });
+
 check('cero errores de página', consoleErrors.length === 0);
 if (consoleErrors.length) console.log('pageerrors:', consoleErrors.join(' | '));
 

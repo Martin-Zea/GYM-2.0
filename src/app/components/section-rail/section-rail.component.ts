@@ -155,7 +155,7 @@ export class SectionRailComponent {
   private progressSection(): RailSection {
     const T = this.T();
     const rows: RailRow[] = [
-      this.viewLink(T.nav_sub_calendar, '/progress', 'calendario'),
+      this.viewLink(T.nav_sub_calendar, '/progress', 'calendario', true),
       this.viewLink(T.nav_sub_progression, '/progress', 'progresion'),
       this.viewLink(T.nav_sub_volume, '/progress', 'volumen'),
     ];
@@ -246,7 +246,7 @@ export class SectionRailComponent {
           // En escritorio la propuesta y el chat comparten pantalla: ofrecer "Chat" como
           // destino aparte llevaría al mismo sitio. Quedan los dos que son distintos.
           rows: [
-            this.viewLink(T.coach_desk_proposal, '/coach', 'panel'),
+            this.viewLink(T.coach_desk_proposal, '/coach', 'panel', true),
             this.viewLink(T.coach_tab_history, '/coach', 'historial'),
           ],
         },
@@ -320,14 +320,23 @@ export class SectionRailComponent {
 
   // ─────────────────────────── Ayudas ───────────────────────────
 
-  private viewLink(label: string, path: string, vista: string): RailRow {
+  /**
+   * Un enlace a una sub-vista.
+   *
+   * `isDefault` marca la fila a la que se llega SIN parámetro. Sin esto, entrar a una
+   * sección desde el rail dejaba la columna entera apagada aunque estuvieras viendo una de
+   * sus vistas: la fila no se encendía hasta que la pulsabas, y la columna dejaba de
+   * responder a la única pregunta que tiene que responder, que es dónde estás.
+   */
+  private viewLink(label: string, path: string, vista: string, isDefault = false): RailRow {
     const here = this.here();
+    const current = here.q['vista'];
     return {
       kind: 'link',
       label,
       path,
       query: { vista },
-      on: here.path === path && here.q['vista'] === vista,
+      on: here.path === path && (current === vista || (!current && isDefault)),
     };
   }
 

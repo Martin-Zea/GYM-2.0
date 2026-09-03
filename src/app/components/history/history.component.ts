@@ -287,16 +287,29 @@ export class HistoryComponent {
   protected readonly range = signal<ChartRange>('all');
   protected readonly selectedId = signal<string | null>(null);
 
-  /**
-   * Sub-vista activa (T-838).
-   *
-   * En escritorio la barra lateral enlaza a cada una y se enseña UNA a la vez: el gráfico
-   * grande no cabe si comparte pantalla con el calendario, y ese gráfico es a lo que se
-   * entra. En móvil no hay barra lateral, así que se muestran todas seguidas como hasta
-   * ahora — el scroll es la navegación cuando no hay sitio para otra cosa.
-   */
-  protected readonly section = signal<'todo' | 'calendario' | 'progresion' | 'volumen'>('todo');
   protected readonly viewport = inject(ViewportService);
+
+  /** Lo que dice la URL, sin interpretar. */
+  private readonly vistaParam = signal<string | null>(null);
+
+  /**
+   * Sub-vista activa (T-838, corregida en T-839).
+   *
+   * En escritorio la columna de sección enlaza a cada una y se enseña UNA a la vez: el
+   * gráfico grande no cabe si comparte pantalla con el calendario. En móvil se muestran
+   * todas seguidas — el scroll es la navegación cuando no hay sitio para otra cosa.
+   *
+   * Sin parámetro, el escritorio cae en `calendario` y NO en `todo`. Con `todo` se llegaba
+   * a un cuarto estado que la navegación no sabe nombrar: entrabas desde el rail, veías las
+   * tres apiladas y ninguna fila quedaba marcada, así que la columna no decía dónde estabas
+   * hasta que pulsabas algo. Y esas tres apiladas son justo el scroll que el escritorio
+   * viene a quitar.
+   */
+  protected readonly section = computed<'todo' | 'calendario' | 'progresion' | 'volumen'>(() => {
+    const v = this.vistaParam();
+    if (v === 'calendario' || v === 'progresion' || v === 'volumen') return v;
+    return this.viewport.isDesktop() ? 'calendario' : 'todo';
+  });
 
   protected shows(name: 'calendario' | 'progresion' | 'volumen'): boolean {
     const s = this.section();
@@ -534,10 +547,7 @@ export class HistoryComponent {
     // La sub-vista vive en la URL (T-838): la barra lateral del escritorio enlaza a cada
     // una, y sin esto "Volumen" llevaba a la misma página de siempre.
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
-      const vista = params.get('vista');
-      this.section.set(
-        vista === 'calendario' || vista === 'progresion' || vista === 'volumen' ? vista : 'todo',
-      );
+      this.vistaParam.set(params.get('vista'));
     });
   }
 }
