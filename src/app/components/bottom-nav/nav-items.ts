@@ -40,3 +40,21 @@ export const MOBILE_NAV_PATHS = ['/', '/routines', '/progress', '/coach', '/sett
 
 /** En el rail, Perfil y Ajustes se separan del resto: son la cuenta, no el entrenamiento. */
 export const RAIL_FOOTER_PATHS = ['/settings', '/profile'];
+
+/**
+ * A qué sub-vista se entra en escritorio cuando la URL no trae `?vista=` (T-839).
+ *
+ * Vive aquí, y no en cada pantalla, porque lo tienen que saber DOS sitios: la pantalla,
+ * para decidir qué pinta, y la columna de sección, para decidir qué fila enciende. Cuando
+ * cada uno lo sabía por su cuenta, se desincronizaron: la pantalla enseñaba una vista y la
+ * columna no marcaba ninguna fila. Un solo dato, dos lectores.
+ *
+ * `/progress` entra por PROGRESIÓN y no por el calendario: la pregunta que se trae quien
+ * abre "Progreso" es si está mejorando, y eso lo contesta la curva. El calendario contesta
+ * si fue, que es otra pregunta — y ya la contestan la adherencia y la racha, que se ven en
+ * las tres sub-vistas.
+ */
+export const DEFAULT_DESKTOP_VIEW: Readonly<Record<string, string>> = {
+  '/progress': 'progresion',
+  '/coach': 'panel',
+};

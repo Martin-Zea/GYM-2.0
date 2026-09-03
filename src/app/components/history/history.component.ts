@@ -35,6 +35,7 @@ import {
 } from '../../utils/stats';
 import { CatalogService } from '../../services/catalog.service';
 import { ViewportService } from '../../services/viewport.service';
+import { DEFAULT_DESKTOP_VIEW } from '../bottom-nav/nav-items';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 interface CalDay {
@@ -308,7 +309,7 @@ export class HistoryComponent {
   protected readonly section = computed<'todo' | 'calendario' | 'progresion' | 'volumen'>(() => {
     const v = this.vistaParam();
     if (v === 'calendario' || v === 'progresion' || v === 'volumen') return v;
-    return this.viewport.isDesktop() ? 'calendario' : 'todo';
+    return this.viewport.isDesktop() ? (DEFAULT_DESKTOP_VIEW['/progress'] as 'progresion') : 'todo';
   });
 
   protected shows(name: 'calendario' | 'progresion' | 'volumen'): boolean {

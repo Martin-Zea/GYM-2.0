@@ -15,6 +15,7 @@ import {
 } from '../../services/providers/ai-usage';
 import { mondayOfISO, toLocalISO } from '../../utils/date';
 import { realSessions } from '../../utils/dashboard';
+import { DEFAULT_DESKTOP_VIEW } from '../bottom-nav/nav-items';
 
 /** Una fila de la columna. Cuatro formas, porque son cuatro cosas distintas. */
 export type RailRow =
@@ -155,7 +156,7 @@ export class SectionRailComponent {
   private progressSection(): RailSection {
     const T = this.T();
     const rows: RailRow[] = [
-      this.viewLink(T.nav_sub_calendar, '/progress', 'calendario', true),
+      this.viewLink(T.nav_sub_calendar, '/progress', 'calendario'),
       this.viewLink(T.nav_sub_progression, '/progress', 'progresion'),
       this.viewLink(T.nav_sub_volume, '/progress', 'volumen'),
     ];
@@ -246,7 +247,7 @@ export class SectionRailComponent {
           // En escritorio la propuesta y el chat comparten pantalla: ofrecer "Chat" como
           // destino aparte llevaría al mismo sitio. Quedan los dos que son distintos.
           rows: [
-            this.viewLink(T.coach_desk_proposal, '/coach', 'panel', true),
+            this.viewLink(T.coach_desk_proposal, '/coach', 'panel'),
             this.viewLink(T.coach_tab_history, '/coach', 'historial'),
           ],
         },
@@ -328,9 +329,13 @@ export class SectionRailComponent {
    * sus vistas: la fila no se encendía hasta que la pulsabas, y la columna dejaba de
    * responder a la única pregunta que tiene que responder, que es dónde estás.
    */
-  private viewLink(label: string, path: string, vista: string, isDefault = false): RailRow {
+  private viewLink(label: string, path: string, vista: string): RailRow {
     const here = this.here();
     const current = here.q['vista'];
+    // Sin parámetro se marca la fila por defecto, que la pantalla lee del MISMO sitio.
+    // Si cada uno lo decidiera por su cuenta volvería el fallo: la vista enseñada y la fila
+    // encendida dejan de ser la misma cosa.
+    const isDefault = DEFAULT_DESKTOP_VIEW[path] === vista;
     return {
       kind: 'link',
       label,
