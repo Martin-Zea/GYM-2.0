@@ -243,6 +243,18 @@
                 <div class="stat">
                   <p class="stat-label">{{ T().home_adherence }}</p>
                   <p class="stat-value">{{ pct }}<span class="stat-unit">%</span></p>
+                  <!--
+                    La ventana, dicha (T-840). Este 50 % convive con "0 de 5" y una racha
+                    de 0 en la misma tarjeta: son periodos distintos, pero sin decirlo se
+                    lee como si la app se contradijera.
+                  -->
+                  @if (adherenceWindow(); as w) {
+                    <p class="stat-delta">
+                      {{
+                        w === 1 ? T().home_adherence_week : tr.tp('home_adherence_weeks', { n: w })
+                      }}
+                    </p>
+                  }
                 </div>
               }
             </div>
@@ -437,6 +449,21 @@
             "
           ></div>
         </div>
+        <!--
+          El cambio de vista vive aquí (T-840): es ESTADO de la sesión, no una acción sobre
+          el ejercicio. Abajo competía con "añadir nota" y "calentamiento" con el mismo
+          peso visual, y además estaba duplicado en la píldora "Ver lista completa".
+        -->
+        <button
+          class="icon-btn session-view-btn"
+          (click)="setSessionView(sessionView() === 'focused' ? 'list' : 'focused')"
+          [title]="sessionView() === 'focused' ? T().session_view_list : T().session_view_focused"
+          [attr.aria-label]="
+            sessionView() === 'focused' ? T().session_view_list : T().session_view_focused
+          "
+        >
+          <app-icon [name]="sessionView() === 'focused' ? 'list' : 'dumbbell'" [size]="18" />
+        </button>
         <button
           class="icon-btn session-finish-btn"
           (click)="showFinishModal.set(true)"
@@ -512,7 +539,6 @@
                 [aiRec]="aiCache()[ex.id] ?? null"
                 (requestAi)="requestAi(ex)"
                 (nextExercise)="onExerciseCompleted(ex)"
-                (showTable)="setSessionView('list')"
               />
             } @else {
               <!-- Todo hecho: cerrar la sesión -->
@@ -527,15 +553,7 @@
                 </button>
               </div>
             }
-            <button class="session-view-toggle" (click)="setSessionView('list')">
-              <app-icon name="list" [size]="13" />
-              {{ T().session_view_list }}
-            </button>
           } @else {
-            <button class="session-view-toggle" (click)="setSessionView('focused')">
-              <app-icon name="dumbbell" [size]="13" />
-              {{ T().session_view_focused }}
-            </button>
             <div class="exercises">
               @for (ex of day.exercises; track ex.id) {
                 <app-exercise-card

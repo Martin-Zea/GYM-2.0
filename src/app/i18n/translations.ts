@@ -274,6 +274,11 @@ export interface Translations {
   settings_goal_label: string;
   profile_equipment_label: string;
   profile_equipment_desc: string;
+  profile_fold_empty: string;
+  profile_fold_measures: string;
+  profile_fold_equipment: string;
+  profile_fold_written: string;
+  profile_age_years: string;
   profile_level_label: string;
   profile_level_desc: string;
   profile_level_beginner: string;
@@ -771,6 +776,8 @@ export interface Translations {
   home_week_title: string;
   home_week_of: string;
   home_volume: string;
+  home_adherence_week: string;
+  home_adherence_weeks: string;
   home_adherence: string;
   home_next_title: string;
   home_streak: string;

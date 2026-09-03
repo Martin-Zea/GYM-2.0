@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
 import { StateService } from '../../services/state.service';
+import { ViewportService } from '../../services/viewport.service';
 import { StorageService } from '../../services/storage.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
@@ -34,6 +35,7 @@ import { formatPrevSets, formatRecLabel } from '../../utils/rec-label';
 })
 export class ExerciseCardComponent {
   private readonly state = inject(StateService);
+  protected readonly viewport = inject(ViewportService);
   private readonly storage = inject(StorageService);
   private readonly uiState = inject(UIStateService);
   private readonly setLogging = inject(SetLoggingService);

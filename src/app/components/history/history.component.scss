@@ -377,9 +377,12 @@
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
+/* Era un enlace de 92×18: se pulsa con el pulgar, así que se pulsa como un botón. */
 .hist-prs-all {
-  display: inline-block;
-  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 4px;
   font-size: var(--fs-xs);
   color: var(--text-2);
   text-decoration: underline;
@@ -417,3 +420,80 @@
 .progress-stats {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+
+/* ═══════ El calendario, plegado en móvil (T-840) ═══════ */
+
+.cal-fold {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-1);
+  padding: 0 var(--sp-3);
+}
+
+.cal-fold-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 48px;
+  cursor: pointer;
+  list-style: none;
+}
+.cal-fold-head::-webkit-details-marker {
+  display: none;
+}
+
+.cal-fold-title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.cal-fold-meta {
+  flex: 0 0 auto;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+
+.cal-fold-head::after {
+  content: '';
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-2);
+  border-bottom: 2px solid var(--text-2);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform 0.15s;
+}
+.cal-fold[open] > .cal-fold-head::after {
+  transform: rotate(-135deg) translate(-2px, -2px);
+}
+
+/* Dentro del plegable la tarjeta ya no necesita su propio marco. */
+.cal-fold .calendar {
+  border: 0;
+  background: none;
+  padding: 0 0 var(--sp-3);
+}
+
+/* ═══════ Objetivos táctiles (T-840) ═══════ */
+
+/* Los segmentos de métrica y rango medían 40 px de alto: casi, que no es 44. */
+.hist-segs .btn,
+.hist-ex-select {
+  min-height: 44px;
+}
+
+/* "3M" y "6M" son cortos: el mínimo también es de ancho. */
+.hist-segs .btn {
+  min-width: 44px;
+}
+
+/*
+ * Los puntos del gráfico son la excepción justificada: su zona de toque mide 22 px de
+ * radio y subirla a 44 haría que puntos contiguos se pisaran, con lo que tocar uno
+ * seleccionaría el vecino. Un objetivo grande que acierta el dato equivocado es peor que
+ * uno pequeño que acierta. La alternativa real —tocar el trazo y que se seleccione el
+ * punto más cercano— es otro trabajo, no un ajuste de tamaño.
+ */

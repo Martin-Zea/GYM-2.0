@@ -39,84 +39,6 @@
     </div>
   </div>
 
-  <!-- ═══ Mes: mapa de calor ═══ -->
-  @if (shows('calendario')) {
-    <div class="calendar">
-      <div class="cal-nav">
-        <button class="icon-btn" (click)="prevMonth()" [attr.aria-label]="T().prev_month">
-          <app-icon name="arrow_left" [size]="16" />
-        </button>
-        <span class="cal-month">{{ monthLabel() }}</span>
-        <button class="icon-btn" (click)="nextMonth()" [attr.aria-label]="T().next_month">
-          <app-icon name="arrow_right" [size]="16" />
-        </button>
-      </div>
-
-      <div class="cal-grid">
-        @for (d of DOW(); track d) {
-          <div class="cal-dow">{{ d }}</div>
-        }
-        @for (cell of calDays(); track $index) {
-          @if (cell.trained) {
-            <button
-              class="cal-day trained"
-              [class]="'cal-day trained cal-day--i' + (cell.intensity ?? 1)"
-              [class.today]="cell.isToday"
-              [attr.aria-label]="dayAria(cell)"
-              (click)="onDayClick(cell)"
-            >
-              {{ cell.day }}
-            </button>
-          } @else {
-            <div
-              class="cal-day"
-              [class.outside]="!cell.day"
-              [class.today]="cell.isToday"
-              [class.skipped]="cell.skipped"
-            >
-              {{ cell.day ?? '' }}
-            </div>
-          }
-        }
-      </div>
-
-      <div class="cal-footer">
-        <span class="cal-stat mono"
-          ><strong>{{ stats().total }}</strong>
-          {{ stats().total === 1 ? T().cal_stat_sessions_one : T().cal_stat_sessions }}</span
-        >
-        <span
-          class="cal-stat mono"
-          [class.cal-stat--up]="stats().delta30 > 0"
-          [class.cal-stat--down]="stats().delta30 < 0"
-        >
-          @if (stats().delta30 === 0) {
-            {{ stats().last30 }} / 30d
-          } @else {
-            {{
-              tr.tp('cal_stat_vs_prev', { n: (stats().delta30 > 0 ? '+' : '') + stats().delta30 })
-            }}
-          }
-        </span>
-        <span class="cal-stat mono"
-          >{{ T().cal_stat_streak.toLowerCase() }} <strong>{{ stats().streak }}</strong></span
-        >
-      </div>
-
-      <div class="cal-legend">
-        <span class="cal-legend-item"
-          ><span class="cal-legend-dot trained"></span> {{ T().cal_trained }}</span
-        >
-        <span class="cal-legend-item"
-          ><span class="cal-legend-dot skipped"></span> {{ T().history_skipped }}</span
-        >
-        <span class="cal-legend-item"
-          ><span class="cal-legend-dot today"></span> {{ T().today_label }}</span
-        >
-      </div>
-    </div>
-  }
-
   <!-- ═══ Progresión: selector + un gráfico grande ═══ -->
   @if (shows('progresion')) {
     <div class="chart-card">
@@ -221,7 +143,7 @@
           </p>
         }
 
-        <div class="chart-svg-wrap">
+        <div class="chart-svg-wrap" data-tap-exempt="puntos contiguos: a 44px se pisarían entre sí">
           <svg viewBox="0 0 300 110">
             <defs>
               <linearGradient id="grad-history" x1="0" y1="0" x2="0" y2="1">
@@ -298,6 +220,178 @@
         </div>
       }
     </div>
+  }
+
+  <!--
+    ═══ Mes: mapa de calor ═══
+
+    Baja del primer puesto y se pliega en móvil (T-840). Ocupaba 850 px —la pantalla
+    entera— para contestar "¿fui?", que es justo lo que la adherencia y la racha de arriba
+    ya contestan, y empujaba el gráfico a pantalla y media de scroll.
+  -->
+  @if (shows('calendario')) {
+    @if (viewport.isDesktop()) {
+      <div class="calendar">
+        <div class="cal-nav">
+          <button class="icon-btn" (click)="prevMonth()" [attr.aria-label]="T().prev_month">
+            <app-icon name="arrow_left" [size]="16" />
+          </button>
+          <span class="cal-month">{{ monthLabel() }}</span>
+          <button class="icon-btn" (click)="nextMonth()" [attr.aria-label]="T().next_month">
+            <app-icon name="arrow_right" [size]="16" />
+          </button>
+        </div>
+
+        <div class="cal-grid">
+          @for (d of DOW(); track d) {
+            <div class="cal-dow">{{ d }}</div>
+          }
+          @for (cell of calDays(); track $index) {
+            @if (cell.trained) {
+              <button
+                class="cal-day trained"
+                [class]="'cal-day trained cal-day--i' + (cell.intensity ?? 1)"
+                [class.today]="cell.isToday"
+                [attr.aria-label]="dayAria(cell)"
+                (click)="onDayClick(cell)"
+              >
+                {{ cell.day }}
+              </button>
+            } @else {
+              <div
+                class="cal-day"
+                [class.outside]="!cell.day"
+                [class.today]="cell.isToday"
+                [class.skipped]="cell.skipped"
+              >
+                {{ cell.day ?? '' }}
+              </div>
+            }
+          }
+        </div>
+
+        <div class="cal-footer">
+          <span class="cal-stat mono"
+            ><strong>{{ stats().total }}</strong>
+            {{ stats().total === 1 ? T().cal_stat_sessions_one : T().cal_stat_sessions }}</span
+          >
+          <span
+            class="cal-stat mono"
+            [class.cal-stat--up]="stats().delta30 > 0"
+            [class.cal-stat--down]="stats().delta30 < 0"
+          >
+            @if (stats().delta30 === 0) {
+              {{ stats().last30 }} / 30d
+            } @else {
+              {{
+                tr.tp('cal_stat_vs_prev', { n: (stats().delta30 > 0 ? '+' : '') + stats().delta30 })
+              }}
+            }
+          </span>
+          <span class="cal-stat mono"
+            >{{ T().cal_stat_streak.toLowerCase() }} <strong>{{ stats().streak }}</strong></span
+          >
+        </div>
+
+        <div class="cal-legend">
+          <span class="cal-legend-item"
+            ><span class="cal-legend-dot trained"></span> {{ T().cal_trained }}</span
+          >
+          <span class="cal-legend-item"
+            ><span class="cal-legend-dot skipped"></span> {{ T().history_skipped }}</span
+          >
+          <span class="cal-legend-item"
+            ><span class="cal-legend-dot today"></span> {{ T().today_label }}</span
+          >
+        </div>
+      </div>
+    } @else {
+      <details class="cal-fold">
+        <summary class="cal-fold-head">
+          <span class="cal-fold-title">{{ monthLabel() }}</span>
+          <span class="cal-fold-meta">
+            {{ stats().total }}
+            {{ stats().total === 1 ? T().cal_stat_sessions_one : T().cal_stat_sessions }}
+          </span>
+        </summary>
+        <div class="calendar">
+          <div class="cal-nav">
+            <button class="icon-btn" (click)="prevMonth()" [attr.aria-label]="T().prev_month">
+              <app-icon name="arrow_left" [size]="16" />
+            </button>
+            <span class="cal-month">{{ monthLabel() }}</span>
+            <button class="icon-btn" (click)="nextMonth()" [attr.aria-label]="T().next_month">
+              <app-icon name="arrow_right" [size]="16" />
+            </button>
+          </div>
+
+          <div class="cal-grid">
+            @for (d of DOW(); track d) {
+              <div class="cal-dow">{{ d }}</div>
+            }
+            @for (cell of calDays(); track $index) {
+              @if (cell.trained) {
+                <button
+                  class="cal-day trained"
+                  [class]="'cal-day trained cal-day--i' + (cell.intensity ?? 1)"
+                  [class.today]="cell.isToday"
+                  [attr.aria-label]="dayAria(cell)"
+                  (click)="onDayClick(cell)"
+                >
+                  {{ cell.day }}
+                </button>
+              } @else {
+                <div
+                  class="cal-day"
+                  [class.outside]="!cell.day"
+                  [class.today]="cell.isToday"
+                  [class.skipped]="cell.skipped"
+                >
+                  {{ cell.day ?? '' }}
+                </div>
+              }
+            }
+          </div>
+
+          <div class="cal-footer">
+            <span class="cal-stat mono"
+              ><strong>{{ stats().total }}</strong>
+              {{ stats().total === 1 ? T().cal_stat_sessions_one : T().cal_stat_sessions }}</span
+            >
+            <span
+              class="cal-stat mono"
+              [class.cal-stat--up]="stats().delta30 > 0"
+              [class.cal-stat--down]="stats().delta30 < 0"
+            >
+              @if (stats().delta30 === 0) {
+                {{ stats().last30 }} / 30d
+              } @else {
+                {{
+                  tr.tp('cal_stat_vs_prev', {
+                    n: (stats().delta30 > 0 ? '+' : '') + stats().delta30,
+                  })
+                }}
+              }
+            </span>
+            <span class="cal-stat mono"
+              >{{ T().cal_stat_streak.toLowerCase() }} <strong>{{ stats().streak }}</strong></span
+            >
+          </div>
+
+          <div class="cal-legend">
+            <span class="cal-legend-item"
+              ><span class="cal-legend-dot trained"></span> {{ T().cal_trained }}</span
+            >
+            <span class="cal-legend-item"
+              ><span class="cal-legend-dot skipped"></span> {{ T().history_skipped }}</span
+            >
+            <span class="cal-legend-item"
+              ><span class="cal-legend-dot today"></span> {{ T().today_label }}</span
+            >
+          </div>
+        </div>
+      </details>
+    }
   }
 
   <!-- ═══ PRs top 3 ═══ -->

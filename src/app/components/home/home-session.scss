@@ -515,3 +515,9 @@
     margin: 0 0 8px 2px;
   }
 }
+
+/* Objetivos táctiles de la sesión (T-840): píldoras y selector de día medían 40-41 px. */
+.session-pill,
+.session-day-btn {
+  min-height: 44px;
+}

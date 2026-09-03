@@ -277,8 +277,10 @@ button.asc-value {
 .asc-link {
   font-size: var(--fs-xs);
   color: var(--text-2);
-  padding: 8px 6px;
-  min-height: 36px;
+  padding: 8px 10px;
+  /* 36 px no se pulsa: son objetivos reales, no decoración (T-840). */
+  min-height: 44px;
+  min-width: 44px;
   border-radius: var(--radius-sm);
   transition: color 0.12s;
 }
@@ -417,4 +419,79 @@ button.asc-value {
   width: 100%;
   padding-top: var(--sp-2);
   border-top: 1px solid var(--border);
+}
+
+/* ═══════ El peso cabe, y el plan se ve (T-840) ═══════ */
+
+/*
+ * El campo de peso necesita más sitio que el de reps: 107,5 son cinco caracteres y 6 es
+ * uno. Repartir el ancho a partes iguales hacía que el número se comiera los botones o se
+ * cortara, que es exactamente lo que pasaba.
+ */
+.asc-stepper:first-child {
+  flex: 1.3;
+}
+
+.asc-value {
+  /* Es un botón (abre la calculadora de discos): tiene que poder pulsarse. */
+  min-height: 44px;
+  min-width: 56px;
+}
+
+/* Un peso ilegible no es un peso: antes de recortar, se baja un escalón. */
+.asc-value--long {
+  font-size: var(--fs-num-md);
+}
+
+.asc-plan {
+  display: flex;
+  gap: 5px;
+  margin: 12px 0 0;
+}
+
+.asc-plan-set {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  padding: 6px 2px;
+  border-radius: var(--radius-md);
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+}
+
+.asc-plan-set--now {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+
+.asc-plan-set--done {
+  border-color: var(--success-border);
+  background: var(--success-bg);
+}
+
+.asc-plan-n {
+  display: block;
+  font-size: var(--fs-2xs);
+  color: var(--text-3);
+}
+
+.asc-plan-w {
+  display: block;
+  margin-top: 1px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.asc-plan-set--now .asc-plan-w {
+  color: var(--accent);
+}
+.asc-plan-set--done .asc-plan-w {
+  color: var(--success);
+}
+
+/* Aceptar y rechazar la sugerencia también se pulsan mientras entrenas. */
+.asc-ai-actions button {
+  min-height: 44px;
+  min-width: 44px;
 }

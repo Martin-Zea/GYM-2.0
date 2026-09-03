@@ -55,7 +55,6 @@ export class ActiveSetCardComponent {
   readonly requestAi = output<void>();
   readonly exerciseCompleted = output<void>();
   readonly nextExercise = output<void>();
-  readonly showTable = output<void>();
 
   protected readonly showPlates = signal(false);
   protected readonly showNote = signal(false);
@@ -76,6 +75,23 @@ export class ActiveSetCardComponent {
     const i = this.currentIdx();
     return i >= 0 ? this.setsArray()[i] : null;
   });
+
+  /** El peso planificado de una serie, tal y como se enseña en la tira del plan. */
+  protected planWeight(set: { weight: number | string; reps: number | string }): string {
+    if (this.exercise().unit === 'BODYWEIGHT' || this.exercise().unit === 'TIME') {
+      return `${set.reps || '—'}`;
+    }
+    const w = Number(set.weight);
+    return Number.isFinite(w) && w > 0 ? `${w}` : '—';
+  }
+
+  /**
+   * `true` cuando el número no cabe a tamaño completo.
+   *
+   * Con tres cifras y decimal —107,5— el valor se comía los botones o se cortaba. Baja un
+   * escalón de la escala en vez de recortar: un peso ilegible no es un peso.
+   */
+  protected readonly longValue = computed(() => `${this.displayWeight() ?? ''}`.length >= 5);
 
   protected readonly doneCount = computed(() => this.setsArray().filter((s) => s.done).length);
   protected readonly isDone = computed(() => this.currentIdx() < 0);

@@ -9,6 +9,7 @@ import { Session } from '../../models/workout.model';
 import { sessionDurationMinutes, tonnageOf, workingSets } from '../../utils/session';
 import { detectPr } from '../../utils/pr';
 import { realSessions } from '../../utils/dashboard';
+import { ViewportService } from '../../services/viewport.service';
 
 interface HistoryRow {
   session: Session;
@@ -41,6 +42,7 @@ export class SessionHistoryComponent {
   protected readonly tr = inject(TranslationService);
   protected readonly T = this.tr.T;
   protected readonly uiState = inject(UIStateService);
+  protected readonly viewport = inject(ViewportService);
 
   /** `null` = todos los días de la rutina. */
   protected readonly dayFilter = signal<string | null>(null);
@@ -119,7 +121,26 @@ export class SessionHistoryComponent {
   /** Las series de la sesión abierta, agrupadas por ejercicio y en orden. */
   protected readonly selectedGroups = computed(() => {
     const row = this.selected();
-    if (!row) return [];
+    return row ? this.groupsFor(row) : [];
+  });
+
+  /**
+   * En móvil no hay sitio para lista Y detalle: la tarjeta se abre en su sitio (T-840).
+   *
+   * Arranca cerrada a propósito. En escritorio `selected()` abre la primera por defecto
+   * porque el detalle vive en una columna vacía si no; aquí abrir una sola sesión de
+   * entrada empujaría el resto de la lista fuera de pantalla sin que nadie lo pidiera.
+   */
+  protected readonly expandedId = signal<string | null>(null);
+
+  protected toggleExpanded(id: string): void {
+    this.expandedId.set(this.expandedId() === id ? null : id);
+  }
+
+  /** Las series de UNA sesión, agrupadas por ejercicio. */
+  protected groupsFor(
+    row: HistoryRow,
+  ): { name: string; sets: { weight: number; reps: number }[] }[] {
     const catalog = new Map(this.state.exercises().map((e) => [e.id, e]));
     const groups = new Map<string, { name: string; sets: { weight: number; reps: number }[] }>();
     for (const set of row.session.sets) {
@@ -128,7 +149,12 @@ export class SessionHistoryComponent {
       groups.get(set.exerciseId)!.sets.push({ weight: set.weight, reps: set.reps });
     }
     return [...groups.values()];
-  });
+  }
+
+  protected onDaySelect(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.setDayFilter(value || null);
+  }
 
   protected readonly trashCount = computed(() => (this.state.state().trash ?? []).length);
 

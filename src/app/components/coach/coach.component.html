@@ -165,38 +165,47 @@
           </div>
         }
 
-        @for (row of rows(); track row.exercise.id) {
-          <div class="card coach-sug">
-            <div class="coach-sug-head">
-              <b class="coach-sug-name">{{ row.exercise.name }}</b>
-              <b class="coach-sug-value">
-                @if (weightLabel(row); as w) {
-                  {{ w }} × {{ repsLabel(row) }}
-                } @else {
-                  {{ repsLabel(row) }} {{ T().reps_short }}
-                }
-              </b>
-            </div>
-            <p class="note coach-sug-reason">{{ row.rec.reason }}</p>
+        <!--
+          El detalle SOLO cuando se pide (T-840).
 
-            @if (row.answered; as answered) {
-              <span class="chip chip--ok">{{ actionLabel(answered.action) }}</span>
-            } @else {
-              <div class="coach-sug-actions">
-                <button class="btn btn-sm coach-accept" type="button" (click)="accept(row)">
-                  {{ T().coach_accept }}
-                </button>
-                <button class="btn btn-ghost btn-sm" type="button" (click)="change(row)">
-                  {{ T().coach_change }}
-                </button>
-                <button class="btn btn-ghost btn-sm" type="button" (click)="reject(row)">
-                  {{ T().coach_reject }}
-                </button>
+          Antes se ofrecía "Aceptar todo" y debajo se repetían igualmente las tres opciones
+          en cada tarjeta: doce botones para lo que casi siempre es UNA decisión, y un
+          "Revisar uno a uno" que no revelaba nada porque el detalle ya estaba puesto.
+        -->
+        @if (batchDismissed() || pendingRows().length <= 1) {
+          @for (row of rows(); track row.exercise.id) {
+            <div class="card coach-sug">
+              <div class="coach-sug-head">
+                <b class="coach-sug-name">{{ row.exercise.name }}</b>
+                <b class="coach-sug-value">
+                  @if (weightLabel(row); as w) {
+                    {{ w }} × {{ repsLabel(row) }}
+                  } @else {
+                    {{ repsLabel(row) }} {{ T().reps_short }}
+                  }
+                </b>
               </div>
-            }
-          </div>
-        } @empty {
-          <p class="note">{{ T().coach_no_suggestions }}</p>
+              <p class="note coach-sug-reason">{{ row.rec.reason }}</p>
+
+              @if (row.answered; as answered) {
+                <span class="chip chip--ok">{{ actionLabel(answered.action) }}</span>
+              } @else {
+                <div class="coach-sug-actions">
+                  <button class="btn btn-sm coach-accept" type="button" (click)="accept(row)">
+                    {{ T().coach_accept }}
+                  </button>
+                  <button class="btn btn-ghost btn-sm" type="button" (click)="change(row)">
+                    {{ T().coach_change }}
+                  </button>
+                  <button class="btn btn-ghost btn-sm" type="button" (click)="reject(row)">
+                    {{ T().coach_reject }}
+                  </button>
+                </div>
+              }
+            </div>
+          } @empty {
+            <p class="note">{{ T().coach_no_suggestions }}</p>
+          }
         }
 
         <div class="card coach-usage">

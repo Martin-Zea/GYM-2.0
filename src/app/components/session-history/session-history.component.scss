@@ -126,3 +126,110 @@
     align-items: start;
   }
 }
+
+/* ═══════ Móvil: tarjetas en vez de tabla (T-840) ═══════ */
+
+.hist-select {
+  width: 100%;
+  min-height: 44px;
+}
+
+.hist-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.hist-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.hist-card--on {
+  border-color: var(--accent-border);
+}
+
+.hist-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  min-height: 44px;
+  padding: 13px 14px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hist-card-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+/* El nombre del día cabe entero: era lo que partía la fila en cuatro líneas. */
+.hist-card-name {
+  min-width: 0;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.hist-card-date {
+  flex: 0 0 auto;
+  font-size: var(--fs-2xs);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.hist-card-nums {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.hist-card-num {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+}
+
+.hist-card-unit {
+  margin-right: var(--sp-2);
+  font-size: var(--fs-2xs);
+  color: var(--text-3);
+}
+
+.hist-card-hl {
+  font-size: var(--fs-xs);
+  color: var(--accent);
+}
+
+.hist-card-body {
+  padding: var(--sp-3) 14px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.hist-group-sets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 5px 0 0;
+}
+
+.hist-set-chip {
+  padding: 4px 9px;
+  border-radius: 99px;
+  background: var(--bg-2);
+  font-size: var(--fs-xs);
+  color: var(--text-1);
+}
+
+/* Editar y borrar tambien se pulsan: median 26 px de alto (T-840). */
+.hist-actions .btn {
+  min-height: 44px;
+}

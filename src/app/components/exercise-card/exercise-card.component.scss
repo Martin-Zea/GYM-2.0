@@ -117,7 +117,7 @@
 }
 .sets-header {
   display: grid;
-  grid-template-columns: 26px 28px 1fr 1fr 44px;
+  grid-template-columns: 44px 22px 1fr 1fr 44px;
   gap: 6px;
   padding: 0 4px;
   font-size: var(--fs-2xs);
@@ -126,9 +126,16 @@
   color: var(--text-3);
   font-weight: 500;
 }
+/*
+ * La rejilla de la fila (T-840).
+ *
+ * En móvil el botón de calentamiento pasa a 44px —era 26 y es un objetivo táctil— y los
+ * steppers en línea desaparecen, así que el número se queda con ~90px en vez de 36. Con
+ * los 8 botones anteriores no cabía "107,5" de ninguna manera: la aritmética no daba.
+ */
 .set-row {
   display: grid;
-  grid-template-columns: 26px 28px 1fr 1fr 44px;
+  grid-template-columns: 44px 22px 1fr 1fr 44px;
   gap: 6px;
   align-items: center;
   padding: 4px;
@@ -172,8 +179,10 @@
 .set-row.warmup {
   opacity: 0.65;
 }
+/* Es un botón, no una etiqueta: 44×44 o no se pulsa (T-840). */
 .set-warmup-btn {
-  width: 26px;
+  width: 100%;
+  min-width: 44px;
   min-height: 44px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
@@ -430,4 +439,17 @@
   display: flex;
   gap: var(--sp-2);
   flex-wrap: wrap;
+}
+
+/* En escritorio vuelven los steppers en línea: ahí sí hay sitio. */
+@media (min-width: 768px) {
+  .set-row,
+  .sets-header {
+    grid-template-columns: 44px 26px 1fr 1fr 44px;
+  }
+}
+
+/* Añadir y quitar serie medían 40 px: cuatro cortos del mínimo (T-840). */
+.set-actions .add-set-btn {
+  min-height: 44px;
 }

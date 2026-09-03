@@ -23,7 +23,7 @@ import { TranslationService } from '../../services/translation.service';
 import { STORAGE_KEYS } from '../../services/storage-keys';
 import { AiRecommendation, Exercise, Session, WorkoutDay } from '../../models/workout.model';
 import { daysBetweenISO, mondayOfISO, shiftISO, weekdayISO } from '../../utils/date';
-import { WEEKLY_SET_RANGE, adherence } from '../../utils/stats';
+import { WEEKLY_SET_RANGE, adherence, adherenceWeeks } from '../../utils/stats';
 import { dashboardKpis, groupSeriesByWeek, realSessions } from '../../utils/dashboard';
 import { sessionDurationMinutes, tonnageOf, workingSets } from '../../utils/session';
 import { CatalogService } from '../../services/catalog.service';
@@ -334,6 +334,11 @@ export class HomeComponent {
   /** Adherencia de las últimas 4 semanas contra los días que declara la rutina activa. */
   protected readonly adherencePct = computed(() =>
     adherence(this.state.sessions(), this.state.days().length || null, this.state.todayKey),
+  );
+
+  /** Contra cuántas semanas se está comparando: sin esto el porcentaje no se puede leer. */
+  protected readonly adherenceWindow = computed(() =>
+    adherenceWeeks(this.state.sessions(), this.state.todayKey),
   );
 
   /**

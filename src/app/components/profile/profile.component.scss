@@ -286,17 +286,81 @@
   gap: 2px;
 }
 
+/* ═══════ Secciones plegables y campos que se pulsan (T-840) ═══════ */
+
 /*
- * Escritorio: dos columnas (T-839).
+ * `<details>` nativo: se abre sin JavaScript, aparece en la búsqueda del navegador y trae
+ * su semántica de accesibilidad puesta. En escritorio se fuerzan abiertos desde el
+ * componente, porque allí sobra sitio y plegar no compra nada.
+ */
+.pf-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  padding: var(--sp-1) 0;
+  cursor: pointer;
+  list-style: none;
+}
+.pf-head::-webkit-details-marker {
+  display: none;
+}
+
+.pf-head-title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+
+.pf-head-meta {
+  flex: 0 0 auto;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+
+/* El chevron lo pone el CSS: un marcador nativo no se puede estilar de forma fiable. */
+.pf-head::after {
+  content: '';
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-2);
+  border-bottom: 2px solid var(--text-2);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform 0.15s;
+}
+.pf-fold[open] > .pf-head::after {
+  transform: rotate(-135deg) translate(-2px, -2px);
+}
+
+/*
+ * Los campos eran de 22 y 37 px de alto. Un input de 22 px no se acierta con el pulgar:
+ * el mínimo es 44 y aquí van algo por encima porque son los que se teclean.
+ */
+.profile-row-input input,
+.profile-measure input,
+.weight-log input,
+.profile-row select {
+  min-height: 46px;
+}
+
+.profile-notes-input {
+  min-height: 88px;
+}
+
+/* Incluye el de guardar medidas, que cuelga FUERA de .profile-measures y median 26 px. */
+.pf-fold .btn,
+.profile-section .btn,
+.weight-log .btn {
+  min-height: 44px;
+}
+
+/*
+ * Escritorio: dos columnas, por CLASE y no por posición (T-840).
  *
- * A la izquierda lo que se EDITA —datos, objetivo, notas— y a la derecha lo que se MIRA
- * —peso corporal y récords—. En una sola columna de 1440px de ancho, un campo de edad
- * de 1100px al lado de una etiqueta de cuatro letras es ridículo, y los récords quedan
- * a tres pantallas de scroll de lo único que los cambia.
- *
- * Cada sección tiene su propia celda con fila explícita. Sin filas explícitas, la
- * autocolocación deja huecos o —peor— dos bloques compartiendo celda: eso ya pasó una vez
- * en el panel y no se ve en una captura, solo midiendo.
+ * Antes iba con `:nth-of-type`, y al partir la sección grande en cinco el mapa se rompía
+ * entero. Con clases, añadir o mover una sección no descoloca al resto.
  */
 @media (min-width: 768px) {
   .main {
@@ -310,23 +374,30 @@
     grid-column: 1 / -1;
   }
 
-  /* Editar */
-  .profile-section:nth-of-type(2) {
-    grid-column: 1;
-    grid-row: 2;
+  /* Izquierda: lo que se edita. Derecha: lo que se mira. Cada una en su celda. */
+  .pf-data {
+    grid-area: 2 / 1;
   }
-  .profile-section:nth-of-type(3) {
-    grid-column: 1;
-    grid-row: 3;
+  .pf-level {
+    grid-area: 3 / 1;
+  }
+  .pf-goal {
+    grid-area: 4 / 1;
+  }
+  .pf-equipment {
+    grid-area: 5 / 1;
+  }
+  .pf-notes {
+    grid-area: 6 / 1;
   }
 
-  /* Mirar */
-  .profile-section:nth-of-type(1) {
-    grid-column: 2;
-    grid-row: 2;
+  .pf-weight {
+    grid-area: 2 / 2;
   }
-  .profile-section:nth-of-type(4) {
-    grid-column: 2;
-    grid-row: 3;
+  .pf-measures {
+    grid-area: 3 / 2;
+  }
+  .pf-prs {
+    grid-area: 4 / 2;
   }
 }

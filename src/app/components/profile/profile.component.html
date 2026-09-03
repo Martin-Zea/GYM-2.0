@@ -5,7 +5,7 @@
   </div>
 
   <!-- Peso corporal: se registra y edita aquí -->
-  <section class="profile-section">
+  <section class="profile-section pf-weight">
     <p class="section-title">{{ T().bodyweight_chart_title }}</p>
     <div class="weight-log">
       <!-- Fila de hoy: siempre visible, crea o actualiza la entrada de hoy -->
@@ -85,8 +85,15 @@
   </section>
 
   <!-- Datos personales: editables aquí (antes en Ajustes) -->
-  <section class="profile-section">
-    <p class="section-title">{{ T().profile_data_section }}</p>
+  <details
+    class="profile-section pf-fold pf-data"
+    [open]="isOpen('data')"
+    (toggle)="onToggle('data', $event)"
+  >
+    <summary class="pf-head">
+      <span class="pf-head-title">{{ T().profile_data_section }}</span>
+      <span class="pf-head-meta">{{ dataSummary() }}</span>
+    </summary>
     <div class="profile-row">
       <label class="profile-row-label" for="profile-height">{{ T().settings_height }}</label>
       <div class="profile-row-input">
@@ -135,11 +142,18 @@
         <option value="other">{{ T().settings_sex_other }}</option>
       </select>
     </div>
-  </section>
+  </details>
 
   <!-- Objetivo y notas: lo que más pesa en la recomendación de la IA -->
-  <section class="profile-section">
-    <p class="section-title">{{ T().profile_level_label }}</p>
+  <details
+    class="profile-section pf-fold pf-level"
+    [open]="isOpen('level')"
+    (toggle)="onToggle('level', $event)"
+  >
+    <summary class="pf-head">
+      <span class="pf-head-title">{{ T().profile_level_label }}</span>
+      <span class="pf-head-meta">{{ levelSummary() }}</span>
+    </summary>
     <p class="profile-section-desc">{{ T().profile_level_desc }}</p>
     <div class="profile-goal-chips profile-chips--level">
       @for (opt of levelOptions; track opt.value) {
@@ -152,8 +166,17 @@
         </button>
       }
     </div>
+  </details>
 
-    <p class="section-title profile-goal-title">{{ T().measures_title }}</p>
+  <details
+    class="profile-section pf-fold pf-measures"
+    [open]="isOpen('measures')"
+    (toggle)="onToggle('measures', $event)"
+  >
+    <summary class="pf-head">
+      <span class="pf-head-title">{{ T().measures_title }}</span>
+      <span class="pf-head-meta">{{ measuresSummary() }}</span>
+    </summary>
     <p class="profile-section-desc">{{ T().measures_desc }}</p>
     <div class="profile-measures">
       @for (field of measureFields; track field.key) {
@@ -170,8 +193,17 @@
       }
     </div>
     <button class="btn btn-sm" (click)="saveMeasures()">{{ T().measures_add }}</button>
+  </details>
 
-    <p class="section-title profile-goal-title">{{ T().profile_equipment_label }}</p>
+  <details
+    class="profile-section pf-fold pf-equipment"
+    [open]="isOpen('equipment')"
+    (toggle)="onToggle('equipment', $event)"
+  >
+    <summary class="pf-head">
+      <span class="pf-head-title">{{ T().profile_equipment_label }}</span>
+      <span class="pf-head-meta">{{ equipmentSummary() }}</span>
+    </summary>
     <p class="profile-section-desc">{{ T().profile_equipment_desc }}</p>
     <div class="profile-goal-chips profile-chips--equipment">
       @for (eq of equipmentOptions; track eq) {
@@ -184,8 +216,17 @@
         </button>
       }
     </div>
+  </details>
 
-    <p class="section-title profile-goal-title">{{ T().settings_goal_label }}</p>
+  <details
+    class="profile-section pf-fold pf-goal"
+    [open]="isOpen('goal')"
+    (toggle)="onToggle('goal', $event)"
+  >
+    <summary class="pf-head">
+      <span class="pf-head-title">{{ T().settings_goal_label }}</span>
+      <span class="pf-head-meta">{{ goalSummary() }}</span>
+    </summary>
     <p class="profile-section-desc">{{ T().settings_goal_desc }}</p>
     <div class="profile-goal-chips profile-chips--goal">
       <button
@@ -210,6 +251,17 @@
         {{ T().settings_goal_endurance }}
       </button>
     </div>
+  </details>
+
+  <details
+    class="profile-section pf-fold pf-notes"
+    [open]="isOpen('notes')"
+    (toggle)="onToggle('notes', $event)"
+  >
+    <summary class="pf-head">
+      <span class="pf-head-title">{{ T().settings_ai_notes_label }}</span>
+      <span class="pf-head-meta">{{ notesSummary() }}</span>
+    </summary>
     <label class="profile-notes-label" for="profile-ai-notes">{{
       T().settings_ai_notes_label
     }}</label>
@@ -223,10 +275,10 @@
       (input)="patchAiNotes($event)"
     ></textarea>
     <p class="profile-section-desc profile-ai-note">{{ T().settings_profile_ai_note }}</p>
-  </section>
+  </details>
 
   <!-- Récords personales -->
-  <section class="profile-section">
+  <section class="profile-section pf-prs">
     <p class="section-title">{{ T().profile_achievements_title }}</p>
     @if (achievements().length > 0) {
       <ul class="achievements-list">

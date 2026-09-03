@@ -134,9 +134,15 @@
             </button>
             <span class="set-num">{{ i + 1 }}</span>
 
-            <!-- Weight column: [ − ] input [ + ] -->
+            <!--
+              Columna de peso. Los botones de paso solo en ESCRITORIO (T-840): en 390px la
+              regla de 44x44 pide 8 botones por fila y no quedan ni 40px para el numero,
+              que es como "32,5" acababa cortado y "107,5" ilegible. En el telefono se
+              teclea el valor y los steppers grandes viven en la vista enfocada, que es la
+              que se usa entrenando.
+            -->
             <div class="set-input-wrap">
-              @if (exercise().unit !== 'BODYWEIGHT' && !set.done) {
+              @if (viewport.isDesktop() && exercise().unit !== 'BODYWEIGHT' && !set.done) {
                 <button
                   class="inline-ctrl-btn"
                   (click)="$event.stopPropagation(); stepWeight(i, -weightStep())"
@@ -162,7 +168,7 @@
               } @else {
                 <span class="set-input set-input-bw">—</span>
               }
-              @if (exercise().unit !== 'BODYWEIGHT' && !set.done) {
+              @if (viewport.isDesktop() && exercise().unit !== 'BODYWEIGHT' && !set.done) {
                 <button
                   class="inline-ctrl-btn"
                   (click)="$event.stopPropagation(); stepWeight(i, weightStep())"
@@ -175,7 +181,7 @@
 
             <!-- Reps column: [ − ] input [ + ] -->
             <div class="set-input-wrap">
-              @if (!set.done) {
+              @if (viewport.isDesktop() && !set.done) {
                 <button
                   class="inline-ctrl-btn"
                   (click)="$event.stopPropagation(); stepReps(i, -1)"
@@ -197,7 +203,7 @@
                 (input)="updateReps(i, $event)"
                 (keydown.enter)="$event.preventDefault(); toggleDone(i)"
               />
-              @if (!set.done) {
+              @if (viewport.isDesktop() && !set.done) {
                 <button
                   class="inline-ctrl-btn"
                   (click)="$event.stopPropagation(); stepReps(i, 1)"

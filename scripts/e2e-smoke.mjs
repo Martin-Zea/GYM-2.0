@@ -157,24 +157,6 @@ check(
   (await page.locator('.resume-card').count()) === 0,
 );
 
-// ── T-704 · Pase mobile-first: targets y ancho (Art. 1, CE-1) ──
-const smallTargets = await page.evaluate(() => {
-  const MIN = 44;
-  const selectors = 'button, a[href], select, input[type="number"]';
-  const bad = [];
-  for (const el of document.querySelectorAll(selectors)) {
-    const r = el.getBoundingClientRect();
-    // Solo lo visible: lo que está oculto no se puede pulsar y no cuenta
-    if (r.width === 0 || r.height === 0) continue;
-    if (r.height < MIN && r.width < MIN) {
-      bad.push(`${el.tagName}.${el.className}`.slice(0, 60));
-    }
-  }
-  return bad;
-});
-check(`mobile: targets de 44px (${smallTargets.length} pequeños)`, smallTargets.length === 0);
-if (smallTargets.length) console.log('   targets pequeños:', smallTargets.slice(0, 6));
-
 const overflows = await page.evaluate(
   () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
 );
@@ -186,8 +168,25 @@ check('mobile: sin scroll horizontal', !overflows);
 await page.goto(`${BASE}/history`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(700);
 check('historial: /history tiene pantalla propia', page.url().endsWith('/history'));
-check('historial: tabla de sesiones', (await page.locator('.hist-table').count()) === 1);
-check('historial: filtros por día', (await page.locator('.hist-chip').count()) > 1);
+// En MÓVIL el historial son tarjetas, no la tabla de escritorio (T-840): la tabla partía
+// los nombres en cuatro líneas y gastaba una columna en una duración casi siempre vacía.
+check('historial: tarjetas de sesión en móvil', (await page.locator('.hist-card').count()) > 1);
+check('historial: sin tabla en móvil', (await page.locator('.hist-table').count()) === 0);
+check(
+  'historial: filtro por día como selector',
+  (await page.locator('.hist-select option').count()) > 1,
+);
+
+// Y la tarjeta se abre EN su sitio, sin salir de la lista.
+await page.locator('.hist-card-head').first().click();
+await page.waitForTimeout(400);
+check('historial: la tarjeta se despliega', (await page.locator('.hist-card-body').count()) === 1);
+check(
+  'historial: la lista sigue entera al desplegar',
+  (await page.locator('.hist-card').count()) > 1,
+);
+await page.locator('.hist-card-head').first().click();
+await page.waitForTimeout(300);
 
 await page.goto(`${BASE}/charts`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(600);
@@ -291,6 +290,14 @@ check(
 );
 check('escritorio: ajustes sin backdrop', (await page.locator('.sheet-backdrop').count()) === 0);
 
+// La tabla del historial es de escritorio y ahí se queda: en móvil son tarjetas.
+await go(`${BASE}/history`);
+await page.waitForTimeout(600);
+check(
+  'escritorio: el historial sigue siendo tabla',
+  (await page.locator('.hist-table').count()) === 1,
+);
+
 // Rutinas: la lista de días y el día elegido conviven.
 await page.goto(`${BASE}/routines`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(600);
@@ -371,6 +378,81 @@ await page
 await page.waitForTimeout(400);
 
 await page.setViewportSize({ width: 390, height: 844 });
+
+/*
+ * T-704 / T-840 · Objetivos táctiles de 44 px, medidos de verdad.
+ *
+ * Esto medía `height < MIN && width < MIN`: solo marcaba lo que era pequeño en LAS DOS
+ * dimensiones, así que un chip de 148×32 pasaba y un stepper de 28×44 también. Decía
+ * "0 pequeños" mientras había decenas, y por eso se fueron acumulando.
+ *
+ * La regla real es 44×44: falla si CUALQUIERA de las dos se queda corta. Y se mide en
+ * TODAS las pantallas, no en la última que quedara abierta.
+ *
+ * `data-tap-exempt` es la única salida, y obliga a escribir por qué en el marcado: sirve
+ * para enlaces de texto dentro de un párrafo, donde un bloque de 44 px rompería la línea.
+ */
+const TAP_AUDIT = () => {
+  const MIN = 44;
+  const bad = [];
+  const sel = 'button, a[href], select, input, textarea, [role="button"]';
+  for (const el of document.querySelectorAll(sel)) {
+    if (el.closest('[data-tap-exempt]')) continue;
+    const r = el.getBoundingClientRect();
+    const st = getComputedStyle(el);
+    if (r.width === 0 || r.height === 0) continue;
+    if (st.visibility === 'hidden' || st.display === 'none') continue;
+    if (r.height < MIN || r.width < MIN) {
+      const label = (el.getAttribute('aria-label') || el.textContent || el.tagName)
+        .trim()
+        .replace(/\s+/g, ' ')
+        .slice(0, 24);
+      bad.push(`${label} ${Math.round(r.width)}×${Math.round(r.height)}`);
+    }
+  }
+  return bad;
+};
+
+// El medidor va al final del guion, donde el viewport ya está en escritorio: se vuelve a
+// móvil A PROPÓSITO. Sin esta línea medía 1440 px y decía "0 pequeños" con razón —y sin
+// mirar el teléfono, que es de lo que trata la comprobación.
+await page.setViewportSize({ width: 390, height: 844 });
+
+const tapPantallas = [
+  ['inicio', '/'],
+  ['progreso', '/progress'],
+  ['rutinas', '/routines'],
+  ['coach', '/coach'],
+  ['ajustes', '/settings'],
+  ['perfil', '/profile'],
+  ['historial', '/history'],
+];
+const smallTargets = [];
+for (const [nombre, ruta] of tapPantallas) {
+  await go(`${BASE}${ruta}`);
+  await page.waitForTimeout(500);
+  for (const t of await page.evaluate(TAP_AUDIT)) smallTargets.push(`${nombre}: ${t}`);
+}
+// Y la sesión, que es donde más se pulsa. Se limpia el estado: a estas alturas del guion
+// la sesión de hoy ya se cerró y el panel no ofrece "Empezar".
+await go(`${BASE}`);
+await page.evaluate(() => localStorage.clear());
+await go(`${BASE}`);
+await page.waitForTimeout(800);
+if (await page.locator('.today-cta').count()) {
+  await page.locator('.today-cta').first().click();
+  await page.waitForTimeout(1200);
+  for (const t of await page.evaluate(TAP_AUDIT)) smallTargets.push(`sesion: ${t}`);
+  await page
+    .locator('.session-view-toggle, .sv-toggle')
+    .first()
+    .click()
+    .catch(() => {});
+  await page.waitForTimeout(700);
+  for (const t of await page.evaluate(TAP_AUDIT)) smallTargets.push(`sesion-lista: ${t}`);
+}
+check(`mobile: targets de 44px (${smallTargets.length} pequeños)`, smallTargets.length === 0);
+if (smallTargets.length) console.log('   targets pequeños:', smallTargets.slice(0, 40));
 
 check('cero errores de página', consoleErrors.length === 0);
 if (consoleErrors.length) console.log('pageerrors:', consoleErrors.join(' | '));

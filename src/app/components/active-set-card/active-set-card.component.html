@@ -31,6 +31,29 @@
     }
   </div>
 
+  <!--
+    El PLAN de las series (T-840).
+
+    Sin esto la tarjeta se contradecía: el motivo decía "las últimas 2 series suben a
+    32,5" y el stepper cargaba 30. Las dos cosas son ciertas —la doble progresión sube
+    solo las últimas— pero desde aquí no había forma de saberlo, y el número de la
+    pantalla parecía desmentir la frase de al lado.
+  -->
+  @if (!isDone() && setsArray().length > 1) {
+    <div class="asc-plan">
+      @for (s of setsArray(); track $index) {
+        <div
+          class="asc-plan-set"
+          [class.asc-plan-set--now]="$index === currentIdx()"
+          [class.asc-plan-set--done]="s.done"
+        >
+          <span class="asc-plan-n">{{ $index + 1 }}</span>
+          <span class="asc-plan-w mono">{{ planWeight(s) }}</span>
+        </div>
+      }
+    </div>
+  }
+
   <!-- La última vez: referencia para decidir el peso de hoy (RF-SES-02) -->
   @if (prevSetsLine()) {
     <p class="asc-prev">
@@ -98,13 +121,18 @@
               <button
                 class="asc-value mono"
                 [class.asc-value--empty]="displayWeight() === null"
+                [class.asc-value--long]="longValue()"
                 (click)="showPlates.set(!showPlates())"
                 [title]="T().plates_btn_title"
               >
                 {{ displayWeight() ?? '—' }}
               </button>
             } @else {
-              <span class="asc-value mono" [class.asc-value--empty]="displayWeight() === null">
+              <span
+                class="asc-value mono"
+                [class.asc-value--empty]="displayWeight() === null"
+                [class.asc-value--long]="longValue()"
+              >
                 {{ displayWeight() ?? '—' }}
               </span>
             }
@@ -161,18 +189,6 @@
       <app-icon name="check" [size]="20" />
       {{ T().asc_set_done }}
     </button>
-
-    <div class="asc-secondary">
-      <button class="asc-link" (click)="showTable.emit()">{{ T().asc_view_table }}</button>
-      <button
-        class="asc-link"
-        [class.asc-link--active]="current()?.isWarmup"
-        (click)="toggleWarmup()"
-      >
-        {{ T().set_warmup_toggle }}
-      </button>
-      <button class="asc-link" (click)="openChart()">{{ T().view_chart }}</button>
-    </div>
   } @else {
     <!-- Ejercicio completo: sensación + siguiente -->
     <div class="asc-complete">
@@ -224,7 +240,21 @@
     Queda fuera la más frecuente —la nota— y el resto se pliega tras "Más". La destructiva
     va separada por una línea, no mezclada entre "Ver tabla" y "Añadir ejercicio".
   -->
+  <!--
+    Tres acciones, no seis (T-840). El cambio de vista subió al header de la sesión, que es
+    donde vive el estado; "ver progresión" bajó a "Más". Aquí quedan solo cosas que se
+    hacen SOBRE el ejercicio que estás levantando.
+  -->
   <div class="asc-footer">
+    @if (!isDone()) {
+      <button
+        class="asc-link"
+        [class.asc-link--active]="current()?.isWarmup"
+        (click)="toggleWarmup()"
+      >
+        {{ T().set_warmup_toggle }}
+      </button>
+    }
     <button class="asc-link" (click)="showNote.set(!showNote())">
       {{ todayNote() ? T().asc_note_edit : T().asc_note_add }}
     </button>
@@ -243,6 +273,9 @@
           {{ T().asc_substitute }}
         </button>
       }
+      <button class="asc-link" (click)="openChart(); showMore.set(false)">
+        {{ T().view_chart }}
+      </button>
       @if (!isDone() && doneCount() > 0) {
         <button class="asc-link" (click)="undoLastSet()">{{ T().asc_undo_set }}</button>
       }

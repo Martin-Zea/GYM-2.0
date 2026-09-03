@@ -59,10 +59,17 @@
  * el atleta, eso es la interfaz votando. Aceptar sigue siendo la opción destacada —es la
  * más frecuente— pero con el par suave, no con un muro de color.
  */
+/*
+ * Aceptar es una ACCIÓN, y en este sistema la acción es naranja (T-840).
+ *
+ * Estaba en verde, que aquí significa "hecho": serie completada, día entrenado, tendencia
+ * al alza. Dos idiomas de color en la misma app hacen que ninguno signifique nada; la
+ * regla está escrita en CLAUDE.md y esta pantalla era la que la incumplía.
+ */
 .coach-accept {
-  background: var(--success-bg);
-  color: var(--success);
-  border-color: var(--success-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-color: var(--accent-border);
   font-weight: 600;
 }
 
@@ -430,4 +437,9 @@
   min-height: 0;
   padding: var(--sp-4);
   overflow-y: auto;
+}
+
+/* Las pestañas eran de 34 px: por debajo del mínimo táctil (T-840). */
+.coach-tabs button {
+  min-height: 44px;
 }

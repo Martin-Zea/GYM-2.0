@@ -6,109 +6,204 @@
     </div>
   </div>
 
-  <!-- Filtro por día de la rutina: el mismo criterio que el gráfico de progresión -->
-  <div class="hist-filters">
-    <button
-      class="chip hist-chip"
-      type="button"
-      [class.chip--accent]="dayFilter() === null"
-      [attr.aria-pressed]="dayFilter() === null"
-      (click)="setDayFilter(null)"
-    >
-      {{ T().history_all_days }}
-    </button>
-    @for (day of days(); track day.id) {
+  <!--
+    Filtro por día. En escritorio, chips: hay ancho y se ven todos de golpe.
+    En móvil eran SEIS chips de 32 px en dos filas —por debajo del mínimo táctil y
+    ocupando media pantalla antes de la primera sesión—, así que pasan a un selector.
+  -->
+  @if (viewport.isDesktop()) {
+    <div class="hist-filters">
       <button
         class="chip hist-chip"
         type="button"
-        [class.chip--accent]="dayFilter() === day.id"
-        [attr.aria-pressed]="dayFilter() === day.id"
-        (click)="setDayFilter(day.id)"
+        [class.chip--accent]="dayFilter() === null"
+        [attr.aria-pressed]="dayFilter() === null"
+        (click)="setDayFilter(null)"
       >
-        {{ day.name }}
+        {{ T().history_all_days }}
       </button>
-    }
-  </div>
-
-  <div class="hist-layout">
-    <div class="card hist-table">
-      <div class="data-row data-row--head hist-row">
-        <span>{{ T().panel_col_date }}</span>
-        <span>{{ T().panel_col_day }}</span>
-        <span>{{ T().panel_col_sets }}</span>
-        <span>{{ T().panel_col_duration }}</span>
-        <span>{{ T().panel_col_volume }}</span>
-        <span>{{ T().history_highlight }}</span>
-      </div>
-
-      @for (row of rows(); track row.session.id) {
+      @for (day of days(); track day.id) {
         <button
-          class="data-row hist-row hist-row--btn"
+          class="chip hist-chip"
           type="button"
-          [class.hist-row--on]="selected()?.session?.id === row.session.id"
-          [class.hist-row--skipped]="row.skipped"
-          (click)="select(row.session.id)"
+          [class.chip--accent]="dayFilter() === day.id"
+          [attr.aria-pressed]="dayFilter() === day.id"
+          (click)="setDayFilter(day.id)"
         >
-          <span class="hist-date">{{ dateLabel(row.session.dateISO) }}</span>
-          <span class="hist-day">{{ row.dayName }}</span>
-          <span class="hist-num">{{ row.skipped ? '—' : row.sets }}</span>
-          <span class="hist-muted">{{ row.minutes ? row.minutes + ' min' : '—' }}</span>
-          <span class="hist-num">{{ row.skipped ? '—' : row.volume + ' kg' }}</span>
-          <span class="hist-highlight">{{ row.highlight ?? '—' }}</span>
+          {{ day.name }}
         </button>
+      }
+    </div>
+  } @else {
+    <select
+      class="select hist-select"
+      [value]="dayFilter() ?? ''"
+      (change)="onDaySelect($event)"
+      [attr.aria-label]="T().history_all_days"
+    >
+      <option value="">{{ T().history_all_days }}</option>
+      @for (day of days(); track day.id) {
+        <option [value]="day.id">{{ day.name }}</option>
+      }
+    </select>
+  }
+
+  @if (!viewport.isDesktop()) {
+    <!--
+      Móvil: tarjetas, no tabla (T-840).
+
+      La tabla se diseñó para 1440 px y en 390 partía los nombres en cuatro líneas
+      —"Espalda / (Auxiliar) / y / Tríceps"— con filas de 160 px para cinco datos, y
+      gastaba una columna entera en una duración que casi siempre es "—".
+      Aquí el nombre cabe, la duración aparece solo si existe y lo destacado se lee.
+    -->
+    <div class="hist-cards">
+      @for (row of rows(); track row.session.id) {
+        <div class="card hist-card" [class.hist-card--on]="expandedId() === row.session.id">
+          <button class="hist-card-head" type="button" (click)="toggleExpanded(row.session.id)">
+            <span class="hist-card-top">
+              <span class="hist-card-name">{{ row.dayName }}</span>
+              <span class="hist-card-date">{{ dateLabel(row.session.dateISO) }}</span>
+            </span>
+            @if (!row.skipped) {
+              <span class="hist-card-nums">
+                <span class="hist-card-num mono">{{ row.sets }}</span>
+                <span class="hist-card-unit">{{ T().panel_col_sets.toLowerCase() }}</span>
+                <span class="hist-card-num mono">{{ row.volume }}</span>
+                <span class="hist-card-unit">kg</span>
+                @if (row.minutes) {
+                  <span class="hist-card-num mono">{{ row.minutes }}</span>
+                  <span class="hist-card-unit">min</span>
+                }
+              </span>
+            }
+            @if (row.highlight; as hl) {
+              <span class="hist-card-hl">{{ hl }}</span>
+            }
+          </button>
+
+          @if (expandedId() === row.session.id) {
+            <div class="hist-card-body">
+              @for (group of groupsFor(row); track group.name) {
+                <div class="hist-group">
+                  <p class="hist-group-name">{{ group.name }}</p>
+                  <p class="hist-group-sets mono">
+                    @for (set of group.sets; track $index) {
+                      <span class="hist-set-chip">{{ set.weight }}×{{ set.reps }}</span>
+                    }
+                  </p>
+                </div>
+              } @empty {
+                <p class="note">{{ T().history_skipped }}</p>
+              }
+
+              @if (row.session.sessionNote; as note) {
+                <p class="hist-note-text">{{ note }}</p>
+              }
+
+              <div class="hist-actions">
+                <button class="btn btn-sm" type="button" (click)="editSets(row)">
+                  {{ T().history_edit }}
+                </button>
+                <button class="btn btn-sm btn-danger" type="button" (click)="remove(row)">
+                  {{ T().history_delete }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
       } @empty {
         <p class="note hist-empty">{{ T().history_empty }}</p>
       }
-
-      <div class="hist-foot">
-        <span class="note">{{ T().history_trash_note }}</span>
-        @if (trashCount(); as n) {
-          <span class="note">{{ tr.tp('history_trash_count', { n }) }}</span>
-        }
-      </div>
     </div>
 
-    <!-- Detalle al lado, no encima: corregir el pasado sin perder de vista la lista -->
-    @if (selected(); as row) {
-      <div class="card hist-detail">
-        <p class="k hist-detail-date">
-          {{ dateLabel(row.session.dateISO) }}
-          @if (row.minutes) {
-            · {{ row.minutes }} min
-          }
-        </p>
-        <p class="big-t hist-detail-name">{{ row.dayName }}</p>
+    <div class="hist-foot">
+      <span class="note">{{ T().history_trash_note }}</span>
+      @if (trashCount(); as n) {
+        <span class="note">{{ tr.tp('history_trash_count', { n }) }}</span>
+      }
+    </div>
+  } @else {
+    <div class="hist-layout">
+      <div class="card hist-table">
+        <div class="data-row data-row--head hist-row">
+          <span>{{ T().panel_col_date }}</span>
+          <span>{{ T().panel_col_day }}</span>
+          <span>{{ T().panel_col_sets }}</span>
+          <span>{{ T().panel_col_duration }}</span>
+          <span>{{ T().panel_col_volume }}</span>
+          <span>{{ T().history_highlight }}</span>
+        </div>
 
-        @for (group of selectedGroups(); track group.name) {
-          <div class="hist-group">
-            <p class="hist-group-name">{{ group.name }}</p>
-            @for (set of group.sets; track $index) {
-              <p class="hist-set">
-                <span class="hist-set-n">{{ $index + 1 }}</span>
-                {{ set.weight }} kg × {{ set.reps }}
-              </p>
-            }
-          </div>
+        @for (row of rows(); track row.session.id) {
+          <button
+            class="data-row hist-row hist-row--btn"
+            type="button"
+            [class.hist-row--on]="selected()?.session?.id === row.session.id"
+            [class.hist-row--skipped]="row.skipped"
+            (click)="select(row.session.id)"
+          >
+            <span class="hist-date">{{ dateLabel(row.session.dateISO) }}</span>
+            <span class="hist-day">{{ row.dayName }}</span>
+            <span class="hist-num">{{ row.skipped ? '—' : row.sets }}</span>
+            <span class="hist-muted">{{ row.minutes ? row.minutes + ' min' : '—' }}</span>
+            <span class="hist-num">{{ row.skipped ? '—' : row.volume + ' kg' }}</span>
+            <span class="hist-highlight">{{ row.highlight ?? '—' }}</span>
+          </button>
         } @empty {
-          <p class="note">{{ T().history_skipped }}</p>
+          <p class="note hist-empty">{{ T().history_empty }}</p>
         }
 
-        @if (row.session.sessionNote; as note) {
-          <div class="hist-note">
-            <p class="k">{{ T().history_session_note }}</p>
-            <p class="hist-note-text">{{ note }}</p>
-          </div>
-        }
-
-        <div class="hist-actions">
-          <button class="btn btn-sm" type="button" (click)="editSets(row)">
-            {{ T().history_edit }}
-          </button>
-          <button class="btn btn-sm btn-danger" type="button" (click)="remove(row)">
-            {{ T().history_delete }}
-          </button>
+        <div class="hist-foot">
+          <span class="note">{{ T().history_trash_note }}</span>
+          @if (trashCount(); as n) {
+            <span class="note">{{ tr.tp('history_trash_count', { n }) }}</span>
+          }
         </div>
       </div>
-    }
-  </div>
+
+      <!-- Detalle al lado, no encima: corregir el pasado sin perder de vista la lista -->
+      @if (selected(); as row) {
+        <div class="card hist-detail">
+          <p class="k hist-detail-date">
+            {{ dateLabel(row.session.dateISO) }}
+            @if (row.minutes) {
+              · {{ row.minutes }} min
+            }
+          </p>
+          <p class="big-t hist-detail-name">{{ row.dayName }}</p>
+
+          @for (group of selectedGroups(); track group.name) {
+            <div class="hist-group">
+              <p class="hist-group-name">{{ group.name }}</p>
+              @for (set of group.sets; track $index) {
+                <p class="hist-set">
+                  <span class="hist-set-n">{{ $index + 1 }}</span>
+                  {{ set.weight }} kg × {{ set.reps }}
+                </p>
+              }
+            </div>
+          } @empty {
+            <p class="note">{{ T().history_skipped }}</p>
+          }
+
+          @if (row.session.sessionNote; as note) {
+            <div class="hist-note">
+              <p class="k">{{ T().history_session_note }}</p>
+              <p class="hist-note-text">{{ note }}</p>
+            </div>
+          }
+
+          <div class="hist-actions">
+            <button class="btn btn-sm" type="button" (click)="editSets(row)">
+              {{ T().history_edit }}
+            </button>
+            <button class="btn btn-sm btn-danger" type="button" (click)="remove(row)">
+              {{ T().history_delete }}
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
 </div>

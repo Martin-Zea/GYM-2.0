@@ -133,6 +133,26 @@ export function volumeImbalances(volumes: readonly GroupVolume[]): ImbalanceAler
  * Sin días por semana declarados devuelve `null`: sin plan no hay nada con lo que comparar, y
  * un porcentaje inventado sobre un plan que el usuario no fijó no significa nada.
  */
+/**
+ * Las semanas que la adherencia está mirando de verdad (T-840).
+ *
+ * `adherence()` acorta la ventana cuando hace poco que se instaló la app, así que el
+ * porcentaje no siempre son 4 semanas. Sin decirlo, en Inicio convivía un "50 %" con un
+ * "0 de 5" y una racha de 0 y parecía que la app se contradecía a sí misma. La misma
+ * aritmética, expuesta, para que la etiqueta pueda decir contra qué se compara.
+ */
+export function adherenceWeeks(
+  sessions: readonly Session[],
+  todayISO: string,
+  weeks = 4,
+): number | null {
+  const real = sessions.filter((s) => !s.skipped && s.sets.length > 0);
+  if (!real.length) return null;
+  const primera = real.reduce((a, s) => (s.dateISO < a ? s.dateISO : a), real[0].dateISO);
+  const dias = daysBetweenISO(primera, todayISO) + 1;
+  return Math.min(weeks, Math.max(1, Math.ceil(dias / 7)));
+}
+
 export function adherence(
   sessions: readonly Session[],
   daysPerWeek: number | null,

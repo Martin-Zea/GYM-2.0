@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
 import { StateService } from '../../services/state.service';
+import { ViewportService } from '../../services/viewport.service';
 import { StorageService } from '../../services/storage.service';
 import { UIStateService } from '../../services/ui-state.service';
 import { TranslationService } from '../../services/translation.service';
@@ -44,6 +45,77 @@ export class ProfileComponent implements OnDestroy {
   private readonly storage = inject(StorageService);
   protected readonly uiState = inject(UIStateService);
   protected readonly tr = inject(TranslationService);
+  protected readonly viewport = inject(ViewportService);
+
+  /**
+   * Secciones plegables (T-840).
+   *
+   * El perfil medía 3,6 pantallas y 50 objetivos táctiles: es un formulario de ajustes
+   * disfrazado de perfil, con todo plano y todo a la vez. Lo que se toca a diario —el peso
+   * de hoy— se queda arriba; el resto se pliega y enseña su resumen, que casi siempre es
+   * lo único que se viene a comprobar.
+   *
+   * Son `<details>` nativos: se abren sin JavaScript, salen en la búsqueda del navegador y
+   * ya vienen con la semántica de accesibilidad puesta. En escritorio arrancan abiertos
+   * porque ahí sobra sitio y plegar no compra nada.
+   */
+  private readonly openFolds = signal<Set<string>>(new Set());
+
+  protected isOpen(key: string): boolean {
+    return this.viewport.isDesktop() || this.openFolds().has(key);
+  }
+
+  protected onToggle(key: string, event: Event): void {
+    const open = (event.target as HTMLDetailsElement).open;
+    const next = new Set(this.openFolds());
+    if (open) next.add(key);
+    else next.delete(key);
+    this.openFolds.set(next);
+  }
+
+  // El resumen de cada sección: lo que se vería al abrirla, en una línea.
+  protected readonly dataSummary = computed(() => {
+    const p = this.profile();
+    const parts = [
+      p.heightCm ? `${p.heightCm} cm` : null,
+      p.age ? this.tr.tp('profile_age_years', { n: p.age }) : null,
+    ].filter(Boolean);
+    return parts.length ? parts.join(' · ') : this.T().profile_fold_empty;
+  });
+
+  protected readonly levelSummary = computed(() => {
+    const level = this.profile().level;
+    if (!level) return this.T().profile_fold_empty;
+    return this.T()[('profile_level_' + level) as 'profile_level_beginner'] as string;
+  });
+
+  protected readonly measuresSummary = computed(() => {
+    const n = (this.profile().measures ?? []).length;
+    return n ? this.tr.tp('profile_fold_measures', { n }) : this.T().profile_fold_empty;
+  });
+
+  protected readonly equipmentSummary = computed(() => {
+    const eq = this.profile().equipment ?? [];
+    return eq.length
+      ? this.tr.tp('profile_fold_equipment', { n: eq.length })
+      : this.T().profile_fold_empty;
+  });
+
+  protected readonly goalSummary = computed(() => {
+    const goal = this.profile().goal;
+    if (!goal) return this.T().profile_fold_empty;
+    const map = {
+      strength: this.T().settings_goal_strength,
+      hypertrophy: this.T().settings_goal_hypertrophy,
+      endurance: this.T().settings_goal_endurance,
+    };
+    return map[goal];
+  });
+
+  protected readonly notesSummary = computed(() =>
+    this.profile().aiNotes?.trim() ? this.T().profile_fold_written : this.T().profile_fold_empty,
+  );
+
   protected readonly T = this.tr.T;
   private readonly shareService = inject(ShareService);
 
