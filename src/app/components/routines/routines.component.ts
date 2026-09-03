@@ -68,6 +68,19 @@ export class RoutinesComponent {
     // petición del chat, pero la URL es editable y se comparte: lo que entra por aquí se
     // valida igual que lo que manda el modelo, porque son dos puertas al mismo estado.
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      // La barra lateral enlaza a cada sub-vista (T-838). `vista` y `gen` conviven: el
+      // segundo es el atajo del chat, que además trae la spec puesta.
+      const vista = params.get('vista');
+      if (vista === 'lista') {
+        this.view.set('list');
+        this.detailId.set(null);
+      } else if (vista === 'plantillas') {
+        this.view.set('templates');
+        this.previewTemplate.set(null);
+      } else if (vista === 'generador') {
+        this.view.set('generator');
+      }
+
       if (params.get('gen') !== '1') return;
       this.genDays.set(snapTo(GEN_DAYS, params.get('days'), DEFAULT_GEN_DAYS));
       this.genMinutes.set(snapTo(GEN_MINUTES, params.get('min'), DEFAULT_GEN_MINUTES));

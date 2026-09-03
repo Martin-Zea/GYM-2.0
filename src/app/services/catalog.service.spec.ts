@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { CatalogService, catalogRefForName } from './catalog.service';
 import { EXERCISE_CATALOG } from '../data/exercise-catalog';
+import { createInitialState } from '../data/initial-data';
 
 describe('CatalogService — RF-EJ-01/02/04', () => {
   let catalog: CatalogService;
@@ -104,6 +105,45 @@ describe('CatalogService — RF-EJ-01/02/04', () => {
       const item = catalog.byRef('bench_press')!;
       expect(catalog.toExercise(item, 'en', 'x').name).toBe('Bench press');
       expect(catalog.toExercise(item, 'es', 'x').name).toBe('Press banca');
+    });
+  });
+
+  /**
+   * La rutina inicial TIENE que enlazar entera con el catálogo (T-837).
+   *
+   * Sin `catalogRef` no hay grupo muscular, y sin grupo no hay reparto de volumen ni avisos
+   * de desequilibrio ni ejercicios alternativos. Enlazaban 3 de 22: la rutina que trae la
+   * app usaba nombres con el equipamiento entre paréntesis —"Press de Pecho (Máquina)"— y
+   * el catálogo tenía otros, así que esas tres funciones estaban muertas para todo el que
+   * no hubiera renombrado sus ejercicios a mano.
+   *
+   * Este test es el que evita que vuelva a pasar: añadir un ejercicio a la rutina inicial
+   * sin darle sinónimo lo rompe aquí y no seis pantallas más allá.
+   */
+  describe('la rutina inicial enlaza entera (T-837)', () => {
+    it('cada ejercicio sembrado encuentra su entrada del catálogo', () => {
+      const inicial = createInitialState();
+      const sinEnlace = inicial.exercises
+        .filter((e) => !catalogRefForName(e.name))
+        .map((e) => e.name);
+
+      expect(sinEnlace).toEqual([]);
+    });
+
+    it('y el enlace queda guardado en el estado, no solo calculable', () => {
+      // La migración v8→v9 lo puebla para quien viene de antes; una instalación nueva
+      // nace en el schema actual y nunca la ejecuta, así que lo tiene que traer puesto.
+      const inicial = createInitialState();
+      expect(inicial.exercises.every((e) => !!e.catalogRef)).toBe(true);
+    });
+
+    it('cada ejercicio sembrado resuelve a un grupo muscular', () => {
+      const inicial = createInitialState();
+      const sinGrupo = inicial.exercises
+        .filter((e) => !catalog.byRef(e.catalogRef ?? null)?.group)
+        .map((e) => e.name);
+
+      expect(sinGrupo).toEqual([]);
     });
   });
 });

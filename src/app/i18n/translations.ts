@@ -103,6 +103,14 @@ export interface Translations {
   prev_sets_label: string;
 
   // Day history sheet — edit/delete sessions
+  history_count: string;
+  history_all_days: string;
+  history_highlight: string;
+  history_marked_hard: string;
+  history_pr: string;
+  history_session_note: string;
+  history_trash_note: string;
+  history_trash_count: string;
   history_empty: string;
   history_edit: string;
   history_delete: string;
@@ -196,6 +204,18 @@ export interface Translations {
 
   // Bottom nav / topbar navigation
   nav_main: string;
+  nav_panel: string;
+  nav_history: string;
+  nav_group_train: string;
+  nav_group_analyze: string;
+  nav_group_plan: string;
+  nav_group_account: string;
+  nav_sub_calendar: string;
+  nav_sub_progression: string;
+  nav_sub_volume: string;
+  nav_sub_my_routines: string;
+  nav_sub_templates: string;
+  nav_sub_generator: string;
   nav_profile: string;
 
   // Exercise units (presentation only — stored values stay in Spanish)

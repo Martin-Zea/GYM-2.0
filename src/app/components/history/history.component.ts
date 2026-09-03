@@ -34,6 +34,8 @@ import {
   volumeImbalances,
 } from '../../utils/stats';
 import { CatalogService } from '../../services/catalog.service';
+import { ViewportService } from '../../services/viewport.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 interface CalDay {
   day: number | null;
@@ -284,6 +286,22 @@ export class HistoryComponent {
   protected readonly metric = signal<ChartMetric>('top');
   protected readonly range = signal<ChartRange>('all');
   protected readonly selectedId = signal<string | null>(null);
+
+  /**
+   * Sub-vista activa (T-838).
+   *
+   * En escritorio la barra lateral enlaza a cada una y se enseña UNA a la vez: el gráfico
+   * grande no cabe si comparte pantalla con el calendario, y ese gráfico es a lo que se
+   * entra. En móvil no hay barra lateral, así que se muestran todas seguidas como hasta
+   * ahora — el scroll es la navegación cuando no hay sitio para otra cosa.
+   */
+  protected readonly section = signal<'todo' | 'calendario' | 'progresion' | 'volumen'>('todo');
+  protected readonly viewport = inject(ViewportService);
+
+  protected shows(name: 'calendario' | 'progresion' | 'volumen'): boolean {
+    const s = this.section();
+    return s === 'todo' || s === name;
+  }
   protected readonly selectedPoint = signal<number | null>(null);
 
   /**
@@ -511,6 +529,15 @@ export class HistoryComponent {
     effect(() => {
       const frag = this.fragment();
       if (frag) this.selectedId.set(frag);
+    });
+
+    // La sub-vista vive en la URL (T-838): la barra lateral del escritorio enlaza a cada
+    // una, y sin esto "Volumen" llevaba a la misma página de siempre.
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const vista = params.get('vista');
+      this.section.set(
+        vista === 'calendario' || vista === 'progresion' || vista === 'volumen' ? vista : 'todo',
+      );
     });
   }
 }

@@ -1,0 +1,128 @@
+/* Historial de sesiones (T-838): lista filtrable + detalle al lado en escritorio. */
+.hist-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+.hist-chip {
+  min-height: 32px;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+}
+
+.hist-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.hist-table {
+  padding: 0;
+  overflow: hidden;
+}
+.hist-row {
+  grid-template-columns: 68px 1.4fr 56px 74px 88px 1fr;
+  width: 100%;
+  text-align: left;
+}
+.hist-row--btn {
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.hist-row--on {
+  background: var(--accent-bg);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.hist-row--skipped {
+  opacity: 0.6;
+}
+.hist-date,
+.hist-muted {
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+}
+.hist-day {
+  font-size: var(--fs-sm);
+}
+.hist-num {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+.hist-highlight {
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hist-empty,
+.hist-foot {
+  padding: var(--sp-4);
+}
+.hist-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  border-top: 1px solid var(--border);
+}
+
+.hist-detail-name {
+  margin: 2px 0 var(--sp-3);
+}
+.hist-group + .hist-group {
+  margin-top: var(--sp-3);
+}
+.hist-group-name {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.hist-set {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0 0 4px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-2);
+  font-size: var(--fs-xs);
+}
+.hist-set-n {
+  width: 12px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-3);
+}
+.hist-note {
+  margin-top: var(--sp-4);
+  padding: var(--sp-3);
+  border-radius: var(--radius-md);
+  background: var(--bg-2);
+}
+.hist-note-text {
+  margin: 5px 0 0;
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  color: var(--text-1);
+}
+.hist-actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+@media (min-width: 768px) {
+  .hist-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    align-items: start;
+  }
+}

@@ -7,13 +7,13 @@
   </div>
 
   <div class="seg coach-tabs">
-    <button type="button" [attr.aria-pressed]="tab() === 'panel'" (click)="tab.set('panel')">
+    <button type="button" [attr.aria-pressed]="tab() === 'panel'" (click)="setTab('panel')">
       {{ T().coach_tab_panel }}
     </button>
-    <button type="button" [attr.aria-pressed]="tab() === 'chat'" (click)="tab.set('chat')">
+    <button type="button" [attr.aria-pressed]="tab() === 'chat'" (click)="setTab('chat')">
       {{ T().coach_tab_chat }}
     </button>
-    <button type="button" [attr.aria-pressed]="tab() === 'history'" (click)="tab.set('history')">
+    <button type="button" [attr.aria-pressed]="tab() === 'history'" (click)="setTab('history')">
       {{ T().coach_tab_history }}
     </button>
   </div>

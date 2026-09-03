@@ -175,10 +175,22 @@ const overflows = await page.evaluate(
 );
 check('mobile: sin scroll horizontal', !overflows);
 
-// ── Progreso (antes /history; la ruta vieja debe seguir redirigiendo) ──
+// ── Historial: `/history` volvió a tener contenido propio (T-838) ──
+// Redirigía a `/progress` desde T-802; corregir una sesión pasada vivía solo dentro de un
+// bottom sheet. Ahora es una pantalla con su ruta, y `/charts` sigue redirigiendo.
 await page.goto(`${BASE}/history`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(700);
+check('historial: /history tiene pantalla propia', page.url().endsWith('/history'));
+check('historial: tabla de sesiones', (await page.locator('.hist-table').count()) === 1);
+check('historial: filtros por día', (await page.locator('.hist-chip').count()) > 1);
+
+await page.goto(`${BASE}/charts`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(600);
-check('progreso: /history redirige', page.url().endsWith('/progress'));
+check('progreso: /charts sigue redirigiendo', page.url().endsWith('/progress'));
+
+// ── Progreso ──
+await page.goto(`${BASE}/progress`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(600);
 check('progreso: calendario', (await page.locator('.cal-grid').count()) === 1);
 check('progreso: adherencia y duración', (await page.locator('.stat-grid .stat').count()) >= 2);
 check(

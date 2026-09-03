@@ -1,3 +1,4 @@
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -6,7 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { IconComponent } from '../icon/icon.component';
 import { StateService } from '../../services/state.service';
 import { TranslationService } from '../../services/translation.service';
@@ -47,6 +48,7 @@ export class CoachComponent {
   private readonly progression = inject(ProgressionService);
   protected readonly chat = inject(CoachChatService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly tab = signal<Tab>('panel');
   protected readonly draft = signal('');
@@ -72,6 +74,25 @@ export class CoachComponent {
       const day = this.day();
       if (day) void this.loadSuggestions(day);
     });
+
+    // La pestaña vive en la URL (T-838): en escritorio la barra lateral enlaza directamente
+    // a "Chat" o "Historial", y sin esto esos enlaces llevaban siempre al panel. De paso
+    // hace que un enlace al chat sea un enlace al chat, no a "el coach, ya buscarás".
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const vista = params.get('vista');
+      if (vista === 'chat' || vista === 'historial') {
+        this.tab.set(vista === 'chat' ? 'chat' : 'history');
+      } else if (vista === 'panel') {
+        this.tab.set('panel');
+      }
+    });
+  }
+
+  /** Cambiar de pestaña ESCRIBE la URL: volver atrás vuelve a la pestaña anterior. */
+  protected setTab(tab: Tab): void {
+    this.tab.set(tab);
+    const vista = tab === 'panel' ? 'panel' : tab === 'chat' ? 'chat' : 'historial';
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { vista } });
   }
 
   private async loadSuggestions(day: WorkoutDay): Promise<void> {

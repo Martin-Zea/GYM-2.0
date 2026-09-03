@@ -41,8 +41,22 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./components/profile/profile.component').then((m) => m.ProfileComponent),
   },
+  /**
+   * `/history` deja de redirigir y vuelve a tener contenido (T-838).
+   *
+   * No es una ruta nueva: existía y se tiraba a `/progress`. Corregir una serie de hace
+   * tres semanas vivía solo dentro de un bottom sheet, sin enlace ni vuelta atrás propia.
+   * Analizar tendencias y corregir el pasado son dos trabajos distintos.
+   */
+  {
+    path: 'history',
+    loadComponent: () =>
+      import('./components/session-history/session-history.component').then(
+        (m) => m.SessionHistoryComponent,
+      ),
+  },
+
   // Compatibilidad con enlaces viejos (bookmarks, accesos directos de la PWA)
-  { path: 'history', redirectTo: 'progress' },
   { path: 'charts', redirectTo: 'progress' },
   { path: 'calendar', redirectTo: 'progress' },
   { path: '**', redirectTo: '' },

@@ -92,6 +92,14 @@ export const es: Translations = {
 
   prev_sets_label: 'Anterior',
 
+  history_count: '{n} sesiones registradas',
+  history_all_days: 'Todos los días',
+  history_highlight: 'Destacado',
+  history_marked_hard: 'Marcado pesado',
+  history_pr: 'Récord · {name} {value} kg',
+  history_session_note: 'Nota de la sesión',
+  history_trash_note: 'Las sesiones borradas van a la papelera 30 días',
+  history_trash_count: 'Papelera ({n})',
   history_empty: 'Todavía no hay sesiones registradas para este día.',
   history_edit: 'Editar sesión',
   history_delete: 'Eliminar sesión',
@@ -182,6 +190,18 @@ export const es: Translations = {
   select_day_title: 'Seleccionar día',
 
   nav_main: 'Navegación principal',
+  nav_panel: 'Panel',
+  nav_history: 'Historial',
+  nav_group_train: 'ENTRENAR',
+  nav_group_analyze: 'ANALIZAR',
+  nav_group_plan: 'PLANIFICAR',
+  nav_group_account: 'CUENTA',
+  nav_sub_calendar: 'Calendario',
+  nav_sub_progression: 'Progresión',
+  nav_sub_volume: 'Volumen',
+  nav_sub_my_routines: 'Mis rutinas',
+  nav_sub_templates: 'Plantillas',
+  nav_sub_generator: 'Generador IA',
   nav_profile: 'Perfil',
 
   unit_kg: 'kg',

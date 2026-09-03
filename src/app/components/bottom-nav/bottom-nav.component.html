@@ -1,14 +1,60 @@
-<nav class="bottom-nav" [attr.aria-label]="T().nav_main">
-  @for (item of items; track item.path) {
-    <a
-      class="nav-item"
-      [routerLink]="item.path"
-      routerLinkActive="active"
-      [routerLinkActiveOptions]="{ exact: item.exact }"
-      [attr.aria-label]="T()[item.key]"
-    >
-      <app-icon [name]="item.icon" [size]="22" />
-      <span class="nav-label">{{ T()[item.key] }}</span>
-    </a>
-  }
-</nav>
+<!--
+  Dos navegaciones para los mismos destinos (T-838).
+
+  En móvil, cinco iconos en la barra inferior: lo que cabe y se pulsa con el pulgar.
+  En escritorio, una barra lateral de texto con grupos y segundo nivel — no porque quede
+  mejor, sino porque las sub-vistas (plantillas, generador, volumen, chat) YA existen y en
+  cinco iconos son invisibles. La lista de destinos es la misma; cambia cómo se enseña.
+-->
+@if (viewport.isDesktop()) {
+  <nav class="bottom-nav rail" [attr.aria-label]="T().nav_main">
+    @for (entry of railEntries(); track $index) {
+      @if (entry.group; as group) {
+        <p class="rail-group">{{ T()[group] }}</p>
+      }
+      @if (entry.item; as item) {
+        <a
+          class="nav-item rail-item"
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          #rla="routerLinkActive"
+          [routerLinkActiveOptions]="{ exact: item.exact }"
+        >
+          <app-icon [name]="item.icon" [size]="17" />
+          <span class="nav-label">{{ label(item) }}</span>
+        </a>
+
+        <!-- El segundo nivel solo se despliega en la sección donde estás: una lista
+             de once entradas siempre abierta es un índice, no una navegación. -->
+        @if (item.sub && rla.isActive) {
+          @for (sub of item.sub; track sub.view) {
+            <a
+              class="rail-sub"
+              [routerLink]="item.path"
+              [queryParams]="{ vista: sub.view }"
+              routerLinkActive="rail-sub--on"
+              [routerLinkActiveOptions]="{ exact: false }"
+            >
+              {{ T()[sub.key] }}
+            </a>
+          }
+        }
+      }
+    }
+  </nav>
+} @else {
+  <nav class="bottom-nav" [attr.aria-label]="T().nav_main">
+    @for (item of mobileItems(); track item.path) {
+      <a
+        class="nav-item"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: item.exact }"
+        [attr.aria-label]="T()[item.key]"
+      >
+        <app-icon [name]="item.icon" [size]="22" />
+        <span class="nav-label">{{ T()[item.key] }}</span>
+      </a>
+    }
+  </nav>
+}

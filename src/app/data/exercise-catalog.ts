@@ -76,7 +76,7 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'horizontal_push',
     unit: 'KG',
     compound: true,
-    synonyms: ['press banca inclinado', 'incline press'],
+    synonyms: ['press banca inclinado', 'incline press', 'Press Inclinado (Máquina)'],
   },
   {
     ref: 'db_bench_press',
@@ -120,7 +120,7 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'isolation',
     unit: 'KG',
     compound: false,
-    synonyms: ['cruces en polea', 'crossover'],
+    synonyms: ['cruces en polea', 'crossover', 'Cruce/Aperturas (Máquina)'],
   },
   {
     ref: 'chest_press_machine',
@@ -131,7 +131,7 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'horizontal_push',
     unit: 'KG',
     compound: true,
-    synonyms: ['press maquina pecho'],
+    synonyms: ['press maquina pecho', 'Press de Pecho (Máquina)'],
   },
   {
     ref: 'push_up',
@@ -199,7 +199,7 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'horizontal_pull',
     unit: 'KG_PER_ARM',
     compound: true,
-    synonyms: ['remo mancuerna', 'remo a una mano'],
+    synonyms: ['remo mancuerna', 'remo a una mano', 'Remo Unilateral (Máquina)'],
   },
   {
     ref: 'seated_row',
@@ -210,7 +210,7 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'horizontal_pull',
     unit: 'KG',
     compound: true,
-    synonyms: ['remo polea', 'remo en polea baja'],
+    synonyms: ['remo polea', 'remo en polea baja', 'Remo en Máquina (Sentado)', 'Remo Polea Baja'],
   },
   {
     ref: 'lat_pulldown',
@@ -221,7 +221,13 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'vertical_pull',
     unit: 'KG',
     compound: true,
-    synonyms: ['jalon', 'polea al pecho', 'pulldown'],
+    synonyms: [
+      'jalon',
+      'polea al pecho',
+      'pulldown',
+      'Jalón al Pecho (Polea Alta)',
+      'Jalón en P (Polea Alta)',
+    ],
   },
   {
     ref: 'pull_up',
@@ -254,7 +260,7 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'horizontal_pull',
     unit: 'KG',
     compound: false,
-    synonyms: ['jalon a la cara'],
+    synonyms: ['jalon a la cara', 'Pájaros (Face Pulls)'],
   },
   {
     ref: 'pullover',
@@ -289,7 +295,7 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'vertical_push',
     unit: 'KG',
     compound: true,
-    synonyms: ['press hombro', 'militar', 'ohp'],
+    synonyms: ['press hombro', 'militar', 'ohp', 'Press de Hombros (Máquina)'],
   },
   {
     ref: 'db_shoulder_press',
@@ -311,7 +317,7 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'isolation',
     unit: 'KG_PER_HAND',
     compound: false,
-    synonyms: ['laterales', 'elevacion lateral'],
+    synonyms: ['laterales', 'elevacion lateral', 'Elevaciones Laterales (Máquina)'],
   },
   {
     ref: 'front_raise',
@@ -379,7 +385,7 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'isolation',
     unit: 'KG_PER_HAND',
     compound: false,
-    synonyms: ['martillo'],
+    synonyms: ['martillo', 'Curl Martillo (Máquina/Polea)'],
   },
   {
     ref: 'preacher_curl',
@@ -401,7 +407,7 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'isolation',
     unit: 'KG',
     compound: false,
-    synonyms: ['curl polea'],
+    synonyms: ['curl polea', 'Curl de Bíceps (Máquina)'],
   },
 
   // ── Tríceps ──
@@ -414,7 +420,7 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'isolation',
     unit: 'KG',
     compound: false,
-    synonyms: ['triceps polea', 'pushdown', 'jalon triceps'],
+    synonyms: ['triceps polea', 'pushdown', 'jalon triceps', 'Extensión Tríceps (Polea)'],
   },
   {
     ref: 'skull_crusher',
@@ -425,7 +431,7 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'isolation',
     unit: 'KG',
     compound: false,
-    synonyms: ['press frances', 'rompecraneos'],
+    synonyms: ['press frances', 'rompecraneos', 'Press Francés (Máquina)'],
   },
   {
     ref: 'overhead_extension',
@@ -504,7 +510,7 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'squat',
     unit: 'KG',
     compound: true,
-    synonyms: ['prensa de piernas', 'leg press'],
+    synonyms: ['prensa de piernas', 'leg press', 'Prensa de Piernas'],
   },
   {
     ref: 'leg_extension',
@@ -515,7 +521,7 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'isolation',
     unit: 'KG',
     compound: false,
-    synonyms: ['cuadriceps maquina', 'extensiones de pierna'],
+    synonyms: ['cuadriceps maquina', 'extensiones de pierna', 'Extensión Cuádriceps'],
   },
   {
     ref: 'leg_curl',
@@ -526,7 +532,7 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'isolation',
     unit: 'KG',
     compound: false,
-    synonyms: ['femoral', 'curl de pierna'],
+    synonyms: ['femoral', 'curl de pierna', 'Curl Femoral (Acostado)', 'Curl Femoral (Sentado)'],
   },
   {
     ref: 'lunge',
@@ -570,7 +576,7 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'isolation',
     unit: 'KG',
     compound: false,
-    synonyms: ['gemelos', 'pantorrillas'],
+    synonyms: ['gemelos', 'pantorrillas', 'Elevación Gemelos', 'Elevación Gemelos (Sentado)'],
   },
   {
     ref: 'good_morning',
@@ -616,7 +622,7 @@ export const EXERCISE_CATALOG: readonly CatalogExercise[] = [
     pattern: 'core',
     unit: 'BODYWEIGHT',
     compound: false,
-    synonyms: ['crunch', 'abdominales cortos'],
+    synonyms: ['crunch', 'abdominales cortos', 'Abdominal (Crunch Máquina)'],
   },
   {
     ref: 'hanging_leg_raise',

@@ -52,7 +52,7 @@
     bottom: auto;
     left: auto;
     transform: none;
-    width: 92px;
+    width: 214px;
     max-width: none;
     flex-direction: column;
     justify-content: flex-start;
@@ -74,17 +74,48 @@
    * cinco iconos mudos y sin tooltip. Es al revés de lo que pide el medio: el sitio donde
    * hay ancho de sobra es justo donde no hay que hacer adivinar.
    */
-  .nav-item {
+  /* Barra lateral de TEXTO: los destinos se leen, no se adivinan (T-838). */
+  .rail {
+    align-items: stretch;
+    padding: 12px 10px;
+    overflow-y: auto;
+  }
+  .rail-group {
+    margin: 14px 0 6px 10px;
+    font-size: var(--fs-2xs);
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    color: var(--text-3);
+  }
+  .rail-group:first-child {
+    margin-top: 0;
+  }
+  .rail-item {
     flex: 0 0 auto;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--sp-2);
     width: 100%;
     height: auto;
-    min-height: 56px;
-    padding: var(--sp-2) 4px;
+    min-height: 36px;
+    padding: var(--sp-2) 10px;
     border-radius: var(--radius-md);
+  }
+  .rail-sub {
+    padding: 5px 10px 5px 34px;
+    border-radius: var(--radius-md);
+    color: var(--text-2);
+    font-size: var(--fs-xs);
+    text-decoration: none;
+  }
+  .rail-sub--on {
+    background: var(--bg-2);
+    color: var(--accent);
+    font-weight: 600;
   }
 
   .nav-label {
     display: block;
-    font-size: var(--fs-2xs);
+    font-size: var(--fs-sm);
   }
 }

@@ -92,6 +92,14 @@ export const en: Translations = {
 
   prev_sets_label: 'Previous',
 
+  history_count: '{n} sessions recorded',
+  history_all_days: 'All days',
+  history_highlight: 'Highlight',
+  history_marked_hard: 'Marked hard',
+  history_pr: 'Record · {name} {value} kg',
+  history_session_note: 'Session note',
+  history_trash_note: 'Deleted sessions go to the trash for 30 days',
+  history_trash_count: 'Trash ({n})',
   history_empty: 'No sessions recorded for this day yet.',
   history_edit: 'Edit session',
   history_delete: 'Delete session',
@@ -181,6 +189,18 @@ export const en: Translations = {
   select_day_title: 'Select day',
 
   nav_main: 'Main navigation',
+  nav_panel: 'Dashboard',
+  nav_history: 'History',
+  nav_group_train: 'TRAIN',
+  nav_group_analyze: 'ANALYZE',
+  nav_group_plan: 'PLAN',
+  nav_group_account: 'ACCOUNT',
+  nav_sub_calendar: 'Calendar',
+  nav_sub_progression: 'Progression',
+  nav_sub_volume: 'Volume',
+  nav_sub_my_routines: 'My routines',
+  nav_sub_templates: 'Templates',
+  nav_sub_generator: 'AI generator',
   nav_profile: 'Profile',
 
   unit_kg: 'kg',
