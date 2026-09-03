@@ -381,3 +381,137 @@
   font-weight: 600;
   color: var(--text-0);
 }
+
+/* ═══════ Tercera columna: contexto (T-839) ═══════ */
+
+.session-context {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .session-context {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+    padding: 16px 20px 40px 0;
+    position: sticky;
+    top: 0;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+
+  .sctx-block {
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg-1);
+  }
+
+  .sctx-block--ai {
+    border-color: var(--accent-border);
+    background: var(--accent-bg);
+  }
+
+  .sctx-title {
+    margin: 0;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  .sctx-head {
+    margin: 0 0 8px;
+    font-size: var(--fs-2xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  .sctx-sets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .sctx-set {
+    padding: 4px 9px;
+    border-radius: 99px;
+    background: var(--bg-2);
+    font-size: var(--fs-xs);
+    color: var(--text-1);
+  }
+
+  .sctx-empty,
+  .sctx-reason {
+    margin: 0;
+    font-size: var(--fs-xs);
+    line-height: 1.45;
+    color: var(--text-2);
+  }
+
+  .sctx-pr {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--fs-title);
+    font-weight: 700;
+    color: var(--accent);
+  }
+}
+
+/*
+ * TODAS las reglas de escritorio de la sesion viven en ESTE archivo (T-839).
+ *
+ * Estaban en `home.component.scss`, y ahi no funcionaban: los dos archivos son
+ * `styleUrls` del mismo componente, este se carga DESPUES, y una regla base de aqui
+ * —`.session-layout { display: block }`— ganaba a la regla dentro de `@media` del otro
+ * por orden de origen, porque la especificidad es la misma. El resultado era que en
+ * escritorio la sesion no tenia rejilla: la barra lateral salia a ancho completo y las
+ * pildoras horizontales, que debian esconderse, seguian ahi duplicando la lista.
+ *
+ * Un `@media` no gana por ser un `@media`. Si una regla de sesion tiene que sobreescribir
+ * a otra de sesion, las dos van aqui.
+ */
+.training-sidebar {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  /*
+   * Tres columnas: lista · serie · contexto (T-839).
+   *
+   * La del medio conserva su ancho de lectura: una serie que se registra con el pulgar
+   * no mejora por medir 900px. Lo que se gana con el monitor no es una tarjeta más
+   * ancha, es dejar de ir a buscar el contexto a otro sitio.
+   */
+  .session-layout {
+    display: grid;
+    grid-template-columns: 256px minmax(0, 1fr) 296px;
+    align-items: start;
+    gap: 0 20px;
+    flex: 1;
+    min-height: 0;
+  }
+  .session-queue {
+    display: none;
+  }
+  .session-main {
+    max-width: 640px;
+    width: 100%;
+    padding: 16px 24px 40px 4px;
+  }
+  .training-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 16px 12px;
+    border-right: 1px solid var(--border);
+    background: var(--bg-0);
+    position: sticky;
+    top: 0;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+  .training-sidebar .section-title {
+    margin: 0 0 8px 2px;
+  }
+}

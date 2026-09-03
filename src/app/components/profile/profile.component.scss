@@ -285,3 +285,48 @@
   flex-direction: column;
   gap: 2px;
 }
+
+/*
+ * Escritorio: dos columnas (T-839).
+ *
+ * A la izquierda lo que se EDITA —datos, objetivo, notas— y a la derecha lo que se MIRA
+ * —peso corporal y récords—. En una sola columna de 1440px de ancho, un campo de edad
+ * de 1100px al lado de una etiqueta de cuatro letras es ridículo, y los récords quedan
+ * a tres pantallas de scroll de lo único que los cambia.
+ *
+ * Cada sección tiene su propia celda con fila explícita. Sin filas explícitas, la
+ * autocolocación deja huecos o —peor— dos bloques compartiendo celda: eso ya pasó una vez
+ * en el panel y no se ve en una captura, solo midiendo.
+ */
+@media (min-width: 768px) {
+  .main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0 28px;
+    align-items: start;
+  }
+
+  .view-header {
+    grid-column: 1 / -1;
+  }
+
+  /* Editar */
+  .profile-section:nth-of-type(2) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .profile-section:nth-of-type(3) {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  /* Mirar */
+  .profile-section:nth-of-type(1) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .profile-section:nth-of-type(4) {
+    grid-column: 2;
+    grid-row: 3;
+  }
+}

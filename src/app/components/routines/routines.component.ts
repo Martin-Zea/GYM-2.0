@@ -1,8 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { IconComponent } from '../icon/icon.component';
 import { StateService } from '../../services/state.service';
+import { ViewportService } from '../../services/viewport.service';
+import { DayEditorComponent } from '../day-editor/day-editor.component';
 import { StorageService } from '../../services/storage.service';
 import { TranslationService } from '../../services/translation.service';
 import { UIStateService } from '../../services/ui-state.service';
@@ -42,7 +52,7 @@ interface RoutineRow {
 @Component({
   selector: 'app-routines',
   standalone: true,
-  imports: [IconComponent],
+  imports: [IconComponent, DayEditorComponent],
   templateUrl: './routines.component.html',
   styleUrl: './routines.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -58,12 +68,57 @@ export class RoutinesComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
+  protected readonly viewport = inject(ViewportService);
+
+  /**
+   * Escritorio: maestro-detalle sobre la rutina ACTIVA (T-839).
+   *
+   * Hoy las vistas se sustituyen —entras al detalle y pierdes la lista— porque en un
+   * teléfono no caben las dos. En un monitor sí caben, y perderla obliga a ir y volver
+   * cada vez que quieres comparar dos dias.
+   *
+   * El primer nivel (qué rutina) ya lo pone la columna de sección, así que aquí el maestro
+   * son los DÍAS y el detalle es el día elegido.
+   */
+  protected readonly deskDayId = signal<string | null>(null);
+
+  // El tipo se anota a mano: sin `noUncheckedIndexedAccess`, `days[0]` se tipa como
+  // presente aunque el array esté vacío, y la plantilla se quedaba sin poder preguntar.
+  protected readonly deskDay = computed<WorkoutDay | null>(() => {
+    const days = this.state.days();
+    const chosen = days.find((d) => d.id === this.deskDayId());
+    // Sin elección se abre por el día que toca hoy: es el que se viene a mirar.
+    return chosen ?? days.find((d) => d.id === this.todayDayId()) ?? days[0] ?? null;
+  });
+
+  protected pickDeskDay(id: string): void {
+    this.deskDayId.set(id);
+  }
+
   protected readonly view = signal<View>('list');
   protected readonly detailId = signal<string | null>(null);
   protected readonly toast = signal<string | null>(null);
   protected readonly confirmDeleteId = signal<string | null>(null);
 
   constructor() {
+    /*
+     * El editor en panel vive dentro de ESTA pantalla, así que se cierra con ella.
+     *
+     * `editingDayInline` hace que `app.html` no dibuje su instancia global. Si se deja
+     * puesta al salir de Rutinas —navegando a otra pestaña, o estrechando la ventana hasta
+     * móvil— el editor queda en un limbo: el estado dice que hay uno abierto, no lo pinta
+     * nadie, y el siguiente día que se intente editar desde cualquier otro sitio no aparece.
+     */
+    inject(DestroyRef).onDestroy(() => {
+      if (this.uiState.editingDayInline()) this.uiState.closeEditingDayInline();
+    });
+
+    effect(() => {
+      if (!this.viewport.isDesktop() && this.uiState.editingDayInline()) {
+        this.uiState.closeEditingDayInline();
+      }
+    });
+
     // `?gen=1&days=4&min=60` abre el generador con la spec puesta. Es como llega la
     // petición del chat, pero la URL es editable y se comparte: lo que entra por aquí se
     // valida igual que lo que manda el modelo, porque son dos puertas al mismo estado.
@@ -475,7 +530,23 @@ export class RoutinesComponent {
   }
 
   protected editDay(day: WorkoutDay): void {
+    // En escritorio el editor sustituye a la tabla del panel de detalle: la lista de días
+    // sigue a la vista y no hay hoja tapando la pantalla, que era la promesa del rediseño.
+    if (this.viewport.isDesktop()) {
+      this.deskDayId.set(day.id);
+      this.uiState.openEditingDayInline(day);
+      return;
+    }
     this.uiState.openEditingDay(day);
+  }
+
+  /** Añadir día también abre en panel cuando hay panel. */
+  protected addDayHere(): void {
+    if (this.viewport.isDesktop()) {
+      this.uiState.openEditingDayInline('new');
+      return;
+    }
+    this.addDay();
   }
 
   protected importTemplate(t: RoutineTemplate): void {

@@ -100,6 +100,8 @@ export interface Translations {
   detail_train_day: string;
 
   // Exercise card
+  session_ctx_pr: string;
+  session_ctx_why: string;
   prev_sets_label: string;
 
   // Day history sheet — edit/delete sessions
@@ -620,6 +622,8 @@ export interface Translations {
   routines_rotation: string;
   routines_today_chip: string;
   routines_exercises_n: string;
+  routines_edit_day: string;
+  rt_col_exercise: string;
   routines_add_day: string;
   routines_empty_days: string;
   routines_copy_suffix: string;
@@ -744,6 +748,11 @@ export interface Translations {
   panel_headline_idle: string;
   panel_headline_neutral_one: string;
   panel_headline_neutral: string;
+  panel_day1_eyebrow: string;
+  panel_day1_headline: string;
+  panel_day1_locked: string;
+  panel_day1_groups: string;
+  panel_day1_table: string;
   panel_kpi_volume: string;
   panel_kpi_sets: string;
   panel_kpi_sessions: string;
@@ -753,6 +762,7 @@ export interface Translations {
   panel_groups_title: string;
   panel_groups_sub: string;
   panel_groups_empty: string;
+  panel_table_title: string;
   panel_col_date: string;
   panel_col_day: string;
   panel_col_sets: string;

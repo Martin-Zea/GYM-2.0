@@ -43,6 +43,11 @@ await page.addInitScript(() => {
 });
 
 // ── Home ──
+async function go(url) {
+  await page.goto(url, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(300);
+}
+
 await page.goto(BASE, { waitUntil: 'networkidle' });
 await page.waitForTimeout(600);
 check('home: tarjeta de hoy visible', (await page.locator('.today-card').count()) === 1);
@@ -275,6 +280,95 @@ for (const [name, url] of [
   const marked = await page.locator('.sr-row--on').count();
   check(`escritorio: ${name} entra con su fila marcada`, marked === 1);
 }
+
+// Ajustes en escritorio es una PÁGINA: un bottom sheet ahí es el patrón del pulgar
+// puesto donde hay ratón y 1440px de ancho.
+await page.goto(`${BASE}/settings`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(600);
+check(
+  'escritorio: ajustes es página, no hoja',
+  (await page.locator('.settings-inline').count()) === 1,
+);
+check('escritorio: ajustes sin backdrop', (await page.locator('.sheet-backdrop').count()) === 0);
+
+// Rutinas: la lista de días y el día elegido conviven.
+await page.goto(`${BASE}/routines`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(600);
+check(
+  'escritorio: rutinas maestro-detalle',
+  (await page.locator('.rt-desk-master .rt-day').count()) > 0 &&
+    (await page.locator('.rt-tbl .rt-tr').count()) > 0,
+);
+
+// Hojas centradas: el asa de arrastre no promete un gesto que no existe.
+await go(`${BASE}/settings`);
+await page.waitForTimeout(500);
+check(
+  'escritorio: sin asa de arrastre en las hojas',
+  (await page.locator('.sheet-handle:visible').count()) === 0,
+);
+
+// El editor de dia se abre EN la pagina de Rutinas.
+await go(`${BASE}/routines`);
+await page.waitForTimeout(700);
+await page.locator('.rt-desk-detail-head .btn').first().click();
+await page.waitForTimeout(700);
+check(
+  'escritorio: editor de dia en panel',
+  (await page.locator('.rt-desk-detail .day-editor-inline').count()) === 1 &&
+    (await page.locator('.sheet-backdrop').count()) === 0,
+);
+check(
+  'escritorio: la lista de dias no se pierde al editar',
+  (await page.locator('.rt-desk-master .rt-day').count()) > 0,
+);
+
+/*
+ * Sesion de escritorio: tres columnas y el descanso como PANEL, no como velo.
+ *
+ * Va la ULTIMA de las comprobaciones de escritorio y limpia el estado antes de empezar:
+ * a estas alturas la sesion de hoy ya se cerro y el panel no ofrece "Empezar". Y termina
+ * saltando el descanso a proposito, porque `gt_rest_timer` sobrevive a la recarga y un
+ * temporizador vivo se convierte en un velo que se come los clics del resto del guion.
+ */
+await go(`${BASE}`);
+await page.evaluate(() => localStorage.clear());
+await go(`${BASE}`);
+await page.waitForTimeout(1000);
+await page.locator('.today-cta').first().click();
+await page.waitForTimeout(1200);
+const cols = await page.evaluate(() => {
+  const w = (s) => {
+    const el = document.querySelector(s);
+    return el ? Math.round(el.getBoundingClientRect().width) : 0;
+  };
+  return { lista: w('.training-sidebar'), centro: w('.session-main'), ctx: w('.session-context') };
+});
+check(
+  'escritorio: sesion en tres columnas',
+  cols.lista > 0 && cols.centro > 0 && cols.ctx > 0 && cols.lista < 400,
+);
+check(
+  'escritorio: sin pildoras duplicando la lista',
+  !(await page
+    .locator('.session-queue')
+    .first()
+    .isVisible()
+    .catch(() => false)),
+);
+await page.locator('.asc-done-btn').first().click();
+await page.waitForTimeout(900);
+check(
+  'escritorio: el descanso es panel, no velo',
+  (await page.locator('.session-context .rest-panel').count()) === 1 &&
+    (await page.locator('.rest-overlay').count()) === 0,
+);
+await page
+  .locator('.rest-skip')
+  .first()
+  .click()
+  .catch(() => {});
+await page.waitForTimeout(400);
 
 await page.setViewportSize({ width: 390, height: 844 });
 

@@ -1,98 +1,28 @@
 <div class="main">
-  @switch (view()) {
-    <!-- ══ R1 · lista de rutinas ══ -->
-    @case ('list') {
-      <div class="view-header rt-header">
-        <h2 class="view-title">{{ T().routines_title }}</h2>
-        <button class="icon-btn rt-add" type="button" (click)="createFromScratch()">
-          <app-icon name="plus" [size]="20" />
-          <span class="sr-only">{{ T().routines_create_scratch }}</span>
-        </button>
-      </div>
+  <!--
+  Escritorio: la lista de dias y el dia elegido CONVIVEN (T-839).
 
-      @if (activeRow(); as row) {
-        <button class="card card--hi rt-card" type="button" (click)="openDetail(row.routine.id)">
-          <span class="chip chip--accent">{{ T().routines_active }}</span>
-          <span class="big-t rt-name">{{ row.name }}</span>
-          <span class="rt-meta">
-            {{ tr.tp('routines_days_count', { n: row.dayCount }) }}
-            @if (nextDayName(); as next) {
-              · {{ tr.tp('routines_next_day', { day: next }) }}
-            }
-          </span>
-        </button>
-      }
-
-      @for (row of otherRows(); track row.routine.id) {
-        <button class="card rt-card" type="button" (click)="openDetail(row.routine.id)">
-          <span class="rt-name-sm">{{ row.name }}</span>
-          <span class="rt-meta">
-            {{ tr.tp('routines_days_count', { n: row.dayCount }) }} ·
-            @if (row.lastUsedISO) {
-              {{ tr.tp('routines_last_used', { date: dateLabel(row.lastUsedISO) }) }}
-            } @else {
-              {{ T().routines_never_used }}
-            }
-          </span>
-        </button>
-      }
-
-      @for (row of archivedRows(); track row.routine.id) {
-        <button
-          class="card rt-card rt-card--archived"
-          type="button"
-          (click)="openDetail(row.routine.id)"
-        >
-          <span class="rt-name-sm">{{ row.name }}</span>
-          <span class="rt-meta">{{ T().routines_archived }}</span>
-        </button>
-      }
-
-      <p class="k rt-create-label">{{ T().routines_create_label }}</p>
-      <div class="rt-create">
-        <button
-          class="chip chip--accent rt-create-btn"
-          type="button"
-          (click)="view.set('generator')"
-        >
-          {{ T().routines_create_ai }}
-        </button>
-        <button class="chip rt-create-btn" type="button" (click)="view.set('templates')">
-          {{ T().routines_create_template }}
-        </button>
-        <button class="chip rt-create-btn" type="button" (click)="createFromScratch()">
-          {{ T().routines_create_scratch }}
-        </button>
-      </div>
-    }
-
-    <!-- ══ R2 · detalle de rutina ══ -->
-    @case ('detail') {
-      @if (detailRoutine(); as routine) {
+  El movil sustituye una vista por otra porque no caben las dos. Aqui si caben, y tenerlas
+  juntas es justo lo que hace falta para lo que se viene a hacer en un monitor: comparar
+  series, reps, descanso e incremento ENTRE ejercicios y entre dias, que apilado en una
+  columna de 390px no se puede.
+-->
+  @if (viewport.isDesktop() && (view() === 'list' || view() === 'detail') && activeRow(); as row) {
+    <div class="rt-desk">
+      <div class="rt-desk-master">
         <div class="view-header rt-header">
-          <button class="icon-btn" type="button" (click)="back()" [attr.aria-label]="T().back">
-            <app-icon name="arrow_left" [size]="20" />
-          </button>
-          <div class="rt-header-body">
-            <h2 class="view-title">{{ routineName(routine) }}</h2>
-            @if (rotationLabel()) {
-              <p class="view-sub">{{ tr.tp('routines_rotation', { days: rotationLabel() }) }}</p>
-            }
-          </div>
+          <h2 class="view-title">{{ routineName(row.routine) }}</h2>
+          @if (rotationLabel()) {
+            <p class="view-sub">{{ tr.tp('routines_rotation', { days: rotationLabel() }) }}</p>
+          }
         </div>
 
-        @if (!activeRow() || activeRow()!.routine.id !== routine.id) {
-          <button class="btn btn-primary rt-activate" type="button" (click)="activate(routine.id)">
-            {{ T().routines_activate }}
-          </button>
-        }
-
-        @for (day of detailDays(); track day.id) {
+        @for (day of state.days(); track day.id) {
           <button
             class="card rt-day"
-            [class.card--hi]="day.id === todayDayId()"
             type="button"
-            (click)="editDay(day)"
+            [class.card--hi]="day.id === deskDay()?.id"
+            (click)="pickDeskDay(day.id)"
           >
             <span class="rt-day-name">{{ day.name }}</span>
             @if (day.id === todayDayId()) {
@@ -101,260 +31,436 @@
             <span class="rt-meta rt-day-count">
               {{ tr.tp('routines_exercises_n', { n: day.exercises.length }) }}
             </span>
-            <app-icon class="li-chev" name="chevron" [size]="16" />
           </button>
         } @empty {
           <p class="note rt-empty">{{ T().routines_empty_days }}</p>
         }
 
-        <button class="btn btn-ghost rt-wide" type="button" (click)="addDay()">
+        <button class="btn btn-ghost rt-wide" type="button" (click)="addDayHere()">
           {{ T().routines_add_day }}
         </button>
-
-        <div class="rt-actions">
-          <button class="btn btn-ghost" type="button" (click)="rename(routine)">
-            {{ T().routines_rename }}
-          </button>
-          <button class="btn btn-ghost" type="button" (click)="duplicate(routine)">
-            {{ T().routines_duplicate }}
-          </button>
-          <button class="btn btn-ghost" type="button" (click)="toggleArchived(routine)">
-            {{ routine.archived ? T().routines_unarchive : T().routines_archive }}
-          </button>
-          <button class="btn btn-ghost btn-danger" type="button" (click)="askDelete(routine.id)">
-            {{ T().routines_delete }}
-          </button>
-        </div>
-      }
-    }
-
-    <!-- ══ R6 · plantillas ══ -->
-    @case ('templates') {
-      <div class="view-header rt-header">
-        <button class="icon-btn" type="button" (click)="back()" [attr.aria-label]="T().back">
-          <app-icon name="arrow_left" [size]="20" />
-        </button>
-        <h2 class="view-title">{{ T().templates_title }}</h2>
       </div>
 
-      @if (previewTemplate(); as preview) {
-        <p class="k">{{ T().templates_preview_title }}</p>
-        <div class="card">
-          <p class="rt-name-sm">{{ templateName(preview) }}</p>
-          @for (name of templateDayNames(preview); track name) {
-            <p class="rt-meta rt-preview-day">{{ name }}</p>
-          }
-        </div>
-        <button class="btn btn-primary rt-wide" type="button" (click)="importTemplate(preview)">
-          {{ T().templates_confirm_import }}
-        </button>
-      } @else {
-        @if (templateProfileLabel(); as label) {
-          <p class="note">{{ tr.tp('templates_filtered', { profile: label }) }}</p>
-        } @else {
-          <p class="note">{{ T().templates_all }}</p>
-        }
-        @for (t of templates(); track t.id) {
-          <button class="card rt-card" type="button" (click)="previewTemplate.set(t)">
-            <span class="rt-name-sm">{{ templateName(t) }}</span>
-            <span class="rt-meta">{{ tr.tp('templates_days_week', { n: t.daysPerWeek }) }}</span>
-          </button>
-        }
-      }
-    }
+      <div class="rt-desk-detail">
+        <!--
+          O el editor, o la tabla; nunca los dos. Editar un día sustituye el panel de
+          detalle en vez de abrir una hoja encima: la lista de días sigue a la vista.
+        -->
+        @if (uiState.editingDay() !== null && uiState.editingDayInline()) {
+          <app-day-editor [inline]="true" />
+        } @else if (deskDay(); as day) {
+          <div class="rt-desk-detail-head">
+            <h3 class="rt-desk-day-name">{{ day.name }}</h3>
+            <button class="btn btn-sm" type="button" (click)="editDay(day)">
+              {{ T().routines_edit_day }}
+            </button>
+          </div>
 
-    <!-- ══ R7 · generador con IA ══ -->
-    @case ('generator') {
-      <div class="view-header rt-header">
-        <button class="icon-btn" type="button" (click)="back()" [attr.aria-label]="T().back">
-          <app-icon name="arrow_left" [size]="20" />
-        </button>
-        <h2 class="view-title">{{ T().generator_title }}</h2>
-      </div>
+          <div class="rt-tbl">
+            <div class="rt-tbl-head">
+              <span>{{ T().rt_col_exercise }}</span>
+              <span>{{ T().sets_label }}</span>
+              <span>{{ T().col_reps }}</span>
+              <span>{{ T().rest_label }}</span>
+              <span>{{ T().day_editor_brick }}</span>
+            </div>
+            @for (ex of day.exercises; track ex.id) {
+              <div class="rt-tr">
+                <span class="rt-td-name">{{ ex.name }}</span>
+                <span class="tabular">{{ ex.defaultSets }}</span>
+                <span class="tabular">{{ ex.defaultRepTarget }}</span>
+                <span class="tabular">{{ ex.restSeconds }}s</span>
+                <span class="tabular">{{ ex.brick }}</span>
+              </div>
+            } @empty {
+              <p class="note rt-empty">{{ T().routines_empty_days }}</p>
+            }
+          </div>
 
-      @if (generated(); as routine) {
-        <p class="k">{{ T().generator_review }}</p>
-        <!-- Pedir 6 y guardar 4 en silencio es la app decidiendo que cuatro está bien -->
-        @if (routine.days.length !== routine.requestedDays) {
-          <p class="note rt-warn">
-            {{
-              tr.tp('generator_short', {
-                got: routine.days.length,
-                asked: routine.requestedDays,
-              })
-            }}
-          </p>
-        }
-        @for (day of routine.days; track day.name) {
-          <div class="card">
-            <p class="rt-name-sm">{{ day.name }}</p>
-            <p class="rt-meta">{{ exerciseSummary(day) }}</p>
+          <div class="rt-actions">
+            <button class="btn btn-ghost" type="button" (click)="rename(row.routine)">
+              {{ T().routines_rename }}
+            </button>
+            <button class="btn btn-ghost" type="button" (click)="duplicate(row.routine)">
+              {{ T().routines_duplicate }}
+            </button>
+            <button
+              class="btn btn-ghost btn-danger"
+              type="button"
+              (click)="askDelete(row.routine.id)"
+            >
+              {{ T().routines_delete }}
+            </button>
           </div>
         }
-        <div class="rt-actions">
-          <button class="btn btn-ghost" type="button" (click)="generated.set(null)">
-            {{ T().generator_discard }}
-          </button>
-          <button class="btn btn-ghost" type="button" (click)="saveGenerated(false)">
-            {{ T().generator_save_only }}
-          </button>
-          <button class="btn btn-primary" type="button" (click)="saveGenerated(true)">
-            {{ T().generator_save_activate }}
+      </div>
+    </div>
+  } @else {
+    @switch (view()) {
+      <!-- ══ R1 · lista de rutinas ══ -->
+      @case ('list') {
+        <div class="view-header rt-header">
+          <h2 class="view-title">{{ T().routines_title }}</h2>
+          <button class="icon-btn rt-add" type="button" (click)="createFromScratch()">
+            <app-icon name="plus" [size]="20" />
+            <span class="sr-only">{{ T().routines_create_scratch }}</span>
           </button>
         </div>
-      } @else {
-        <!--
+
+        @if (activeRow(); as row) {
+          <button class="card card--hi rt-card" type="button" (click)="openDetail(row.routine.id)">
+            <span class="chip chip--accent">{{ T().routines_active }}</span>
+            <span class="big-t rt-name">{{ row.name }}</span>
+            <span class="rt-meta">
+              {{ tr.tp('routines_days_count', { n: row.dayCount }) }}
+              @if (nextDayName(); as next) {
+                · {{ tr.tp('routines_next_day', { day: next }) }}
+              }
+            </span>
+          </button>
+        }
+
+        @for (row of otherRows(); track row.routine.id) {
+          <button class="card rt-card" type="button" (click)="openDetail(row.routine.id)">
+            <span class="rt-name-sm">{{ row.name }}</span>
+            <span class="rt-meta">
+              {{ tr.tp('routines_days_count', { n: row.dayCount }) }} ·
+              @if (row.lastUsedISO) {
+                {{ tr.tp('routines_last_used', { date: dateLabel(row.lastUsedISO) }) }}
+              } @else {
+                {{ T().routines_never_used }}
+              }
+            </span>
+          </button>
+        }
+
+        @for (row of archivedRows(); track row.routine.id) {
+          <button
+            class="card rt-card rt-card--archived"
+            type="button"
+            (click)="openDetail(row.routine.id)"
+          >
+            <span class="rt-name-sm">{{ row.name }}</span>
+            <span class="rt-meta">{{ T().routines_archived }}</span>
+          </button>
+        }
+
+        <p class="k rt-create-label">{{ T().routines_create_label }}</p>
+        <div class="rt-create">
+          <button
+            class="chip chip--accent rt-create-btn"
+            type="button"
+            (click)="view.set('generator')"
+          >
+            {{ T().routines_create_ai }}
+          </button>
+          <button class="chip rt-create-btn" type="button" (click)="view.set('templates')">
+            {{ T().routines_create_template }}
+          </button>
+          <button class="chip rt-create-btn" type="button" (click)="createFromScratch()">
+            {{ T().routines_create_scratch }}
+          </button>
+        </div>
+      }
+
+      <!-- ══ R2 · detalle de rutina ══ -->
+      @case ('detail') {
+        @if (detailRoutine(); as routine) {
+          <div class="view-header rt-header">
+            <button class="icon-btn" type="button" (click)="back()" [attr.aria-label]="T().back">
+              <app-icon name="arrow_left" [size]="20" />
+            </button>
+            <div class="rt-header-body">
+              <h2 class="view-title">{{ routineName(routine) }}</h2>
+              @if (rotationLabel()) {
+                <p class="view-sub">{{ tr.tp('routines_rotation', { days: rotationLabel() }) }}</p>
+              }
+            </div>
+          </div>
+
+          @if (!activeRow() || activeRow()!.routine.id !== routine.id) {
+            <button
+              class="btn btn-primary rt-activate"
+              type="button"
+              (click)="activate(routine.id)"
+            >
+              {{ T().routines_activate }}
+            </button>
+          }
+
+          @for (day of detailDays(); track day.id) {
+            <button
+              class="card rt-day"
+              [class.card--hi]="day.id === todayDayId()"
+              type="button"
+              (click)="editDay(day)"
+            >
+              <span class="rt-day-name">{{ day.name }}</span>
+              @if (day.id === todayDayId()) {
+                <span class="chip chip--accent">{{ T().routines_today_chip }}</span>
+              }
+              <span class="rt-meta rt-day-count">
+                {{ tr.tp('routines_exercises_n', { n: day.exercises.length }) }}
+              </span>
+              <app-icon class="li-chev" name="chevron" [size]="16" />
+            </button>
+          } @empty {
+            <p class="note rt-empty">{{ T().routines_empty_days }}</p>
+          }
+
+          <button class="btn btn-ghost rt-wide" type="button" (click)="addDay()">
+            {{ T().routines_add_day }}
+          </button>
+
+          <div class="rt-actions">
+            <button class="btn btn-ghost" type="button" (click)="rename(routine)">
+              {{ T().routines_rename }}
+            </button>
+            <button class="btn btn-ghost" type="button" (click)="duplicate(routine)">
+              {{ T().routines_duplicate }}
+            </button>
+            <button class="btn btn-ghost" type="button" (click)="toggleArchived(routine)">
+              {{ routine.archived ? T().routines_unarchive : T().routines_archive }}
+            </button>
+            <button class="btn btn-ghost btn-danger" type="button" (click)="askDelete(routine.id)">
+              {{ T().routines_delete }}
+            </button>
+          </div>
+        }
+      }
+
+      <!-- ══ R6 · plantillas ══ -->
+      @case ('templates') {
+        <div class="view-header rt-header">
+          <button class="icon-btn" type="button" (click)="back()" [attr.aria-label]="T().back">
+            <app-icon name="arrow_left" [size]="20" />
+          </button>
+          <h2 class="view-title">{{ T().templates_title }}</h2>
+        </div>
+
+        @if (previewTemplate(); as preview) {
+          <p class="k">{{ T().templates_preview_title }}</p>
+          <div class="card">
+            <p class="rt-name-sm">{{ templateName(preview) }}</p>
+            @for (name of templateDayNames(preview); track name) {
+              <p class="rt-meta rt-preview-day">{{ name }}</p>
+            }
+          </div>
+          <button class="btn btn-primary rt-wide" type="button" (click)="importTemplate(preview)">
+            {{ T().templates_confirm_import }}
+          </button>
+        } @else {
+          @if (templateProfileLabel(); as label) {
+            <p class="note">{{ tr.tp('templates_filtered', { profile: label }) }}</p>
+          } @else {
+            <p class="note">{{ T().templates_all }}</p>
+          }
+          @for (t of templates(); track t.id) {
+            <button class="card rt-card" type="button" (click)="previewTemplate.set(t)">
+              <span class="rt-name-sm">{{ templateName(t) }}</span>
+              <span class="rt-meta">{{ tr.tp('templates_days_week', { n: t.daysPerWeek }) }}</span>
+            </button>
+          }
+        }
+      }
+
+      <!-- ══ R7 · generador con IA ══ -->
+      @case ('generator') {
+        <div class="view-header rt-header">
+          <button class="icon-btn" type="button" (click)="back()" [attr.aria-label]="T().back">
+            <app-icon name="arrow_left" [size]="20" />
+          </button>
+          <h2 class="view-title">{{ T().generator_title }}</h2>
+        </div>
+
+        @if (generated(); as routine) {
+          <p class="k">{{ T().generator_review }}</p>
+          <!-- Pedir 6 y guardar 4 en silencio es la app decidiendo que cuatro está bien -->
+          @if (routine.days.length !== routine.requestedDays) {
+            <p class="note rt-warn">
+              {{
+                tr.tp('generator_short', {
+                  got: routine.days.length,
+                  asked: routine.requestedDays,
+                })
+              }}
+            </p>
+          }
+          @for (day of routine.days; track day.name) {
+            <div class="card">
+              <p class="rt-name-sm">{{ day.name }}</p>
+              <p class="rt-meta">{{ exerciseSummary(day) }}</p>
+            </div>
+          }
+          <div class="rt-actions">
+            <button class="btn btn-ghost" type="button" (click)="generated.set(null)">
+              {{ T().generator_discard }}
+            </button>
+            <button class="btn btn-ghost" type="button" (click)="saveGenerated(false)">
+              {{ T().generator_save_only }}
+            </button>
+            <button class="btn btn-primary" type="button" (click)="saveGenerated(true)">
+              {{ T().generator_save_activate }}
+            </button>
+          </div>
+        } @else {
+          <!--
           El contexto se ENSEÑA antes de gastar la llamada (T-832), pero RESUMIDO (T-833).
           Desplegado siempre eran cinco secciones que atravesar para llegar al botón: lo que
           quería ser "mirá con qué genero" se había vuelto un formulario que rellenar. La
           línea resumen dice lo mismo de un vistazo y solo se abre si algo está mal.
         -->
-        <div class="rt-ctx">
-          <div class="rt-ctx-head">
-            <div class="rt-ctx-text">
-              <p class="k">{{ T().generator_context_title }}</p>
-              <p class="rt-ctx-summary">{{ contextSummary() }}</p>
-            </div>
-            <button
-              class="btn btn-ghost btn-sm"
-              type="button"
-              [attr.aria-expanded]="editingContext()"
-              (click)="editingContext.set(!editingContext())"
-            >
-              {{ editingContext() ? T().generator_context_done : T().generator_context_edit }}
-            </button>
-          </div>
-          @if (genLayoffDays(); as days) {
-            <p class="note rt-layoff">{{ tr.tp('generator_layoff_note', { n: days }) }}</p>
-          }
-        </div>
-
-        @if (editingContext()) {
-          <p class="k rt-sub">{{ T().profile_level_label }}</p>
-          <div class="seg">
-            @for (lv of levelOptions; track lv) {
-              <button type="button" [attr.aria-pressed]="genLevel() === lv" (click)="setLevel(lv)">
-                {{ levelLabel(lv) }}
-              </button>
-            }
-          </div>
-
-          <p class="k rt-sub">{{ T().settings_goal_label }}</p>
-          <div class="seg">
-            @for (g of goalOptions; track g) {
-              <button type="button" [attr.aria-pressed]="genGoal() === g" (click)="setGoal(g)">
-                {{ goalLabel(g) }}
-              </button>
-            }
-          </div>
-
-          <p class="k rt-sub">{{ T().profile_equipment_label }}</p>
-          <div class="rt-chips">
-            @for (eq of equipmentOptions; track eq) {
+          <div class="rt-ctx">
+            <div class="rt-ctx-head">
+              <div class="rt-ctx-text">
+                <p class="k">{{ T().generator_context_title }}</p>
+                <p class="rt-ctx-summary">{{ contextSummary() }}</p>
+              </div>
               <button
-                class="chip rt-chip"
+                class="btn btn-ghost btn-sm"
                 type="button"
-                [class.chip--accent]="hasEquipment(eq)"
-                [attr.aria-pressed]="hasEquipment(eq)"
-                (click)="toggleEquipment(eq)"
+                [attr.aria-expanded]="editingContext()"
+                (click)="editingContext.set(!editingContext())"
               >
-                {{ equipmentLabel(eq) }}
+                {{ editingContext() ? T().generator_context_done : T().generator_context_edit }}
+              </button>
+            </div>
+            @if (genLayoffDays(); as days) {
+              <p class="note rt-layoff">{{ tr.tp('generator_layoff_note', { n: days }) }}</p>
+            }
+          </div>
+
+          @if (editingContext()) {
+            <p class="k rt-sub">{{ T().profile_level_label }}</p>
+            <div class="seg">
+              @for (lv of levelOptions; track lv) {
+                <button
+                  type="button"
+                  [attr.aria-pressed]="genLevel() === lv"
+                  (click)="setLevel(lv)"
+                >
+                  {{ levelLabel(lv) }}
+                </button>
+              }
+            </div>
+
+            <p class="k rt-sub">{{ T().settings_goal_label }}</p>
+            <div class="seg">
+              @for (g of goalOptions; track g) {
+                <button type="button" [attr.aria-pressed]="genGoal() === g" (click)="setGoal(g)">
+                  {{ goalLabel(g) }}
+                </button>
+              }
+            </div>
+
+            <p class="k rt-sub">{{ T().profile_equipment_label }}</p>
+            <div class="rt-chips">
+              @for (eq of equipmentOptions; track eq) {
+                <button
+                  class="chip rt-chip"
+                  type="button"
+                  [class.chip--accent]="hasEquipment(eq)"
+                  [attr.aria-pressed]="hasEquipment(eq)"
+                  (click)="toggleEquipment(eq)"
+                >
+                  {{ equipmentLabel(eq) }}
+                </button>
+              }
+            </div>
+            @if (!genEquipment()?.length) {
+              <p class="note">{{ T().generator_equipment_any }}</p>
+            }
+
+            <p class="k rt-sub">{{ T().generator_context_notes }}</p>
+            <textarea
+              class="input rt-notes"
+              rows="3"
+              [attr.maxlength]="MAX_SPEC_NOTES"
+              [value]="genNotes()"
+              [attr.placeholder]="T().generator_notes_placeholder"
+              [attr.aria-label]="T().generator_context_notes"
+              (input)="onNotes($event)"
+            ></textarea>
+            <p class="note rt-notes-count">
+              {{ tr.tp('generator_notes_count', { n: genNotes().length, max: MAX_SPEC_NOTES }) }}
+            </p>
+          }
+
+          <p class="k rt-sub">{{ T().generator_days_week }}</p>
+          <div class="seg">
+            @for (n of GEN_DAYS; track n) {
+              <button type="button" [attr.aria-pressed]="genDays() === n" (click)="genDays.set(n)">
+                {{ n }}
               </button>
             }
           </div>
-          @if (!genEquipment()?.length) {
-            <p class="note">{{ T().generator_equipment_any }}</p>
-          }
 
-          <p class="k rt-sub">{{ T().generator_context_notes }}</p>
-          <textarea
-            class="input rt-notes"
-            rows="3"
-            [attr.maxlength]="MAX_SPEC_NOTES"
-            [value]="genNotes()"
-            [attr.placeholder]="T().generator_notes_placeholder"
-            [attr.aria-label]="T().generator_context_notes"
-            (input)="onNotes($event)"
-          ></textarea>
-          <p class="note rt-notes-count">
-            {{ tr.tp('generator_notes_count', { n: genNotes().length, max: MAX_SPEC_NOTES }) }}
+          <p class="k rt-sub">{{ T().generator_minutes }}</p>
+          <div class="seg">
+            @for (m of GEN_MINUTES; track m) {
+              <button
+                type="button"
+                [attr.aria-pressed]="genMinutes() === m"
+                (click)="genMinutes.set(m)"
+              >
+                {{ m }} min
+              </button>
+            }
+          </div>
+
+          <!-- El coste va ANTES del botón: gastar tokens es una decisión, no una sorpresa -->
+          <p class="note">
+            {{ tr.tp('generator_cost', { tokens: costEstimate().total, seconds: 30 }) }}
           </p>
-        }
 
-        <p class="k rt-sub">{{ T().generator_days_week }}</p>
-        <div class="seg">
-          @for (n of GEN_DAYS; track n) {
-            <button type="button" [attr.aria-pressed]="genDays() === n" (click)="genDays.set(n)">
-              {{ n }}
-            </button>
+          <!-- Un botón deshabilitado sin motivo es un callejón sin salida: el motivo SIEMPRE -->
+          @if (genBlock(); as block) {
+            <p class="note rt-error">{{ blockLabel(block) }}</p>
+          } @else if (genError(); as err) {
+            <p class="note rt-error">{{ errorLabel(err) }}</p>
           }
-        </div>
 
-        <p class="k rt-sub">{{ T().generator_minutes }}</p>
-        <div class="seg">
-          @for (m of GEN_MINUTES; track m) {
+          <p class="note">{{ T().generator_context_scope }}</p>
+
+          <div class="rt-actions">
+            <button class="btn btn-ghost" type="button" (click)="back()">
+              {{ T().cancel }}
+            </button>
             <button
+              class="btn btn-primary"
               type="button"
-              [attr.aria-pressed]="genMinutes() === m"
-              (click)="genMinutes.set(m)"
+              [disabled]="generating() || genBlock() !== null"
+              (click)="runGenerator()"
             >
-              {{ m }} min
+              {{ generating() ? T().generator_running : T().generator_run }}
             </button>
-          }
-        </div>
-
-        <!-- El coste va ANTES del botón: gastar tokens es una decisión, no una sorpresa -->
-        <p class="note">
-          {{ tr.tp('generator_cost', { tokens: costEstimate().total, seconds: 30 }) }}
-        </p>
-
-        <!-- Un botón deshabilitado sin motivo es un callejón sin salida: el motivo SIEMPRE -->
-        @if (genBlock(); as block) {
-          <p class="note rt-error">{{ blockLabel(block) }}</p>
-        } @else if (genError(); as err) {
-          <p class="note rt-error">{{ errorLabel(err) }}</p>
+          </div>
         }
-
-        <p class="note">{{ T().generator_context_scope }}</p>
-
-        <div class="rt-actions">
-          <button class="btn btn-ghost" type="button" (click)="back()">
-            {{ T().cancel }}
-          </button>
-          <button
-            class="btn btn-primary"
-            type="button"
-            [disabled]="generating() || genBlock() !== null"
-            (click)="runGenerator()"
-          >
-            {{ generating() ? T().generator_running : T().generator_run }}
-          </button>
-        </div>
       }
     }
-  }
 
-  @if (confirmDeleteId()) {
-    <div class="exit-confirm-overlay">
-      <div class="exit-confirm-panel">
-        <p class="exit-confirm-msg">
-          {{ tr.tp('routines_delete_confirm', { name: detailRoutine()?.name ?? '' }) }}
-        </p>
-        <div class="exit-confirm-actions">
-          <button class="btn btn-ghost" type="button" (click)="confirmDeleteId.set(null)">
-            {{ T().cancel }}
-          </button>
-          <button class="btn btn-danger" type="button" (click)="confirmDelete()">
-            {{ T().routines_delete }}
-          </button>
+    @if (confirmDeleteId()) {
+      <div class="exit-confirm-overlay">
+        <div class="exit-confirm-panel">
+          <p class="exit-confirm-msg">
+            {{ tr.tp('routines_delete_confirm', { name: detailRoutine()?.name ?? '' }) }}
+          </p>
+          <div class="exit-confirm-actions">
+            <button class="btn btn-ghost" type="button" (click)="confirmDeleteId.set(null)">
+              {{ T().cancel }}
+            </button>
+            <button class="btn btn-danger" type="button" (click)="confirmDelete()">
+              {{ T().routines_delete }}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  }
+    }
 
-  @if (toast(); as msg) {
-    <div class="app-toast" role="status">
-      <span class="app-toast-msg">{{ msg }}</span>
-    </div>
+    @if (toast(); as msg) {
+      <div class="app-toast" role="status">
+        <span class="app-toast-msg">{{ msg }}</span>
+      </div>
+    }
   }
 </div>

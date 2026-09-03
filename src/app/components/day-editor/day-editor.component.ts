@@ -4,6 +4,7 @@ import {
   OnInit,
   computed,
   inject,
+  input,
   signal,
 } from '@angular/core';
 import {
@@ -46,6 +47,9 @@ interface ExerciseSuggestion {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DayEditorComponent implements OnInit {
+  /** `true` lo pinta como panel de la página, sin hoja, sin backdrop y sin trampa de foco. */
+  readonly inline = input(false);
+
   private readonly state = inject(StateService);
   protected readonly uiState = inject(UIStateService);
   private readonly storage = inject(StorageService);
@@ -440,6 +444,11 @@ export class DayEditorComponent implements OnInit {
   }
 
   protected close(): void {
+    // En página no se metió nada en el stack de overlays, así que tampoco se saca.
+    if (this.inline()) {
+      this.uiState.closeEditingDayInline();
+      return;
+    }
     this.uiState.closeEditingDay();
   }
 }

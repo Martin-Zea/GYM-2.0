@@ -167,3 +167,15 @@
   opacity: 0.5;
   text-decoration: line-through;
 }
+
+/*
+ * Versión en página (T-839): el mismo contenido sin el marco de la hoja.
+ *
+ * No hay backdrop, ni handle, ni cierre: no tapa nada, así que no hay nada que cerrar.
+ * El ancho se acota porque un campo de notas de 1100px para un texto de 60 caracteres es
+ * el mismo error que la hoja resolvía por accidente al ser estrecha.
+ */
+.settings-inline {
+  max-width: 640px;
+  padding-bottom: var(--sp-6);
+}

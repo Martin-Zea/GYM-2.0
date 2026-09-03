@@ -91,7 +91,38 @@ export class SectionRailComponent {
     return { path, q: (tree.queryParams ?? {}) as Record<string, string | undefined> };
   });
 
-  protected readonly section = computed((): RailSection => {
+  protected readonly section = computed(
+    (): RailSection => this.ensureOneMarked(this.buildSection()),
+  );
+
+  /**
+   * Invariante de la columna: si la sección tiene una vista por defecto, SIEMPRE hay
+   * exactamente una fila encendida.
+   *
+   * Marcar por igualdad con el parámetro no basta. Con `?vista=inventado` la pantalla cae
+   * en el defecto —hace lo correcto— pero ninguna fila coincidía, y la columna volvía a
+   * quedarse muda: el mismo fallo que ya se arregló para el caso de "sin parámetro",
+   * disfrazado de valor basura. Aquí se cierra para los dos.
+   */
+  private ensureOneMarked(section: RailSection): RailSection {
+    const fallback = DEFAULT_DESKTOP_VIEW[this.here().path];
+    if (!fallback) return section;
+
+    const links = section.groups.flatMap((g) => g.rows).filter((r) => r.kind === 'link');
+    if (!links.length || links.some((r) => r.on)) return section;
+
+    return {
+      ...section,
+      groups: section.groups.map((g) => ({
+        ...g,
+        rows: g.rows.map((r) =>
+          r.kind === 'link' && r.query['vista'] === fallback ? { ...r, on: true } : r,
+        ),
+      })),
+    };
+  }
+
+  private buildSection(): RailSection {
     switch (this.here().path) {
       case '/progress':
         return this.progressSection();
@@ -108,7 +139,7 @@ export class SectionRailComponent {
       default:
         return this.panelSection();
     }
-  });
+  }
 
   // ─────────────────────────── Secciones ───────────────────────────
 
@@ -307,11 +338,14 @@ export class SectionRailComponent {
       groups: [
         {
           title: T.rail_group_sections,
+          // Enlaces, no acciones: en escritorio Ajustes es una página. Abrir un sheet que
+          // tapa la pantalla entera para elegir un idioma es el patrón del pulgar puesto
+          // donde hay ratón y 1440px.
           rows: [
-            { kind: 'act', label: T.settings_menu_prefs, act: 'prefs' },
-            { kind: 'act', label: T.settings_menu_ai, act: 'ai' },
-            { kind: 'act', label: T.settings_menu_data, act: 'data' },
-            { kind: 'act', label: T.settings_menu_about, act: 'about' },
+            this.viewLink(T.settings_menu_prefs, '/settings', 'prefs'),
+            this.viewLink(T.settings_menu_ai, '/settings', 'ai'),
+            this.viewLink(T.settings_menu_data, '/settings', 'data'),
+            this.viewLink(T.settings_menu_about, '/settings', 'about'),
           ],
         },
         { rows: [{ kind: 'act', label: T.settings_menu_tools, act: 'tools' }] },

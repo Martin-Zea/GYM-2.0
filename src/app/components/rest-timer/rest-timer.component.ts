@@ -5,8 +5,10 @@ import {
   OnInit,
   computed,
   inject,
+  input,
   signal,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { UIStateService } from '../../services/ui-state.service';
 import { StateService } from '../../services/state.service';
 import { TranslationService } from '../../services/translation.service';
@@ -15,12 +17,21 @@ import { SoundService } from '../../services/sound.service';
 @Component({
   selector: 'app-rest-timer',
   standalone: true,
-  imports: [],
+  imports: [NgTemplateOutlet],
   templateUrl: './rest-timer.component.html',
   styleUrl: './rest-timer.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RestTimerComponent implements OnInit, OnDestroy {
+  /**
+   * `true` lo pinta como PANEL dentro de la sesión, sin velo.
+   *
+   * En un teléfono tapar la pantalla para contar 90 segundos no quita nada: no hay nada
+   * detrás que mirar. En un monitor sí lo hay —la lista de ejercicios, lo que viene, la
+   * última marca— y taparlo obliga a esperar mirando un círculo.
+   */
+  readonly inline = input(false);
+
   protected readonly uiState = inject(UIStateService);
   private readonly state = inject(StateService);
   protected readonly tr = inject(TranslationService);

@@ -19,6 +19,41 @@
         donde se entiende qué está pasando. Se pinta solo en escritorio para que un
         teléfono no construya un DOM que nunca va a enseñar.
       -->
+      <!--
+        DÍA 1: el panel no se esconde, se enseña APAGADO (T-839).
+        Sin esto, un usuario recién instalado abría el escritorio y no veía panel ninguno
+        — la app parecía diminuta justo el día en que decide si le gusta. Enseñar los
+        bloques diciendo qué falta para encenderlos cuenta lo que la app va a hacer por él.
+      -->
+      @if (viewport.isDesktop() && !hasCompletedSessions()) {
+        <div class="panel panel--day1">
+          <div class="panel-hero">
+            <p class="panel-eyebrow">{{ T().panel_day1_eyebrow }}</p>
+            <h1 class="panel-headline">{{ T().panel_day1_headline }}</h1>
+          </div>
+
+          <div class="panel-kpis">
+            @for (label of day1Kpis(); track label) {
+              <div class="stat panel-kpi panel-kpi--locked">
+                <p class="stat-label">{{ label }}</p>
+                <p class="stat-value">—</p>
+                <p class="stat-delta">{{ T().panel_day1_locked }}</p>
+              </div>
+            }
+          </div>
+
+          <div class="card panel-locked">
+            <p class="k">{{ T().panel_groups_title }}</p>
+            <p class="note">{{ T().panel_day1_groups }}</p>
+          </div>
+
+          <div class="card panel-locked">
+            <p class="k">{{ T().panel_table_title }}</p>
+            <p class="note">{{ T().panel_day1_table }}</p>
+          </div>
+        </div>
+      }
+
       @if (viewport.isDesktop() && hasCompletedSessions()) {
         <div class="panel">
           <!-- Portada: una afirmación, no una fila de widgets -->
@@ -517,6 +552,60 @@
           }
         }
       </div>
+      <!--
+        Tercera columna: CONTEXTO (T-839).
+
+        La lista dice qué queda, el centro registra, y esto contesta "¿con qué vengo?".
+        En el teléfono estas tres respuestas están en tres sitios distintos porque no
+        caben juntas; aquí sí caben, y dejar de ir a buscarlas es la mitad del valor de
+        entrenar mirando un monitor.
+      -->
+      @if (viewport.isDesktop()) {
+        <aside class="session-context">
+          @if (uiState.restTimer()) {
+            <app-rest-timer [inline]="true" />
+          }
+
+          @if (sessionContext(); as ctx) {
+            <div class="sctx-block">
+              <p class="sctx-title">{{ ctx.exercise.name }}</p>
+            </div>
+
+            <div class="sctx-block">
+              <p class="sctx-head">{{ T().prev_sets_label }}</p>
+              @if (ctx.lastSets.length) {
+                <div class="sctx-sets">
+                  @for (set of ctx.lastSets; track $index) {
+                    <span class="sctx-set tabular">
+                      @if (ctx.hasWeight) {
+                        {{ set.weight }} × {{ set.reps }}
+                      } @else {
+                        {{ set.reps }}
+                      }
+                    </span>
+                  }
+                </div>
+              } @else {
+                <p class="sctx-empty">{{ T().detail_no_data }}</p>
+              }
+            </div>
+
+            @if (ctx.pr; as pr) {
+              <div class="sctx-block">
+                <p class="sctx-head">{{ T().session_ctx_pr }}</p>
+                <p class="sctx-pr tabular">{{ pr }} kg</p>
+              </div>
+            }
+
+            @if (ctx.rec?.reason; as reason) {
+              <div class="sctx-block sctx-block--ai">
+                <p class="sctx-head">{{ T().session_ctx_why }}</p>
+                <p class="sctx-reason">{{ reason }}</p>
+              </div>
+            }
+          }
+        </aside>
+      }
     </div>
 
     <!-- Modal de confirmación para terminar -->

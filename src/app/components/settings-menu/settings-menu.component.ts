@@ -1,6 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IconComponent } from '../icon/icon.component';
+import { SettingsComponent } from '../settings/settings.component';
+import { ViewportService } from '../../services/viewport.service';
+import { SettingsSection } from '../../services/ui-state.service';
+import { DEFAULT_DESKTOP_VIEW } from '../bottom-nav/nav-items';
 import { StateService } from '../../services/state.service';
 import { TranslationService } from '../../services/translation.service';
 import { UIStateService } from '../../services/ui-state.service';
@@ -22,7 +27,7 @@ import {
 @Component({
   selector: 'app-settings-menu',
   standalone: true,
-  imports: [IconComponent],
+  imports: [IconComponent, SettingsComponent],
   templateUrl: './settings-menu.component.html',
   styleUrl: './settings-menu.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -34,6 +39,24 @@ export class SettingsMenuComponent {
   protected readonly uiState = inject(UIStateService);
   private readonly keys = inject(ApiKeyService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  protected readonly viewport = inject(ViewportService);
+
+  constructor() {
+    // La sección vive en la URL, igual que el resto de sub-vistas: la columna de sección
+    // enlaza a cada una y `uiState.settingsSection` sigue siendo quien decide qué se pinta,
+    // así que sheet y página comparten mecanismo en vez de tener uno cada uno.
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const fallback = DEFAULT_DESKTOP_VIEW['/settings'];
+      const vista = params.get('vista') ?? fallback;
+      const valid: string[] = ['prefs', 'ai', 'data', 'about'];
+      // Un valor inventado en la URL cae en el defecto, no en "enséñalo todo": con `null`
+      // la página pintaba las cuatro secciones seguidas y ninguna fila quedaba marcada.
+      this.uiState.settingsSection.set(
+        (valid.includes(vista) ? vista : fallback) as SettingsSection,
+      );
+    });
+  }
 
   protected readonly profileSummary = computed(() => {
     const p = this.state.settings().userProfile;

@@ -1,4 +1,15 @@
-<div class="rest-overlay" role="alertdialog" aria-modal="true" [attr.aria-label]="T().rest_label">
+<!-- Velo en móvil, panel en la sesión de escritorio. Un solo cuerpo. -->
+@if (inline()) {
+  <div class="rest-panel" role="status" [attr.aria-label]="T().rest_label">
+    <ng-container *ngTemplateOutlet="restBody" />
+  </div>
+} @else {
+  <div class="rest-overlay" role="alertdialog" aria-modal="true" [attr.aria-label]="T().rest_label">
+    <ng-container *ngTemplateOutlet="restBody" />
+  </div>
+}
+
+<ng-template #restBody>
   <p class="rest-label">{{ T().rest_label }}</p>
 
   <div class="rest-ring">
@@ -36,4 +47,4 @@
       +15
     </button>
   </div>
-</div>
+</ng-template>

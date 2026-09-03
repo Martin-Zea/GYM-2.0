@@ -28,6 +28,7 @@ import { dashboardKpis, groupSeriesByWeek, realSessions } from '../../utils/dash
 import { sessionDurationMinutes, tonnageOf, workingSets } from '../../utils/session';
 import { CatalogService } from '../../services/catalog.service';
 import { ViewportService } from '../../services/viewport.service';
+import { RestTimerComponent } from '../rest-timer/rest-timer.component';
 
 type SessionView = 'focused' | 'list';
 
@@ -49,6 +50,7 @@ interface SessionQueueItem {
     HowItWorksComponent,
     ProgressBarComponent,
     SessionSummaryComponent,
+    RestTimerComponent,
     RouterLink,
   ],
   templateUrl: './home.component.html',
@@ -207,6 +209,38 @@ export class HomeComponent {
       if (done < total) return ex;
     }
     return null;
+  });
+
+  /**
+   * Columna de CONTEXTO de la sesión de escritorio (T-839).
+   *
+   * En el teléfono este contexto —la última marca, el récord, el motivo de la sugerencia—
+   * está repartido entre la tarjeta, un sheet y una hoja de progresión, porque no cabe.
+   * En un monitor cabe al lado y deja de haber que ir a buscarlo mientras entrenas.
+   *
+   * Es solo lectura a propósito: registrar sigue pasando en la columna del medio, que es
+   * donde están las manos.
+   */
+  /** Las etiquetas de los KPI del panel, para enseñarlos apagados el primer día. */
+  protected readonly day1Kpis = computed(() => {
+    const T = this.T();
+    return [T.panel_kpi_volume, T.panel_kpi_sets, T.panel_kpi_sessions, T.progress_adherence];
+  });
+
+  protected readonly sessionContext = computed(() => {
+    const ex = this.activeSessionExercise();
+    if (!ex) return null;
+    const st = this.state.state();
+    const lastSets = (this.storage.lastSetsForExercise(st, ex.id) ?? []).filter((x) => !x.isWarmup);
+    const history = this.storage.historyForExercise(st, ex.id);
+    const top = history.length ? Math.max(...history.map((h) => h.topWeight)) : 0;
+    return {
+      exercise: ex,
+      lastSets,
+      pr: top > 0 ? top : null,
+      rec: this.aiCache()[ex.id] ?? null,
+      hasWeight: ex.unit !== 'BODYWEIGHT' && ex.unit !== 'TIME',
+    };
   });
 
   protected readonly dayProgress = computed(() => {
@@ -517,6 +551,10 @@ export class HomeComponent {
     this.showFinishModal.set(false);
     this.activeExerciseId.set(null);
     this.mode.set('today');
+    // El descanso pertenece a la sesión: si la sesión termina, termina. Antes seguía
+    // corriendo sobre el panel, y en escritorio además saltaba de panel a velo a pantalla
+    // completa justo al terminar, porque el velo solo se suprime mientras se entrena.
+    this.uiState.restTimer.set(null);
 
     // Sin series registradas no hay nada que resumir: se vuelve a Inicio sin más.
     if (finished && sessionDay) {
@@ -568,6 +606,7 @@ export class HomeComponent {
     if (!pending) return;
     const idx = this.state.days().findIndex((d) => d.id === pending.day.id);
     const finished = this.state.finishSession(pending.day.id, idx >= 0 ? idx : undefined);
+    this.uiState.restTimer.set(null);
     if (finished) {
       this.summarySession.set(finished);
       this.summaryDay.set(pending.day);

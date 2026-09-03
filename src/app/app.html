@@ -58,11 +58,15 @@
     }
   }
 
-  @if (uiState.restTimer()) {
+  <!--
+    Entrenando en escritorio el descanso es un panel de la tercera columna; el velo global
+    solo sale donde no hay tercera columna. Sin esta guarda se pintaban los dos a la vez.
+  -->
+  @if (uiState.restTimer() && !(viewport.isDesktop() && uiState.trainingActive())) {
     <app-rest-timer />
   }
 
-  @if (uiState.editingDay() !== null) {
+  @if (uiState.editingDay() !== null && !uiState.editingDayInline()) {
     <app-day-editor />
   }
 

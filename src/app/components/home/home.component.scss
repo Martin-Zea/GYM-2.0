@@ -96,10 +96,6 @@
   font-size: var(--fs-lg);
 }
 
-.training-sidebar {
-  display: none;
-}
-
 /* ── AI hero banner ── */
 .ai-hero {
   display: flex;
@@ -169,37 +165,6 @@
      * encima de la tarjeta del día. Estar primero en la columna ya la deja visible en
      * cualquier ventana de altura normal, y sin superponer nada.
      */
-  }
-  .session-layout {
-    display: grid;
-    grid-template-columns: 256px 1fr;
-    align-items: start;
-    gap: 0 20px;
-    flex: 1;
-    min-height: 0;
-  }
-  .session-queue {
-    display: none;
-  }
-  .session-main {
-    max-width: 640px;
-    width: 100%;
-    padding: 16px 24px 40px 4px;
-  }
-  .training-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 16px 12px;
-    border-right: 1px solid var(--border);
-    background: var(--bg-0);
-    position: sticky;
-    top: 0;
-    height: calc(100vh - 64px);
-    overflow-y: auto;
-  }
-  .training-sidebar .section-title {
-    margin: 0 0 8px 2px;
   }
 
   .today-title {
@@ -545,4 +510,21 @@
     font-size: var(--fs-md);
     font-weight: 700;
   }
+}
+
+/*
+ * Día 1: los bloques se enseñan APAGADOS, no se esconden (T-839).
+ *
+ * Atenuados y sin números inventados: dicen qué van a contener y qué hace falta para
+ * encenderlos. Esconderlos hacía que la app pareciera diminuta justo el día en que el
+ * usuario decide si le gusta.
+ */
+.panel--day1 .panel-kpi--locked .stat-value,
+.panel--day1 .panel-locked {
+  opacity: 0.62;
+}
+
+.panel--day1 .panel-locked .note {
+  margin: 6px 0 0;
+  line-height: 1.5;
 }

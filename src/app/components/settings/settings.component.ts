@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -5,6 +6,7 @@ import {
   OnInit,
   computed,
   inject,
+  input,
   signal,
 } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
@@ -31,12 +33,20 @@ import { APP_VERSION } from '../../version';
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [IconComponent, FocusTrapDirective],
+  imports: [IconComponent, FocusTrapDirective, NgTemplateOutlet],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsComponent implements OnInit {
+  /**
+   * `true` pinta solo el contenido, sin hoja ni backdrop.
+   *
+   * Es la versión de escritorio, donde Ajustes es una página: no tapa nada, así que no
+   * hay nada que cerrar y el foco no necesita atraparse.
+   */
+  readonly inline = input(false);
+
   protected readonly state = inject(StateService);
   private readonly storage = inject(StorageService);
   protected readonly uiState = inject(UIStateService);
@@ -221,6 +231,9 @@ export class SettingsComponent implements OnInit {
 
   @HostListener('document:keydown.escape')
   protected close(): void {
+    // En página no hay hoja que cerrar: dejar pasar el Escape sacaría una entrada del
+    // stack de overlays que nadie metió, y el botón atrás acabaría navegando de más.
+    if (this.inline()) return;
     this.uiState.closeSettings();
   }
 

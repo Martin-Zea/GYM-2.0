@@ -117,3 +117,27 @@
     font-size: var(--fs-num-xl);
   }
 }
+
+/*
+ * Panel (T-839): el mismo temporizador sin velo, dentro de la columna de contexto.
+ *
+ * El anillo se encoge porque aquí compite por sitio con lo que viene después; en el velo
+ * no competía con nada.
+ */
+.rest-panel {
+  padding: 14px;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-lg);
+  background: var(--accent-bg);
+  text-align: center;
+
+  .rest-ring {
+    width: 132px;
+    height: 132px;
+    margin: 0 auto;
+  }
+
+  .rest-controls {
+    margin-top: 10px;
+  }
+}

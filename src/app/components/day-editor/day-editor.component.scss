@@ -270,3 +270,40 @@
   justify-content: center;
   margin-bottom: 8px;
 }
+
+/*
+ * Versión en panel (T-839): el mismo editor sin la hoja.
+ *
+ * Se reaprovechan .sheet-body y .sheet-footer del cuerpo compartido; aquí solo se les
+ * quita el marco de hoja, porque dentro de una página no hay hoja de la que ser cuerpo.
+ */
+.day-editor-inline {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  .sheet-body {
+    padding: 0;
+    overflow: visible;
+    max-height: none;
+  }
+
+  .sheet-footer {
+    position: sticky;
+    bottom: 0;
+    padding: var(--sp-3) 0 0;
+    background: var(--bg-0);
+    border-top: 1px solid var(--border);
+  }
+}
+
+.de-inline-head {
+  margin-bottom: var(--sp-3);
+}
+
+.de-inline-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-title);
+  font-weight: 700;
+}

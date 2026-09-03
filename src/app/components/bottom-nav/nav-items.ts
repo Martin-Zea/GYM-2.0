@@ -57,4 +57,5 @@ export const RAIL_FOOTER_PATHS = ['/settings', '/profile'];
 export const DEFAULT_DESKTOP_VIEW: Readonly<Record<string, string>> = {
   '/progress': 'progresion',
   '/coach': 'panel',
+  '/settings': 'prefs',
 };

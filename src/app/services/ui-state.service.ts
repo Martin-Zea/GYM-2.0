@@ -173,6 +173,25 @@ export class UIStateService {
   closeTools(): void {
     this._close('tools');
   }
+  /**
+   * `true` cuando el editor de día lo pinta una PÁGINA y no una hoja (T-839).
+   *
+   * Existe para que `app.html` no dibuje además su instancia global: si no, el mismo
+   * editor sale dos veces, uno dentro del panel de Rutinas y otro encima tapando todo.
+   */
+  readonly editingDayInline = signal(false);
+
+  /** Abre el editor DENTRO de la página: sin hoja y sin tocar el stack de overlays. */
+  openEditingDayInline(day: EditingDayState): void {
+    this.editingDayInline.set(true);
+    this.editingDay.set(day);
+  }
+
+  closeEditingDayInline(): void {
+    this.editingDay.set(null);
+    this.editingDayInline.set(false);
+  }
+
   openEditingDay(day: EditingDayState): void {
     this._push('editingDay');
     this.editingDay.set(day);

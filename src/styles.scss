@@ -599,6 +599,17 @@ button.btn[disabled] {
   animation: slideUp 0.22s cubic-bezier(0.2, 0.7, 0.3, 1);
   overflow: hidden;
 }
+@keyframes sheetIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @keyframes slideUp {
   from {
     transform: translateY(20px);
@@ -870,6 +881,32 @@ button.btn[disabled] {
     margin: 0 auto;
     padding: 24px 32px 48px;
   } /* no bottom-nav in desktop */
+
+  /*
+   * Las hojas dejan de estar pegadas al borde de abajo (T-839).
+   *
+   * Un bottom sheet es un patrón TÁCTIL: nace del borde inferior porque ahí está el
+   * pulgar, y lleva un asa porque se arrastra. En un monitor no hay pulgar ni arrastre,
+   * y una hoja anclada abajo deja la mirada en el sitio equivocado con el asa prometiendo
+   * un gesto que no existe.
+   *
+   * Se arregla aquí, en el sistema, y no hoja por hoja: lo heredan el resumen de sesión,
+   * las herramientas, el editor de día, el historial, el selector y el diálogo de
+   * terminar. Corregir seis copias habría dejado la séptima sin corregir.
+   */
+  .sheet {
+    align-items: center;
+  }
+  .sheet-panel {
+    max-width: 560px;
+    max-height: 86vh;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    animation: sheetIn 0.16s cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+  .sheet-handle {
+    display: none;
+  }
 
   /* Sesión activa: sin topbar ni nav lateral — la sesión ocupa todo */
   .app--session {
