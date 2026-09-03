@@ -20,6 +20,11 @@ import {
   WorkoutDay,
 } from '../../models/workout.model';
 import { DEFAULT_TOKEN_BUDGET } from '../../services/providers/ai-usage';
+import { CeilingCause } from '../../services/providers/session-response';
+import { SessionRecommendation } from '../../services/providers/session-context';
+import { StorageService } from '../../services/storage.service';
+import { ViewportService } from '../../services/viewport.service';
+import { NgTemplateOutlet } from '@angular/common';
 
 type Tab = 'panel' | 'chat' | 'history';
 
@@ -36,7 +41,7 @@ const CHAT_TOKENS_PER_MESSAGE = 120;
 @Component({
   selector: 'app-coach',
   standalone: true,
-  imports: [IconComponent],
+  imports: [IconComponent, NgTemplateOutlet],
   templateUrl: './coach.component.html',
   styleUrl: './coach.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,12 +54,16 @@ export class CoachComponent {
   protected readonly chat = inject(CoachChatService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly storage = inject(StorageService);
+  protected readonly viewport = inject(ViewportService);
 
   protected readonly tab = signal<Tab>('panel');
   protected readonly draft = signal('');
   protected readonly chatTokens = CHAT_TOKENS_PER_MESSAGE;
 
   private readonly suggestions = signal<Record<string, AiRecommendation> | null>(null);
+  /** Lo que hubo que corregir de la respuesta, con la causa. Alimenta la columna "por que". */
+  private readonly validated = signal<SessionRecommendation['validated'] | null>(null);
   protected readonly source = signal<'groq' | 'cohere' | 'local' | null>(null);
 
   protected readonly day = computed(() => this.state.currentDay());
@@ -108,6 +117,7 @@ export class CoachComponent {
       { state: this.state.state(), allowNetwork: true },
     );
     this.suggestions.set(result.byExercise);
+    this.validated.set(result.validated ?? null);
     this.source.set(result.source);
   }
 
@@ -127,7 +137,101 @@ export class CoachComponent {
     return entry !== null && entry.dateISO === this.state.todayKey;
   }
 
+  /** El contexto se corrige donde vive, que es el perfil. */
+  protected openProfile(): void {
+    void this.router.navigate(['/profile']);
+  }
+
   protected readonly history = computed(() => [...(this.state.state().aiFeedback ?? [])].reverse());
+
+  // ── Escritorio: la propuesta como tabla auditable (T-839) ──
+  //
+  // En el móvil el coach es un chat con tarjetas. En un monitor eso desperdicia la única
+  // ventaja del medio: poder poner el ANTES y el DESPUÉS uno al lado del otro con su
+  // motivo. Estos ayudantes existen para esa tabla; el móvil no los usa.
+
+  /** La marca de la que se parte. `null` si el ejercicio no tiene historial con carga. */
+  protected lastLabel(row: SuggestionRow): string | null {
+    if (row.exercise.unit === 'BODYWEIGHT' || row.exercise.unit === 'TIME') return null;
+    const sets = this.storage.lastSetsForExercise(this.state.state(), row.exercise.id);
+    const working = (sets ?? []).filter((s) => !s.isWarmup && s.weight > 0);
+    if (!working.length) return null;
+    const top = working.reduce((a, b) => (b.weight > a.weight ? b : a));
+    return `${top.weight} × ${top.reps}`;
+  }
+
+  /**
+   * Diferencia entre lo propuesto y la última marca.
+   *
+   * Se compara contra el TOPE de ambas, no contra la primera serie: el motor sube solo las
+   * últimas series la primera vez que cumplís, y comparar primeras haría que una subida
+   * real apareciera como "igual".
+   */
+  protected deltaOf(row: SuggestionRow): { text: string; tone: 'up' | 'down' | 'flat' } | null {
+    if (row.exercise.unit === 'BODYWEIGHT' || row.exercise.unit === 'TIME') return null;
+    const sets = this.storage.lastSetsForExercise(this.state.state(), row.exercise.id);
+    const previous = Math.max(0, ...(sets ?? []).filter((s) => !s.isWarmup).map((s) => s.weight));
+    const proposed = Math.max(0, ...row.rec.sets.map((s) => s.weight));
+    if (previous <= 0 || proposed <= 0) return null;
+
+    const diff = Math.round((proposed - previous) * 100) / 100;
+    if (diff === 0) return { text: this.T().coach_delta_same, tone: 'flat' };
+    return { text: `${diff > 0 ? '+' : '−'}${Math.abs(diff)}`, tone: diff > 0 ? 'up' : 'down' };
+  }
+
+  private readonly causeLabels = computed((): Record<CeilingCause, string> => {
+    const T = this.T();
+    return {
+      layoff: T.coach_cause_layoff,
+      injury: T.coach_cause_injury,
+      hard_feel: T.coach_cause_hard_feel,
+      max_increase: T.coach_cause_max_increase,
+    };
+  });
+
+  /**
+   * Por qué ese número.
+   *
+   * Si el techo tuvo que recortar la respuesta, esa es la explicación verdadera y gana:
+   * el motivo que escribió el modelo describe lo que PROPUSO, no lo que quedó. Si no hubo
+   * recorte, se enseña el motivo del motor tal cual.
+   */
+  protected whyLabel(row: SuggestionRow): string {
+    const cause = this.validated()?.corrections.find((c) => c.exerciseId === row.exercise.id)
+      ?.causes?.[0];
+    if (cause) return this.causeLabels()[cause];
+    // Un ejercicio estrenado hoy no tiene motivo que contar: el motor no está razonando
+    // sobre nada, está proponiendo un punto de partida. Decirlo es más honesto que un hueco.
+    if (!row.rec.reason && !this.lastLabel(row)) return this.T().coach_desk_first_time;
+    return row.rec.reason;
+  }
+
+  /** Cuántas de las filas cambian algo: el titular del pie de la tabla. */
+  protected readonly changeCount = computed(
+    () => this.rows().filter((row) => this.deltaOf(row)?.tone !== 'flat').length,
+  );
+
+  /**
+   * Con qué está respondiendo el coach, como franja de 44px en vez de panel de 320.
+   *
+   * Es el mismo contexto que el motor usa para decidir. Hoy solo aparece cuando el chat
+   * propone algo, así que el atleta nunca sabe con qué se le está respondiendo.
+   */
+  protected readonly contextChips = computed((): { label: string; hot: boolean }[] => {
+    const T = this.T();
+    const p = this.state.settings().userProfile;
+    const chips: { label: string; hot: boolean }[] = [];
+    if (p.level) chips.push({ label: this.levelLabel(p.level), hot: false });
+    if (p.goal) chips.push({ label: this.goalLabel(p.goal), hot: false });
+    if (p.layoffSinceISO) {
+      chips.push({ label: T.coach_context_layoff, hot: true });
+    }
+    chips.push({
+      label: p.aiNotes?.trim() ? p.aiNotes.trim() : T.coach_context_no_notes,
+      hot: !!p.aiNotes?.trim(),
+    });
+    return chips;
+  });
 
   protected firstSet(rec: AiRecommendation) {
     return rec.sets[0] ?? null;

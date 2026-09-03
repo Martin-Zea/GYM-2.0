@@ -219,3 +219,215 @@
   line-height: 1.5;
   color: var(--text-1);
 }
+
+/* ═══════════ Escritorio: la propuesta como tabla (T-839) ═══════════ */
+
+/*
+ * La vista de escritorio ocupa el alto completo, no el de su contenido.
+ *
+ * `app-coach` es un elemento sin display propio: sin esto, `height: 100%` del grid se
+ * resolvía contra una altura automática y las dos columnas terminaban a media pantalla,
+ * con el borde del chat cortado en el aire.
+ */
+@media (min-width: 768px) {
+  :host {
+    display: block;
+    height: 100%;
+  }
+}
+
+.coach-desk {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 356px;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.coach-desk-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+  padding: var(--sp-5) var(--sp-5) var(--sp-4);
+  overflow-y: auto;
+}
+
+.coach-desk-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.coach-desk-eyebrow {
+  width: 100%;
+  margin: 0;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+}
+
+.coach-desk-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  font-weight: 700;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+/* El contexto como franja: se ve siempre y cuesta una fila, no una columna. */
+.coach-ctx {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.coach-ctx-label {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+}
+
+.coach-ctx-fix {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.coach-tbl {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.coach-tbl-head,
+.coach-tr {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) 100px minmax(0, 0.9fr) minmax(0, 1.4fr) auto;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.coach-tbl-head {
+  padding: 0 var(--sp-3);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+}
+
+.coach-tr {
+  padding: var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-1);
+}
+
+.coach-td-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.coach-td-last {
+  color: var(--text-2);
+}
+
+.coach-td-new {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+}
+
+.coach-delta {
+  font-size: var(--fs-2xs);
+  color: var(--text-3);
+}
+.coach-delta--up {
+  color: var(--success);
+}
+/* Bajar no es un fallo: es el recorte haciendo su trabajo. Acento, no rojo. */
+.coach-delta--down {
+  color: var(--accent);
+}
+
+.coach-td-why {
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+  line-height: 1.4;
+}
+
+.coach-td-act {
+  display: flex;
+  gap: var(--sp-2);
+  justify-content: flex-end;
+}
+
+.coach-tbl-empty {
+  padding: var(--sp-4) var(--sp-3);
+}
+
+.coach-desk-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  margin-top: auto;
+  padding: var(--sp-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-1);
+}
+
+.coach-desk-foot-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.coach-desk-foot-title {
+  margin: 0 0 3px;
+  font-weight: 600;
+}
+
+.coach-desk-apply {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 var(--sp-5);
+}
+
+/* El chat baja a columna: sigue estando, deja de ser el protagonista. */
+.coach-desk-chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--border);
+  background: var(--bg-1);
+  overflow: hidden;
+}
+
+.coach-desk-chat-head {
+  padding: var(--sp-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.coach-desk-chat-title {
+  margin: 0 0 3px;
+  font-weight: 600;
+}
+
+.coach-desk-chat-body {
+  flex: 1;
+  min-height: 0;
+  padding: var(--sp-4);
+  overflow-y: auto;
+}

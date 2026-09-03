@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { StateService } from '../../services/state.service';
 import { StorageService } from '../../services/storage.service';
 import { TranslationService } from '../../services/translation.service';
@@ -43,6 +45,21 @@ export class SessionHistoryComponent {
   /** `null` = todos los días de la rutina. */
   protected readonly dayFilter = signal<string | null>(null);
   protected readonly selectedId = signal<string | null>(null);
+
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  constructor() {
+    // El filtro vive en la URL (T-839): la columna de sección del escritorio enlaza a
+    // cada día, y así el botón atrás deshace el filtro en vez de salir de la pantalla.
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const dia = params.get('dia');
+      // Un id que ya no existe (rutina borrada, enlace viejo) no deja la tabla vacía
+      // sin explicación: se ignora y se ven todas.
+      this.dayFilter.set(dia && this.state.days().some((d) => d.id === dia) ? dia : null);
+      this.selectedId.set(null);
+    });
+  }
 
   protected readonly days = computed(() => this.state.days());
 
@@ -120,8 +137,12 @@ export class SessionHistoryComponent {
   }
 
   protected setDayFilter(dayId: string | null): void {
-    this.dayFilter.set(dayId);
-    this.selectedId.set(null);
+    // Se navega en vez de asignar: la URL es la fuente y el suscriptor de arriba aplica.
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { dia: dayId },
+      queryParamsHandling: 'merge',
+    });
   }
 
   protected dateLabel(iso: string): string {

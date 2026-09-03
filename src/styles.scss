@@ -813,16 +813,31 @@ button.btn[disabled] {
 
 /* ============ Desktop ≥ 1024px — shell layout only ============ */
 @media (min-width: 768px) {
+  /*
+   * Rail + columna de sección (T-839).
+   *
+   * El rail ocupa las DOS filas, así que la topbar solo cubre el contenido. Es
+   * deliberado: la marca vive en el rail y la topbar pasa a ser la barra de la vista.
+   * Con la topbar cruzando de lado a lado, la navegación quedaba metida en una caja
+   * dentro de otra y el rail perdía su papel de columna vertebral.
+   */
   .app {
     max-width: none;
     display: grid;
-    grid-template-columns: 214px 1fr;
+    grid-template-columns: 66px 1fr;
     grid-template-rows: auto 1fr;
     grid-template-areas:
-      'topbar  topbar'
+      'sidenav topbar'
       'sidenav content';
     height: 100vh;
     overflow: hidden;
+  }
+
+  .app--rail-open {
+    grid-template-columns: 66px 202px 1fr;
+    grid-template-areas:
+      'sidenav sectionrail topbar'
+      'sidenav sectionrail content';
   }
 
   .topbar {

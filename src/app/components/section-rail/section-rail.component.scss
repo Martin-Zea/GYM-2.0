@@ -1,0 +1,117 @@
+:host {
+  display: contents;
+}
+
+.section-rail {
+  grid-area: sectionrail;
+  width: 202px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-1);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.sr-head {
+  padding: var(--sp-4) var(--sp-3) var(--sp-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.sr-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.sr-sub {
+  margin: 3px 0 0;
+  font-size: var(--fs-2xs);
+  color: var(--text-3);
+  /* La fecha larga en alemán o en inglés no cabe: se corta, no empuja la columna. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sr-body {
+  flex: 1;
+  min-height: 0;
+  padding: var(--sp-2) var(--sp-2) var(--sp-4);
+  overflow-y: auto;
+}
+
+.sr-group {
+  margin: var(--sp-3) 0 var(--sp-1) 10px;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+.sr-group:first-child {
+  margin-top: var(--sp-1);
+}
+
+.sr-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-1);
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+a.sr-row:hover,
+button.sr-row:hover {
+  background: var(--bg-2);
+  color: var(--text-0);
+}
+
+.sr-row--on {
+  background: var(--bg-2);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Un dato no es un destino: ni se pulsa ni se ilumina al pasar por encima. */
+.sr-row--stat {
+  cursor: default;
+  color: var(--text-2);
+}
+
+.sr-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sr-meta {
+  flex: 0 0 auto;
+  font-size: var(--fs-2xs);
+  color: var(--text-3);
+}
+
+.sr-value {
+  flex: 0 0 auto;
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--text-0);
+}
+
+.sr-value--warn {
+  color: var(--warning);
+}

@@ -1,4 +1,8 @@
-<div class="app" [class.app--session]="uiState.trainingActive()">
+<div
+  class="app"
+  [class.app--session]="uiState.trainingActive()"
+  [class.app--rail-open]="!uiState.trainingActive() && viewport.sectionRailOpen()"
+>
   @if (!uiState.trainingActive()) {
     <header class="topbar">
       <div class="brand">
@@ -49,6 +53,9 @@
 
   @if (!uiState.trainingActive()) {
     <app-bottom-nav />
+    @if (viewport.sectionRailOpen()) {
+      <app-section-rail />
+    }
   }
 
   @if (uiState.restTimer()) {

@@ -1,45 +1,60 @@
 <!--
-  Dos navegaciones para los mismos destinos (T-838).
-
-  En móvil, cinco iconos en la barra inferior: lo que cabe y se pulsa con el pulgar.
-  En escritorio, una barra lateral de texto con grupos y segundo nivel — no porque quede
-  mejor, sino porque las sub-vistas (plantillas, generador, volumen, chat) YA existen y en
-  cinco iconos son invisibles. La lista de destinos es la misma; cambia cómo se enseña.
+  El rail de escritorio y la barra inferior de móvil listan los MISMOS destinos.
+  Lo que cambia es cuántos caben y cómo se enseña el segundo nivel: en escritorio vive
+  en la columna de al lado (`app-section-rail`), en móvil dentro de cada pantalla.
 -->
 @if (viewport.isDesktop()) {
   <nav class="bottom-nav rail" [attr.aria-label]="T().nav_main">
-    @for (entry of railEntries(); track $index) {
-      @if (entry.group; as group) {
-        <p class="rail-group">{{ T()[group] }}</p>
-      }
-      @if (entry.item; as item) {
-        <a
-          class="nav-item rail-item"
-          [routerLink]="item.path"
-          routerLinkActive="active"
-          #rla="routerLinkActive"
-          [routerLinkActiveOptions]="{ exact: item.exact }"
-        >
-          <app-icon [name]="item.icon" [size]="17" />
-          <span class="nav-label">{{ label(item) }}</span>
-        </a>
+    <div class="rail-brand" aria-hidden="true">
+      <app-icon name="dumbbell" [size]="15" />
+    </div>
 
-        <!-- El segundo nivel solo se despliega en la sección donde estás: una lista
-             de once entradas siempre abierta es un índice, no una navegación. -->
-        @if (item.sub && rla.isActive) {
-          @for (sub of item.sub; track sub.view) {
-            <a
-              class="rail-sub"
-              [routerLink]="item.path"
-              [queryParams]="{ vista: sub.view }"
-              routerLinkActive="rail-sub--on"
-              [routerLinkActiveOptions]="{ exact: false }"
-            >
-              {{ T()[sub.key] }}
-            </a>
-          }
-        }
-      }
+    @for (item of railItems(); track item.path) {
+      <a
+        class="nav-item rail-item"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: item.exact }"
+        [title]="label(item)"
+      >
+        <app-icon [name]="item.icon" [size]="19" />
+        <span class="nav-label">{{ label(item) }}</span>
+      </a>
+    }
+
+    <div class="rail-spacer"></div>
+
+    @for (item of railFooterItems(); track item.path) {
+      <a
+        class="nav-item rail-item"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: item.exact }"
+        [title]="label(item)"
+      >
+        <app-icon [name]="item.icon" [size]="19" />
+        <span class="nav-label">{{ label(item) }}</span>
+      </a>
+    }
+
+    <!--
+      El pliegue solo se ofrece cuando es una ELECCIÓN. Por debajo de 1100px la columna
+      se pliega sola y el botón desaparece: un control que no puede cambiar nada miente.
+    -->
+    @if (!viewport.sectionRailForced()) {
+      <button
+        class="rail-toggle"
+        (click)="viewport.toggleSectionRail()"
+        [attr.aria-label]="viewport.sectionRailOpen() ? T().rail_collapse : T().rail_expand"
+        [attr.aria-expanded]="viewport.sectionRailOpen()"
+        [title]="viewport.sectionRailOpen() ? T().rail_collapse : T().rail_expand"
+      >
+        <app-icon
+          name="chevron"
+          [size]="15"
+          [class.rail-toggle-icon--open]="viewport.sectionRailOpen()"
+        />
+      </button>
     }
   </nav>
 } @else {

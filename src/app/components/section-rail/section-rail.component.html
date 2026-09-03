@@ -1,0 +1,65 @@
+@let s = section();
+
+<aside class="section-rail" [attr.aria-label]="s.title">
+  <div class="sr-head">
+    <p class="sr-title">{{ s.title }}</p>
+    @if (s.subtitle) {
+      <p class="sr-sub">{{ s.subtitle }}</p>
+    }
+  </div>
+
+  <div class="sr-body">
+    @for (group of s.groups; track $index) {
+      @if (group.title) {
+        <p class="sr-group">{{ group.title }}</p>
+      }
+      @for (row of group.rows; track $index) {
+        @switch (row.kind) {
+          @case ('link') {
+            <a
+              class="sr-row"
+              [class.sr-row--on]="row.on"
+              [routerLink]="row.path"
+              [queryParams]="row.query"
+            >
+              <span class="sr-label">{{ row.label }}</span>
+              @if (row.meta) {
+                <span class="sr-meta">{{ row.meta }}</span>
+              }
+            </a>
+          }
+          @case ('act') {
+            <button class="sr-row" type="button" (click)="run(row.act)">
+              <span class="sr-label">{{ row.label }}</span>
+              @if (row.meta) {
+                <span class="sr-meta">{{ row.meta }}</span>
+              }
+            </button>
+          }
+          @case ('routine') {
+            <button
+              class="sr-row"
+              type="button"
+              [class.sr-row--on]="row.on"
+              [attr.aria-current]="row.on ? 'true' : null"
+              (click)="pickRoutine(row.id)"
+            >
+              <span class="sr-label">{{ row.label }}</span>
+              @if (row.meta) {
+                <span class="sr-meta">{{ row.meta }}</span>
+              }
+            </button>
+          }
+          @case ('stat') {
+            <div class="sr-row sr-row--stat">
+              <span class="sr-label">{{ row.label }}</span>
+              <span class="sr-value" [class.sr-value--warn]="row.tone === 'warn'">{{
+                row.value
+              }}</span>
+            </div>
+          }
+        }
+      }
+    }
+  </div>
+</aside>

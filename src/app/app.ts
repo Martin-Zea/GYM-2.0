@@ -23,6 +23,8 @@ import { DayPickerSheetComponent } from './components/day-picker-sheet/day-picke
 import { DayHistorySheetComponent } from './components/day-history-sheet/day-history-sheet.component';
 import { ExerciseChartSheetComponent } from './components/exercise-chart-sheet/exercise-chart-sheet.component';
 import { BottomNavComponent } from './components/bottom-nav/bottom-nav.component';
+import { SectionRailComponent } from './components/section-rail/section-rail.component';
+import { ViewportService } from './services/viewport.service';
 import {
   OnboardingComponent,
   OnboardingResult,
@@ -44,6 +46,7 @@ import { LegalGateComponent } from './components/legal-gate/legal-gate.component
     DayHistorySheetComponent,
     ExerciseChartSheetComponent,
     BottomNavComponent,
+    SectionRailComponent,
     OnboardingComponent,
     LegalGateComponent,
   ],
@@ -54,6 +57,7 @@ import { LegalGateComponent } from './components/legal-gate/legal-gate.component
 export class App {
   protected readonly state = inject(StateService);
   protected readonly uiState = inject(UIStateService);
+  protected readonly viewport = inject(ViewportService);
   protected readonly tr = inject(TranslationService);
   protected readonly appUpdate = inject(AppUpdateService);
   protected readonly errorService = inject(ErrorService);

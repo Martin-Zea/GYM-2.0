@@ -23,4 +23,6 @@ export const STORAGE_KEYS = {
   /** Consumo de tokens por mes de la capa IA (RF-IA-07). */
   aiUsage: 'gt_ai_usage',
   coachChat: 'gt_coach_chat',
+  /** Columna de sección plegada a mano en escritorio (T-839). */
+  railCollapsed: 'gym_rail_collapsed',
 } as const;

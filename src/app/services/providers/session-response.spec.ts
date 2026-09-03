@@ -4,6 +4,7 @@ import { AiSessionContext } from './session-context';
 import {
   MAX_INCREASE,
   allowedCeiling,
+  ceilingFor,
   injuryBlocksIncrease,
   validateSessionResponse,
 } from './session-response';
@@ -262,5 +263,66 @@ describe('Tope tras un parón (T-810)', () => {
       })),
     };
     expect(allowedCeiling(c.exercises[0], undefined, c.todayISO)).toBeNull();
+  });
+});
+
+describe('La causa del techo (T-839)', () => {
+  function withGap(lastSessionDate: string, todayISO: string): AiSessionContext {
+    const base = ctx();
+    return {
+      ...base,
+      todayISO,
+      exercises: base.exercises.map((ec) => ({
+        ...ec,
+        lastSessionDate,
+        lastSets: [{ exerciseId: ec.exercise.id, setIndex: 0, weight: 100, reps: 5 }],
+      })),
+    };
+  }
+
+  it('el parón se distingue de la regla del +10%', () => {
+    const normal = withGap('2026-08-28', '2026-08-30');
+    expect(ceilingFor(normal.exercises[0], undefined, normal.todayISO)?.cause).toBe('max_increase');
+
+    const layoff = withGap('2026-06-30', '2026-08-30');
+    expect(ceilingFor(layoff.exercises[0], undefined, layoff.todayISO)?.cause).toBe('layoff');
+  });
+
+  it('una molestia declarada y una sesión dura no son la misma causa', () => {
+    const c = withGap('2026-08-28', '2026-08-30');
+    const name = c.exercises[0].exercise.name;
+
+    const injured = ceilingFor(c.exercises[0], `me molesta el hombro en ${name}`, c.todayISO);
+    expect(injured?.cause).toBe('injury');
+    expect(injured?.weight).toBeCloseTo(100, 5);
+
+    const hard = ceilingFor({ ...c.exercises[0], lastFeel: 'hard' }, undefined, c.todayISO);
+    expect(hard?.cause).toBe('hard_feel');
+    expect(hard?.weight).toBeCloseTo(100, 5);
+  });
+
+  it('la corrección registrada nombra el parón, no el 10%', () => {
+    // Es el caso que dio origen al cambio: el recorte lo impone el parón y el registro
+    // decía "incremento por encima del 10%", que era sencillamente falso.
+    const c = withGap('2026-06-30', '2026-08-30');
+    const id = c.exercises[0].exercise.id;
+    const raw = { r: [{ e: 1, sets: [{ w: 105, r: 5 }], why: 'seguimos subiendo' }] };
+
+    const out = validateSessionResponse(raw, c, 'groq');
+    const log = out.corrections.find((x) => x.exerciseId === id);
+
+    expect(log?.causes).toEqual(['layoff']);
+    expect(log?.reasons.join(' ')).not.toContain('10%');
+  });
+
+  it('sin recorte no se inventa una causa', () => {
+    const c = withGap('2026-08-28', '2026-08-30');
+    const id = c.exercises[0].exercise.id;
+    // Dentro del techo: no hay nada que corregir, así que no hay causa que contar.
+    const raw = { r: [{ e: 1, sets: [{ w: 102, r: 5 }], why: 'pequeña subida' }] };
+
+    const out = validateSessionResponse(raw, c, 'groq');
+
+    expect(out.corrections.find((x) => x.exerciseId === id)).toBeUndefined();
   });
 });

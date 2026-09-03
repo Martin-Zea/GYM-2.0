@@ -1,3 +1,4 @@
+import type { CorrectionLog } from './session-response';
 import {
   AiFeedbackAction,
   AiRecommendation,
@@ -50,7 +51,7 @@ export interface SessionRecommendation {
   source: 'groq' | 'cohere' | 'local';
   /** Qué hubo que corregir y qué ejercicios quedaron sin respuesta (RF-IA-04). */
   validated?: {
-    corrections: { exerciseId: string; reasons: string[] }[];
+    corrections: CorrectionLog[];
     missing: string[];
   };
 }
